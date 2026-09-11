@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RFN70FPWB1');
+</script>
+<meta charset="utf-8">
+<title>dots and boxes · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Dots and Boxes — play a friend by sending moves over WhatsApp, or pass and play locally.">
+<meta property="og:title" content="Dots and Boxes · two players over WhatsApp">
+<meta property="og:description" content="Draw one line per turn. Complete a box and go again.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .db-board {
+    display: grid;
+    grid-template-columns: 10px repeat(4, 1fr 10px);
+    grid-template-rows: 10px repeat(4, 1fr 10px);
+    width: min(420px, 100%);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 6px;
+  }
+  .db-cell { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+  .db-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+  .db-edge { border: 0; padding: 0; cursor: pointer; background: transparent; border-radius: 3px; }
+  .db-h { width: 100%; height: 6px; background: var(--border); }
+  .db-v { width: 6px; height: 100%; background: var(--border); }
+  .db-edge:disabled { cursor: default; }
+  .db-edge:not(.drawn):not(:disabled):hover { background: var(--border-hi); }
+  .db-edge.drawn { background: var(--fg); }
+  .db-edge.last { background: #f5c800; }
+  .db-boxcell { border-radius: 2px; }
+  .db-boxcell.owned.p1 { background: rgba(184,50,39,0.35); }
+  .db-boxcell.owned.p2 { background: rgba(60,130,220,0.35); }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-dots-and-boxes">
+<main class="wrap">
+  <div class="topbar">
+    <h1>dots and boxes</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <p class="status" id="score">Player 1: 0 · Player 2: 0</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="dots-and-boxes" data-man-title="DOTS-AND-BOXES(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="db-board" id="board" aria-label="Dots and boxes grid"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-dots-and-boxes">
+  <h2>Name</h2>
+  <p>dots and boxes — draw lines, claim boxes.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>A 5×5 grid of dots (16 boxes). On your turn, draw one line between two adjacent dots.</li>
+    <li>If your line completes the 4th side of a box (or two boxes at once, when a line borders both), you claim it — and you <strong>go again</strong>.</li>
+    <li>When every line is drawn, whoever claimed more boxes wins. Equal counts are a draw.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Player 1</strong>.</li>
+    <li>Tap a line to draw it. If it completes a box, you'll see "keep going" and can draw another line immediately — nothing is sent until your turn actually ends.</li>
+  </ul>
+
+  <h2>Same device</h2>
+  <p class="muted">Pass the device when a turn ends (no completed box). A completed box keeps the same player going, same as over WhatsApp.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap</strong> any undrawn line segment between two dots.</li>
+  </ul>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>
