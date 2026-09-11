@@ -4,7 +4,7 @@ Two-player mini-games you play **with a friend over WhatsApp**, one link per tur
 
 **▶ Play: [wa-minigames.online](https://wa-minigames.online/)**
 
-Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CSS/JS with no build step. The remaining six solo/logic-puzzle games are unchanged.
+Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CSS/JS with no build step. The six original solo/logic-puzzle games are unchanged.
 
 ## WhatsApp games
 
@@ -16,8 +16,15 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [chess](chess/) | **2 players · WhatsApp** (default), vs AI at 3 depths |
 | [memory](memory/) | **2 players · WhatsApp** (default), solo (race the clock) |
 | [lights-out](lights-out/) | **2 players · WhatsApp** (default), solo |
+| [reversi](reversi/) | **2 players · WhatsApp** (default), local 2 players |
+| [checkers](checkers/) | **2 players · WhatsApp** (default), local 2 players |
+| [dots-and-boxes](dots-and-boxes/) | **2 players · WhatsApp** (default), local 2 players |
+| [mancala](mancala/) | **2 players · WhatsApp** (default), local 2 players |
+| [pentago](pentago/) | **2 players · WhatsApp** (default), local 2 players |
+| [rock-paper-scissors](rock-paper-scissors/) | **2 players · WhatsApp** (default), local 2 players |
+| [hangman](hangman/) | **2 players · WhatsApp** (default), local 2 players |
 
-Opening a shared link always switches the page to WhatsApp mode.
+Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
 ## How play-by-link works
 
@@ -45,7 +52,7 @@ Every game works with the same **logical** envelope — this is the shape `Async
 | `game` | Must match the page, or the link is rejected. |
 | `version` | Schema version. Bump it when a board format changes; older links then show "invalid or from an older version". |
 | `id` | Random per game. Only used on each device to recognise old links (see below). |
-| `turn` | Who moves next. After the game ends, the player who did *not* make the last move. |
+| `turn` | Who moves next. After the game ends, the player who did *not* make the last move. Normally the opponent, but `commit()` accepts an optional `nextTurn` to override that when a rule grants the same player another turn — Reversi's pass, an extra turn in Dots and Boxes/Mancala, or Hangman's guesser always going again. |
 | `status` | `in_progress`, `won`, or `draw`. |
 | `winner` | `null` unless `status` is `won`. |
 | `moveCount` | Moves made so far. |
@@ -75,8 +82,15 @@ Board formats:
   `last` is `[fromSquare, toSquare]`. There's no undo and no threefold-repetition draw in this mode, since no move history travels in the link — everything else (castling, en passant, auto-queen promotion, checkmate/stalemate/insufficient-material/50-move draws) works as in solo mode.
 - **memory**: `{ size, seed, own }`. The shuffled card layout is never sent — only `size` and a `seed`, from which both players derive the identical deck (the same way the daily logic puzzles regenerate from a seed). `own` is one character per **pair**, not per cell: `0` unmatched, `1`/`2` the player who matched it. `last` is the list of pair indices matched during the turn that produced the link (a match keeps your turn, so a "turn" can cover more than one pair).
 - **lights-out**: `{ bits }` — the current 5×5 light pattern packed into one integer (bit *i* = light *i*, row-major). `last` is the index of the cell pressed. Whoever's press turns the last light off wins; if neither player manages it within 60 combined presses, it's called a draw.
+- **reversi**: 64 characters, `0` empty, `1` Black (opens), `2` White. `last` is the placed disc's index. A move that leaves the opponent with no legal move passes back to the same player (`nextTurn`); no legal move for either side ends the game.
+- **checkers**: 64 characters, `0` empty, `1`/`2` a man, `3`/`4` a king. A full mandatory jump chain resolves locally before any link is produced — one commit per turn, however many jumps it took (same pattern as Memory's multi-flip turn). No legal move on your turn loses immediately.
+- **dots-and-boxes**: 56 characters — 40 for edge state (`0`/`1`, drawn or not) then 16 for box ownership (`0` unclaimed, `1`/`2`). Ownership can't be derived from the final edge state alone (it depends on who drew the completing line), so it rides along explicitly. Completing a box (or two at once) grants another turn (`nextTurn`).
+- **mancala**: 28 characters, 14 pits (0–5 Player 1, 6 Player 1's store, 7–12 Player 2, 13 Player 2's store) each zero-padded to 2 digits — a pit can hold more than 9 seeds, unlike every other game's board here. Landing your last seed in your own store grants another turn (`nextTurn`); an empty row ends the game after the other player sweeps their remaining seeds into their store.
+- **pentago**: 36 characters, one char per cell (`0`/`1`/`2`). A turn is place-then-rotate-a-quadrant, resolved locally before one commit — nothing is sent until the rotation is chosen. 5 in a row after the rotation wins; both players getting 5 at once is a draw.
+- **rock-paper-scissors**: a 6-digit string (best-of, both scores, Player 1's pending hidden pick, and the last completed round's two picks). Player 1's pick genuinely rides along in the link — same tradeoff as Minesweeper's mines — the UI just never renders it until Player 2 has also picked. A tie replays the round.
+- **hangman**: word length + the word + the guessed-letters bitmask in base36. The wrong-guess count isn't stored — it's derived from (word, mask). Player 1 sets the word once; every guess after that is Player 2's (`nextTurn` keeps giving it back to them).
 
-Typical link lengths: ~140–150 for tic-tac-toe and Connect Four, ~150–190 for Memory and Lights Out, ~210–245 for chess, up to ~380 for a busy hard Minesweeper board.
+Typical link lengths: ~140–150 for tic-tac-toe and Connect Four, ~150–190 for Memory and Lights Out, ~210–245 for chess, up to ~380 for a busy hard Minesweeper board, and ~110–130 for each of the seven newer games above — they use the same compact-string-board approach from the start, so there was nothing left to shrink.
 
 ### Old links and refreshes
 
@@ -108,6 +122,37 @@ Tic-tac-toe, Connect Four, and chess are played over WhatsApp exactly as they ar
 - Same press rule as solo Lights Out (toggle a cell and its four neighbors), but players alternate.
 - **Whoever's press turns the last light off wins.**
 - Since two players could in principle keep undoing each other, the game is called a **draw after 60 combined presses** if neither has cleared the board by then.
+
+## Seven new games (built from scratch)
+
+These play by the same standard rules as the real games — no reinterpretation needed, since they're already turn-based two-player games. Notes on anything specific to the WhatsApp version:
+
+**Reversi (Othello)**
+- Standard flip-capture rules on an 8×8 board, Black opens.
+- If a move leaves the opponent with no legal move, their turn is skipped automatically — you just keep playing instead of sending them an unplayable link. If neither side can move, the game ends and most discs wins.
+
+**Checkers**
+- Standard American rules: mandatory captures, forced multi-jump chains, king promotion (which always ends the chain, even mid-jump).
+- A full jump chain resolves before anything is sent, so one link can represent several jumps.
+- No legal move on your turn loses immediately.
+
+**Dots and Boxes**
+- 5×5 dot grid (16 boxes). Draw one line per turn; completing a box (or two at once) claims it and grants another turn.
+- Most boxes when every line is drawn wins.
+
+**Mancala (Kalah)**
+- Standard Kalah: sow counter-clockwise skipping the opponent's store, land in your own store for another turn, capture an opposite pit by landing your last seed in your own empty one.
+- An empty row ends the game — the other player sweeps their remaining seeds into their store first.
+
+**Pentago**
+- Place a marble, then rotate one of the four 3×3 quadrants 90° — both parts happen before anything sends. 5 in a row after the rotation wins; both players getting 5 at once (from the same rotation) is a draw.
+
+**Rock Paper Scissors**
+- Best of 3, 5, or 7. Since a link can't deliver a truly simultaneous choice, Player 1's pick opens each round hidden and Player 2's pick resolves it — the UI never shows Player 1's pick to Player 2 beforehand. A tie replays the round.
+
+**Hangman**
+- Player 1 sets a secret word (3–20 letters) once. Every guess after that belongs to Player 2, who keeps guessing link after link — 6 wrong guesses and Player 1 wins, complete the word first and Player 2 does.
+- The word isn't shown to Player 2 before the game ends, the same tradeoff as Rock Paper Scissors' hidden pick.
 
 ## Run locally
 
@@ -166,10 +211,17 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── manifest.json       PWA manifest
 ├── tic-tac-toe/        ┐
 ├── connect-four/       │
-├── minesweeper/        ├ WhatsApp two-player + solo modes
+├── minesweeper/        ├ WhatsApp two-player + solo/AI modes (adapted from wavde/games)
 ├── chess/              │
 ├── memory/             │
 ├── lights-out/         ┘
+├── reversi/            ┐
+├── checkers/           │
+├── dots-and-boxes/     ├ WhatsApp two-player + local modes (built from scratch)
+├── mancala/            │
+├── pentago/            │
+├── rock-paper-scissors/│
+├── hangman/            ┘
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 
