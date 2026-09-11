@@ -2,7 +2,7 @@
 
 Two-player mini-games you play **with a friend over WhatsApp**, one link per turn. There are no accounts and no server. Make your move, tap **Send on WhatsApp**, and your friend opens the link, moves, and sends a new link back.
 
-**▶ Play: [bash328.github.io/WA-mini-games](https://bash328.github.io/WA-mini-games/)**
+**▶ Play: [wa-minigames.online](https://wa-minigames.online/)**
 
 Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CSS/JS with no build step. The original nine solo games are still here, unchanged.
 
@@ -92,6 +92,36 @@ To try a full game on one computer, use two browser profiles (or a normal and a 
 ## Deploy to GitHub Pages
 
 Settings → Pages → *Deploy from a branch* → `main`, folder `/ (root)`. The site is static files only, and `.nojekyll` is included.
+
+The custom domain **wa-minigames.online** is set via the [CNAME](CNAME) file in this repo — GitHub Pages picks it up automatically once the domain's DNS points here (see below) and it's entered under Settings → Pages → Custom domain. Turn on **Enforce HTTPS** there once the certificate is issued (can take a while after DNS first resolves).
+
+### DNS records
+
+At your domain registrar, for the apex domain `wa-minigames.online`, add four **A** records (all with the same host: `@`, or blank, depending on the registrar):
+
+```
+185.199.108.153
+185.199.109.153
+185.199.110.153
+185.199.111.153
+```
+
+Optional, for IPv6 (**AAAA**, same host):
+
+```
+2606:50c0:8000::153
+2606:50c0:8001::153
+2606:50c0:8002::153
+2606:50c0:8003::153
+```
+
+If `www.wa-minigames.online` should also work, add one more record:
+
+```
+CNAME   www   bash328.github.io
+```
+
+Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AAAA records only.
 
 ## Project structure
 
