@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RFN70FPWB1');
+</script>
+<meta charset="utf-8">
+<title>reversi · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Reversi / Othello — play a friend by sending moves over WhatsApp, or pass and play locally.">
+<meta property="og:title" content="Reversi · two players over WhatsApp">
+<meta property="og:description" content="Flip your opponent's discs. Most discs when the board fills wins.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .rv-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 3px;
+    width: min(480px, 100%);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    background: #1b6b3a;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 6px;
+  }
+  .rv-cell {
+    background: #2c8a4f;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 3px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .rv-cell:disabled { cursor: default; }
+  .rv-cell.hint::after {
+    content: "";
+    width: 22%; height: 22%;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.45);
+  }
+  .rv-cell.last { box-shadow: inset 0 0 0 2px #f5c800; }
+  .rv-disc {
+    width: 82%; height: 82%;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .rv-disc.black { background: #111; }
+  .rv-disc.white { background: #f4f4f4; }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-reversi">
+<main class="wrap">
+  <div class="topbar">
+    <h1>reversi</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <p class="status" id="score">Black 2 · White 2</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="reversi" data-man-title="REVERSI(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="rv-board" id="board" aria-label="Reversi board"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-reversi">
+  <h2>Name</h2>
+  <p>reversi (othello) — flip your opponent's discs to your color.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Board is 8×8. Black opens with 4 discs already placed in the center.</li>
+    <li>On your turn, place a disc so it flanks one or more of your opponent's discs in a straight line (any of 8 directions) with one of your own discs at the other end — all flanked discs flip to your color.</li>
+    <li>If you have no legal move, your turn is skipped automatically. If neither player has a legal move, the game ends.</li>
+    <li>When the board fills (or neither side can move), whoever has more discs wins. Equal counts are a draw.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts plays <strong>Black</strong> and moves first.</li>
+    <li>Tap a highlighted square, then <code>Send on WhatsApp</code>. If your move leaves your friend with no legal move, the game skips their turn for you and you'll see "keep going" instead of a send button.</li>
+  </ul>
+
+  <h2>Same device</h2>
+  <p class="muted">Pass the device after each move. A skipped turn is handled the same way — the board just tells you whose move it still is.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap</strong> a highlighted square to place your disc there. Only legal moves are tappable.</li>
+  </ul>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>
