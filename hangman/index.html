@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RFN70FPWB1');
+</script>
+<meta charset="utf-8">
+<title>hangman · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Hangman — set a secret word for a friend over WhatsApp, or pass and play locally.">
+<meta property="og:title" content="Hangman · two players over WhatsApp">
+<meta property="og:description" content="One sets a secret word. The other guesses it, letter by letter.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  #word {
+    font-size: clamp(1.6rem, 7vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-align: center;
+    margin: 18px 0 6px;
+    word-break: break-all;
+  }
+  #misses { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin-bottom: 10px; }
+  #setup { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 16px 0; }
+  #setup input {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: var(--fs-md);
+    min-height: var(--tap);
+    text-align: center;
+    text-transform: uppercase;
+    width: min(280px, 100%);
+  }
+  #setup-error { color: var(--bad, #e35b5b); font-size: var(--fs-sm); min-height: 1.2em; }
+  .hm-keyboard {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    width: min(420px, 100%);
+    margin: 10px auto;
+  }
+  .hm-key {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--fg);
+    font-family: inherit;
+    font-weight: 700;
+    padding: 8px 0;
+    cursor: pointer;
+    min-height: var(--tap);
+  }
+  .hm-key:disabled { cursor: default; }
+  .hm-key.hit { background: rgba(60,180,100,0.3); border-color: rgba(60,180,100,0.6); }
+  .hm-key.miss { background: rgba(200,60,60,0.25); border-color: rgba(200,60,60,0.55); opacity: 0.7; }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-hangman">
+<main class="wrap">
+  <div class="topbar">
+    <h1>hangman</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="hangman" data-man-title="HANGMAN(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div id="setup" hidden>
+      <input id="setup-input" type="text" maxlength="20" placeholder="Secret word" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <button class="btn primary" id="setup-btn" type="button">Set word</button>
+      <p id="setup-error"></p>
+    </div>
+    <p id="word"></p>
+    <p id="misses"></p>
+    <div class="hm-keyboard" id="keyboard" hidden></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-hangman">
+  <h2>Name</h2>
+  <p>hangman — set a word, guess it letter by letter.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Player 1 sets a secret word (3-20 letters). Player 2 guesses one letter at a time.</li>
+    <li>A correct guess fills in every matching blank. A wrong guess costs one of 6 misses.</li>
+    <li>Player 2 wins by completing the word before running out of misses. Otherwise Player 1 wins.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Player 1</strong> and sets the word — after that, every turn belongs to <strong>Player 2</strong>, who keeps guessing link after link until the game ends.</li>
+    <li>The word does technically ride along in the link's data (same as Minesweeper's mine positions) — the page just never displays it to Player 2 before the game is decided, which is what makes blind link-passing work for a real game.</li>
+  </ul>
+
+  <h2>Same device</h2>
+  <p class="muted">Player 1 types the word, then hands the device to Player 2 without looking — the page never shows the word until the game ends.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Type</strong> the secret word once as Player 1. <strong>Tap a letter</strong> to guess it as Player 2.</li>
+  </ul>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>
