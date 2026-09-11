@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RFN70FPWB1');
+</script>
+<meta charset="utf-8">
+<title>pentago · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Pentago — place a marble, rotate a quadrant, get 5 in a row. Play a friend over WhatsApp or locally.">
+<meta property="og:title" content="Pentago · two players over WhatsApp">
+<meta property="og:description" content="Place a marble, then rotate one quadrant 90°. Five in a row wins.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .pg-board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 3px;
+    width: min(420px, 100%);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 6px;
+  }
+  .pg-cell {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .pg-cell:disabled { cursor: default; }
+  .pg-cell.qsep-l { border-left: 2px solid var(--border-hi); }
+  .pg-cell.qsep-t { border-top: 2px solid var(--border-hi); }
+  .pg-cell.last { box-shadow: inset 0 0 0 2px #f5c800; }
+  .pg-marble { width: 74%; height: 74%; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .pg-marble.p1 { background: #b83227; }
+  .pg-marble.p2 { background: #3c82dc; }
+  .pg-marble.pending { opacity: 0.55; outline: 2px dashed currentColor; }
+
+  .pg-rotate { display: flex; flex-direction: column; gap: 6px; margin: 10px auto; width: min(420px, 100%); }
+  .pg-rotate-row { display: flex; align-items: center; gap: 8px; }
+  .pg-rotate-label { flex: 1; font-size: var(--fs-sm); color: var(--muted); }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-pentago">
+<main class="wrap">
+  <div class="topbar">
+    <h1>pentago</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="pentago" data-man-title="PENTAGO(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="pg-board" id="board" aria-label="Pentago board"></div>
+    <div class="pg-rotate" id="rotate" hidden></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-pentago">
+  <h2>Name</h2>
+  <p>pentago — place a marble, rotate a quadrant, get 5 in a row.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The 6×6 board is split into four 3×3 quadrants.</li>
+    <li>Each turn has two parts, in order: <strong>place</strong> a marble on any empty cell, then <strong>rotate</strong> one of the four quadrants 90° clockwise or counter-clockwise — any quadrant, including the one you just played in.</li>
+    <li>After the rotation, 5 in a row (any direction) wins. If a rotation gives <em>both</em> players 5 in a row at once, it's a draw. A full board with no line is also a draw.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Player 1</strong>.</li>
+    <li>Tap an empty cell to place your marble (tap it again to change your mind), then tap a quadrant's ↻ or ↺ to rotate and finish your turn — nothing is sent until the rotation is chosen.</li>
+  </ul>
+
+  <h2>Same device</h2>
+  <p class="muted">Pass the device after each full place-and-rotate turn.</p>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>
