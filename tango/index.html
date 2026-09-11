@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tango · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Tango — suns and moons on a 6×6 grid. No three in a row; three of each per row/column; respect the = and × edges.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<style>
+  .tg-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 8px;
+    width: min(440px, 92vw);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 10px;
+    position: relative;
+  }
+  .tg-cell {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 6.5vw, 2rem);
+    cursor: pointer;
+    user-select: none;
+    color: var(--dim);
+    min-width: 0;
+    padding: 0;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+  }
+  .tg-cell.given { background: var(--bg-2); border-color: var(--border-hi); font-weight: 700; cursor: default; }
+  .tg-cell.sun  { color: var(--accent); }
+  .tg-cell.moon { color: var(--accent-2); }
+  .tg-cell.error { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+
+  /* Edge badges */
+  .tg-edge {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-sm);
+    padding: 1px 4px;
+    min-width: 14px;
+    text-align: center;
+  }
+  .tg-edge.eq  { color: var(--accent-2); border-color: var(--accent-2); }
+  .tg-edge.neq { color: var(--accent);   border-color: var(--accent); }
+
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+</head>
+<body class="g-tango">
+<main class="wrap">
+  <div class="topbar">
+    <h1>tango</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Fill with suns and moons.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="tango" data-man-title="TANGO(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="tg-grid" id="board"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="hint-btn" type="button"><span class="glyph">💡</span> hint</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-tango">
+  <h2>Name</h2>
+  <p>tango — balance suns and moons.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The grid is 6×6. Every cell must hold a <strong>sun</strong> (yellow) or <strong>moon</strong> (blue).</li>
+    <li>No three of the same symbol may be adjacent in any row or column.</li>
+    <li>Each row and column must contain exactly <strong>three suns and three moons</strong>.</li>
+    <li>A green <code>=</code> between two cells means they must be <strong>the same</strong>.</li>
+    <li>An amber <code>×</code> between two cells means they must be <strong>different</strong>.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a cell</strong> to cycle: empty → sun → moon → empty.</li>
+    <li><code>↶ undo</code> takes back one entry.</li>
+    <li><code>💡 hint</code> reveals one correct cell (use sparingly).</li>
+    <li><code>↻ reset</code> clears your entries; <code>↻ new</code> generates a fresh puzzle.</li>
+  </ul>
+
+  <h2>Difficulty</h2>
+  <p class="muted">Harder puzzles give fewer starting cells and fewer edge clues — you'll lean more on the "no three in a row" and row/column balance rules.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

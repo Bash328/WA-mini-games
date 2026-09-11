@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>zip · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Zip — draw one path visiting numbered waypoints in order, covering every cell.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<style>
+  .zp-grid {
+    position: relative;
+    display: grid;
+    gap: 0;
+    width: min(480px, 92vw);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    border: 2px solid var(--fg);
+    background: var(--bg-2);
+    touch-action: none;
+    user-select: none;
+  }
+  .zp-cell {
+    position: relative;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(0.9rem, 4.2vw, 1.3rem);
+    color: var(--fg);
+    background: transparent;
+  }
+  .zp-cell.on { background: rgba(245,197,66,0.18); }
+  .zp-cell .wp {
+    display: inline-flex; width: 2em; height: 2em;
+    border-radius: 999px; background: var(--fg); color: var(--bg);
+    align-items: center; justify-content: center; font-size: 0.9em;
+  }
+  .zp-cell.start .wp { background: var(--accent); }
+  .zp-cell.end .wp { background: var(--accent-2); color: #0a0a0a; }
+  .zp-svg { position: absolute; inset: 0; pointer-events: none; }
+  .zp-wall-h, .zp-wall-v {
+    position: absolute; background: var(--danger); pointer-events: none; z-index: 2;
+  }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+  @keyframes zp-shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-3px); }
+    40%,80% { transform: translateX(3px); }
+  }
+  .zp-cell.invalid { animation: zp-shake 0.3s ease; background: rgba(255,107,107,0.15); }
+</style>
+</head>
+<body class="g-zip">
+<main class="wrap">
+  <div class="topbar">
+    <h1>zip</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Connect 1 → 2 → 3 → … filling every cell.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="zip" data-man-title="ZIP(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 5×5</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 6×6</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 7×7</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="zp-grid" id="board">
+      <svg class="zp-svg" id="svg" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-zip">
+  <h2>Name</h2>
+  <p>zip — draw one continuous path through every cell, hitting the numbered waypoints in order.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Start on cell <strong>1</strong>. End on the highest number.</li>
+    <li>Visit waypoints in ascending order: 1 → 2 → 3 → ….</li>
+    <li>Move only between orthogonally-adjacent cells.</li>
+    <li>Every cell must be visited <strong>exactly once</strong>.</li>
+    <li>Red lines mark walls — you cannot cross them.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Touch / click-and-drag from cell 1 to paint the path.</li>
+    <li>Or tap cells one by one — each tap extends from the current end, or truncates back if you tap a cell already on the path.</li>
+    <li><code>↶ undo</code> removes the last cell. <code>↻ reset</code> clears the path.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

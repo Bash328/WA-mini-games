@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>queens · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Queens — place one queen per row, column, and colored region. No two queens may touch.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<style>
+  .qn-grid {
+    display: grid;
+    gap: 0;
+    width: min(480px, 92vw);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    border: 2px solid var(--fg);
+    background: var(--bg-2);
+    touch-action: manipulation;
+  }
+  .qn-cell {
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 5.5vw, 2rem);
+    cursor: pointer;
+    user-select: none;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--fg);
+  }
+  .qn-cell .mk {
+    color: var(--fg);
+    opacity: 0.5;
+    font-weight: 700;
+  }
+  .qn-cell .qq {
+    color: #1a1a1a;
+    font-size: 1.5em;
+    font-weight: bold;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+    -webkit-text-stroke: 0.5px rgba(255,255,255,0.3);
+  }
+  .qn-cell.err .qq { color: var(--danger); filter: none; }
+
+  /* Win animation — golden blinking queens */
+  @keyframes golden-blink {
+    0%, 100% { color: #ffd700; filter: drop-shadow(0 0 6px #ffd700); }
+    50% { color: #ffaa00; filter: drop-shadow(0 0 12px #ffaa00) drop-shadow(0 0 20px rgba(255,170,0,0.4)); }
+  }
+  .qn-cell.won .qq {
+    color: #ffd700;
+    animation: golden-blink 1.2s ease-in-out infinite;
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.3);
+  }
+
+  /* Region colors — high-contrast, widely spaced hues */
+  .qn-cell.r0 { background: #e74c3c; }
+  .qn-cell.r1 { background: #3498db; }
+  .qn-cell.r2 { background: #2ecc71; }
+  .qn-cell.r3 { background: #f39c12; }
+  .qn-cell.r4 { background: #9b59b6; }
+  .qn-cell.r5 { background: #1abc9c; }
+  .qn-cell.r6 { background: #e67e22; }
+  .qn-cell.r7 { background: #e84393; }
+  .qn-cell.r8 { background: #0984e3; }
+
+  /* Thick region borders */
+  .qn-cell.br-t { border-top:    2px solid rgba(0,0,0,0.5); }
+  .qn-cell.br-b { border-bottom: 2px solid rgba(0,0,0,0.5); }
+  .qn-cell.br-l { border-left:   2px solid rgba(0,0,0,0.5); }
+  .qn-cell.br-r { border-right:  2px solid rgba(0,0,0,0.5); }
+
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+</head>
+<body class="g-queens">
+<main class="wrap">
+  <div class="topbar">
+    <h1>queens</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">One queen per row, column, and color.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="queens" data-man-title="QUEENS(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 6</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 7</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 8</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="qn-grid" id="board"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="hint-btn" type="button"><span class="glyph">💡</span> hint</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-queens">
+  <h2>Name</h2>
+  <p>queens — the LinkedIn-style non-attacking queen puzzle.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Place exactly <strong>N queens</strong> on an N×N grid, where N matches the board size.</li>
+    <li>Exactly <strong>one queen per row</strong>, <strong>one per column</strong>, and <strong>one per colored region</strong>.</li>
+    <li>No two queens may touch — not even diagonally. If they share an edge or a corner, it's a conflict.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a cell</strong> to cycle: empty → × (blocked, a mark you control) → ♛ queen → empty.</li>
+    <li><code>↶ undo</code> takes back your last change.</li>
+    <li><code>💡 hint</code> places one correct queen.</li>
+    <li><code>↻ reset</code> clears your marks; <code>↻ new</code> generates a fresh puzzle.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with small regions — a 1-cell region forces its queen. Use the "no touching" rule to eliminate neighboring cells in adjacent regions.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

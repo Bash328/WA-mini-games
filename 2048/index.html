@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>2048 · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="2048 — slide tiles, merge matching numbers, reach the 2048 tile.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<style>
+  .board2048 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: var(--r-md);
+    width: min(420px, 92vw);
+    margin: 0 auto;
+    aspect-ratio: 1;
+    touch-action: none;
+  }
+  .tile {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(1.1rem, 5vw, 1.8rem);
+    color: var(--fg);
+    user-select: none;
+    transition: background .1s, color .1s, border-color .1s;
+  }
+  /* Amber-scaled tile ramp */
+  .t2    { background: #1a1a17; color: var(--muted); }
+  .t4    { background: #1e1d18; color: var(--fg); }
+  .t8    { background: #2a2318; color: var(--warn); border-color: rgba(245,197,66,0.25); }
+  .t16   { background: #33271a; color: var(--warn); border-color: rgba(245,197,66,0.35); }
+  .t32   { background: #3d2b1d; color: var(--accent); border-color: rgba(245,197,66,0.45); }
+  .t64   { background: #4a3320; color: var(--accent); border-color: rgba(245,197,66,0.55); }
+  .t128  { background: #2a3a28; color: var(--accent-2); border-color: rgba(138,255,193,0.35); }
+  .t256  { background: #2d4a34; color: var(--accent-2); border-color: rgba(138,255,193,0.45); }
+  .t512  { background: #335a3c; color: var(--accent-2); border-color: rgba(138,255,193,0.55); }
+  .t1024 { background: #3a6a45; color: #0a0a0a; border-color: var(--accent-2); font-size: clamp(0.9rem, 4vw, 1.5rem); }
+  .t2048 { background: var(--accent-2); color: #0a0a0a; border-color: var(--accent-2); font-size: clamp(0.9rem, 4vw, 1.5rem); box-shadow: 0 0 24px rgba(138,255,193,0.35); }
+  .t4096, .t8192 { background: var(--accent); color: #0a0a0a; border-color: var(--accent); font-size: clamp(0.9rem, 4vw, 1.5rem); }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  .tile.merged { animation: pop 0.18s ease-out; }
+</style>
+</head>
+<body class="g-2048">
+<main class="wrap">
+  <div class="topbar">
+    <h1>2048</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status">Slide tiles. Merge to 2048. Score: <span class="hot" id="score">0</span> · Best: <span id="best">0</span> <span id="over-msg"></span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="2048" data-man-title="2048(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="board2048" id="board" role="grid" aria-label="2048 game board" aria-live="polite"></div>
+    <div class="controls" style="justify-content:center">
+      <button class="primary" id="reset">New game</button>
+      <span class="kbd">↑ ← ↓ →</span> or swipe
+    </div>
+  </div>
+</main>
+
+<template id="man-2048">
+  <h2>Name</h2>
+  <p>2048 — slide numbered tiles, merge matching pairs, reach <strong>2048</strong>.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Every move slides <strong>all</strong> tiles as far as they can go in that direction.</li>
+    <li>When two tiles of the same value collide, they merge into one tile of double the value.</li>
+    <li>A new <code>2</code> (or occasionally a <code>4</code>) appears in a random empty cell after each move.</li>
+    <li>You win when a <code>2048</code> tile is created. Keep going for higher scores.</li>
+    <li>You lose when the board is full and no moves are possible.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Swipe</strong> up/down/left/right on the board (mobile).</li>
+    <li>Keyboard: <span class="k">↑</span> <span class="k">↓</span> <span class="k">←</span> <span class="k">→</span> or <span class="k">W</span> <span class="k">A</span> <span class="k">S</span> <span class="k">D</span>.</li>
+    <li><code>New game</code> resets the board. Best score persists across sessions.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Pick one corner and keep your largest tile parked there. Never break the ramp.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+<script>window.addEventListener("load", () => Manpage.autoOpen("2048"));</script>
+</body>
+</html>

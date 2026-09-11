@@ -1,0 +1,58 @@
+/* ============================================================
+   async-share.css — share panel for play-by-link games.
+   Loaded after soft.css; uses the shared tokens only, plus
+   WhatsApp green on the send button so it's recognisable.
+   ============================================================ */
+
+[hidden] { display: none !important; }
+
+.wa-ui { margin: 0 0 14px; }
+.wa-ui .banner { margin: 0 0 10px; text-align: center; }
+
+.wa-note {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+.wa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 8px;
+}
+.wa-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body[class*="g-"] .panel .btn.wa-send {
+  background: #25d366;
+  border-color: #25d366;
+  color: #0b1f12;
+  font-weight: 700;
+}
+body[class*="g-"] .panel .btn.wa-send:hover {
+  background: #3ee07f;
+  border-color: #3ee07f;
+  color: #0b1f12;
+}
+body[class*="g-"] .panel .btn.wa-small {
+  min-height: 34px;
+  font-size: var(--fs-xs);
+  border-style: dashed;
+}
+
+.panel select {
+  background: var(--panel-2);
+  color: var(--fg);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-md);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  min-height: var(--tap);
+}

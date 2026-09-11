@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>patches · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Patches — partition the grid into rectangles, each containing exactly one clue whose number equals the rectangle's area.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<style>
+  .pt-grid {
+    position: relative;
+    display: grid;
+    gap: 0;
+    width: min(480px, 92vw);
+    aspect-ratio: 1;
+    margin: 8px auto;
+    border: 2px solid var(--fg);
+    background: var(--bg-2);
+    touch-action: none;
+    user-select: none;
+  }
+  .pt-cell {
+    position: relative;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(0.9rem, 4.2vw, 1.3rem);
+    color: var(--fg);
+    cursor: crosshair;
+  }
+  .pt-cell.clue { color: var(--accent); }
+  .pt-cell.drag { background: rgba(255,255,255,0.1); cursor: grabbing; }
+  .pt-rect-overlay {
+    position: absolute;
+    border: 2px solid var(--accent-2);
+    pointer-events: auto;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: opacity 0.15s;
+  }
+  .pt-rect-overlay.bad {
+    border-color: var(--danger);
+    background: rgba(255,107,107,0.12) !important;
+  }
+  /* Patch region colour palette */
+  .pt-rect-overlay.pc0 { background: rgba(232,124,138,0.22); border-color: #e87c8a; }
+  .pt-rect-overlay.pc1 { background: rgba(232,165,90,0.22); border-color: #e8a55a; }
+  .pt-rect-overlay.pc2 { background: rgba(212,196,84,0.22); border-color: #d4c454; }
+  .pt-rect-overlay.pc3 { background: rgba(108,192,108,0.22); border-color: #6cc06c; }
+  .pt-rect-overlay.pc4 { background: rgba(76,202,160,0.22); border-color: #4ccaa0; }
+  .pt-rect-overlay.pc5 { background: rgba(90,158,232,0.22); border-color: #5a9ee8; }
+  .pt-rect-overlay.pc6 { background: rgba(160,124,232,0.22); border-color: #a07ce8; }
+  .pt-rect-overlay.pc7 { background: rgba(216,112,168,0.22); border-color: #d870a8; }
+  .pt-rect-overlay.pc8 { background: rgba(200,154,94,0.22); border-color: #c89a5e; }
+  .pt-rect-overlay.pc9 { background: rgba(139,156,247,0.22); border-color: #8b9cf7; }
+  .pt-rect-overlay.pc10 { background: rgba(77,217,172,0.22); border-color: #4dd9ac; }
+  .pt-rect-overlay.pc11 { background: rgba(245,184,0,0.22); border-color: #f5b800; }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+</head>
+<body class="g-patches">
+<main class="wrap">
+  <div class="topbar">
+    <h1>patches</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Draw rectangles — each clue's number = its rectangle's area.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="patches" data-man-title="PATCHES(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 5×5</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 6×6</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 7×7</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="pt-grid" id="board"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-patches">
+  <h2>Name</h2>
+  <p>patches — sew the grid into rectangles.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Divide the grid into <strong>non-overlapping rectangles</strong> so every cell belongs to exactly one.</li>
+    <li>Each rectangle must contain <strong>exactly one numbered clue</strong>.</li>
+    <li>The rectangle's area (width × height) must equal the clue's number.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Drag</strong> from one corner of a rectangle to the opposite corner to draw it.</li>
+    <li><strong>Tap</strong> a drawn rectangle to remove it.</li>
+    <li><code>↶ undo</code> removes the last drawn rectangle. <code>↻ reset</code> clears them all.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with clues that have only one possible rectangle shape — small numbers in a corner, or primes. Use those to lock in walls that constrain the rest.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

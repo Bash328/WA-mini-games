@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>connect-four · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Connect Four — play a friend by sending moves over WhatsApp, vs AI at three depths, or locally.">
+<meta property="og:title" content="Connect Four · two players over WhatsApp">
+<meta property="og:description" content="Open the board, drop a checker, and send the link back.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .c4-wrap {
+    width: min(560px, 100%);
+    margin: 8px auto 0;
+  }
+  .c4-cols {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .c4-col-btn {
+    background: transparent;
+    border: 0;
+    color: var(--dim);
+    padding: 6px 0;
+    font-size: var(--fs-lg);
+    cursor: pointer;
+    transition: color 0.12s, background 0.12s;
+    min-height: var(--tap);
+    border-radius: 8px;
+  }
+  .c4-col-btn:hover:not(:disabled) {
+    color: var(--accent);
+    background: rgba(245,184,0,0.08);
+  }
+  .c4-col-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+  .c4-board {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 4px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 6px;
+    aspect-ratio: 7 / 6;
+  }
+  .c4-slot {
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .c4-slot.p1 {
+    background: var(--accent);
+    border-color: var(--accent);
+    animation: drop 0.28s cubic-bezier(0.5, 0, 0.2, 1);
+  }
+  .c4-slot.p2 {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    animation: drop 0.28s cubic-bezier(0.5, 0, 0.2, 1);
+  }
+  .c4-slot.win {
+    box-shadow: 0 0 14px currentColor;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .c4-slot.win.p1 { color: var(--accent); }
+  .c4-slot.win.p2 { color: var(--accent-2); }
+  body.g-connect-four .panel .c4-slot.last:not(.win) {
+    outline: 2px dashed rgba(255,255,255,0.75);
+    outline-offset: -6px;
+  }
+  .c4-key.p1 { color: var(--coral); }
+  .c4-key.p2 { color: #f5c800; }
+  @keyframes drop {
+    from { transform: translateY(-200%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.4); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .c4-slot.p1, .c4-slot.p2, .c4-slot.win { animation: none; }
+  }
+
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 14px; }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-connect-four">
+<main class="wrap">
+  <div class="topbar">
+    <h1>connect-four</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <p class="status" id="legend">You <span class="hot">●</span> · AI <span class="ok">●</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="connect-four" data-man-title="CONNECT-FOUR(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="AI difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="ai-first-p1">You first vs AI</option>
+        <option value="ai-first-p2">AI first vs AI</option>
+        <option value="local">2 players local</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="c4-wrap">
+      <div class="c4-cols" id="cols" aria-label="Columns"></div>
+      <div class="c4-board" id="board" aria-label="Board"></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn primary" id="reset-btn" type="button">↻ new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-connect-four">
+  <h2>Name</h2>
+  <p>connect-four — be first to connect four checkers in a line.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Board is 7 columns × 6 rows. Checkers drop from the top and stack from the bottom.</li>
+    <li>Players alternate turns. First to align <strong>four in a row</strong> — horizontally, vertically, or diagonally — wins.</li>
+    <li>If the board fills with no winner, it's a draw.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Red</strong> and drops first; your friend is <strong>Yellow</strong>.</li>
+    <li>After each drop, tap <code>Send on WhatsApp</code>. Your friend opens the link, sees your checker outlined, drops theirs, and sends a link back.</li>
+    <li><code>Copy link</code> works for any other messenger.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap / click</strong> the arrow above any column to drop your checker there.</li>
+    <li><code>↻ new game</code> resets the board.</li>
+    <li>Use the <code>Mode</code> selector to play the AI or pass-and-play locally. <code>↶ undo</code> is available in those modes.</li>
+  </ul>
+
+  <h2>Difficulty (vs AI)</h2>
+  <ul>
+    <li><strong>Easy</strong> — AI searches depth 2 (1 full ply + reply). Beatable by a novice.</li>
+    <li><strong>Medium</strong> — depth 4. Exploits obvious traps.</li>
+    <li><strong>Hard</strong> — depth 6. Uses alpha-beta pruning and center-weighted evaluation. Tough.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Control the center column first — a checker there belongs to four winning lines. Watch for "odd threats" on row 1, 3, 5 if you move first.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

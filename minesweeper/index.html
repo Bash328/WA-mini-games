@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>minesweeper · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Minesweeper — take turns revealing tiles with a friend over WhatsApp, or clear the board solo.">
+<meta property="og:title" content="Minesweeper · two players over WhatsApp">
+<meta property="og:description" content="Take turns revealing tiles. Hit a mine and you lose.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .ms {
+    display: grid;
+    gap: 2px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    padding: 4px;
+    border-radius: var(--r-md);
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    overflow-x: auto;
+    touch-action: manipulation;
+  }
+  /* Cells fill the grid tracks sized in game.js; the font size is set on the board. */
+  .c {
+    min-width: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--font-mono);
+    color: var(--fg);
+    transition: background 0.08s, border-color 0.08s;
+  }
+  .c:hover { background: var(--panel); border-color: var(--border-hi); }
+  .c.open {
+    background: var(--bg);
+    border-color: var(--border);
+    cursor: default;
+  }
+  .c.open:hover { background: var(--bg); }
+  .c.flag { background: rgba(245, 197, 66, 0.12); color: var(--accent); border-color: rgba(245, 197, 66, 0.4); }
+  .c.mine { background: rgba(255, 107, 107, 0.18); color: var(--danger); border-color: var(--danger); }
+  /* Amber-scale number colors */
+  .n1 { color: #8ec9ff; }
+  .n2 { color: var(--accent-2); }
+  .n3 { color: var(--warn); }
+  .n4 { color: var(--accent); }
+  .n5 { color: #e08aff; }
+  .n6 { color: #5fe0d2; }
+  .n7 { color: var(--fg); }
+  .n8 { color: var(--danger); }
+
+  /* WhatsApp mode: underline tiles in the colour of the player who opened them */
+  body.g-minesweeper .panel .c.open.by1 { box-shadow: inset 0 -3px 0 rgba(255, 107, 107, 0.6); }
+  body.g-minesweeper .panel .c.open.by2 { box-shadow: inset 0 -3px 0 rgba(77, 217, 172, 0.6); }
+  body.g-minesweeper .panel .c.last { outline: 2px solid var(--fg); outline-offset: -2px; }
+  .ms-key1 { color: var(--coral); }
+  .ms-key2 { color: var(--teal); }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-minesweeper">
+<main class="wrap">
+  <div class="topbar">
+    <h1>minesweeper</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Tap to reveal.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="minesweeper" data-man-title="MINESWEEPER(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div id="board" class="ms"></div>
+    <div class="controls" style="justify-content:center">
+      <button class="primary" id="reset">New game</button>
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="solo">Solo</option>
+      </select>
+      <select id="diff" aria-label="Difficulty">
+        <option value="easy">Easy · 9×9 · 10 mines</option>
+        <option value="medium" selected>Medium · 16×16 · 40</option>
+        <option value="hard">Hard · 20×20 · 80</option>
+      </select>
+      <span id="mines" class="kbd">0 mines</span>
+      <span id="score" class="kbd" hidden></span>
+      <span id="time" class="kbd">0s</span>
+    </div>
+  </div>
+</main>
+
+<template id="man-minesweeper">
+  <h2>Name</h2>
+  <p>minesweeper — clear the board without setting off a mine. Head-to-head over WhatsApp, or solo.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each cell is either empty or contains a hidden mine.</li>
+    <li>Revealing a numbered cell tells you how many mines touch it (8 neighbors).</li>
+    <li>Revealing a blank (zero) cell auto-opens its neighbors in a flood.</li>
+    <li>The first reveal is always safe.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Take turns revealing <strong>one tile</strong>, then send the link. Whoever starts is Player 1.</li>
+    <li>Reveal a mine and you <strong>lose immediately</strong>.</li>
+    <li>If every safe tile gets revealed, whoever opened <strong>more tiles</strong> wins — a flood counts for the player who set it off. Equal counts are a draw.</li>
+    <li>Tiles are underlined in the colour of the player who opened them. No flags in this mode.</li>
+    <li>Pick the size before the first move; it's fixed after that.</li>
+  </ul>
+
+  <h2>Solo</h2>
+  <ul>
+    <li>Reveal <strong>every</strong> non-mine cell to win. Reveal a mine to lose.</li>
+    <li><strong>Long-press</strong> or <strong>right-click</strong> to place / remove a flag.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap / left-click</strong> a cell to reveal it.</li>
+    <li><code>New game</code> re-deals. The size dropdown changes board size and mine count.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">If a number equals the count of flagged neighbors, all remaining neighbors are safe. If a number equals the count of unknown neighbors, they're all mines.</p>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+<script>window.addEventListener("load", () => Manpage.autoOpen("minesweeper"));</script>
+</body>
+</html>
