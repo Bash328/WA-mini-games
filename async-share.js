@@ -9,7 +9,10 @@
      { game, version, id, turn, board, status, winner, moveCount, last }
      id        random, only used by this device to spot old links
      turn      player who moves next (after the game ends: the player
-               who did NOT make the final move)
+               who did NOT make the final move). commit()'s move.nextTurn
+               can override the default "give it to the opponent" for
+               rules where the same player goes again (a pass, an extra
+               turn on a streak).
      status    "in_progress" | "won" | "draw"
      winner    null unless status is "won"
      last      game-specific index of the last move, for highlighting
@@ -89,9 +92,9 @@
     return rec && Number.isInteger(rec.n) && typeof rec.s === "string" ? rec : null;
   }
 
-  function remember(s, enc, sent) {
+  function remember(s, enc, sent, mover) {
     const all = seenAll();
-    all[s.game + ":" + s.id] = { n: s.moveCount, s: enc, sent: sent, t: Date.now() };
+    all[s.game + ":" + s.id] = { n: s.moveCount, s: enc, sent: sent, t: Date.now(), mover: mover };
     Object.keys(all)
       .sort((a, b) => (all[b].t || 0) - (all[a].t || 0))
       .slice(MAX_REMEMBERED)
@@ -161,18 +164,32 @@
       const rec = recall(state);
       if (rec && state.moveCount < rec.n) return { kind: "stale", state: state, latest: rec };
       if (rec && state.moveCount === rec.n && rec.sent) {
-        return { kind: "sent", state: state, enc: raw, viewer: other(state.turn) };
+        // Normally the mover is whoever DIDN'T get `turn` next. But a move
+        // that grants another turn (Othello's pass, an extra turn in
+        // Mancala/Dots and Boxes) can leave `turn` pointing at the mover
+        // themself — so prefer the mover recorded at commit time, and only
+        // fall back to the old guess for records saved before this existed.
+        return { kind: "sent", state: state, enc: raw, viewer: rec.mover !== undefined ? rec.mover : other(state.turn) };
       }
       remember(state, raw, false);
       return { kind: "received", state: state, enc: raw, viewer: state.turn };
     }
 
     function canMove() {
-      return !!view && (view.kind === "new" || view.kind === "received") &&
-        (!view.state || view.state.status === "in_progress");
+      if (!view) return false;
+      if (view.state && view.state.status !== "in_progress") return false;
+      // Normally only a freshly-opened link is playable. But a move that
+      // granted another turn (see commit()'s nextTurn) can leave it still
+      // this viewer's turn right after their own commit — let them keep
+      // playing immediately instead of forcing a send-then-reopen round trip.
+      return view.kind === "new" || view.kind === "received" ||
+        (view.kind === "sent" && view.state.turn === view.viewer);
     }
 
-    // move = { board, status, winner, last } for the player whose turn it is.
+    // move = { board, status, winner, last, nextTurn? } for the player whose
+    // turn it is. nextTurn is optional and defaults to the opponent — pass
+    // it explicitly when a rule grants another turn to the same player
+    // (Othello's pass, an extra turn in Mancala or Dots and Boxes).
     function commit(move) {
       if (!canMove()) return;
       const prev = view.state;
@@ -181,7 +198,7 @@
         game: opts.game,
         version: opts.version,
         id: prev ? prev.id : newId(),
-        turn: other(mover),
+        turn: move.nextTurn !== undefined ? move.nextTurn : other(mover),
         board: move.board,
         status: move.status,
         winner: move.winner === undefined ? null : move.winner,
@@ -190,7 +207,7 @@
       });
       // Render from the decoded link so the sender sees exactly what the opponent will.
       const state = decode(enc);
-      remember(state, enc, true);
+      remember(state, enc, true, mover);
       setParam(enc);
       view = { kind: "sent", state: state, enc: enc, viewer: mover };
       paint();
@@ -291,9 +308,11 @@
       }
 
       if (s.status === "in_progress") {
-        if (v.kind === "received") {
+        // True even for kind "sent" when a rule (commit()'s nextTurn) just
+        // granted the same player another turn — see canMove() above.
+        if (v.kind === "received" || s.turn === v.viewer) {
           setStatus("Your move", "you're " + label(v.viewer));
-          note("Make your move, then send the new link back.");
+          note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
           return;
         }
         setStatus("Waiting for " + label(s.turn));
