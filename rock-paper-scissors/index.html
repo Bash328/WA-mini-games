@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RFN70FPWB1');
+</script>
+<meta charset="utf-8">
+<title>rock paper scissors · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Rock Paper Scissors — best of 3, 5, or 7, played a round at a time over WhatsApp or locally.">
+<meta property="og:title" content="Rock Paper Scissors · two players over WhatsApp">
+<meta property="og:description" content="Your pick stays hidden until your friend has picked too.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../manpage.css">
+<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .rps-choices {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+  .rps-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 16px 22px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    color: var(--fg);
+    cursor: pointer;
+    min-width: 88px;
+  }
+  .rps-choice:hover { background: var(--panel); border-color: var(--accent); }
+  .rps-emoji { font-size: 2.4rem; line-height: 1; }
+  #last-round { color: var(--muted); font-size: var(--fs-sm); text-align: center; margin: 4px 0; }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-rock-paper-scissors">
+<main class="wrap">
+  <div class="topbar">
+    <h1>rock paper scissors</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <p class="status" id="score">Player 1: 0 · Player 2: 0 (best of 3)</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="rock-paper-scissors" data-man-title="ROCK-PAPER-SCISSORS(1)" type="button">
+        <span class="q">?</span> man
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="local">2 players · same device</option>
+      </select>
+      <select id="bestof" aria-label="Match length">
+        <option value="3" selected>Best of 3</option>
+        <option value="5">Best of 5</option>
+        <option value="7">Best of 7</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <p id="last-round"></p>
+    <div class="rps-choices" id="choices"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new match</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-rock-paper-scissors">
+  <h2>Name</h2>
+  <p>rock paper scissors — a match of hidden picks.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Rock beats scissors, scissors beats paper, paper beats rock. A tie replays the round.</li>
+    <li>First to win a majority of rounds (2 of 3, 3 of 5, or 4 of 7) wins the match.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>There's no way to pick at the exact same instant over a link, so picks are hidden instead: <strong>Player 1</strong> picks first each round and sends the link without anyone seeing their pick rendered anywhere — <strong>Player 2</strong> then picks, which reveals both and resolves the round.</li>
+    <li>Choose the match length before the first pick; it's fixed after that.</li>
+    <li>Like Minesweeper's mine positions, the hidden pick technically travels inside the link's data — a determined player could dig it out of devtools. The UI just never shows it, which is enough for a normal game between friends.</li>
+  </ul>
+
+  <h2>Same device</h2>
+  <p class="muted">Player 1 picks, then looks away (or hands off the device) before Player 2 picks — the app doesn't show Player 1's pick until both are in.</p>
+</template>
+
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>
