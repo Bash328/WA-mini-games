@@ -51,12 +51,14 @@ Every game works with the same **logical** envelope — this is the shape `Async
 | `moveCount` | Moves made so far. |
 | `last` | Game-specific index (or indices) of the last move, used for highlighting. |
 
-On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above. Combined with `lz-string`, this keeps a tic-tac-toe link to around 155 characters and Connect Four to around 170 — both noticeably shorter than the raw-field-name encoding this project shipped with initially.
+On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above.
+
+Every game's `board` is also a compact string rather than a JSON array/object with punctuation — one character per cell (or per pair, for Memory) instead of `["X",null,...]`-style array syntax. That plus the key/status shrinking above keeps a tic-tac-toe link to around 140 characters and Connect Four to around 150 — well under half the size of the original array-of-cells, full-field-name encoding this project shipped with initially. Further shrinking is possible (e.g. dropping envelope fields the board itself already implies, like `moveCount`), but only helps the simplest games and would mean each game's link no longer follows one shared, easy-to-extend format — not worth it while links are already this far under any real WhatsApp limit.
 
 Board formats:
 
-- **tic-tac-toe**: array of 9, row by row (`row * 3 + col`), each `"X"`, `"O"`, or `null`. Players are `"X"` (opens) and `"O"`.
-- **connect-four**: flat array of 42, `row * 7 + col` with row 0 at the **top**. `0` empty, `1` Red (opens), `2` Yellow.
+- **tic-tac-toe**: 9 characters, row by row (`row * 3 + col`); `.` empty, else `X` or `O`. Players are `"X"` (opens) and `"O"`.
+- **connect-four**: 42 characters, `row * 7 + col` with row 0 at the **top**. `0` empty, `1` Red (opens), `2` Yellow.
 - **minesweeper**: `{ d, seed, first, own }`.
   - `d`: board size (`easy` 9×9 with 10 mines, `medium` 16×16 with 40, `hard` 20×20 with 80).
   - `seed`: uint32 for the mine generator.
@@ -74,7 +76,7 @@ Board formats:
 - **memory**: `{ size, seed, own }`. The shuffled card layout is never sent — only `size` and a `seed`, from which both players derive the identical deck (the same way the daily logic puzzles regenerate from a seed). `own` is one character per **pair**, not per cell: `0` unmatched, `1`/`2` the player who matched it. `last` is the list of pair indices matched during the turn that produced the link (a match keeps your turn, so a "turn" can cover more than one pair).
 - **lights-out**: `{ bits }` — the current 5×5 light pattern packed into one integer (bit *i* = light *i*, row-major). `last` is the index of the cell pressed. Whoever's press turns the last light off wins; if neither player manages it within 60 combined presses, it's called a draw.
 
-Typical link lengths: ~150–190 characters for tic-tac-toe, Connect Four, Memory, and Lights Out; ~210–245 for chess; up to ~380 for a busy hard Minesweeper board.
+Typical link lengths: ~140–150 for tic-tac-toe and Connect Four, ~150–190 for Memory and Lights Out, ~210–245 for chess, up to ~380 for a busy hard Minesweeper board.
 
 ### Old links and refreshes
 

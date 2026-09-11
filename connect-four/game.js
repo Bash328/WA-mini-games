@@ -324,25 +324,27 @@
   }
 
   // ---------- 2 players over WhatsApp ----------
-  // board: flat array of 42, index = row * 7 + col with row 0 at the TOP
-  // (the same layout as grid[r][c]). 0 empty, 1 Red (opens), 2 Yellow.
+  // board on the wire is a 42-char string (not a JSON array — shorter
+  // before compression), index = row * 7 + col with row 0 at the TOP (the
+  // same layout as grid[r][c]). '0' empty, '1' Red (opens), '2' Yellow.
   // last: index of the most recent checker.
   const COLORS = { [P1]: "Red", [P2]: "Yellow" };
   const LEGEND_LINK = 'Red <span class="c4-key p1">●</span> · Yellow <span class="c4-key p2">●</span>';
 
   const link = AsyncShare.start({
     game: "connect-four",
-    version: 1,
+    version: 2,
     title: "connect-four",
     players: [P1, P2],
     label: (p) => COLORS[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) =>
-      Array.isArray(s.board) && s.board.length === ROWS * COLS &&
-      s.board.every(v => v === EMPTY || v === P1 || v === P2) &&
-      s.board.filter(v => v !== EMPTY).length === s.moveCount &&
-      Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && s.board[s.last] !== EMPTY,
+    validateBoard: (s) => {
+      const b = s.board;
+      if (typeof b !== "string" || b.length !== ROWS * COLS || !/^[012]+$/.test(b)) return false;
+      if (b.split("").filter(c => c !== "0").length !== s.moveCount) return false;
+      return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
+    },
     onState: loadLink,
   });
 
@@ -350,7 +352,7 @@
     cancelAI();
     grid = newGrid();
     history = [];
-    if (state) state.board.forEach((v, i) => { grid[Math.floor(i / COLS)][i % COLS] = v; });
+    if (state) state.board.split("").forEach((v, i) => { grid[Math.floor(i / COLS)][i % COLS] = +v; });
     current = state ? state.turn : P1;
     lastSlot = state ? state.last : null;
     linkCanMove = canMove;
@@ -369,7 +371,7 @@
     const last = history[history.length - 1];
     const win = winAt(grid, last.r, last.c, last.p);
     link.commit({
-      board: grid.flatMap(row => Array.from(row)),
+      board: grid.flatMap(row => Array.from(row)).join(""),
       status: win ? "won" : isFull(grid) ? "draw" : "in_progress",
       winner: win ? last.p : null,
       last: last.r * COLS + last.c,

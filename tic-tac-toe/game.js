@@ -143,24 +143,30 @@
   // ---------- 2 players over WhatsApp ----------
   // board: 9 cells, row by row (index = row * 3 + col): "X" | "O" | null.
   // X always opens. last: index of the most recent move.
+  // board on the wire is a 9-char string, not a JSON array — "." for an
+  // empty cell — shorter before compression, matching every other game.
+  function boardToStr(b) { return b.map(v => v === null ? "." : v).join(""); }
+  function strToBoard(s) { return s.split("").map(c => c === "." ? null : c); }
+
   const link = AsyncShare.start({
     game: "tic-tac-toe",
-    version: 1,
+    version: 2,
     title: "tic-tac-toe",
     players: ["X", "O"],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) =>
-      Array.isArray(s.board) && s.board.length === 9 &&
-      s.board.every(v => v === null || v === "X" || v === "O") &&
-      s.board.filter(Boolean).length === s.moveCount &&
-      Number.isInteger(s.last) && s.last >= 0 && s.last < 9 && s.board[s.last] !== null,
+    validateBoard: (s) => {
+      const b = s.board;
+      if (typeof b !== "string" || b.length !== 9 || !/^[.XO]{9}$/.test(b)) return false;
+      if (b.split("").filter(c => c !== ".").length !== s.moveCount) return false;
+      return Number.isInteger(s.last) && s.last >= 0 && s.last < 9 && b[s.last] !== ".";
+    },
     onState: loadLink,
   });
 
   function loadLink(state, canMove) {
     cancelAI();
-    board = state ? state.board.slice() : Array(9).fill(null);
+    board = state ? strToBoard(state.board) : Array(9).fill(null);
     turn = state ? state.turn : "X";
     lastMove = state ? state.last : null;
     linkCanMove = canMove;
@@ -174,7 +180,7 @@
     board[i] = turn;
     const w = winner(board);
     link.commit({
-      board: board.slice(),
+      board: boardToStr(board),
       status: !w ? "in_progress" : w.player === "draw" ? "draw" : "won",
       winner: w && w.player !== "draw" ? w.player : null,
       last: i,
