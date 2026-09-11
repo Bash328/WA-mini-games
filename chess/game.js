@@ -341,6 +341,92 @@ function bestMove(s, depth) {
   return best;
 }
 
+function insufficientMaterial(s) {
+  const pieces = { w: [], b: [] };
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const p = s.board[r][c];
+    if (!p) continue;
+    if (p.type === 'p' || p.type === 'r' || p.type === 'q') return false;
+    pieces[p.color].push({ t: p.type, sq: (r + c) % 2 });
+  }
+  const w = pieces.w.filter(p => p.t !== 'k');
+  const b = pieces.b.filter(p => p.t !== 'k');
+  // K v K
+  if (w.length === 0 && b.length === 0) return true;
+  // K+minor v K
+  if (w.length === 1 && b.length === 0 && (w[0].t === 'n' || w[0].t === 'b')) return true;
+  if (b.length === 1 && w.length === 0 && (b[0].t === 'n' || b[0].t === 'b')) return true;
+  // K+B v K+B with same-color bishops
+  if (w.length === 1 && b.length === 1 && w[0].t === 'b' && b[0].t === 'b' && w[0].sq === b[0].sq) return true;
+  return false;
+}
+
+function threefold(s) {
+  const key = s.positions[s.positions.length - 1];
+  if (!key) return false;
+  let c = 0;
+  for (const k of s.positions) if (k === key) c++;
+  return c >= 3;
+}
+
+// Terminal outcome (checkmate / stalemate / 50-move / insufficient material) as of
+// `s.turn` being the side to move. Does NOT check threefold repetition — the
+// WhatsApp mode doesn't carry position history across links, so that rule is
+// not enforced there (documented limitation; the solo/AI mode below still
+// checks it via checkEnd(), since it keeps a continuous position stack).
+function outcome(s) {
+  const legal = allLegal(s, s.turn);
+  if (legal.length === 0) {
+    if (inCheck(s, s.turn)) return { status: 'won', winner: opp(s.turn), reason: 'Checkmate.' };
+    return { status: 'draw', winner: null, reason: 'Stalemate.' };
+  }
+  if (s.halfmove >= 100) return { status: 'draw', winner: null, reason: 'Draw — 50-move rule.' };
+  if (insufficientMaterial(s)) return { status: 'draw', winner: null, reason: 'Draw — insufficient material.' };
+  return { status: 'in_progress', winner: null, reason: null };
+}
+
+// ---------- Link (de)serialization ----------
+// board.b: 64 chars, row-major (a8..h8, a7..h7, ... a1..h1 to match the
+// internal [row][col] array where row 0 is black's back rank). '.' empty,
+// else a piece letter — uppercase White, lowercase Black (p n b r q k).
+// board.castle: subset of "KQkq" in that order, or "-".
+// board.ep: en-passant target square as row*8+col, or null.
+// board.half: half-move clock (50-move rule).
+function boardToStr(b) {
+  let s = '';
+  for (let r=0;r<8;r++) for (let c=0;c<8;c++) {
+    const p = b[r][c];
+    s += !p ? '.' : (p.color === 'w' ? p.type.toUpperCase() : p.type);
+  }
+  return s;
+}
+function strToBoard(str) {
+  const b = Array.from({length:8},()=>Array(8).fill(null));
+  for (let i=0;i<64;i++) {
+    const ch = str[i];
+    if (ch === '.') continue;
+    b[i>>3][i&7] = { type: ch.toLowerCase(), color: ch === ch.toUpperCase() ? 'w' : 'b' };
+  }
+  return b;
+}
+function castleToStr(c) {
+  return ((c.wK?'K':'') + (c.wQ?'Q':'') + (c.bK?'k':'') + (c.bQ?'q':'')) || '-';
+}
+function strToCastle(s) {
+  return { wK: s.includes('K'), wQ: s.includes('Q'), bK: s.includes('k'), bQ: s.includes('q') };
+}
+function stateFromLinkBoard(b, turn) {
+  return {
+    board: strToBoard(b.b),
+    turn,
+    castling: strToCastle(b.castle),
+    ep: b.ep === null ? null : { r: b.ep >> 3, c: b.ep & 7 },
+    halfmove: b.half,
+    positions: [],
+    history: [],
+  };
+}
+
 // ---------- UI ----------
 let state = initialState();
 let humanColor = 'w';
@@ -349,6 +435,15 @@ let selected = null;
 let legalFromSel = [];
 let lastMove = null;
 let thinking = false;
+let mode = 'whatsapp';      // 'whatsapp' | 'ai'
+let linkCanMove = false;    // WhatsApp mode: is it this viewer's move?
+let lastReason = null;      // WhatsApp mode: why a finished game ended
+
+const modeSel = document.getElementById('mode');
+const undoBtn = document.getElementById('undo');
+const sideSel = document.getElementById('side');
+const levelSel = document.getElementById('level');
+const flipBtn = document.getElementById('flip');
 
 function renderBoard() {
   const el = document.getElementById('board');
@@ -371,12 +466,16 @@ function renderBoard() {
     d.addEventListener('click', () => onSquare(r,c));
     el.appendChild(d);
   }
-  const checkMsg = inCheck(state, state.turn) ? ' — check!' : '';
-  document.getElementById('status').textContent =
-    (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + checkMsg;
+  const inChk = inCheck(state, state.turn);
+  document.getElementById('info').textContent = inChk ? 'Check!' : '';
+  if (mode !== 'whatsapp') {
+    document.getElementById('status').textContent =
+      (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + (inChk ? ' — check!' : '');
+  }
 }
 
 function onSquare(r,c) {
+  if (mode === 'whatsapp') return playLink(r,c);
   if (thinking || state.turn !== humanColor) return;
   const p = state.board[r][c];
   if (selected) {
@@ -427,34 +526,6 @@ function aiTurn() {
   }, 20);
 }
 
-function insufficientMaterial(s) {
-  const pieces = { w: [], b: [] };
-  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
-    const p = s.board[r][c];
-    if (!p) continue;
-    if (p.type === 'p' || p.type === 'r' || p.type === 'q') return false;
-    pieces[p.color].push({ t: p.type, sq: (r + c) % 2 });
-  }
-  const w = pieces.w.filter(p => p.t !== 'k');
-  const b = pieces.b.filter(p => p.t !== 'k');
-  // K v K
-  if (w.length === 0 && b.length === 0) return true;
-  // K+minor v K
-  if (w.length === 1 && b.length === 0 && (w[0].t === 'n' || w[0].t === 'b')) return true;
-  if (b.length === 1 && w.length === 0 && (b[0].t === 'n' || b[0].t === 'b')) return true;
-  // K+B v K+B with same-color bishops
-  if (w.length === 1 && b.length === 1 && w[0].t === 'b' && b[0].t === 'b' && w[0].sq === b[0].sq) return true;
-  return false;
-}
-
-function threefold(s) {
-  const key = s.positions[s.positions.length - 1];
-  if (!key) return false;
-  let c = 0;
-  for (const k of s.positions) if (k === key) c++;
-  return c >= 3;
-}
-
 function checkEnd() {
   const moves = allLegal(state, state.turn);
   if (moves.length === 0) {
@@ -480,19 +551,116 @@ function checkEnd() {
   return false;
 }
 
-document.getElementById('reset').addEventListener('click', () => {
+function resetSolo() {
   cancelAI();
   state = initialState();
   selected = null; legalFromSel = []; lastMove = null;
-  humanColor = document.getElementById('side').value;
+  humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();
   document.getElementById('status').textContent = humanColor === 'b' ? 'AI is thinking…' : 'Your move.';
   if (humanColor === 'b') aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
+}
+
+// ---------- 2 players over WhatsApp ----------
+// Whoever opens the game (no link yet) plays White and moves first. Castling,
+// en passant, and auto-queen promotion all work as in solo mode. There's no
+// threefold-repetition draw in this mode (no position history travels in the
+// link) and no undo — matches this project's play-by-mail model.
+const link = AsyncShare.start({
+  game: 'chess',
+  version: 1,
+  title: 'chess',
+  players: ['w', 'b'],
+  label: (p) => p === 'w' ? 'White' : 'Black',
+  ui: document.getElementById('wa-ui'),
+  statusEl: document.getElementById('status'),
+  validateBoard: (s) => {
+    const b = s.board;
+    if (!b || typeof b.b !== 'string' || b.b.length !== 64 || !/^[.pnbrqkPNBRQK]{64}$/.test(b.b)) return false;
+    if ((b.b.match(/K/g) || []).length !== 1 || (b.b.match(/k/g) || []).length !== 1) return false;
+    if (typeof b.castle !== 'string' || !/^(-|[KQkq]{1,4})$/.test(b.castle)) return false;
+    if (!(b.ep === null || (Number.isInteger(b.ep) && b.ep >= 0 && b.ep < 64))) return false;
+    if (!Number.isInteger(b.half) || b.half < 0 || b.half > 150) return false;
+    return Array.isArray(s.last) && s.last.length === 2 &&
+      s.last.every(i => Number.isInteger(i) && i >= 0 && i < 64);
+  },
+  onState: loadLink,
+  detail: () => lastReason || '',
 });
 
-document.getElementById('undo').addEventListener('click', () => {
-  if (state.history.length === 0) return;
+function loadLink(s, canMove) {
+  cancelAI();
+  thinking = false;
+  if (s) {
+    state = stateFromLinkBoard(s.board, s.turn);
+    lastMove = { from: [s.last[0] >> 3, s.last[0] & 7], to: [s.last[1] >> 3, s.last[1] & 7] };
+    lastReason = s.status !== 'in_progress' ? outcome(state).reason : null;
+  } else {
+    state = initialState();
+    lastMove = null;
+    lastReason = null;
+  }
+  selected = null; legalFromSel = [];
+  linkCanMove = canMove;
+  renderBoard();
+}
+
+function playLink(r, c) {
+  if (!linkCanMove) return;
+  const p = state.board[r][c];
+  if (selected) {
+    const mv = legalFromSel.find(m => m.to[0]===r && m.to[1]===c);
+    if (mv) {
+      makeMove(state, mv);
+      lastMove = mv;
+      selected = null; legalFromSel = [];
+      const o = outcome(state);
+      link.commit({
+        board: { b: boardToStr(state.board), castle: castleToStr(state.castling), ep: state.ep ? state.ep.r*8+state.ep.c : null, half: state.halfmove },
+        status: o.status, winner: o.winner,
+        last: [mv.from[0]*8+mv.from[1], mv.to[0]*8+mv.to[1]],
+      });
+      return;
+    }
+    if (p && p.color === state.turn) {
+      selected = [r,c];
+      legalFromSel = allLegal(state, state.turn).filter(m => m.from[0]===r && m.from[1]===c);
+      renderBoard();
+      return;
+    }
+    selected = null; legalFromSel = [];
+    renderBoard();
+    return;
+  }
+  if (p && p.color === state.turn) {
+    selected = [r,c];
+    legalFromSel = allLegal(state, state.turn).filter(m => m.from[0]===r && m.from[1]===c);
+    renderBoard();
+  }
+}
+
+function applyMode() {
+  const wa = mode === 'whatsapp';
+  levelSel.hidden = wa;
+  sideSel.hidden = wa;
+  undoBtn.hidden = wa;
+  if (wa) {
+    cancelAI();
+    link.show();
+    return;
+  }
+  link.hide();
+  resetSolo();
+}
+
+document.getElementById('reset').addEventListener('click', () => {
+  if (mode === 'whatsapp') link.newGame();
+  else resetSolo();
+});
+
+undoBtn.addEventListener('click', () => {
+  if (mode === 'whatsapp' || state.history.length === 0) return;
   cancelAI();
   undoMove(state);
   if (state.turn !== humanColor && state.history.length > 0) undoMove(state);
@@ -501,7 +669,9 @@ document.getElementById('undo').addEventListener('click', () => {
   document.getElementById('status').textContent = 'Your move.';
 });
 
-document.getElementById('flip').addEventListener('click', () => { flipped = !flipped; renderBoard(); });
-document.getElementById('side').addEventListener('change', () => document.getElementById('reset').click());
+flipBtn.addEventListener('click', () => { flipped = !flipped; renderBoard(); });
+sideSel.addEventListener('change', () => resetSolo());
+modeSel.addEventListener('change', () => { mode = modeSel.value; applyMode(); });
 
-renderBoard();
+modeSel.value = mode;
+applyMode();

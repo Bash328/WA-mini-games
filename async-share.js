@@ -24,20 +24,37 @@
   const STATUSES = ["in_progress", "won", "draw"];
   const MAX_REMEMBERED = 40;
 
-  /* ---------- Encoding ---------- */
+  /* ---------- Encoding ----------
+     Every byte in the URL costs WhatsApp preview real estate, so the
+     envelope is shrunk to single-letter keys and status codes on the wire
+     — purely a transport detail. encode() takes, and decode() returns, the
+     full-key envelope described above; every caller (validate(), every
+     game's board code) only ever sees that shape. */
+
+  const WIRE_KEY = { game: "g", version: "v", id: "i", turn: "t", board: "b", status: "s", winner: "w", moveCount: "n", last: "l" };
+  const STATUS_CODE = { in_progress: "p", won: "w", draw: "d" };
+  const STATUS_NAME = { p: "in_progress", w: "won", d: "draw" };
 
   // lz-string's URI alphabet is [A-Za-z0-9+-]. A "+" in a query string
   // decodes to a space and some apps mangle it, so swap it for "_" and
   // keep links to unreserved characters. decode() accepts all spellings.
   function encode(state) {
-    return LZString.compressToEncodedURIComponent(JSON.stringify(state)).replace(/\+/g, "_");
+    const wire = {};
+    for (const k in WIRE_KEY) wire[WIRE_KEY[k]] = k === "status" ? (STATUS_CODE[state[k]] || state[k]) : state[k];
+    return LZString.compressToEncodedURIComponent(JSON.stringify(wire)).replace(/\+/g, "_");
   }
 
   function decode(str) {
     if (typeof str !== "string" || !str) return null;
     try {
       const json = LZString.decompressFromEncodedURIComponent(str.replace(/[_ ]/g, "+"));
-      return json ? JSON.parse(json) : null;
+      if (!json) return null;
+      const wire = JSON.parse(json);
+      if (!wire || typeof wire !== "object") return null;
+      const state = {};
+      for (const k in WIRE_KEY) state[k] = wire[WIRE_KEY[k]];
+      state.status = STATUS_NAME[state.status] || state.status;
+      return state;
     } catch (e) {
       return null;
     }
@@ -84,8 +101,8 @@
 
   function newId() {
     let id = "";
-    while (id.length < 8) id += Gamekit.randomSeed().toString(36);
-    return id.slice(0, 8);
+    while (id.length < 6) id += Gamekit.randomSeed().toString(36);
+    return id.slice(0, 6);
   }
 
   /* ---------- Links + clipboard ---------- */

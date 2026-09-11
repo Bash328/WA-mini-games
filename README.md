@@ -4,7 +4,7 @@ Two-player mini-games you play **with a friend over WhatsApp**, one link per tur
 
 **▶ Play: [wa-minigames.online](https://wa-minigames.online/)**
 
-Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CSS/JS with no build step. The original nine solo games are still here, unchanged.
+Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CSS/JS with no build step. The remaining six solo/logic-puzzle games are unchanged.
 
 ## WhatsApp games
 
@@ -13,6 +13,9 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [tic-tac-toe](tic-tac-toe/) | **2 players · WhatsApp** (default), vs AI |
 | [connect-four](connect-four/) | **2 players · WhatsApp** (default), vs AI at 3 depths, local 2 players |
 | [minesweeper](minesweeper/) | **2 players · WhatsApp** (default), solo |
+| [chess](chess/) | **2 players · WhatsApp** (default), vs AI at 3 depths |
+| [memory](memory/) | **2 players · WhatsApp** (default), solo (race the clock) |
+| [lights-out](lights-out/) | **2 players · WhatsApp** (default), solo |
 
 Opening a shared link always switches the page to WhatsApp mode.
 
@@ -27,12 +30,12 @@ The URL is the save file. There is no game server, lobby, or lookup.
 
 ### Link format
 
-`?s=` holds `LZString.compressToEncodedURIComponent(JSON.stringify(state))`, with `+` swapped for `_`. That keeps links to `A–Z a–z 0–9 _ -`; a raw `+` in a query string turns into a space. lz-string is vendored in [vendor/](vendor/), so the game makes no CDN requests.
+`?s=` holds a compressed envelope, with `+` swapped for `_`. That keeps links to `A–Z a–z 0–9 _ -`; a raw `+` in a query string turns into a space. lz-string is vendored in [vendor/](vendor/), so the game makes no CDN requests.
 
-Every game shares one envelope, handled by [async-share.js](async-share.js):
+Every game works with the same **logical** envelope — this is the shape `AsyncShare.encode()` takes and `AsyncShare.decode()` returns, and what every game's `board`/`validateBoard`/`commit()` code sees:
 
 ```json
-{ "game": "tic-tac-toe", "version": 1, "id": "k3j9x0qa", "turn": "O",
+{ "game": "tic-tac-toe", "version": 1, "id": "k3j9x0", "turn": "O",
   "board": ["X", null, null, null, null, null, null, null, null],
   "status": "in_progress", "winner": null, "moveCount": 1, "last": 0 }
 ```
@@ -46,7 +49,9 @@ Every game shares one envelope, handled by [async-share.js](async-share.js):
 | `status` | `in_progress`, `won`, or `draw`. |
 | `winner` | `null` unless `status` is `won`. |
 | `moveCount` | Moves made so far. |
-| `last` | Board index of the last move, used for highlighting. |
+| `last` | Game-specific index (or indices) of the last move, used for highlighting. |
+
+On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above. Combined with `lz-string`, this keeps a tic-tac-toe link to around 155 characters and Connect Four to around 170 — both noticeably shorter than the raw-field-name encoding this project shipped with initially.
 
 Board formats:
 
@@ -59,8 +64,17 @@ Board formats:
   - `own`: one character per cell, `0` hidden, `1`/`2` revealed by that player.
 
   Mine positions are rebuilt from `seed` + `first`, so they never appear in the link in readable form.
+- **chess**: `{ b, castle, ep, half }`.
+  - `b`: 64 characters, row-major from White's back rank down. `.` empty, else a piece letter (`p n b r q k`) — uppercase White, lowercase Black.
+  - `castle`: subset of `"KQkq"`, or `"-"`.
+  - `ep`: en-passant target square (0–63), or `null`.
+  - `half`: half-move clock, for the 50-move rule.
 
-Typical link lengths: ~245 characters for tic-tac-toe, ~260 for Connect Four, up to ~450 for a busy hard Minesweeper board.
+  `last` is `[fromSquare, toSquare]`. There's no undo and no threefold-repetition draw in this mode, since no move history travels in the link — everything else (castling, en passant, auto-queen promotion, checkmate/stalemate/insufficient-material/50-move draws) works as in solo mode.
+- **memory**: `{ size, seed, own }`. The shuffled card layout is never sent — only `size` and a `seed`, from which both players derive the identical deck (the same way the daily logic puzzles regenerate from a seed). `own` is one character per **pair**, not per cell: `0` unmatched, `1`/`2` the player who matched it. `last` is the list of pair indices matched during the turn that produced the link (a match keeps your turn, so a "turn" can cover more than one pair).
+- **lights-out**: `{ bits }` — the current 5×5 light pattern packed into one integer (bit *i* = light *i*, row-major). `last` is the index of the cell pressed. Whoever's press turns the last light off wins; if neither player manages it within 60 combined presses, it's called a draw.
+
+Typical link lengths: ~150–190 characters for tic-tac-toe, Connect Four, Memory, and Lights Out; ~210–245 for chess; up to ~380 for a busy hard Minesweeper board.
 
 ### Old links and refreshes
 
@@ -72,13 +86,26 @@ Each browser remembers (in `localStorage`) the newest move it has seen for each 
 
 There is no anti-cheat: anyone can hand-edit a link. That's accepted for a casual game between friends.
 
-## Minesweeper: two-player rules
+## Two-player rules for the reinterpreted games
 
+Tic-tac-toe, Connect Four, and chess are played over WhatsApp exactly as they are normally. Minesweeper, Memory, and Lights Out needed new turn-based rules to become fair two-player games:
+
+**Minesweeper**
 - Players take turns revealing **one tile**. Player 1 opens, and the first reveal is always safe.
 - Reveal a mine and you **lose immediately**.
 - If every safe tile gets revealed, the player who opened **more tiles** wins. A flood-fill counts for whoever triggered it. Equal counts are a draw.
 - There are no flags in two-player mode, since your opponent would see them.
 - The board size is chosen before the first move and can't change after that.
+
+**Memory Match**
+- Flip two cards on your turn. A **match keeps your turn** — keep flipping until you miss or clear the board. A miss passes the turn.
+- When every pair is matched, whoever matched **more pairs** wins. Equal counts are a draw.
+- The board size is chosen before the first flip and can't change after that.
+
+**Lights Out**
+- Same press rule as solo Lights Out (toggle a cell and its four neighbors), but players alternate.
+- **Whoever's press turns the last light off wins.**
+- Since two players could in principle keep undoing each other, the game is called a **draw after 60 combined presses** if neither has cleared the board by then.
 
 ## Run locally
 
@@ -136,9 +163,12 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
 ├── manifest.json       PWA manifest
 ├── tic-tac-toe/        ┐
-├── connect-four/       ├ WhatsApp two-player + solo modes
-├── minesweeper/        ┘
-└── 2048/ memory/ chess/ lights-out/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
+├── connect-four/       │
+├── minesweeper/        ├ WhatsApp two-player + solo modes
+├── chess/              │
+├── memory/             │
+├── lights-out/         ┘
+└── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 
 Each game folder is self-contained: `index.html` + `game.js`.

@@ -5,7 +5,10 @@
 <title>chess · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Chess — play against a minimax engine with alpha-beta pruning.">
+<meta name="description" content="Chess — play a friend by sending moves over WhatsApp, or take on a minimax engine.">
+<meta property="og:title" content="Chess · two players over WhatsApp">
+<meta property="og:description" content="Full rules, played one move-link at a time.">
+<meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../favicon.svg">
 <link rel="manifest" href="../manifest.json">
@@ -15,12 +18,13 @@
 <link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../manpage.css">
 <link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
 <style>
   .board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    width: min(560px, 94vw);
+    width: min(560px, 100%);
     aspect-ratio: 1;
     margin: 0 auto;
     border: 1px solid var(--border-hi);
@@ -90,23 +94,28 @@
   </div>
   <div class="panel">
     <div class="row">
-      <p class="status" id="status">White to move.</p>
+      <p class="status" id="status">Your move.</p>
       <p class="status" id="info"></p>
       <button class="btn ghost tool-btn man-trigger" data-man="chess" data-man-title="CHESS(1)" type="button">
         <span class="q">?</span> man
       </button>
     </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
     <div class="board" id="board"></div>
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
-      <button id="undo">Undo</button>
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="ai">vs AI</option>
+      </select>
+      <button id="undo" hidden>Undo</button>
       <button id="flip">Flip board</button>
-      <select id="level" aria-label="AI level">
+      <select id="level" aria-label="AI level" hidden>
         <option value="1">Easy (depth 1)</option>
         <option value="2" selected>Normal (depth 2)</option>
         <option value="3">Hard (depth 3)</option>
       </select>
-      <select id="side" aria-label="Your side">
+      <select id="side" aria-label="Your side" hidden>
         <option value="w" selected>Play White</option>
         <option value="b">Play Black</option>
       </select>
@@ -117,27 +126,36 @@
 
 <template id="man-chess">
   <h2>Name</h2>
-  <p>chess — full rules vs. a small minimax engine.</p>
+  <p>chess — full rules, against a friend over WhatsApp or a small minimax engine.</p>
 
   <h2>Rules</h2>
   <ul>
     <li>Standard chess: pieces move as they do in real chess, including <strong>castling</strong>, <strong>en passant</strong>, and <strong>pawn promotion</strong> (auto-queens).</li>
-    <li>Deliver <strong>checkmate</strong> to win; the game ends in a draw on stalemate, insufficient material, or 50-move rule.</li>
+    <li>Deliver <strong>checkmate</strong> to win; the game ends in a draw on stalemate, insufficient material, or the 50-move rule.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game plays <strong>White</strong> and moves first.</li>
+    <li>Tap a piece, tap where it goes, then <code>Send on WhatsApp</code>. Your friend opens the link, sees your last move outlined, and moves.</li>
+    <li>This mode has no <strong>undo</strong>, and doesn't detect <strong>threefold repetition</strong> (draws by repeating a position) since no move history travels in the link — everything else works as normal.</li>
+    <li><code>Flip board</code> is a per-device preference and isn't remembered from link to link, so Black may want to tap it after opening a link.</li>
   </ul>
 
   <h2>Controls</h2>
   <ul>
     <li><strong>Tap</strong> one of your pieces to select it. Legal destinations are highlighted with dots (moves) or rings (captures).</li>
     <li><strong>Tap a highlighted square</strong> to move there. Tap the piece again to deselect.</li>
-    <li><code>Undo</code> takes back one full pair of moves (yours + the engine's).</li>
-    <li><code>Flip board</code> rotates the view.</li>
-    <li>Choose AI strength via the <code>Easy / Normal / Hard</code> selector — deeper search is stronger but slower.</li>
+    <li>Switch the mode to <code>vs AI</code> to play solo. <code>Undo</code> takes back one full pair of moves there; choose <code>Easy / Normal / Hard</code> for engine strength.</li>
   </ul>
 
   <h2>Notes</h2>
   <p class="muted">The engine uses minimax with alpha-beta pruning and piece-square tables. At depth 3 it plays a decent casual game.</p>
 </template>
 
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("chess"));</script>

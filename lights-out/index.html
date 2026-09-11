@@ -5,7 +5,10 @@
 <title>lights-out · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Lights Out — turn every light off. Toggle cells and their neighbors.">
+<meta name="description" content="Lights Out — take turns with a friend over WhatsApp; whoever clears the board wins. Or solve it solo.">
+<meta property="og:title" content="Lights Out · two players over WhatsApp">
+<meta property="og:description" content="Toggle a cell and its neighbors. Whoever's press turns the last light off wins.">
+<meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../favicon.svg">
 <link rel="manifest" href="../manifest.json">
@@ -15,13 +18,14 @@
 <link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../manpage.css">
 <link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../async-share.css">
 <style>
   .lo-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(5, 1fr);
     gap: 6px;
-    width: min(380px, 88vw);
+    width: min(380px, 100%);
     aspect-ratio: 1;
     margin: 8px auto;
     background: var(--bg-2);
@@ -46,7 +50,20 @@
     border-color: var(--accent);
     box-shadow: 0 0 16px rgba(245, 197, 66, 0.45), inset 0 0 12px rgba(255, 240, 180, 0.35);
   }
+  .lo-cell.last { outline: 2px dashed var(--fg); outline-offset: -4px; }
+  .lo-cell:disabled { cursor: default; opacity: 0.85; }
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0 4px; }
+
+  select {
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    min-height: var(--tap);
+  }
 </style>
 </head>
 <body class="g-lights-out">
@@ -58,12 +75,16 @@
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Turn every light off.</p>
-      <p class="status">Moves: <span id="moves">0</span> · Best: <span id="best">—</span></p>
+      <p class="status" id="stats" hidden>Moves: <span id="moves">0</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="lights-out" data-man-title="LIGHTS-OUT(1)" type="button">
         <span class="q">?</span> man
       </button>
     </div>
     <div class="game-controls">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="solo">Solo</option>
+      </select>
       <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
         <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
         <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
@@ -71,6 +92,7 @@
       </div>
       <button id="new-btn" class="btn ghost tool-btn" type="button"><span class="glyph">↻</span> new</button>
     </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
     <div class="lo-grid" id="board"></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
@@ -81,25 +103,27 @@
 
 <template id="man-lights-out">
   <h2>Name</h2>
-  <p>lights-out — turn every light off.</p>
+  <p>lights-out — turn every light off. Head-to-head over WhatsApp, or solve it solo.</p>
 
   <h2>Rules</h2>
   <ul>
     <li>The grid is 5×5. Each cell is a light — <strong>on</strong> (amber) or <strong>off</strong>.</li>
     <li>Tapping a cell toggles <strong>that cell and its four orthogonal neighbors</strong> (not diagonals).</li>
-    <li>Win when every light is off.</li>
   </ul>
 
-  <h2>Controls</h2>
+  <h2>Two players over WhatsApp</h2>
   <ul>
-    <li><strong>Tap / click</strong> any cell.</li>
+    <li>Whoever starts sees a scrambled board and presses first, then it's Player 2's turn, and so on.</li>
+    <li><strong>Whoever's press turns the last light off wins.</strong></li>
+    <li>Difficulty (scramble amount) only matters for the starting board, and is fixed once the first press is made.</li>
+    <li>If neither player clears the board within 60 combined presses, it's called a draw.</li>
+  </ul>
+
+  <h2>Solo</h2>
+  <ul>
+    <li>Win when every light is off, in as few presses as possible.</li>
     <li><code>↶ undo</code> takes back your last move. <code>↻ reset</code> restores the puzzle's starting state.</li>
     <li><code>↻ new</code> generates a fresh puzzle at the selected difficulty. The daily puzzle loads by default.</li>
-  </ul>
-
-  <h2>Difficulty</h2>
-  <ul>
-    <li><strong>Easy</strong> — 3 scrambles. <strong>Medium</strong> — 6 scrambles. <strong>Hard</strong> — 10 scrambles.</li>
     <li>Every puzzle is solvable by construction.</li>
   </ul>
 
@@ -109,6 +133,8 @@
 
 <script defer src="../manpage.js"></script>
 <script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
 <script defer src="game.js"></script>
 </body>
 </html>
