@@ -15,6 +15,7 @@
    ============================================================ */
 
 import { ogFor } from "./og-text.mjs";
+import { canonicalRedirect } from "./canonical.mjs";
 
 class MetaRewriter {
   constructor(og) { this.og = og; }
@@ -32,6 +33,11 @@ class TitleRewriter {
 
 export default {
   async fetch(request, env) {
+    // Before anything else, and before touching the assets: www and the
+    // apex were each serving their own indexable copy of every page.
+    const canonical = canonicalRedirect(request.url);
+    if (canonical) return Response.redirect(canonical, 301);
+
     const res = await env.ASSETS.fetch(request);
 
     // Only HTML is worth rewriting, and only when the link carries state.
