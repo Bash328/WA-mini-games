@@ -204,7 +204,8 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── async-share.js      play-by-link: encode/decode, validation, share panel, old-link detection
 ├── async-share.css     share panel styles (shared tokens)
 ├── vendor/             lz-string 1.5.0 + its MIT license
-├── shared.css          design tokens, buttons, panels, light mode
+├── fonts/              self-hosted Fira Mono (woff2) + its OFL license
+├── shared.css          design tokens, @font-face, buttons, panels, light mode
 ├── soft.css            warm dark theme for game pages
 ├── manpage.css/.js     "? man" help overlay
 ├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
@@ -229,4 +230,4 @@ Each game folder is self-contained: `index.html` + `game.js`.
 
 ## License
 
-[MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([vendor/lz-string.LICENSE](vendor/lz-string.LICENSE)).
+[MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([vendor/lz-string.LICENSE](vendor/lz-string.LICENSE)). Fira Mono © The Mozilla Corporation and Telefonica S.A., SIL Open Font License 1.1 ([fonts/fira-mono.LICENSE](fonts/fira-mono.LICENSE)).
