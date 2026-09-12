@@ -1,0 +1,24 @@
+# Cloudflare Workers config — serves the site and rewrites link previews.
+#
+# The repo root IS the site, exactly as GitHub Pages served it, so the
+# assets directory is "./" and .assetsignore keeps the non-site files
+# (this config, worker/, the READMEs) from being published.
+#
+# Deploy:  npx wrangler deploy
+# Local:   npx wrangler dev     (then open http://localhost:8787/tic-tac-toe/)
+
+name = "wa-minigames"
+main = "worker/index.mjs"
+compatibility_date = "2026-09-12"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+
+# The Worker has to see a request before the asset is served, otherwise it
+# can't rewrite the OG tags for a ?s= link. This does mean every asset
+# request costs a Worker invocation; worker/index.mjs returns non-HTML
+# responses untouched on the first check to keep that as cheap as
+# possible. If invocation count ever matters more than simplicity, this
+# can become an array of route patterns covering only the game pages.
+run_worker_first = true

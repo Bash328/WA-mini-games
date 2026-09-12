@@ -1,0 +1,15 @@
+# Files in the repo that are not part of the published site.
+# Same format as .gitignore.
+
+wrangler.toml
+.assetsignore
+worker/
+README.md
+LICENSE
+.gitattributes
+.gitignore
+
+# GitHub Pages leftovers — inert once Cloudflare serves the site, but kept
+# in the repo so switching back is a DNS change and nothing more.
+CNAME
+.nojekyll

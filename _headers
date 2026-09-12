@@ -1,0 +1,22 @@
+# Cache-Control for static assets. GitHub Pages served everything with a
+# fixed max-age=600 and no way to change it; this is the part of that
+# problem Cloudflare actually fixes.
+#
+# Anything not listed keeps the Workers default:
+#   Cache-Control: public, max-age=0, must-revalidate  (plus an ETag)
+# which is what HTML wants. A game page's content depends on ?s=, and its
+# link preview is rewritten per state, so it must never be served stale.
+
+# Vendored third-party files. Both are pinned to a specific version and
+# would be replaced under a new name, never edited in place.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The site's own CSS and JS deliberately are NOT cached long here: the
+# filenames carry no content hash, so a long max-age would strand players
+# on a stale game.js after a fix. The default ETag revalidation costs one
+# conditional request and answers 304 with an empty body. Fingerprint
+# these filenames if that round trip ever proves worth removing.
