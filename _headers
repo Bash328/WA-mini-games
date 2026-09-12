@@ -20,3 +20,14 @@
 # on a stale game.js after a fix. The default ETag revalidation costs one
 # conditional request and answers 304 with an empty body. Fingerprint
 # these filenames if that round trip ever proves worth removing.
+
+# The Worker also answers on its workers.dev hostname, which serves the
+# same site as wa-minigames.online. Keep search engines off that copy so
+# the real domain is the only one indexed — these rules are scoped by
+# hostname, so they never touch the custom domain.
+https://wa-minigames.cwakiku.workers.dev/*
+  X-Robots-Tag: noindex
+
+# Same for the per-version preview URLs wrangler hands out on deploy.
+https://:version.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
