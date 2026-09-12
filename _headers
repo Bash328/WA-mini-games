@@ -7,19 +7,39 @@
 # which is what HTML wants. A game page's content depends on ?s=, and its
 # link preview is rewritten per state, so it must never be served stale.
 
-# Vendored third-party files. Both are pinned to a specific version and
-# would be replaced under a new name, never edited in place.
+# Vendored fonts are pinned to a version and would be replaced under a new
+# name, never edited in place, so they can be cached forever. This rule is
+# safe to keep broad: .woff2 matches neither of the rules below.
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
-/vendor/*
-  Cache-Control: public, max-age=31536000, immutable
+# vendor/ deliberately has NO rule of its own. It used to carry the same
+# immutable line, but /vendor/lz-string.min.js also matches /*.js below and
+# the two rules did not override — they concatenated, producing
+#   public, max-age=31536000, immutable, public, max-age=600, ...
+# which is ambiguous: parsers disagree on whether the first or last max-age
+# wins. lz-string is 4.8 KiB, so letting the /*.js rule own it costs a
+# revalidation every ten minutes, and stale-while-revalidate means no page
+# load ever waits for it. Worth more than a header nobody can predict.
 
-# The site's own CSS and JS deliberately are NOT cached long here: the
-# filenames carry no content hash, so a long max-age would strand players
-# on a stale game.js after a fix. The default ETag revalidation costs one
-# conditional request and answers 304 with an empty body. Fingerprint
-# these filenames if that round trip ever proves worth removing.
+# The site's own CSS and JS carry no content hash in their filenames, so
+# they can't be immutable — a stale game.js would strand players on a bug
+# that was already fixed. But leaving them on the Workers default of
+# max-age=0, must-revalidate was worse: a game page pulls four stylesheets
+# and four scripts, so every single navigation paid eight blocking
+# revalidation round trips (~0.2s each, measured). GitHub Pages served
+# these with max-age=600 and no round trips at all, so that change made
+# clicking into a game noticeably slower than before the migration.
+#
+# 600s matches what Pages did. stale-while-revalidate then serves the
+# cached copy instantly for a day while refreshing in the background, so
+# a deploy reaches players within about ten minutes without any load
+# ever waiting on a revalidation.
+/*.css
+  Cache-Control: public, max-age=600, stale-while-revalidate=86400
+
+/*.js
+  Cache-Control: public, max-age=600, stale-while-revalidate=86400
 
 # The Worker also answers on its workers.dev hostname, which serves the
 # same site as wa-minigames.online. Keep search engines off that copy so
