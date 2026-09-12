@@ -134,6 +134,13 @@
 
   function autoOpen(id, tplId) {
     if (!id) return;
+    // Resuming a game from a shared link (?s=…): the board is already on
+    // screen and the player is mid-move, so dropping the manual over it is
+    // pure friction. Skip without marking it seen — they still get the
+    // manual the first time they open the game fresh.
+    try {
+      if (new URLSearchParams(location.search).has("s")) return;
+    } catch (e) { /* no URLSearchParams → fall through and open as usual */ }
     const key = LS_PREFIX + id;
     try {
       if (localStorage.getItem(key)) return;
