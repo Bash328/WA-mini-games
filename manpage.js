@@ -9,7 +9,7 @@
      <button class="btn ghost tool-btn man-trigger"
              data-man="queens"
              data-man-title="QUEENS(1)">
-       <span class="q">?</span> man
+       how to <span class="q">?</span>
      </button>
 
      <template id="man-queens">
