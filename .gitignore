@@ -10,3 +10,6 @@ Thumbs.db
 # Misc
 node_modules/
 .env
+
+# Cloudflare Workers local state
+.wrangler/

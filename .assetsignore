@@ -1,5 +1,15 @@
 # Files in the repo that are not part of the published site.
 # Same format as .gitignore.
+#
+# The assets directory is the repo root, so this also has to exclude the
+# repo plumbing itself, and — importantly — wrangler's own state folder.
+# .wrangler/ holds live SQLite WAL files that are rewritten constantly; if
+# it is treated as an asset, `wrangler dev` watches the directory it is
+# writing into and reloads forever (observed: 978 reloads, server never
+# answering a request).
+.git/
+.wrangler/
+node_modules/
 
 wrangler.toml
 .assetsignore

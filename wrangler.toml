@@ -5,7 +5,23 @@
 # (this config, worker/, the READMEs) from being published.
 #
 # Deploy:  npx wrangler deploy
-# Local:   npx wrangler dev     (then open http://localhost:8787/tic-tac-toe/)
+# Local:   npx wrangler dev --persist-to ../.wrangler-state
+#          (then open http://localhost:8787/tic-tac-toe/)
+#
+# --persist-to is REQUIRED for dev, and the reason is worth knowing. The
+# assets directory is the repo root, so wrangler's file watcher watches the
+# repo root — including the .wrangler/ folder wrangler itself writes into
+# it. Its local state is a set of SQLite databases with WAL files that are
+# rewritten continuously, so the watcher sees a change, reloads, writes
+# again, and never stops: measured at 978 reload cycles with the server
+# accepting connections but never answering a single request.
+#
+# .assetsignore does NOT prevent this — it controls what gets uploaded, not
+# what gets watched. Pointing --persist-to outside the repo moves those
+# databases out of the watched tree and the loop stops (measured: 1 reload).
+# What stays in .wrangler/ is bundle output, written once per build.
+#
+# `wrangler deploy` does not watch anything, so it needs no flag.
 
 name = "wa-minigames"
 main = "worker/index.mjs"

@@ -163,13 +163,40 @@ python -m http.server 8000
 
 To try a full game on one computer, use two browser profiles (or a normal and a private window) so each player has separate storage, and paste links between them.
 
-## Deploy to GitHub Pages
+## Deploy to Cloudflare Workers
+
+The site is served by [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/): Cloudflare serves the files straight from the repo, and [worker/index.mjs](worker/index.mjs) runs first so it can rewrite each page's Open Graph tags from the `?s=` state. That is what makes a WhatsApp preview say *"Your move · tic-tac-toe"* instead of the same generic line on every link.
+
+```bash
+npx wrangler dev --persist-to ../.wrangler-state   # http://localhost:8787
+node worker/og-text.test.mjs                       # preview-text tests, no network
+npx wrangler deploy
+```
+
+`--persist-to` is not optional for `dev`. The assets directory is the repo root, so wrangler watches the repo root — including the `.wrangler/` folder it writes its own state into. That state is SQLite with WAL files rewritten continuously, so the watcher reloads forever and the server accepts connections without ever answering one (measured: 978 reload cycles). `.assetsignore` does not help — it controls uploads, not watching. Persisting state outside the repo fixes it (measured: 1 reload). `wrangler deploy` watches nothing and needs no flag.
+
+First-time setup, in order:
+
+1. Add `wa-minigames.online` to Cloudflare (**Add a site**); it gives you two nameservers.
+2. At the registrar, replace the existing nameservers with those two. This is the only irreversible-feeling step — the A records below stop being used, so keep them written down.
+3. Wait for the zone to go **Active**.
+4. `npx wrangler deploy`.
+5. Worker → **Settings → Domains & Routes → Add custom domain** → `wa-minigames.online`. Cloudflare creates the DNS record and the certificate itself; no A records and no `CNAME` file involved.
+6. In the repo's GitHub **Settings → Pages**, clear the custom domain so the two don't both claim it.
+
+To go back to GitHub Pages: point the nameservers (or the A records) at GitHub again, per the section below. [CNAME](CNAME) and `.nojekyll` are deliberately still in the repo so that revert needs no code change.
+
+Caching is in [_headers](_headers) — fonts and `vendor/` are immutable for a year; the site's own CSS and JS stay on ETag revalidation, because their filenames carry no content hash and a long `max-age` would strand players on a stale `game.js`. GitHub Pages allowed none of this: it serves a fixed `max-age=600`.
+
+## Deploy to GitHub Pages (fallback)
 
 Settings → Pages → *Deploy from a branch* → `main`, folder `/ (root)`. The site is static files only, and `.nojekyll` is included.
 
 The custom domain **wa-minigames.online** is set via the [CNAME](CNAME) file in this repo — GitHub Pages picks it up automatically once the domain's DNS points here (see below) and it's entered under Settings → Pages → Custom domain. Turn on **Enforce HTTPS** there once the certificate is issued (can take a while after DNS first resolves).
 
 ### DNS records
+
+These apply to the GitHub Pages setup. On Cloudflare you do not add them at all — the Worker's custom domain creates its own record.
 
 At your domain registrar, for the apex domain `wa-minigames.online`, add four **A** records (all with the same host: `@`, or blank, depending on the registrar):
 
@@ -210,6 +237,10 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── manpage.css/.js     "? man" help overlay
 ├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
 ├── manifest.json       PWA manifest
+├── worker/             Cloudflare Worker: per-state link previews, + its node test
+├── wrangler.toml       Workers config (the assets directory is the repo root)
+├── _headers            Cache-Control for static assets
+├── .assetsignore       repo files that are not part of the published site
 ├── tic-tac-toe/        ┐
 ├── connect-four/       │
 ├── minesweeper/        ├ WhatsApp two-player + solo/AI modes (adapted from wavde/games)
