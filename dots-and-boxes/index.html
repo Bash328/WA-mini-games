@@ -1,16 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1"></script>
+<meta charset="utf-8">
+<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
+     This is the standard snippet with the async loader tag removed: gtag()
+     queue in dataLayer and GA4 replays them once the library arrives, so
+     no hits are lost. Keeps a third-party DNS + TLS handshake off the
+     critical path in the WhatsApp in-app browser, where most first
+     paints happen. charset moved first so it stays well inside the
+     1024-byte window browsers scan for it. -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-RFN70FPWB1');
+  addEventListener("load", function () {
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
+    document.head.appendChild(s);
+  });
 </script>
-<meta charset="utf-8">
 <title>dots and boxes · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
