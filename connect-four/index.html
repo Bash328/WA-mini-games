@@ -48,7 +48,13 @@
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
   }
-  .c4-col-btn {
+  /* Scoped under #cols (not just .c4-col-btn) to outrank soft.css's
+     "body[class*='g-'] .panel button" rule — same specificity fix as
+     dots-and-boxes's #board .db-edge. Without it, that rule's background,
+     border, border-radius and min-height win regardless of source order,
+     turning these into filled 40px boxes instead of plain tall arrows and
+     throwing off the spacing above the board. */
+  #cols.c4-cols .c4-col-btn {
     background: transparent;
     border: 0;
     color: var(--dim);
@@ -59,11 +65,11 @@
     min-height: var(--tap);
     border-radius: 8px;
   }
-  .c4-col-btn:hover:not(:disabled) {
+  #cols.c4-cols .c4-col-btn:hover:not(:disabled) {
     color: var(--accent);
     background: rgba(245,184,0,0.08);
   }
-  .c4-col-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+  #cols.c4-cols .c4-col-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
   .c4-board {
     display: grid;

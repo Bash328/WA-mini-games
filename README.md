@@ -32,6 +32,7 @@ Opening a shared link always switches the page to WhatsApp mode. The last seven 
 2. The page encodes the whole game into the URL and shows **Send on WhatsApp** and **Copy link**. On touch devices the button hands the link to the phone's native share sheet (same as sharing a Spotify link) instead of opening WhatsApp directly, so you pick the contact there; elsewhere (desktop) it falls back to `https://wa.me/?text=…` with no phone number, which shows the raw link a second time below the preview card — a quirk of that single-text-field approach.
 3. Your friend taps the link and sees the board with your last move outlined. They move, and send a new link back.
 4. When the game ends, the player who made the final move sends the result link so the other player sees how it ended.
+5. On your turn, **Admit defeat (coward)** forfeits on the spot — board unchanged, opponent wins immediately — and swaps the result screen to **Share your shame**, a differently-worded send button for broadcasting the loss.
 
 The URL is the save file. There is no game server, lobby, or lookup.
 
@@ -57,8 +58,9 @@ Every game works with the same **logical** envelope — this is the shape `Async
 | `winner` | `null` unless `status` is `won`. |
 | `moveCount` | Moves made so far. |
 | `last` | Game-specific index (or indices) of the last move, used for highlighting. |
+| `resigned` | `true` when `status: "won"` was reached by the loser hitting "Admit defeat (coward)" instead of playing it out. Absent (not `false`) on every ordinary move, so it costs nothing in the link until it's actually used. |
 
-On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above.
+On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l/r`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above.
 
 Every game's `board` is also a compact string rather than a JSON array/object with punctuation — one character per cell (or per pair, for Memory) instead of `["X",null,...]`-style array syntax. That plus the key/status shrinking above keeps a tic-tac-toe link to around 140 characters and Connect Four to around 150 — well under half the size of the original array-of-cells, full-field-name encoding this project shipped with initially. Further shrinking is possible (e.g. dropping envelope fields the board itself already implies, like `moveCount`), but only helps the simplest games and would mean each game's link no longer follows one shared, easy-to-extend format — not worth it while links are already this far under any real WhatsApp limit.
 
