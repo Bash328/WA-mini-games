@@ -123,9 +123,26 @@
   // ---------- 2 players, same device ----------
   let lo = null, loOver = false;
 
+  // "You've got this in the bag" / "spoke too soon" - see checkers for the
+  // same pattern. A best-of-N match is short, so the natural lead moment
+  // is "one win from a clean sweep" (2-0 in a best of 3, 3-0 in a best of
+  // 5, ...) rather than a raw score difference.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || loOver) return;
+    const rtw = roundsToWin(lo.n);
+    if (lo.p1Wins === rtw - 1 && lo.p2Wins === 0) confidenceGivenTo = P1;
+    else if (lo.p2Wins === rtw - 1 && lo.p1Wins === 0) confidenceGivenTo = P2;
+    else return;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+  }
+
   function resetLocal() {
     lo = { n: +bestofSel.value, p1Wins: 0, p2Wins: 0, pending: 0, lastP1: 0, lastP2: 0 };
     loOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
   }
 
@@ -137,9 +154,10 @@
       renderChoiceButtons(false, null);
       return;
     }
-    statusEl.textContent = lo.pending === 0
+    const note = confidenceNote; confidenceNote = "";
+    statusEl.textContent = (lo.pending === 0
       ? "Player 1: pick secretly, then hand the device to Player 2."
-      : "Player 2: make your pick.";
+      : "Player 2: make your pick.") + (note ? " " + note : "");
     updateLast(lo.pending === 0 ? lo.lastP1 : 0, lo.pending === 0 ? lo.lastP2 : 0);
     renderChoiceButtons(true, pickLocal);
   }
@@ -155,7 +173,12 @@
     const rtw = roundsToWin(lo.n);
     if (lo.p1Wins >= rtw || lo.p2Wins >= rtw) {
       loOver = true;
-      statusEl.textContent = `${NAMES[lo.p1Wins > lo.p2Wins ? P1 : P2]} wins the match!`;
+      const winnerColor = lo.p1Wins > lo.p2Wins ? P1 : P2;
+      const loserColor = winnerColor === P1 ? P2 : P1;
+      const reversed = confidenceGivenTo === loserColor;
+      statusEl.textContent = `${NAMES[winnerColor]} wins the match! ${NAMES[loserColor]} — ${Gamekit.taunt(reversed ? "reversal" : "loss")}`;
+    } else {
+      checkConfidence();
     }
     renderLocal();
   }
