@@ -268,8 +268,10 @@
       return a;
     }
 
-    function sendButton(enc, finished) {
-      const caption = (finished ? "Game over in " : "Your turn in ") + opts.title + "!";
+    function sendButton(enc, finished, moveCount) {
+      const caption = finished ? "Game over in " + opts.title + "!"
+        : moveCount === 1 ? "Let's play " + opts.title + "!"
+        : "Your turn in " + opts.title + "!";
       const url = linkFor(enc);
       const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
 
@@ -279,7 +281,7 @@
           // sheet — leave it alone. Anything else (the share sheet
           // rejecting the payload, no app handling it, ...) falls back
           // to the plain wa.me link rather than leaving the tap dead.
-          navigator.share({ url: url }).catch(err => {
+          navigator.share({ text: caption, url: url }).catch(err => {
             if (err && err.name === "AbortError") return;
             waLink(caption, url).click();
           });
@@ -349,7 +351,7 @@
         }
         setStatus("Waiting for " + label(s.turn));
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
-        actions(sendButton(v.enc, false), copyButton(v.enc));
+        actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc));
         actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
           view = { kind: "received", state: s, enc: v.enc, viewer: s.turn };
           paint();
