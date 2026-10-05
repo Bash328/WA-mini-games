@@ -156,8 +156,25 @@
   // ---------- 2 players, same device ----------
   let localEdges, localBoxes, localCurrent, localLast, localOver;
 
+  // "You've got this in the bag" / "spoke too soon" - see checkers for the
+  // same pattern. Box-count difference (16 boxes total) is this game's
+  // own natural lead signal.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+  const LEAD_THRESHOLD = 4;
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || localOver) return;
+    const cnt = counts(localBoxes);
+    const diff = cnt[P1] - cnt[P2];
+    if (Math.abs(diff) < LEAD_THRESHOLD) return;
+    confidenceGivenTo = diff > 0 ? P1 : P2;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+  }
+
   function resetLocal() {
     localEdges = newEdges(); localBoxes = newBoxes(); localCurrent = P1; localLast = null; localOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
   }
 
@@ -165,9 +182,17 @@
     renderBoard(localEdges, localBoxes, !localOver, playLocal, localLast);
     if (localOver) {
       const cnt = counts(localBoxes);
-      statusEl.textContent = cnt[P1] === cnt[P2] ? "Draw." : `${NAMES[cnt[P1] > cnt[P2] ? P1 : P2]} wins.`;
+      if (cnt[P1] === cnt[P2]) {
+        statusEl.textContent = "Draw.";
+      } else {
+        const winnerColor = cnt[P1] > cnt[P2] ? P1 : P2;
+        const loserColor = other(winnerColor);
+        const reversed = confidenceGivenTo === loserColor;
+        statusEl.textContent = `${NAMES[winnerColor]} wins. ${NAMES[loserColor]} — ${Gamekit.taunt(reversed ? "reversal" : "loss")}`;
+      }
     } else {
-      statusEl.textContent = `${NAMES[localCurrent]}'s move.`;
+      const note = confidenceNote; confidenceNote = "";
+      statusEl.textContent = `${NAMES[localCurrent]}'s move.` + (note ? " " + note : "");
     }
   }
 
@@ -179,6 +204,7 @@
     localLast = ei;
     if (localEdges.reduce((a, x) => a + x, 0) === EDGE_COUNT) { localOver = true; renderLocal(); return; }
     if (claimed === 0) localCurrent = other(localCurrent);
+    checkConfidence();
     renderLocal();
   }
 
