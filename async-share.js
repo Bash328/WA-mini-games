@@ -251,20 +251,28 @@
     }
 
     // A wa.me text link always shows the raw link a second time under the
-    // preview card, because the whole message is one text string. A first
-    // attempt at fixing that passed both a caption and the url to
-    // navigator.share as separate fields — on-device testing showed that
-    // broke the handoff into WhatsApp entirely (opened to an empty home
-    // screen). Sharing *only* the url — same as tapping Spotify's own
-    // Share button, with no caption baked in by the app — is the next
-    // thing to try; it still needs on-device confirmation that it (a)
-    // reaches WhatsApp with the link intact and (b) actually avoids the
-    // duplicate-link text. Falls back to the wa.me link on devices without
-    // a coarse pointer (desktop), where native share rarely lists WhatsApp
-    // as a target anyway.
+    // preview card, because the whole message is one text string. Sharing
+    // *only* the url via navigator.share — same as tapping Spotify's own
+    // Share button, with no caption baked in by the app — is meant to
+    // avoid that. Two earlier gates on this (checking a coarse pointer via
+    // matchMedia, and before that passing a caption alongside the url)
+    // both failed on-device: the share sheet never appeared at all, which
+    // means the matchMedia check itself was returning false and silently
+    // falling through to the wa.me link. navigator.maxTouchPoints is a
+    // plain hardware check with no media-query matching involved, so it's
+    // less likely to have the same failure mode — still needs on-device
+    // confirmation that the share sheet now actually appears, and that
+    // picking WhatsApp from it avoids the duplicate-link text.
     function canNativeShare() {
-      return typeof navigator.share === "function" &&
-        global.matchMedia && global.matchMedia("(pointer: coarse)").matches;
+      return typeof navigator.share === "function" && navigator.maxTouchPoints > 0;
+    }
+
+    function waLink(caption, url) {
+      const a = el("a", "btn wa-send", "");
+      a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);
+      a.target = "_blank";
+      a.rel = "noopener";
+      return a;
     }
 
     function sendButton(enc, finished) {
@@ -274,14 +282,19 @@
 
       if (canNativeShare()) {
         return button(label, "wa-send", () => {
-          navigator.share({ url: url }).catch(() => {});
+          // AbortError just means the person backed out of the share
+          // sheet — leave it alone. Anything else (the share sheet
+          // rejecting the payload, no app handling it, ...) falls back
+          // to the plain wa.me link rather than leaving the tap dead.
+          navigator.share({ url: url }).catch(err => {
+            if (err && err.name === "AbortError") return;
+            waLink(caption, url).click();
+          });
         });
       }
 
-      const a = el("a", "btn wa-send", label);
-      a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);
-      a.target = "_blank";
-      a.rel = "noopener";
+      const a = waLink(caption, url);
+      a.textContent = label;
       return a;
     }
 
