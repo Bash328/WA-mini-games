@@ -186,6 +186,7 @@
     "One wrong move from game over.",
     "The executioner is checking their watch.",
     "Pick wisely. Or don't — it's funnier that way.",
+    "😂",
   ];
   const HANGMAN_LOSS = [
     "Hanged by your own indecision.",
@@ -200,6 +201,7 @@
     "Well, the letters tried to warn you.",
     "That's going in the hangman hall of shame.",
     "The rope wins this round.",
+    "😂",
   ];
   // Mid-game mockery for a pile of misses that hasn't reached the gallows
   // yet — distinct from the last-chance line, which is reserved for the
@@ -216,6 +218,7 @@
     "This is turning into a greatest-misses album.",
     "Half your guesses gone and the word's barely dented.",
     "The keyboard is starting to feel personally attacked.",
+    "😂",
   ];
   // A hint dressed up as a jab. Only offered while the word still has an
   // unguessed vowel (see guessNote), so it never points at a letter that
@@ -240,6 +243,7 @@
     "Right idea, wrong vowel.",
     "You listened! ...and still missed.",
     "A vowel, yes. The vowel, no.",
+    "😂",
   ];
   const HANGMAN_COMEBACK = [
     "Now we're talking.",
@@ -325,6 +329,7 @@
     "You could taste the win. Then you couldn't.",
     "One more correct guess and this ends differently.",
     "You really couldn't tell, huh?",
+    "😂",
   ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
   function missingUniqueCount(word, mask) {
