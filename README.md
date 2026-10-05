@@ -165,7 +165,7 @@ To try a full game on one computer, use two browser profiles (or a normal and a 
 
 ## Deploy to Cloudflare Workers
 
-The site is served by [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/): Cloudflare serves the files straight from the repo, and [worker/index.mjs](worker/index.mjs) runs first so it can rewrite each page's Open Graph tags from the `?s=` state. That is what makes a WhatsApp preview say *"Your move · tic-tac-toe"* instead of the same generic line on every link.
+The site is served by [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/): Cloudflare serves the files straight from the repo, and [worker/index.mjs](worker/index.mjs) runs first so it can rewrite each page's Open Graph tags from the `?s=` state. That is what makes a WhatsApp preview say *"Your move · tic-tac-toe"* instead of the same generic line on every link. `og:image` is static (`og-image.png`, the same picture on every game and every move) — the worker only rewrites title/description, not the image, so there's no per-move artwork.
 
 ```bash
 npx wrangler dev --persist-to ../.wrangler-state   # http://localhost:8787
