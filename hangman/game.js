@@ -105,6 +105,10 @@
   });
 
   let waWord = "", waMask = 0, waCurrent = P1, waCanMove = false, waInGame = false, waStatus = "in_progress";
+  // The guess reaction belongs to one board state: it's shown only while
+  // waMask still equals waNoteMask, so a re-render keeps it and a fresh
+  // link never inherits a stale one.
+  let waNote = "", waNoteMask = -1, waTaunt = newTauntState();
 
   function loadLink(s, canMove) {
     waInGame = !!s;
@@ -116,6 +120,7 @@
     } else {
       waWord = ""; waMask = 0; waCurrent = P1;
     }
+    if (waMask === 0) { waNote = ""; waNoteMask = -1; waTaunt = newTauntState(); }
     renderWA();
   }
 
@@ -126,9 +131,8 @@
       renderWord(waWord, waMask, reveal);
       const misses = wrongCount(waWord, waMask);
       const guesserTurn = waCanMove && waCurrent === P2 && waStatus === "in_progress";
-      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` + (!guesserTurn ? "" :
-        misses === MAX_WRONG - 1 ? " — " + lastChanceTaunt(waWord) :
-        misses >= MANY_WRONG_THRESHOLD ? " — " + manyWrongTaunt() : "");
+      const note = guesserTurn && waNoteMask === waMask ? waNote : "";
+      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` + (note ? " — " + note : "");
     } else {
       wordEl.textContent = "";
       missesEl.textContent = "";
@@ -161,6 +165,8 @@
     let status = "in_progress", winner = null;
     if (isSolved(waWord, mask)) { status = "won"; winner = P2; }
     else if (wrongCount(waWord, mask) >= MAX_WRONG) { status = "won"; winner = P1; }
+    waNote = guessNote(waTaunt, waWord, mask, String.fromCharCode(A_CODE + i));
+    waNoteMask = mask;
     link.commit({ board: boardToStr(waWord, mask), status, winner, last: i, nextTurn: P2 });
   }
 
@@ -180,6 +186,7 @@
     "One wrong move from game over.",
     "The executioner is checking their watch.",
     "Pick wisely. Or don't — it's funnier that way.",
+    "😂",
   ];
   const HANGMAN_LOSS = [
     "Hanged by your own indecision.",
@@ -194,6 +201,7 @@
     "Well, the letters tried to warn you.",
     "That's going in the hangman hall of shame.",
     "The rope wins this round.",
+    "😂",
   ];
   // Mid-game mockery for a pile of misses that hasn't reached the gallows
   // yet — distinct from the last-chance line, which is reserved for the
@@ -207,11 +215,70 @@
     "Statistically, you should've hit one by now.",
     "The gallows crew is placing bets.",
     "Quite a collection of misses you're building there.",
-    "Maybe try... a vowel? Any vowel?",
     "This is turning into a greatest-misses album.",
     "Half your guesses gone and the word's barely dented.",
     "The keyboard is starting to feel personally attacked.",
+    "😂",
   ];
+  // A hint dressed up as a jab. Only offered while the word still has an
+  // unguessed vowel (see guessNote), so it never points at a letter that
+  // can't help — and it sets up the VOWEL_PAYOFF / VOWEL_WRONG callbacks.
+  const HANGMAN_VOWEL_NUDGE = [
+    "Maybe try... a vowel? Any vowel?",
+    "Have you considered a vowel?",
+    "Vowels exist. Just saying.",
+    "A, E, I, O, U — pick one. Any one.",
+    "Pro tip: most words have vowels.",
+  ];
+  // Callbacks to the lines above, shown on the very next guess.
+  const HANGMAN_VOWEL_PAYOFF = [
+    "Seeeeee? Was that so hard?",
+    "Seeeee — all it took was a vowel.",
+    "See?? Vowels. They work.",
+    "Seeeeeee! I'm basically a genius.",
+    "And THAT is why we try vowels.",
+  ];
+  const HANGMAN_VOWEL_WRONG = [
+    "Technically a vowel. Technically wrong.",
+    "Right idea, wrong vowel.",
+    "You listened! ...and still missed.",
+    "A vowel, yes. The vowel, no.",
+    "😂",
+  ];
+  const HANGMAN_COMEBACK = [
+    "Now we're talking.",
+    "There it is. Now we're talking.",
+    "Oh, so you CAN do this.",
+    "Finally. Now we're getting somewhere.",
+    "Look at that — a correct letter. Now we're talking.",
+    "Okay okay, now we're cooking.",
+  ];
+  // Right letters while down to the last life: surprise on the first one,
+  // genuine praise once it becomes a streak.
+  const HANGMAN_LAST_LIFE_SURPRISE = [
+    "Wait — that was right? On your last life?",
+    "Okay, didn't see that coming.",
+    "Whoa. Still alive. For now.",
+    "Plot twist: you might survive this.",
+    "Look who's still breathing.",
+    "Hold on. Is this a comeback?",
+  ];
+  const HANGMAN_LAST_LIFE_PRAISE = [
+    "Okay, this is getting impressive.",
+    "Cheating death, one letter at a time.",
+    "Ice. In. Your. Veins.",
+    "The noose is sweating. You're not.",
+    "Alright, I'm genuinely impressed.",
+    "Hanging by a thread and still delivering.",
+    "That's called clutch.",
+  ];
+  // Taunts are seasoning, not a laugh track: most guesses get no line at
+  // all. Callbacks (payoffs) always fire, since they answer a line the
+  // player already saw.
+  const CHANCE_LAST_CHANCE = 0.6;
+  const CHANCE_MANY_WRONG = 0.5;
+  const CHANCE_VOWEL_NUDGE = 0.35; // share of many-wrong lines that are the vowel hint
+  const CHANCE_FIRST_SURPRISE = 0.7;
   // Word-length-aware extras, blended into the pool above rather than
   // replacing it: a short word losing to the guesser is extra embarrassing
   // (it was right there), a long one earns a little sympathy instead.
@@ -262,6 +329,7 @@
     "You could taste the win. Then you couldn't.",
     "One more correct guess and this ends differently.",
     "You really couldn't tell, huh?",
+    "😂",
   ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
   function missingUniqueCount(word, mask) {
@@ -288,12 +356,60 @@
     }
     return pick(pool);
   }
-  function manyWrongTaunt() { return pick(HANGMAN_MANY_WRONG); }
+  function hasUnguessedVowel(word, mask) {
+    for (const ch of word) {
+      if ("AEIOU".includes(ch) && !(mask & bit(letterIdx(ch)))) return true;
+    }
+    return false;
+  }
 
-  let loWord = "", loMask = 0, loStatus = "in_progress";
+  // Per-game memory the guess reactions need: what the last line nudged
+  // (so the next guess can call back to it) and how many right letters in
+  // a row have landed while on the last life.
+  function newTauntState() { return { nudge: null, lastLifeHits: 0 }; }
+
+  // The line (or "") to show after the guesser picks `ch`; `mask` already
+  // includes it. Decided once per guess and stored by the caller, so a
+  // re-render never re-rolls it. Game-over lines are handled elsewhere.
+  function guessNote(st, word, mask, ch) {
+    const prevNudge = st.nudge;
+    st.nudge = null;
+    const misses = wrongCount(word, mask);
+    if (isSolved(word, mask) || misses >= MAX_WRONG) return "";
+    const hit = word.includes(ch);
+    const isVowel = "AEIOU".includes(ch);
+
+    if (misses === MAX_WRONG - 1) {
+      if (!hit) {
+        st.lastLifeHits = 0;
+        return Math.random() < CHANCE_LAST_CHANCE ? lastChanceTaunt(word) : "";
+      }
+      st.lastLifeHits++;
+      if (st.lastLifeHits === 1) {
+        return Math.random() < CHANCE_FIRST_SURPRISE ? pick(HANGMAN_LAST_LIFE_SURPRISE) : "";
+      }
+      return pick(HANGMAN_LAST_LIFE_PRAISE);
+    }
+
+    if (misses < MANY_WRONG_THRESHOLD) return "";
+    if (hit) {
+      if (prevNudge === "vowel" && isVowel) return pick(HANGMAN_VOWEL_PAYOFF);
+      return prevNudge ? pick(HANGMAN_COMEBACK) : "";
+    }
+    if (prevNudge === "vowel" && isVowel) return pick(HANGMAN_VOWEL_WRONG);
+    if (Math.random() >= CHANCE_MANY_WRONG) return "";
+    if (hasUnguessedVowel(word, mask) && Math.random() < CHANCE_VOWEL_NUDGE) {
+      st.nudge = "vowel";
+      return pick(HANGMAN_VOWEL_NUDGE);
+    }
+    st.nudge = "other";
+    return pick(HANGMAN_MANY_WRONG);
+  }
+
+  let loWord = "", loMask = 0, loStatus = "in_progress", loNote = "", loTaunt = newTauntState();
 
   function resetLocal() {
-    loWord = ""; loMask = 0; loStatus = "in_progress";
+    loWord = ""; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
     renderLocal();
   }
 
@@ -305,9 +421,7 @@
       const misses = wrongCount(loWord, loMask);
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
       statusEl.textContent = loStatus === "in_progress"
-        ? "Player 2: guess a letter." + (
-            misses === MAX_WRONG - 1 ? " " + lastChanceTaunt(loWord) :
-            misses >= MANY_WRONG_THRESHOLD ? " " + manyWrongTaunt() : "")
+        ? "Player 2: guess a letter." + (loNote ? " " + loNote : "")
         : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord, loMask));
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
@@ -322,7 +436,7 @@
     const word = normalizeWord(setupInput.value);
     if (!validWord(word)) { setupError.textContent = "Enter a word from 3 to 20 letters (A-Z only)."; return; }
     setupError.textContent = "";
-    loWord = word; loMask = 0; loStatus = "in_progress";
+    loWord = word; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
     renderLocal();
   }
 
@@ -331,6 +445,7 @@
     loMask |= bit(i);
     if (isSolved(loWord, loMask)) loStatus = "won-p2";
     else if (wrongCount(loWord, loMask) >= MAX_WRONG) loStatus = "won-p1";
+    loNote = guessNote(loTaunt, loWord, loMask, String.fromCharCode(A_CODE + i));
     renderLocal();
   }
 
