@@ -122,7 +122,10 @@
     const reveal = waStatus !== "in_progress"; // game over: show the real word
     if (waInGame) {
       renderWord(waWord, waMask, reveal);
-      missesEl.textContent = `Misses: ${wrongCount(waWord, waMask)} / ${MAX_WRONG}`;
+      const misses = wrongCount(waWord, waMask);
+      const guesserTurn = waCanMove && waCurrent === P2 && waStatus === "in_progress";
+      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` +
+        (guesserTurn && misses === MAX_WRONG - 1 ? " — " + pick(HANGMAN_LAST_CHANCE) : "");
     } else {
       wordEl.textContent = "";
       missesEl.textContent = "";
@@ -159,6 +162,22 @@
   }
 
   // ---------- 2 players, same device ----------
+  // Hangman's own gallows-humor taunts, rather than Gamekit's generic
+  // pool — "the one hanging" joke doesn't land in checkers.
+  const HANGMAN_LAST_CHANCE = [
+    "Try harder — if I wanted the one hanging, I'd be scared.",
+    "One more miss and that's curtains.",
+    "The rope's getting tighter. Figuratively. Mostly.",
+    "Last letter standing between you and the noose.",
+  ];
+  const HANGMAN_LOSS = [
+    "Hanged by your own indecision.",
+    "The word remains undefeated.",
+    "Better luck spelling next time.",
+    "That word really had your number.",
+  ];
+  function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
+
   let loWord = "", loMask = 0, loStatus = "in_progress";
 
   function resetLocal() {
@@ -171,9 +190,11 @@
     if (loWord) {
       const reveal = loStatus !== "in_progress";
       renderWord(loWord, loMask, reveal);
-      missesEl.textContent = `Misses: ${wrongCount(loWord, loMask)} / ${MAX_WRONG}`;
-      statusEl.textContent = loStatus === "in_progress" ? "Player 2: guess a letter."
-        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time.");
+      const misses = wrongCount(loWord, loMask);
+      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
+      statusEl.textContent = loStatus === "in_progress"
+        ? "Player 2: guess a letter." + (misses === MAX_WRONG - 1 ? " " + pick(HANGMAN_LAST_CHANCE) : "")
+        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + pick(HANGMAN_LOSS));
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
     } else {
