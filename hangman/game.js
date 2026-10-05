@@ -124,8 +124,9 @@
       renderWord(waWord, waMask, reveal);
       const misses = wrongCount(waWord, waMask);
       const guesserTurn = waCanMove && waCurrent === P2 && waStatus === "in_progress";
-      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` +
-        (guesserTurn && misses === MAX_WRONG - 1 ? " — " + lastChanceTaunt(waWord) : "");
+      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` + (!guesserTurn ? "" :
+        misses === MAX_WRONG - 1 ? " — " + lastChanceTaunt(waWord) :
+        misses >= MANY_WRONG_THRESHOLD ? " — " + manyWrongTaunt() : "");
     } else {
       wordEl.textContent = "";
       missesEl.textContent = "";
@@ -173,6 +174,10 @@
     "One guess left. Make it count. You won't.",
     "This is the letter that decides everything.",
     "Dramatic pause intensifies.",
+    "This is the nail-biter moment.",
+    "One wrong move from game over.",
+    "The executioner is checking their watch.",
+    "Pick wisely. Or don't — it's funnier that way.",
   ];
   const HANGMAN_LOSS = [
     "Hanged by your own indecision.",
@@ -183,6 +188,27 @@
     "A moment of silence for your guesses.",
     "Spelling was never your strong suit, huh.",
     "The noose has spoken.",
+    "Game over. The word lives to see another day.",
+    "Well, the letters tried to warn you.",
+    "That's going in the hangman hall of shame.",
+    "The rope wins this round.",
+  ];
+  // Mid-game mockery for a pile of misses that hasn't reached the gallows
+  // yet — distinct from the last-chance line, which is reserved for the
+  // final guess. Needs no word-length awareness: the joke here is just
+  // "you've already whiffed a lot," not about the word itself.
+  const MANY_WRONG_THRESHOLD = 3;
+  const HANGMAN_MANY_WRONG = [
+    "That's a lot of wrong letters for one word.",
+    "The alphabet is not your friend tonight.",
+    "At this rate you're guessing backwards.",
+    "Statistically, you should've hit one by now.",
+    "The gallows crew is placing bets.",
+    "Quite a collection of misses you're building there.",
+    "Maybe try... a vowel? Any vowel?",
+    "This is turning into a greatest-misses album.",
+    "Half your guesses gone and the word's barely dented.",
+    "The keyboard is starting to feel personally attacked.",
   ];
   // Word-length-aware extras, blended into the pool above rather than
   // replacing it: a short word losing to the guesser is extra embarrassing
@@ -193,21 +219,33 @@
     "Come on, this is an easy one.",
     "It's barely a word. How is this close?",
     "This one should've been free.",
+    "A toddler could spell this one.",
+    "This word has training wheels and you're still wobbling.",
+    "Four letters. FOUR.",
   ];
   const HANGMAN_SHORT_LOSS = [
     "That word had training wheels and you still fell off.",
     "Four letters or less. And you still lost.",
     "A word that short deserved a better guesser.",
+    "Short word. Shorter memory, apparently.",
+    "That's the hangman equivalent of missing an open goal.",
+    "Autocorrect would've gotten that one.",
   ];
   const HANGMAN_LONG_LAST_CHANCE = [
     "Stay sharp — that's a long one to blow now.",
     "This word's been testing everyone. Don't let it win.",
     "One letter from cracking a genuinely hard word.",
+    "That's a lot of letters to lose on now.",
+    "This one's earned its difficulty badge. Don't waste it.",
+    "So close to cracking a real beast of a word.",
   ];
   const HANGMAN_LONG_LOSS = [
     "I don't blame you, that's a big one.",
     "Honestly, that word was unreasonable.",
     "Nobody was spelling that one cold.",
+    "That word was basically a boss fight.",
+    "Respect for even attempting that monster.",
+    "Long words like that have humbled better guessers.",
   ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
   function lastChanceTaunt(word) {
@@ -220,6 +258,7 @@
     if (word.length >= LONG_WORD_MIN) return pick(HANGMAN_LOSS.concat(HANGMAN_LONG_LOSS));
     return pick(HANGMAN_LOSS);
   }
+  function manyWrongTaunt() { return pick(HANGMAN_MANY_WRONG); }
 
   let loWord = "", loMask = 0, loStatus = "in_progress";
 
@@ -236,7 +275,9 @@
       const misses = wrongCount(loWord, loMask);
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
       statusEl.textContent = loStatus === "in_progress"
-        ? "Player 2: guess a letter." + (misses === MAX_WRONG - 1 ? " " + lastChanceTaunt(loWord) : "")
+        ? "Player 2: guess a letter." + (
+            misses === MAX_WRONG - 1 ? " " + lastChanceTaunt(loWord) :
+            misses >= MANY_WRONG_THRESHOLD ? " " + manyWrongTaunt() : "")
         : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord));
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
