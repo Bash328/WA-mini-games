@@ -260,9 +260,19 @@
       return typeof navigator.share === "function";
     }
 
+    // Link first, then a line break, then the caption — matches what was
+    // asked for after seeing the actual WhatsApp message text. Used for
+    // both the native share (as a single `text` field, no separate `url`
+    // — the two-field version left the order up to WhatsApp, which put
+    // the caption first) and the wa.me fallback, so the two paths produce
+    // the same message shape.
+    function waMessage(caption, url) {
+      return url + "\n" + caption;
+    }
+
     function waLink(caption, url) {
       const a = el("a", "btn wa-send", "");
-      a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);
+      a.href = "https://wa.me/?text=" + encodeURIComponent(waMessage(caption, url));
       a.target = "_blank";
       a.rel = "noopener";
       return a;
@@ -281,7 +291,7 @@
           // sheet — leave it alone. Anything else (the share sheet
           // rejecting the payload, no app handling it, ...) falls back
           // to the plain wa.me link rather than leaving the tap dead.
-          navigator.share({ text: caption, url: url }).catch(err => {
+          navigator.share({ text: waMessage(caption, url) }).catch(err => {
             if (err && err.name === "AbortError") return;
             waLink(caption, url).click();
           });
