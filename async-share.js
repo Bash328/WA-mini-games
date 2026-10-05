@@ -250,27 +250,18 @@
       if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
     }
 
-    // Sharing caption+link as one wa.me text string always makes WhatsApp
-    // show the raw link a second time under the preview card. The native
-    // share sheet hands WhatsApp the link and caption as separate fields,
-    // which keeps the message to just the caption and the clean card — so
-    // prefer it on touch devices, where it reliably lists WhatsApp as a
-    // target; fall back to the direct wa.me link elsewhere.
-    function canNativeShare() {
-      return typeof navigator.share === "function" &&
-        global.matchMedia && global.matchMedia("(pointer: coarse)").matches;
-    }
-
+    // Tried routing this through navigator.share so WhatsApp would get the
+    // caption and link as separate fields (avoiding the raw-link repeat
+    // below the preview card) — but on-device testing showed WhatsApp's
+    // share handling just opens the app with nothing filled in when both
+    // fields are passed separately, on iOS and desktop alike. That's worse
+    // than the duplicate-link text, so back to a single wa.me link for
+    // everyone until a version of the split-field approach is confirmed
+    // to actually work on-device.
     function sendButton(enc, finished) {
       const caption = (finished ? "Game over in " : "Your turn in ") + opts.title + "!";
       const url = linkFor(enc);
       const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
-
-      if (canNativeShare()) {
-        return button(label, "wa-send", () => {
-          navigator.share({ title: opts.title, text: caption, url: url }).catch(() => {});
-        });
-      }
 
       const a = el("a", "btn wa-send", label);
       a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);
