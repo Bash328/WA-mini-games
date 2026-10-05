@@ -250,18 +250,33 @@
       if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
     }
 
-    // Tried routing this through navigator.share so WhatsApp would get the
-    // caption and link as separate fields (avoiding the raw-link repeat
-    // below the preview card) — but on-device testing showed WhatsApp's
-    // share handling just opens the app with nothing filled in when both
-    // fields are passed separately, on iOS and desktop alike. That's worse
-    // than the duplicate-link text, so back to a single wa.me link for
-    // everyone until a version of the split-field approach is confirmed
-    // to actually work on-device.
+    // A wa.me text link always shows the raw link a second time under the
+    // preview card, because the whole message is one text string. A first
+    // attempt at fixing that passed both a caption and the url to
+    // navigator.share as separate fields — on-device testing showed that
+    // broke the handoff into WhatsApp entirely (opened to an empty home
+    // screen). Sharing *only* the url — same as tapping Spotify's own
+    // Share button, with no caption baked in by the app — is the next
+    // thing to try; it still needs on-device confirmation that it (a)
+    // reaches WhatsApp with the link intact and (b) actually avoids the
+    // duplicate-link text. Falls back to the wa.me link on devices without
+    // a coarse pointer (desktop), where native share rarely lists WhatsApp
+    // as a target anyway.
+    function canNativeShare() {
+      return typeof navigator.share === "function" &&
+        global.matchMedia && global.matchMedia("(pointer: coarse)").matches;
+    }
+
     function sendButton(enc, finished) {
       const caption = (finished ? "Game over in " : "Your turn in ") + opts.title + "!";
       const url = linkFor(enc);
       const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
+
+      if (canNativeShare()) {
+        return button(label, "wa-send", () => {
+          navigator.share({ url: url }).catch(() => {});
+        });
+      }
 
       const a = el("a", "btn wa-send", label);
       a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);

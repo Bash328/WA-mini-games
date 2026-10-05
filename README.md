@@ -29,7 +29,7 @@ Opening a shared link always switches the page to WhatsApp mode. The last seven 
 ## How play-by-link works
 
 1. Open a game page with no `?s=` in the URL. You get a fresh board; make the first move.
-2. The page encodes the whole game into the URL and shows **Send on WhatsApp** and **Copy link**. The WhatsApp button opens `https://wa.me/?text=…` with no phone number, so you pick the contact. WhatsApp's preview card shows the raw link a second time below the caption — that's a WhatsApp rendering quirk of the single-text-field approach wa.me requires, not something the page controls.
+2. The page encodes the whole game into the URL and shows **Send on WhatsApp** and **Copy link**. On touch devices the button hands the link to the phone's native share sheet (same as sharing a Spotify link) instead of opening WhatsApp directly, so you pick the contact there; elsewhere (desktop) it falls back to `https://wa.me/?text=…` with no phone number, which shows the raw link a second time below the preview card — a quirk of that single-text-field approach.
 3. Your friend taps the link and sees the board with your last move outlined. They move, and send a new link back.
 4. When the game ends, the player who made the final move sends the result link so the other player sees how it ended.
 
