@@ -264,7 +264,17 @@
     // confirmation that the share sheet now actually appears, and that
     // picking WhatsApp from it avoids the duplicate-link text.
     function canNativeShare() {
-      return typeof navigator.share === "function" && navigator.maxTouchPoints > 0;
+      return typeof navigator.share === "function";
+    }
+
+    // Temporary on-screen diagnostic: three failed attempts at this (text+url
+    // split, a matchMedia pointer check, a maxTouchPoints check) all landed on
+    // the wa.me fallback on-device for reasons that weren't reproducible from
+    // here, so this prints what the browser itself reports instead of
+    // guessing again. Remove once the native-share path is confirmed working.
+    function shareDiagnostic() {
+      return "share: " + typeof navigator.share + " · touchPoints: " + navigator.maxTouchPoints +
+        " · secure: " + global.isSecureContext;
     }
 
     function waLink(caption, url) {
@@ -357,6 +367,7 @@
         setStatus("Waiting for " + label(s.turn));
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
         actions(sendButton(v.enc, false), copyButton(v.enc));
+        note(shareDiagnostic());
         actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
           view = { kind: "received", state: s, enc: v.enc, viewer: s.turn };
           paint();
@@ -372,6 +383,7 @@
       if (v.kind === "sent") {
         note("Send the final board so your opponent sees how it ended.");
         actions(sendButton(v.enc, true), copyButton(v.enc));
+        note(shareDiagnostic());
       }
       actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
     }
