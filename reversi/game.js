@@ -157,11 +157,28 @@
   let localLast = null;
   let localOver = false;
 
+  // "You've got this in the bag" / "spoke too soon" - see checkers for the
+  // same pattern. Disc-count difference is reversi's own natural lead
+  // signal, already computed for the scoreboard.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+  const LEAD_THRESHOLD = 8;
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || localOver) return;
+    const cnt = counts(localBoard);
+    const diff = cnt[BLACK] - cnt[WHITE];
+    if (Math.abs(diff) < LEAD_THRESHOLD) return;
+    confidenceGivenTo = diff > 0 ? BLACK : WHITE;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+  }
+
   function resetLocal() {
     localBoard = initialBoard();
     localCurrent = BLACK;
     localLast = null;
     localOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
   }
 
@@ -170,9 +187,17 @@
     renderBoard(localBoard, legal, !localOver, playLocal, localLast);
     if (localOver) {
       const cnt = counts(localBoard);
-      statusEl.textContent = cnt[BLACK] === cnt[WHITE] ? "Draw." : `${NAMES[cnt[BLACK] > cnt[WHITE] ? BLACK : WHITE]} wins.`;
+      if (cnt[BLACK] === cnt[WHITE]) {
+        statusEl.textContent = "Draw.";
+      } else {
+        const winnerColor = cnt[BLACK] > cnt[WHITE] ? BLACK : WHITE;
+        const loserColor = other(winnerColor);
+        const reversed = confidenceGivenTo === loserColor;
+        statusEl.textContent = `${NAMES[winnerColor]} wins. ${NAMES[loserColor]} — ${Gamekit.taunt(reversed ? "reversal" : "loss")}`;
+      }
     } else {
-      statusEl.textContent = `${NAMES[localCurrent]}'s move.`;
+      const note = confidenceNote; confidenceNote = "";
+      statusEl.textContent = `${NAMES[localCurrent]}'s move.` + (note ? " " + note : "");
     }
   }
 
@@ -186,6 +211,7 @@
     if (legalMoves(localBoard, opp).length > 0) localCurrent = opp;
     else if (legalMoves(localBoard, localCurrent).length === 0) localOver = true;
     // else: opponent has no move, same player goes again (localCurrent unchanged)
+    checkConfidence();
     renderLocal();
   }
 
