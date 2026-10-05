@@ -165,7 +165,7 @@
   // Hangman's own gallows-humor taunts, rather than Gamekit's generic
   // pool — "the one hanging" joke doesn't land in checkers.
   const HANGMAN_LAST_CHANCE = [
-    "Try harder — if I wanted the one hanging, I'd be scared.",
+    "Try harder — if I was the one hanging, I'd be scared.",
     "One more miss and that's curtains.",
     "The rope's getting tighter. Figuratively. Mostly.",
     "Last letter standing between you and the noose.",
