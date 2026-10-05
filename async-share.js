@@ -343,11 +343,15 @@
       return a;
     }
 
-    function sendButton(enc, finished, moveCount, resigned) {
-      const caption = resigned ? "I surrendered! 🏳️"
+    function captionFor(finished, moveCount, resigned) {
+      return resigned ? "I surrendered! 🏳️"
         : finished ? "Game over!"
         : moveCount === 1 ? "Let's play!"
         : "Your turn!";
+    }
+
+    function sendButton(enc, finished, moveCount, resigned) {
+      const caption = captionFor(finished, moveCount, resigned);
       const url = linkFor(enc);
       const label = resigned ? "Share your shame" : finished ? "Send result on WhatsApp" : "Send on WhatsApp";
 
@@ -369,9 +373,11 @@
       return a;
     }
 
-    function copyButton(enc) {
+    // Copies the same text the Send button shares (link, line break,
+    // caption), so a pasted message matches a sent one.
+    function copyButton(enc, finished, moveCount, resigned) {
       const b = button("Copy link", "ghost", () => {
-        copyText(linkFor(enc)).then(ok => {
+        copyText(waMessage(captionFor(finished, moveCount, resigned), linkFor(enc))).then(ok => {
           b.textContent = ok ? "Copied!" : "Copy failed — use the address bar";
           setTimeout(() => { b.textContent = "Copy link"; }, 1800);
         });
@@ -430,7 +436,7 @@
         }
         setStatus("Waiting for " + label(s.turn));
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
-        actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc));
+        actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc, false, s.moveCount));
         actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
           view = { kind: "received", state: s, enc: v.enc, viewer: s.turn };
           paint();
@@ -446,7 +452,7 @@
       if (extra) note(extra);
       if (v.kind === "sent") {
         note(s.resigned ? "Let them know you threw in the towel." : "Send the final board so your opponent sees how it ended.");
-        actions(sendButton(v.enc, true, undefined, s.resigned), copyButton(v.enc));
+        actions(sendButton(v.enc, true, undefined, s.resigned), copyButton(v.enc, true, undefined, s.resigned));
       }
       actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
     }
