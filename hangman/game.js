@@ -96,9 +96,11 @@
       return Number.isInteger(s.last) && s.last >= 0 && s.last <= 26;
     },
     onState: loadLink,
-    detail: (s) => {
-      const { word } = strToBoard(s.board);
-      return `The word was ${word}.`;
+    detail: (s, viewer) => {
+      const { word, mask } = strToBoard(s.board);
+      const lostAsGuesser = s.status === "won" && s.winner === P1 && viewer === P2;
+      const almost = lostAsGuesser && missingUniqueCount(word, mask) <= ALMOST_MAX_MISSING;
+      return `The word was ${word}.` + (almost ? " " + pick(HANGMAN_ALMOST_LOSS) : "");
     },
   });
 
@@ -247,16 +249,44 @@
     "Respect for even attempting that monster.",
     "Long words like that have humbled better guessers.",
   ];
+  // The cruelest loss: only one unguessed letter stood between the guesser
+  // and the win. Checked independently of word length — a short word lost
+  // by one letter stings just as much as a long one.
+  const ALMOST_MAX_MISSING = 1;
+  const HANGMAN_ALMOST_LOSS = [
+    "You had my hopes up for nothing.",
+    "So close. So, so close.",
+    "One letter. ONE letter away.",
+    "The word was right there and you still missed it.",
+    "That's the cruelest kind of loss — the almost kind.",
+    "You could taste the win. Then you couldn't.",
+    "One more correct guess and this ends differently.",
+    "You really couldn't tell, huh?",
+  ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
+  function missingUniqueCount(word, mask) {
+    const seen = new Set();
+    let missing = 0;
+    for (const ch of word) {
+      if (seen.has(ch)) continue;
+      seen.add(ch);
+      if (!(mask & bit(letterIdx(ch)))) missing++;
+    }
+    return missing;
+  }
   function lastChanceTaunt(word) {
     if (word.length <= SHORT_WORD_MAX) return pick(HANGMAN_LAST_CHANCE.concat(HANGMAN_SHORT_LAST_CHANCE));
     if (word.length >= LONG_WORD_MIN) return pick(HANGMAN_LAST_CHANCE.concat(HANGMAN_LONG_LAST_CHANCE));
     return pick(HANGMAN_LAST_CHANCE);
   }
-  function lossTaunt(word) {
-    if (word.length <= SHORT_WORD_MAX) return pick(HANGMAN_LOSS.concat(HANGMAN_SHORT_LOSS));
-    if (word.length >= LONG_WORD_MIN) return pick(HANGMAN_LOSS.concat(HANGMAN_LONG_LOSS));
-    return pick(HANGMAN_LOSS);
+  function lossTaunt(word, mask) {
+    let pool = HANGMAN_LOSS;
+    if (word.length <= SHORT_WORD_MAX) pool = pool.concat(HANGMAN_SHORT_LOSS);
+    else if (word.length >= LONG_WORD_MIN) pool = pool.concat(HANGMAN_LONG_LOSS);
+    if (typeof mask === "number" && missingUniqueCount(word, mask) <= ALMOST_MAX_MISSING) {
+      pool = pool.concat(HANGMAN_ALMOST_LOSS);
+    }
+    return pick(pool);
   }
   function manyWrongTaunt() { return pick(HANGMAN_MANY_WRONG); }
 
@@ -278,7 +308,7 @@
         ? "Player 2: guess a letter." + (
             misses === MAX_WRONG - 1 ? " " + lastChanceTaunt(loWord) :
             misses >= MANY_WRONG_THRESHOLD ? " " + manyWrongTaunt() : "")
-        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord));
+        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord, loMask));
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
     } else {
