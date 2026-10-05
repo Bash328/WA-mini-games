@@ -292,6 +292,28 @@
   let aiDiff = aiStore.get("diff", "medium");
   if (!AI_DEPTHS[aiDiff]) aiDiff = "medium";
 
+  // "You've got this in the bag" / "spoke too soon" callback: once per
+  // game, whichever color first takes a clear material lead gets the
+  // confidence line (never the AI - there's no point teasing it). If
+  // that same color goes on to lose, the game-over line is the reversal
+  // taunt instead of a generic one. confidenceNote is one-shot: set when
+  // detected, shown on the next render, then cleared so it doesn't repeat
+  // every turn.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+  const LEAD_THRESHOLD = 6; // evaluate()'s units: a man is 3, so ~2 pieces up
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || localOver) return;
+    const score = evaluate(localBoard, P1);
+    if (Math.abs(score) < LEAD_THRESHOLD) return;
+    const leader = score > 0 ? P1 : P2;
+    if (aiColor !== null && leader === aiColor) return;
+    confidenceGivenTo = leader;
+    const who = aiColor !== null ? "" : NAMES[leader] + " — ";
+    confidenceNote = who + Gamekit.taunt("confidence");
+  }
+
   function cancelAI() {
     if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; }
     aiThinking = false;
@@ -302,6 +324,7 @@
     localBoard = initialBoard();
     localCurrent = P1;
     localSelected = null; localChain = null; localLast = null; localOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
     maybeAITurn();
   }
@@ -313,15 +336,17 @@
     renderBoard(localBoard, selectable, localSelected, targets, humanTurn, onClickLocal, localLast);
     if (localOver) {
       const winnerColor = other(localCurrent);
+      const loserColor = localCurrent;
+      const reversed = confidenceGivenTo === loserColor;
       statusEl.textContent = aiColor === null
-        ? `${NAMES[winnerColor]} wins.`
-        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt() : "You win! 🎉");
+        ? `${NAMES[winnerColor]} wins.` + (reversed ? " " + Gamekit.taunt("reversal") : "")
+        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉");
     } else if (aiThinking) {
       statusEl.textContent = "AI thinking…";
-    } else if (aiColor !== null) {
-      statusEl.textContent = localCurrent === aiColor ? "AI thinking…" : "Your move.";
     } else {
-      statusEl.textContent = `${NAMES[localCurrent]}'s move.`;
+      const note = confidenceNote; confidenceNote = "";
+      const base = aiColor !== null ? (localCurrent === aiColor ? "AI thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
+      statusEl.textContent = base + (note ? " " + note : "");
     }
   }
 
@@ -346,6 +371,7 @@
     const opp = other(localCurrent);
     if (!hasAnyMove(localBoard, opp)) { localOver = true; renderLocal(); return; }
     localCurrent = opp;
+    checkConfidence();
     renderLocal();
     maybeAITurn();
   }
@@ -369,6 +395,7 @@
       const opp = other(aiColor);
       if (!hasAnyMove(localBoard, opp)) { localOver = true; renderLocal(); return; }
       localCurrent = opp;
+      checkConfidence();
       renderLocal();
     }, 300);
   }
@@ -399,5 +426,5 @@
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("checkers"));
 
-  window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2, allTurns, pickAITurn, AI_DEPTHS };
+  window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2, allTurns, pickAITurn, AI_DEPTHS, evaluate };
 })();
