@@ -6,7 +6,7 @@
 
 [hidden] { display: none !important; }
 
-.wa-ui { margin: 0 0 14px; }
+.wa-ui { margin: 14px 0; }
 .wa-ui .banner { margin: 0 0 10px; text-align: center; }
 
 .wa-note {
@@ -23,6 +23,11 @@
   justify-content: center;
   margin: 0 0 8px;
 }
+/* Sits directly after the board (see async-share.js) with nothing of its
+   own providing top spacing - every board container's own CSS stops at
+   its own bottom edge with no margin, so without this the resign button
+   sat flush against it. */
+.wa-resign-row { margin-top: 14px; }
 .wa-actions .btn {
   display: inline-flex;
   align-items: center;
