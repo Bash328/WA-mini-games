@@ -28,6 +28,20 @@
     return null;
   }
 
+  // The AI plays optimally, so a material "lead" isn't a meaningful signal
+  // here the way it is in checkers/connect-four - but a genuine fork (two
+  // simultaneous winning threats, unblockable in one move) is a real
+  // "you're cooked" moment worth calling out.
+  function countThreats(b, player) {
+    let n = 0;
+    for (const line of LINES) {
+      const filled = line.filter(i => b[i] === player).length;
+      const empty = line.filter(i => b[i] === null).length;
+      if (filled === 2 && empty === 1) n++;
+    }
+    return n;
+  }
+
   function minimax(b, player) {
     const w = winner(b);
     if (w) {
@@ -110,7 +124,8 @@
     if (w) { render(w); return end(w); }
     turn = human;
     render(null);
-    setStatus("Your turn (" + human + ").");
+    const forked = countThreats(board, ai) >= 2;
+    setStatus("Your turn (" + human + ")." + (forked ? " " + Gamekit.taunt("lastChance") : ""));
   }
 
   function end(w) {
