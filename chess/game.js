@@ -439,6 +439,25 @@ let mode = 'whatsapp';      // 'whatsapp' | 'ai'
 let linkCanMove = false;    // WhatsApp mode: is it this viewer's move?
 let lastReason = null;      // WhatsApp mode: why a finished game ended
 
+// "You've got this in the bag" / "spoke too soon" - see checkers for the
+// same pattern. Reuses the AI's own evaluate() (centipawns, White-
+// positive) as the lead signal. 250 rather than a cleaner-looking 300:
+// removing a full knight (worth 320) only moves the score by 280 once
+// its own positional adjustment is accounted for, measured directly -
+// 300 would miss exactly the "up a minor piece" case it's meant to catch.
+let confidenceGivenTo = null;
+let confidenceNote = '';
+const CONFIDENCE_THRESHOLD = 250;
+function checkConfidence() {
+  if (confidenceGivenTo !== null || mode !== 'ai') return;
+  const score = evaluate(state);
+  if (Math.abs(score) < CONFIDENCE_THRESHOLD) return;
+  const leaderColor = score > 0 ? 'w' : 'b';
+  if (leaderColor !== humanColor) return; // don't taunt the AI's own lead
+  confidenceGivenTo = leaderColor;
+  confidenceNote = Gamekit.taunt('confidence');
+}
+
 const modeSel = document.getElementById('mode');
 const undoBtn = document.getElementById('undo');
 const sideSel = document.getElementById('side');
@@ -469,8 +488,10 @@ function renderBoard() {
   const inChk = inCheck(state, state.turn);
   document.getElementById('info').textContent = inChk ? 'Check!' : '';
   if (mode !== 'whatsapp') {
+    const note = (!thinking && state.turn === humanColor && confidenceNote) ? ' ' + confidenceNote : '';
+    if (note) confidenceNote = '';
     document.getElementById('status').textContent =
-      (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + (inChk ? ' — check!' : '');
+      (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + (inChk ? ' — check!' : '') + note;
   }
 }
 
@@ -484,6 +505,7 @@ function onSquare(r,c) {
       makeMove(state, mv);
       lastMove = mv;
       selected = null; legalFromSel = [];
+      checkConfidence();
       renderBoard();
       checkEnd();
       if (!thinking) setTimeout(aiTurn, 150);
@@ -520,6 +542,7 @@ function aiTurn() {
     const depth = +document.getElementById('level').value;
     const m = bestMove(state, depth);
     if (m) { makeMove(state, m); lastMove = m; }
+    checkConfidence();
     thinking = false;
     renderBoard();
     checkEnd();
@@ -530,8 +553,9 @@ function checkEnd() {
   const moves = allLegal(state, state.turn);
   if (moves.length === 0) {
     const humanLost = mode === 'ai' && state.turn === humanColor;
+    const reversed = confidenceGivenTo === state.turn;
     const msg = inCheck(state, state.turn)
-      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (humanLost ? ' ' + Gamekit.taunt() : '')
+      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (humanLost ? ' ' + Gamekit.taunt(reversed ? 'reversal' : 'loss') : '')
       : 'Stalemate — draw.';
     document.getElementById('status').textContent = msg;
     thinking = true; // freeze interaction
@@ -556,6 +580,7 @@ function resetSolo() {
   cancelAI();
   state = initialState();
   selected = null; legalFromSel = []; lastMove = null;
+  confidenceGivenTo = null; confidenceNote = '';
   humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();
