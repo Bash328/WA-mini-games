@@ -52,7 +52,12 @@
     border-radius: var(--r-md);
     padding: 6px;
   }
-  .pg-cell {
+  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button"
+     rule (specificity 0-2-1 vs a plain class at 0-1-0 / 0-2-0), which was
+     otherwise forcing a 10px radius + 40px min-height and overriding the
+     quadrant-separator border with its own thinner one — same fix as
+     dots-and-boxes's #board .db-edge. */
+  #board .pg-cell {
     background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -61,10 +66,11 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    min-height: 0;
   }
   .pg-cell:disabled { cursor: default; }
-  .pg-cell.qsep-l { border-left: 2px solid var(--border-hi); }
-  .pg-cell.qsep-t { border-top: 2px solid var(--border-hi); }
+  #board .pg-cell.qsep-l { border-left: 2px solid var(--border-hi); }
+  #board .pg-cell.qsep-t { border-top: 2px solid var(--border-hi); }
   .pg-cell.last { box-shadow: inset 0 0 0 2px #f5c800; }
   .pg-marble { width: 74%; height: 74%; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
   .pg-marble.p1 { background: #b83227; }

@@ -46,7 +46,11 @@
     flex-wrap: wrap;
     margin: 20px 0;
   }
-  .rps-choice {
+  /* #choices-prefixed to beat the shared "body[class*='g-'] .panel
+     button" rule (specificity 0-2-1 vs a plain class at 0-1-0), which was
+     otherwise forcing a 10px radius instead of the intended 4px and a
+     40px min-height — same fix as dots-and-boxes's #board .db-edge. */
+  #choices .rps-choice {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -60,8 +64,9 @@
     color: var(--fg);
     cursor: pointer;
     min-width: 88px;
+    min-height: 0;
   }
-  .rps-choice:hover { background: var(--panel); border-color: var(--accent); }
+  #choices .rps-choice:hover { background: var(--panel); border-color: var(--accent); }
   .rps-emoji { font-size: 2.4rem; line-height: 1; }
   #last-round { color: var(--muted); font-size: var(--fs-sm); text-align: center; margin: 4px 0; }
 
