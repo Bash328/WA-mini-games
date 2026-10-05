@@ -250,10 +250,30 @@
       if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
     }
 
+    // Sharing caption+link as one wa.me text string always makes WhatsApp
+    // show the raw link a second time under the preview card. The native
+    // share sheet hands WhatsApp the link and caption as separate fields,
+    // which keeps the message to just the caption and the clean card — so
+    // prefer it on touch devices, where it reliably lists WhatsApp as a
+    // target; fall back to the direct wa.me link elsewhere.
+    function canNativeShare() {
+      return typeof navigator.share === "function" &&
+        global.matchMedia && global.matchMedia("(pointer: coarse)").matches;
+    }
+
     function sendButton(enc, finished) {
-      const msg = (finished ? "Game over in " : "Your move in ") + opts.title + "! " + linkFor(enc);
-      const a = el("a", "btn wa-send", finished ? "Send result on WhatsApp" : "Send on WhatsApp");
-      a.href = "https://wa.me/?text=" + encodeURIComponent(msg);
+      const caption = (finished ? "Game over in " : "Your turn in ") + opts.title + "!";
+      const url = linkFor(enc);
+      const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
+
+      if (canNativeShare()) {
+        return button(label, "wa-send", () => {
+          navigator.share({ title: opts.title, text: caption, url: url }).catch(() => {});
+        });
+      }
+
+      const a = el("a", "btn wa-send", label);
+      a.href = "https://wa.me/?text=" + encodeURIComponent(caption + " " + url);
       a.target = "_blank";
       a.rel = "noopener";
       return a;
