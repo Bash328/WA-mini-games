@@ -253,28 +253,11 @@
     // A wa.me text link always shows the raw link a second time under the
     // preview card, because the whole message is one text string. Sharing
     // *only* the url via navigator.share — same as tapping Spotify's own
-    // Share button, with no caption baked in by the app — is meant to
-    // avoid that. Two earlier gates on this (checking a coarse pointer via
-    // matchMedia, and before that passing a caption alongside the url)
-    // both failed on-device: the share sheet never appeared at all, which
-    // means the matchMedia check itself was returning false and silently
-    // falling through to the wa.me link. navigator.maxTouchPoints is a
-    // plain hardware check with no media-query matching involved, so it's
-    // less likely to have the same failure mode — still needs on-device
-    // confirmation that the share sheet now actually appears, and that
-    // picking WhatsApp from it avoids the duplicate-link text.
+    // Share button, with no caption baked in by the app — avoids that:
+    // confirmed on-device, the share sheet appears and WhatsApp shows just
+    // the clean preview card.
     function canNativeShare() {
       return typeof navigator.share === "function";
-    }
-
-    // Temporary on-screen diagnostic: three failed attempts at this (text+url
-    // split, a matchMedia pointer check, a maxTouchPoints check) all landed on
-    // the wa.me fallback on-device for reasons that weren't reproducible from
-    // here, so this prints what the browser itself reports instead of
-    // guessing again. Remove once the native-share path is confirmed working.
-    function shareDiagnostic() {
-      return "share: " + typeof navigator.share + " · touchPoints: " + navigator.maxTouchPoints +
-        " · secure: " + global.isSecureContext;
     }
 
     function waLink(caption, url) {
@@ -367,7 +350,6 @@
         setStatus("Waiting for " + label(s.turn));
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
         actions(sendButton(v.enc, false), copyButton(v.enc));
-        note(shareDiagnostic());
         actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
           view = { kind: "received", state: s, enc: v.enc, viewer: s.turn };
           paint();
@@ -383,7 +365,6 @@
       if (v.kind === "sent") {
         note("Send the final board so your opponent sees how it ended.");
         actions(sendButton(v.enc, true), copyButton(v.enc));
-        note(shareDiagnostic());
       }
       actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
     }
