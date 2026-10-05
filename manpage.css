@@ -152,6 +152,14 @@
   align-items: center;
   gap: 6px;
   font-family: inherit;
+  /* Pins this to the row's right edge whether it stays inline with the
+     status text or wraps to its own line below (some games also have a
+     status "legend" item, e.g. connect-four's Red/Yellow dots, which eats
+     enough row width to force a wrap that games without one never hit —
+     margin-left:auto keeps the result in the same spot either way,
+     instead of a wrapped line falling back to the left edge). */
+  margin-left: auto;
+  flex-shrink: 0;
 }
 .man-trigger .q { color: var(--accent); font-weight: 500; }
 
