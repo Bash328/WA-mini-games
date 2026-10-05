@@ -52,7 +52,12 @@
     border-radius: 20px;
     padding: 8px;
   }
-  .mk-cell {
+  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button"
+     rule (specificity 0-2-1 vs a plain class at 0-1-0 / 0-2-0), which was
+     otherwise painting over the tan-wood pit color and forcing square
+     40px-min-height buttons instead of round pits — same fix as
+     dots-and-boxes's #board .db-edge. */
+  #board .mk-cell {
     border: 1px solid rgba(0,0,0,0.25);
     border-radius: 50%;
     background: #d9c39a;
@@ -64,9 +69,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 0;
   }
   .mk-cell:disabled { cursor: default; opacity: 0.9; }
-  .mk-cell.p1, .mk-cell.p2 { border-radius: 14px; }
+  #board .mk-cell.p1, #board .mk-cell.p2 { border-radius: 14px; }
   .mk-cell.last { box-shadow: 0 0 0 3px #f5c800; }
   .mk-cell:not(:disabled):hover { filter: brightness(1.08); }
 

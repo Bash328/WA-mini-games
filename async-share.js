@@ -159,6 +159,21 @@
     const label = opts.label || String;
     let view = null;   // { kind, state, enc, viewer, latest }
 
+    // Resign gets its own row below the board, just above whatever "New
+    // game" controls the page already has — keeps it out of the busier
+    // wa-ui panel above the board. Every WhatsApp game has either
+    // .toolbar (undo/new-game) or .controls (new-game/mode select), so
+    // this needs no per-game markup.
+    const resignRow = document.createElement("div");
+    resignRow.className = "wa-actions wa-resign-row";
+    resignRow.hidden = true;
+    const bottomBar = document.querySelector(".toolbar, .controls");
+    if (bottomBar && bottomBar.parentNode) {
+      bottomBar.parentNode.insertBefore(resignRow, bottomBar);
+    } else {
+      ui.parentNode.insertBefore(resignRow, ui.nextSibling);
+    }
+
     function other(p) { return p === opts.players[0] ? opts.players[1] : opts.players[0]; }
 
     function classify(raw) {
@@ -348,6 +363,8 @@
       opts.onState(s, canMove());
       ui.hidden = false;
       ui.replaceChildren();
+      resignRow.hidden = true;
+      resignRow.replaceChildren();
 
       if (v.kind === "invalid") {
         setStatus("Invalid link");
@@ -379,7 +396,8 @@
         if (v.kind === "received" || s.turn === v.viewer) {
           setStatus("Your move", "you're " + label(v.viewer));
           note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
-          actions(button("Admit defeat (coward)", "ghost wa-small", resign));
+          resignRow.hidden = false;
+          resignRow.appendChild(button("Admit defeat (coward)", "ghost wa-small", resign));
           return;
         }
         setStatus("Waiting for " + label(s.turn));
@@ -412,6 +430,8 @@
       hide() {
         ui.hidden = true;
         ui.replaceChildren();
+        resignRow.hidden = true;
+        resignRow.replaceChildren();
       },
       canMove: canMove,
       commit: commit,

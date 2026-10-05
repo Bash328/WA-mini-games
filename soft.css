@@ -530,6 +530,12 @@ body.g-connect-four .panel .c4-col-btn {
   border: 1px dashed var(--border);
   color: var(--muted);
   border-radius: 10px;
+  /* This block already beats the generic ".panel button" rule's
+     background/border/border-radius (specificity 0-3-0 vs 0-2-1), but
+     doesn't declare min-height, so that one property still fell through
+     to the generic rule's 40px instead of the inline style's intended
+     var(--tap)=44px — a 4px tap-target shrink. */
+  min-height: var(--tap);
 }
 body.g-connect-four .panel .c4-col-btn:hover:not(:disabled) {
   background: rgba(245,184,0,0.08);

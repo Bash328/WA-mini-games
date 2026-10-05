@@ -70,7 +70,12 @@
     width: min(420px, 100%);
     margin: 10px auto;
   }
-  .hm-key {
+  /* #keyboard-prefixed to beat the shared "body[class*='g-'] .panel
+     button" rule (specificity 0-2-1 vs a plain class at 0-1-0 / 0-2-0),
+     which was otherwise forcing a 10px radius instead of the intended
+     3px and painting over the hit/miss highlight colors — same fix as
+     dots-and-boxes's #board .db-edge. */
+  #keyboard .hm-key {
     background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
@@ -82,8 +87,8 @@
     min-height: var(--tap);
   }
   .hm-key:disabled { cursor: default; }
-  .hm-key.hit { background: rgba(60,180,100,0.3); border-color: rgba(60,180,100,0.6); }
-  .hm-key.miss { background: rgba(200,60,60,0.25); border-color: rgba(200,60,60,0.55); opacity: 0.7; }
+  #keyboard .hm-key.hit { background: rgba(60,180,100,0.3); border-color: rgba(60,180,100,0.6); }
+  #keyboard .hm-key.miss { background: rgba(200,60,60,0.25); border-color: rgba(200,60,60,0.55); opacity: 0.7; }
 
   select {
     background: var(--panel-2);

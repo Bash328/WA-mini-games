@@ -52,7 +52,12 @@
     border-radius: var(--r-md);
     padding: 6px;
   }
-  .rv-cell {
+  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button"
+     rule (specificity 0-2-1 vs a plain class at 0-1-0), which was
+     otherwise painting the felt-green background and border over with
+     the generic button look and forcing a 10px radius + 40px min-height
+     — same fix as dots-and-boxes's #board .db-edge. */
+  #board .rv-cell {
     background: #2c8a4f;
     border: 1px solid rgba(0,0,0,0.15);
     border-radius: 3px;
@@ -62,6 +67,7 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
+    min-height: 0;
   }
   .rv-cell:disabled { cursor: default; }
   .rv-cell.hint::after {
