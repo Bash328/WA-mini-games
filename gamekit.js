@@ -171,6 +171,27 @@
     };
   }
 
+  // Friendly trash talk for a loss screen, in any mode (solo vs AI, local
+  // 2-player, or WhatsApp). Picked at render time, not stored anywhere —
+  // nothing here rides along in a shared link, so two players can see
+  // different lines for the same result with no desync risk.
+  const LOSS_TAUNTS = [
+    "Tough loss. Really tough.",
+    "That's gonna leave a mark.",
+    "Skill issue.",
+    "Well, that happened.",
+    "Painful to watch, honestly.",
+    "Not your best game, champ.",
+    "L + ratio.",
+    "Your opponent is already bragging about this.",
+    "Maybe try a different game. Or a different hobby.",
+    "Better luck next time — you'll need it.",
+  ];
+  function taunt(rng) {
+    const pick = rng ? rng() : Math.random();
+    return LOSS_TAUNTS[Math.floor(pick * LOSS_TAUNTS.length)];
+  }
+
   global.Gamekit = {
     mulberry32,
     hashStr,
@@ -182,5 +203,6 @@
     fmtTime,
     wireDifficultyChips,
     onLongPress,
+    taunt,
   };
 })(window);

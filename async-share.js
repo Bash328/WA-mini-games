@@ -413,6 +413,7 @@
       const r = result(s, v.viewer);
       setStatus("Game over");
       banner(r.cls, r.text);
+      if (s.status === "won" && s.winner !== v.viewer) note(Gamekit.taunt());
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {
