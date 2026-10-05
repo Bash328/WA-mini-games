@@ -529,8 +529,9 @@ function aiTurn() {
 function checkEnd() {
   const moves = allLegal(state, state.turn);
   if (moves.length === 0) {
+    const humanLost = mode === 'ai' && state.turn === humanColor;
     const msg = inCheck(state, state.turn)
-      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.`
+      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (humanLost ? ' ' + Gamekit.taunt() : '')
       : 'Stalemate — draw.';
     document.getElementById('status').textContent = msg;
     thinking = true; // freeze interaction

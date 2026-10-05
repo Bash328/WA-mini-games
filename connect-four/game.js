@@ -249,7 +249,7 @@
       gameOver = true;
       const who = (mode === "local")
         ? (last.p === P1 ? "Amber" : "Mint") + " wins."
-        : (last.p === humanIs ? "You win." : "AI wins.");
+        : (last.p === humanIs ? "You win." : "AI wins. " + Gamekit.taunt());
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
     } else if (isFull(grid)) {
       gameOver = true;

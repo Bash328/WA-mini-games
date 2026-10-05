@@ -118,7 +118,7 @@
     cancelAI();
     if (w.player === "draw") setStatus("Draw.");
     else if (w.player === human) setStatus("You win! 🎉");
-    else setStatus("AI wins.");
+    else setStatus("AI wins. " + Gamekit.taunt());
   }
 
   function reset() {

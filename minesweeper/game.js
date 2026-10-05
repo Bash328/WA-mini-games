@@ -86,7 +86,7 @@ function updateHud() {
   }
   let flagged=0; for (let i=0;i<H*W;i++) if (flags[i]) flagged++;
   document.getElementById('mines').textContent = `${M - flagged} mines left`;
-  if (over) document.getElementById('status').textContent = won ? 'You won! 🎉' : 'Boom. 💥';
+  if (over) document.getElementById('status').textContent = won ? 'You won! 🎉' : 'Boom. 💥 ' + Gamekit.taunt();
 }
 
 // Largest tile that fits the panel, after the board's own padding, border and gaps.
