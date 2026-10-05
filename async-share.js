@@ -45,6 +45,14 @@
     "Your opponent will remember this.",
     "Sure you don't want to make them earn it?",
     "This is permanent. Unlike your dignity, which left a while ago.",
+    "Waving the white flag already?",
+    "They'll tell this story for years.",
+    "Giving up builds character. Allegedly.",
+    "One click from legendary status. Legendary cowardice.",
+    "This screenshot is going somewhere.",
+    "Running away never looked so... available.",
+    "Your opponent didn't even have to try.",
+    "Future you will have questions about this moment.",
   ];
   function resignConfirmText() {
     const flavor = RESIGN_CONFIRMS[Math.floor(Math.random() * RESIGN_CONFIRMS.length)];

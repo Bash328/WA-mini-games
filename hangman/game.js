@@ -169,12 +169,20 @@
     "One more miss and that's curtains.",
     "The rope's getting tighter. Figuratively. Mostly.",
     "Last letter standing between you and the noose.",
+    "The gallows are warming up.",
+    "One guess left. Make it count. You won't.",
+    "This is the letter that decides everything.",
+    "Dramatic pause intensifies.",
   ];
   const HANGMAN_LOSS = [
     "Hanged by your own indecision.",
     "The word remains undefeated.",
     "Better luck spelling next time.",
     "That word really had your number.",
+    "The dictionary wins again.",
+    "A moment of silence for your guesses.",
+    "Spelling was never your strong suit, huh.",
+    "The noose has spoken.",
   ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
 
