@@ -279,9 +279,9 @@
     }
 
     function sendButton(enc, finished, moveCount) {
-      const caption = finished ? "Game over in " + opts.title + "!"
-        : moveCount === 1 ? "Let's play " + opts.title + "!"
-        : "Your turn in " + opts.title + "!";
+      const caption = finished ? "Game over!"
+        : moveCount === 1 ? "Let's play!"
+        : "Your turn!";
       const url = linkFor(enc);
       const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
 
