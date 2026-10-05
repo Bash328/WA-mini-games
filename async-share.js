@@ -6,7 +6,7 @@
    WhatsApp; the opponent opens it, moves, and sends one back.
 
    State envelope (every game):
-     { game, version, id, turn, board, status, winner, moveCount, last }
+     { game, version, id, turn, board, status, winner, moveCount, last, resigned }
      id        random, only used by this device to spot old links
      turn      player who moves next (after the game ends: the player
                who did NOT make the final move). commit()'s move.nextTurn
@@ -16,6 +16,10 @@
      status    "in_progress" | "won" | "draw"
      winner    null unless status is "won"
      last      game-specific index of the last move, for highlighting
+     resigned  true when status "won" was reached by the loser hitting
+               "Admit defeat" rather than playing it out; absent (not
+               false) on every ordinary move, so it costs nothing in the
+               link until it's actually used
 
    Exposes `window.AsyncShare`. Needs gamekit.js and
    vendor/lz-string.min.js loaded first.
@@ -34,7 +38,7 @@
      full-key envelope described above; every caller (validate(), every
      game's board code) only ever sees that shape. */
 
-  const WIRE_KEY = { game: "g", version: "v", id: "i", turn: "t", board: "b", status: "s", winner: "w", moveCount: "n", last: "l" };
+  const WIRE_KEY = { game: "g", version: "v", id: "i", turn: "t", board: "b", status: "s", winner: "w", moveCount: "n", last: "l", resigned: "r" };
   const STATUS_CODE = { in_progress: "p", won: "w", draw: "d" };
   const STATUS_NAME = { p: "in_progress", w: "won", d: "draw" };
 
@@ -72,6 +76,7 @@
     if (opts.players.indexOf(s.turn) === -1) return false;
     if (!Number.isInteger(s.moveCount) || s.moveCount < 1) return false;
     if (s.status === "won" ? opts.players.indexOf(s.winner) === -1 : s.winner !== null) return false;
+    if (s.resigned !== undefined && (s.resigned !== true || s.status !== "won")) return false;
     try { return !!opts.validateBoard(s); } catch (e) { return false; }
   }
 
@@ -204,6 +209,7 @@
         winner: move.winner === undefined ? null : move.winner,
         moveCount: (prev ? prev.moveCount : 0) + 1,
         last: move.last === undefined ? null : move.last,
+        resigned: move.resigned === true ? true : undefined,
       });
       // Render from the decoded link so the sender sees exactly what the opponent will.
       const state = decode(enc);
@@ -211,6 +217,22 @@
       setParam(enc);
       view = { kind: "sent", state: state, enc: enc, viewer: mover };
       paint();
+    }
+
+    // Forfeits on the spot, board unchanged, from whoever's turn it
+    // currently is — commit() already requires that, so no separate check
+    // here. Starting a brand-new game (view.state null) has nothing to
+    // resign from, so the button for this is simply never shown then.
+    function resign() {
+      if (!view.state) return;
+      if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
+      commit({
+        board: view.state.board,
+        status: "won",
+        winner: other(view.viewer),
+        last: view.state.last,
+        resigned: true,
+      });
     }
 
     function go(enc) {
@@ -278,12 +300,13 @@
       return a;
     }
 
-    function sendButton(enc, finished, moveCount) {
-      const caption = finished ? "Game over!"
+    function sendButton(enc, finished, moveCount, resigned) {
+      const caption = resigned ? "I surrendered! 🏳️"
+        : finished ? "Game over!"
         : moveCount === 1 ? "Let's play!"
         : "Your turn!";
       const url = linkFor(enc);
-      const label = finished ? "Send result on WhatsApp" : "Send on WhatsApp";
+      const label = resigned ? "Share your shame" : finished ? "Send result on WhatsApp" : "Send on WhatsApp";
 
       if (canNativeShare()) {
         return button(label, "wa-send", () => {
@@ -315,9 +338,8 @@
 
     function result(s, viewer) {
       if (s.status === "draw") return { cls: "", text: "It's a draw." };
-      return s.winner === viewer
-        ? { cls: "win", text: "You won! 🎉" }
-        : { cls: "bad", text: "You lost." };
+      if (s.winner === viewer) return { cls: "win", text: s.resigned ? "They gave up — you won! 🎉" : "You won! 🎉" };
+      return { cls: "bad", text: s.resigned ? "You admitted defeat." : "You lost." };
     }
 
     function paint() {
@@ -357,6 +379,7 @@
         if (v.kind === "received" || s.turn === v.viewer) {
           setStatus("Your move", "you're " + label(v.viewer));
           note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
+          actions(button("Admit defeat (coward)", "ghost wa-small", resign));
           return;
         }
         setStatus("Waiting for " + label(s.turn));
@@ -375,8 +398,8 @@
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {
-        note("Send the final board so your opponent sees how it ended.");
-        actions(sendButton(v.enc, true), copyButton(v.enc));
+        note(s.resigned ? "Let them know you threw in the towel." : "Send the final board so your opponent sees how it ended.");
+        actions(sendButton(v.enc, true, undefined, s.resigned), copyButton(v.enc));
       }
       actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
     }
