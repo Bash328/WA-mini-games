@@ -166,18 +166,42 @@
   // ---------- 2 players, same device ----------
   let localBoard, localCurrent, localLast, localOver;
 
+  // "You've got this in the bag" / "spoke too soon" - see checkers for the
+  // same pattern. Store-seed difference (48 seeds total, so a 10-seed
+  // lead already means more than a fifth of all seeds) is mancala's own
+  // natural lead signal.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+  const LEAD_THRESHOLD = 10;
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || localOver) return;
+    const diff = localBoard[P1_STORE] - localBoard[P2_STORE];
+    if (Math.abs(diff) < LEAD_THRESHOLD) return;
+    confidenceGivenTo = diff > 0 ? P1 : P2;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+  }
+
   function resetLocal() {
     localBoard = initialBoard(); localCurrent = P1; localLast = null; localOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
   }
 
   function renderLocal() {
     renderBoard(localBoard, localCurrent, !localOver, playLocal, localLast);
     if (localOver) {
-      statusEl.textContent = localBoard[P1_STORE] === localBoard[P2_STORE] ? "Draw."
-        : `${NAMES[localBoard[P1_STORE] > localBoard[P2_STORE] ? P1 : P2]} wins.`;
+      if (localBoard[P1_STORE] === localBoard[P2_STORE]) {
+        statusEl.textContent = "Draw.";
+      } else {
+        const winnerColor = localBoard[P1_STORE] > localBoard[P2_STORE] ? P1 : P2;
+        const loserColor = other(winnerColor);
+        const reversed = confidenceGivenTo === loserColor;
+        statusEl.textContent = `${NAMES[winnerColor]} wins. ${NAMES[loserColor]} — ${Gamekit.taunt(reversed ? "reversal" : "loss")}`;
+      }
     } else {
-      statusEl.textContent = `${NAMES[localCurrent]}'s move.`;
+      const note = confidenceNote; confidenceNote = "";
+      statusEl.textContent = `${NAMES[localCurrent]}'s move.` + (note ? " " + note : "");
     }
   }
 
@@ -189,6 +213,7 @@
     if (end) { localBoard = end.board; localOver = true; renderLocal(); return; }
     localBoard = board;
     if (!extraTurn) localCurrent = other(localCurrent);
+    checkConfidence();
     renderLocal();
   }
 
