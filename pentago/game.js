@@ -196,7 +196,8 @@
     const { status, winner } = outcomeFor(localBoard);
     if (status !== "in_progress") {
       localOver = true;
-      statusEl.textContent = status === "draw" ? "Draw." : `${NAMES[winner]} wins.`;
+      statusEl.textContent = status === "draw" ? "Draw."
+        : `${NAMES[winner]} wins. ${NAMES[other(winner)]} — ${Gamekit.taunt("loss")}`;
       renderLocal();
       return;
     }

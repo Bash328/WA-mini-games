@@ -31,6 +31,12 @@
   let gameOver = false;
   let winLine = null;         // [{r,c},...]
   let thinking = false;
+  // "You've got this in the bag" / "spoke too soon" - see checkers for the
+  // same pattern. Here the lead signal is evaluate()'s own score (a 3-in-
+  // a-row open threat scores ±50/-80) rather than material count.
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+  const CONFIDENCE_THRESHOLD = 40;
   let humanIs = P1;           // set per mode
   let lastSlot = null;        // highlighted checker in WhatsApp mode
   let linkCanMove = false;    // WhatsApp mode: is it this viewer's move?
@@ -174,6 +180,17 @@
     return score;
   }
 
+  function checkConfidence() {
+    if (confidenceGivenTo !== null || gameOver) return;
+    const score = evaluate(grid, P1);
+    if (Math.abs(score) < CONFIDENCE_THRESHOLD) return;
+    const leader = score > 0 ? P1 : P2;
+    if (mode !== "local" && leader !== humanIs) return; // don't taunt the AI's own lead
+    confidenceGivenTo = leader;
+    const who = mode === "local" ? (leader === P1 ? "Amber" : "Mint") + " — " : "";
+    confidenceNote = who + Gamekit.taunt("confidence");
+  }
+
   const COL_ORDER = [3, 2, 4, 1, 5, 0, 6];
 
   function alphabeta(g, depth, alpha, beta, maximizing, me) {
@@ -247,15 +264,18 @@
     if (win) {
       winLine = win;
       gameOver = true;
+      const loser = last.p === P1 ? P2 : P1;
+      const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
-        ? (last.p === P1 ? "Amber" : "Mint") + " wins."
-        : (last.p === humanIs ? "You win." : "AI wins.");
+        ? (last.p === P1 ? "Amber" : "Mint") + " wins. " + (loser === P1 ? "Amber" : "Mint") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
+        : (last.p === humanIs ? "You win." : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
     } else if (isFull(grid)) {
       gameOver = true;
       statusEl.textContent = "Draw.";
     } else {
       current = current === P1 ? P2 : P1;
+      checkConfidence();
       updateTurnStatus();
     }
     renderBoard();
@@ -264,10 +284,11 @@
 
   function updateTurnStatus() {
     if (gameOver) return;
+    const note = confidenceNote; confidenceNote = "";
     if (mode === "local") {
-      statusEl.textContent = (current === P1 ? "Amber" : "Mint") + " to move.";
+      statusEl.textContent = (current === P1 ? "Amber" : "Mint") + " to move." + (note ? " " + note : "");
     } else if (current === humanIs) {
-      statusEl.textContent = "Your turn · drop a checker.";
+      statusEl.textContent = "Your turn · drop a checker." + (note ? " " + note : "");
     } else {
       statusEl.textContent = "AI thinking…";
     }
@@ -317,6 +338,7 @@
     current = P1;
     gameOver = false;
     winLine = null;
+    confidenceGivenTo = null; confidenceNote = "";
     renderShell();
     renderBoard();
     updateTurnStatus();

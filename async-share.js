@@ -31,6 +31,34 @@
   const STATUSES = ["in_progress", "won", "draw"];
   const MAX_REMEMBERED = 40;
 
+  // The confirm() dialog is the only safeguard before this irreversible
+  // action, so every variant keeps the factual warning (opponent wins,
+  // no undo) and only varies the line added after it — picked fresh each
+  // tap, same spirit as Gamekit's taunts but specific to the resign
+  // moment itself, so it lives here rather than in the shared pool.
+  const RESIGN_CONFIRMS = [
+    "Try harder. You've got this... probably not, but try.",
+    "Hint: you still have a chance here. Don't run.",
+    "Just run. You stand no chance anyway.",
+    "I understand your choice, coward!!",
+    "Bold of you to give up this early.",
+    "Your opponent will remember this.",
+    "Sure you don't want to make them earn it?",
+    "This is permanent. Unlike your dignity, which left a while ago.",
+    "Waving the white flag already?",
+    "They'll tell this story for years.",
+    "Giving up builds character. Allegedly.",
+    "One click from legendary status. Legendary cowardice.",
+    "This screenshot is going somewhere.",
+    "Running away never looked so... available.",
+    "Your opponent didn't even have to try.",
+    "Future you will have questions about this moment.",
+  ];
+  function resignConfirmText() {
+    const flavor = RESIGN_CONFIRMS[Math.floor(Math.random() * RESIGN_CONFIRMS.length)];
+    return "Admit defeat? Your opponent wins immediately — there's no undo. " + flavor;
+  }
+
   /* ---------- Encoding ----------
      Every byte in the URL costs WhatsApp preview real estate, so the
      envelope is shrunk to single-letter keys and status codes on the wire
@@ -240,7 +268,7 @@
     // resign from, so the button for this is simply never shown then.
     function resign() {
       if (!view.state) return;
-      if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
+      if (!global.confirm(resignConfirmText())) return;
       commit({
         board: view.state.board,
         status: "won",
@@ -413,6 +441,7 @@
       const r = result(s, v.viewer);
       setStatus("Game over");
       banner(r.cls, r.text);
+      if (s.status === "won" && s.winner !== v.viewer) note(Gamekit.taunt());
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {
