@@ -118,6 +118,70 @@
     return { board: next, chainContinues, promoted };
   }
 
+  // ---------- AI (minimax/negamax, alpha-beta) ----------
+  // A search "ply" is one full turn, not one jump - a mandatory capture
+  // chain is several step()s but a single decision, same as a human
+  // player experiences it. allTurns() walks every forced-chain branch to
+  // each chain's end (reusing step()/targetsFor(), not reimplementing the
+  // rules) and returns one entry per resulting board.
+  function allTurns(board, color) {
+    const results = [];
+    for (const from of selectableFor(board, color, null)) {
+      for (const t of targetsFor(board, from, false)) extend(board, from, t, []);
+    }
+    function extend(b, from, move, path) {
+      const { board: nb, chainContinues } = step(b, from, move);
+      const newPath = path.concat([{ from, move }]);
+      if (chainContinues) {
+        for (const t2 of targetsFor(nb, move.to, true)) extend(nb, move.to, t2, newPath);
+      } else {
+        results.push({ board: nb, path: newPath });
+      }
+    }
+    return results;
+  }
+
+  // Symmetric: evaluate(b, P1) === -evaluate(b, P2), required for negamax.
+  function evaluate(board, color) {
+    let score = 0;
+    for (let i = 0; i < N * N; i++) {
+      const v = board[i];
+      if (!v) continue;
+      score += (colorOf(v) === color ? 1 : -1) * (isKingV(v) ? 5 : 3);
+    }
+    return score;
+  }
+
+  function negamax(board, color, depth, alpha, beta) {
+    const turns = allTurns(board, color);
+    // No legal move on your turn loses immediately in checkers - make
+    // that terminal state strongly bad, same sign convention as a win.
+    if (turns.length === 0) return -100000 - depth;
+    if (depth === 0) return evaluate(board, color);
+    let best = -Infinity;
+    for (const t of turns) {
+      const val = -negamax(t.board, other(color), depth - 1, -beta, -alpha);
+      if (val > best) best = val;
+      if (val > alpha) alpha = val;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+
+  const AI_DEPTHS = { easy: 2, medium: 4, hard: 6 };
+
+  function pickAITurn(board, color, depth) {
+    const turns = allTurns(board, color);
+    if (turns.length === 0) return null;
+    let bestTurn = turns[0], bestVal = -Infinity, alpha = -Infinity, beta = Infinity;
+    for (const t of turns) {
+      const val = -negamax(t.board, other(color), depth - 1, -beta, -alpha);
+      if (val > bestVal) { bestVal = val; bestTurn = t; }
+      if (val > alpha) alpha = val;
+    }
+    return bestTurn;
+  }
+
   function renderBoard(board, selectable, selected, targets, canClick, onClick, lastIdx) {
     boardEl.innerHTML = "";
     const targetSet = new Map(targets.map(m => [m.to, m]));
@@ -215,25 +279,54 @@
     link.commit({ board: waBoard.join(""), status, winner, last: waLast });
   }
 
-  // ---------- 2 players, same device ----------
+  // ---------- 2 players same device, or 1 vs AI ----------
+  // Shared state for both sub-modes; aiColor is null for local pass-and-play,
+  // or the color the AI plays (always P2 - the human is always P1) when
+  // modeSel is "ai".
   let localBoard, localCurrent, localSelected, localChain, localLast, localOver;
+  let aiColor = null;
+  let aiThinking = false;
+  let aiTimer = null;
+  const chipsEl = document.getElementById("chips");
+  const aiStore = Gamekit.storage("checkers:");
+  let aiDiff = aiStore.get("diff", "medium");
+  if (!AI_DEPTHS[aiDiff]) aiDiff = "medium";
+
+  function cancelAI() {
+    if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; }
+    aiThinking = false;
+  }
 
   function resetLocal() {
+    cancelAI();
     localBoard = initialBoard();
     localCurrent = P1;
     localSelected = null; localChain = null; localLast = null; localOver = false;
     renderLocal();
+    maybeAITurn();
   }
 
   function renderLocal() {
-    const selectable = localOver ? [] : selectableFor(localBoard, localCurrent, localChain);
-    const targets = (!localOver && localSelected !== null) ? targetsFor(localBoard, localSelected, localChain !== null) : [];
-    renderBoard(localBoard, selectable, localSelected, targets, !localOver, onClickLocal, localLast);
-    statusEl.textContent = localOver ? `${NAMES[other(localCurrent)]} wins.` : `${NAMES[localCurrent]}'s move.`;
+    const humanTurn = !localOver && !aiThinking && !(aiColor !== null && localCurrent === aiColor);
+    const selectable = humanTurn ? selectableFor(localBoard, localCurrent, localChain) : [];
+    const targets = (humanTurn && localSelected !== null) ? targetsFor(localBoard, localSelected, localChain !== null) : [];
+    renderBoard(localBoard, selectable, localSelected, targets, humanTurn, onClickLocal, localLast);
+    if (localOver) {
+      const winnerColor = other(localCurrent);
+      statusEl.textContent = aiColor === null
+        ? `${NAMES[winnerColor]} wins.`
+        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt() : "You win! 🎉");
+    } else if (aiThinking) {
+      statusEl.textContent = "AI thinking…";
+    } else if (aiColor !== null) {
+      statusEl.textContent = localCurrent === aiColor ? "AI thinking…" : "Your move.";
+    } else {
+      statusEl.textContent = `${NAMES[localCurrent]}'s move.`;
+    }
   }
 
   function onClickLocal(i) {
-    if (localOver) return;
+    if (localOver || aiThinking || (aiColor !== null && localCurrent === aiColor)) return;
     if (localSelected !== null) {
       const t = targetsFor(localBoard, localSelected, localChain !== null).find(m => m.to === i);
       if (t) { applyStepLocal(localSelected, t); return; }
@@ -254,13 +347,50 @@
     if (!hasAnyMove(localBoard, opp)) { localOver = true; renderLocal(); return; }
     localCurrent = opp;
     renderLocal();
+    maybeAITurn();
   }
 
+  // Runs the AI's full turn (which may itself be a multi-jump chain) as
+  // one atomic step, same granularity a human move gets - there is no
+  // intermediate "AI is mid-jump" state to render.
+  function maybeAITurn() {
+    if (aiColor === null || localOver || localCurrent !== aiColor) return;
+    aiThinking = true;
+    renderLocal();
+    const gen = aiTimer = setTimeout(() => {
+      if (aiTimer !== gen) return;
+      aiTimer = null;
+      if (localOver || localCurrent !== aiColor) { aiThinking = false; renderLocal(); return; }
+      const turn = pickAITurn(localBoard, aiColor, AI_DEPTHS[aiDiff] || 4);
+      aiThinking = false;
+      if (!turn) { localOver = true; renderLocal(); return; } // maybeAITurn only runs when hasAnyMove was true
+      localBoard = turn.board;
+      localLast = turn.path[turn.path.length - 1].move.to;
+      const opp = other(aiColor);
+      if (!hasAnyMove(localBoard, opp)) { localOver = true; renderLocal(); return; }
+      localCurrent = opp;
+      renderLocal();
+    }, 300);
+  }
+
+  Gamekit.wireDifficultyChips({
+    el: chipsEl,
+    difficulties: Object.keys(AI_DEPTHS),
+    storage: aiStore,
+    storageKey: "diff",
+    initial: aiDiff,
+    onChange: (d) => { aiDiff = d; resetLocal(); },
+  });
+
   function applyMode() {
-    const wa = modeSel.value === "whatsapp";
+    const val = modeSel.value;
+    const wa = val === "whatsapp";
     resetBtn.hidden = wa;
+    chipsEl.hidden = val !== "ai";
+    cancelAI();
     if (wa) { link.show(); return; }
     link.hide();
+    aiColor = val === "ai" ? P2 : null;
     resetLocal();
   }
 
@@ -269,5 +399,5 @@
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("checkers"));
 
-  window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2 };
+  window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2, allTurns, pickAITurn, AI_DEPTHS };
 })();
