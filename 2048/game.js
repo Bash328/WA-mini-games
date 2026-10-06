@@ -2,14 +2,46 @@ const N = 4;
 const store = Gamekit.storage('2048:');
 let grid, score, over, mergedCells;
 
+// four = chance a new tile is a 4 instead of a 2. evil = chance the new tile
+// goes in the cell that does the player the most harm instead of a random one.
+// "normal" is the original game.
+const DIFFS = {
+  normal: { four: 0.1, evil: 0 },
+  hard:   { four: 0.2, evil: 0.35 },
+  brutal: { four: 0.3, evil: 0.85 },
+};
+let diff = store.get('diff', 'hard');
+if (!DIFFS[diff]) diff = 'hard';
+const bestKey = () => diff === 'normal' ? 'best' : 'best:' + diff;
+
 function empty() { return Array.from({length: N}, () => Array(N).fill(0)); }
 
 function addTile() {
   const spots = [];
   for (let r=0;r<N;r++) for (let c=0;c<N;c++) if (!grid[r][c]) spots.push([r,c]);
   if (!spots.length) return;
-  const [r,c] = spots[Math.floor(Math.random()*spots.length)];
-  grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+  const d = DIFFS[diff];
+  const v = Math.random() < d.four ? 4 : 2;
+  const [r,c] = Math.random() < d.evil ? worstSpot(spots, v) : spots[Math.floor(Math.random()*spots.length)];
+  grid[r][c] = v;
+}
+
+// The empty cell where a new tile v hurts most: wedged between very different
+// neighbours (blocks merges) and never beside a matching tile (which would
+// hand over a free merge). A little noise breaks ties so it isn't scripted.
+function worstSpot(spots, v) {
+  let best = spots[0], bestScore = -Infinity;
+  for (const [r,c] of spots) {
+    let score = Math.random() * 0.5;
+    for (const [dr,dc] of [[0,1],[1,0],[0,-1],[-1,0]]) {
+      const nr = r+dr, nc = c+dc;
+      if (nr<0 || nr>=N || nc<0 || nc>=N || !grid[nr][nc]) continue;
+      score += Math.abs(Math.log2(grid[nr][nc]) - Math.log2(v));
+      if (grid[nr][nc] === v) score -= 10;
+    }
+    if (score > bestScore) { bestScore = score; best = [r,c]; }
+  }
+  return best;
 }
 
 function render() {
@@ -25,7 +57,7 @@ function render() {
   }
   mergedCells = null;
   document.getElementById('score').textContent = score;
-  document.getElementById('best').textContent = store.getInt('best', 0);
+  document.getElementById('best').textContent = store.getInt(bestKey(), 0);
 }
 
 function slideRow(row) {
@@ -67,8 +99,8 @@ function move(dir) {
   if (!moved) { mergedCells = null; return; }
   grid = working;
   score += gained;
-  const best = store.getInt('best', 0);
-  if (score > best) store.set('best', score);
+  const best = store.getInt(bestKey(), 0);
+  if (score > best) store.set(bestKey(), score);
   addTile();
   render();
   if (!canMove()) { over = true; document.getElementById('over-msg').textContent = '· Game over.'; }
@@ -112,4 +144,12 @@ document.getElementById('board').addEventListener('touchend', e=>{
 });
 
 document.getElementById('reset').addEventListener('click', reset);
+Gamekit.wireDifficultyChips({
+  el: document.getElementById('chips'),
+  difficulties: Object.keys(DIFFS),
+  initial: diff,
+  storage: store,
+  storageKey: 'diff',
+  onChange: (d) => { diff = d; reset(); },
+});
 reset();
