@@ -400,6 +400,9 @@
       resignRow.hidden = true;
       resignRow.replaceChildren();
 
+      const slotOf = (p) => opts.players.indexOf(p) + 1;
+      Gamekit.turn(null);
+
       if (v.kind === "invalid") {
         setStatus("Invalid link");
         banner("bad", "This link looks invalid or from an older version of the game — start a new game?");
@@ -420,6 +423,7 @@
 
       if (v.kind === "new") {
         setStatus("Your move", "you're " + label(v.viewer));
+        Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
         note("Make the first move, then send the link to a friend on WhatsApp.");
         return;
       }
@@ -429,12 +433,14 @@
         // granted the same player another turn — see canMove() above.
         if (v.kind === "received" || s.turn === v.viewer) {
           setStatus("Your move", "you're " + label(v.viewer));
+          Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
           note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
           resignRow.hidden = false;
           resignRow.appendChild(button("Admit defeat (coward)", "ghost wa-small", resign));
           return;
         }
         setStatus("Waiting for " + label(s.turn));
+        Gamekit.turn(slotOf(s.turn), "Waiting for " + label(s.turn), true);
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
         actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc, false, s.moveCount));
         actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
@@ -463,6 +469,7 @@
         paint();
       },
       hide() {
+        Gamekit.turn(null);
         ui.hidden = true;
         ui.replaceChildren();
         resignRow.hidden = true;

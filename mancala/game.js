@@ -190,6 +190,7 @@
 
   function renderLocal() {
     renderBoard(localBoard, localCurrent, !localOver, playLocal, localLast);
+    Gamekit.turn(localOver ? null : localCurrent, `${NAMES[localCurrent]}'s move`);
     if (localOver) {
       if (localBoard[P1_STORE] === localBoard[P2_STORE]) {
         statusEl.textContent = "Draw.";

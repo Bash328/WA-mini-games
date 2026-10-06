@@ -187,7 +187,7 @@
     const leader = score > 0 ? P1 : P2;
     if (mode !== "local" && leader !== humanIs) return; // don't taunt the AI's own lead
     confidenceGivenTo = leader;
-    const who = mode === "local" ? (leader === P1 ? "Amber" : "Mint") + " — " : "";
+    const who = mode === "local" ? (leader === P1 ? "Red" : "Yellow") + " — " : "";
     confidenceNote = who + Gamekit.taunt("confidence");
   }
 
@@ -267,12 +267,14 @@
       const loser = last.p === P1 ? P2 : P1;
       const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
-        ? (last.p === P1 ? "Amber" : "Mint") + " wins. " + (loser === P1 ? "Amber" : "Mint") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
+        ? (last.p === P1 ? "Red" : "Yellow") + " wins. " + (loser === P1 ? "Red" : "Yellow") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
         : (last.p === humanIs ? "You win." : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
+      Gamekit.turn(null);
     } else if (isFull(grid)) {
       gameOver = true;
       statusEl.textContent = "Draw.";
+      Gamekit.turn(null);
     } else {
       current = current === P1 ? P2 : P1;
       checkConfidence();
@@ -286,11 +288,14 @@
     if (gameOver) return;
     const note = confidenceNote; confidenceNote = "";
     if (mode === "local") {
-      statusEl.textContent = (current === P1 ? "Amber" : "Mint") + " to move." + (note ? " " + note : "");
+      statusEl.textContent = (current === P1 ? "Red" : "Yellow") + " to move." + (note ? " " + note : "");
+      Gamekit.turn(current, (current === P1 ? "Red" : "Yellow") + " to move");
     } else if (current === humanIs) {
       statusEl.textContent = "Your turn · drop a checker." + (note ? " " + note : "");
+      Gamekit.turn(current, "Your turn · you're " + (current === P1 ? "Red" : "Yellow"));
     } else {
       statusEl.textContent = "AI thinking…";
+      Gamekit.turn(current, "AI thinking…", true);
     }
   }
 

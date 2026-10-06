@@ -59,15 +59,24 @@
      it, since vertical ones size via height:100% instead) and painting
      over the drawn/last background colors regardless of state. */
   #board .db-edge { border: 0; padding: 0; cursor: pointer; background: transparent; border-radius: 3px; min-height: 0; min-width: 0; }
-  #board .db-h { width: 100%; height: 6px; background: var(--border); }
-  #board .db-v { width: 6px; height: 100%; background: var(--border); }
+  #board .db-h { width: 100%; height: 6px; background: var(--border-hi); }
+  #board .db-v { width: 6px; height: 100%; background: var(--border-hi); }
   #board .db-edge:disabled { cursor: default; }
   #board .db-edge:not(.drawn):not(:disabled):hover { background: var(--border-hi); }
-  #board .db-edge.drawn { background: var(--fg); }
-  #board .db-edge.last { background: #f5c800; }
+  /* Drawn edges are disabled buttons, which the shared CSS fades; keep them solid. */
+  #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: var(--fg); opacity: 1; }
+  #board .db-edge.last, #board .db-edge.last:disabled { background: #f5c800; opacity: 1; }
   .db-boxcell { border-radius: 2px; }
-  .db-boxcell.owned.p1 { background: rgba(184,50,39,0.35); }
-  .db-boxcell.owned.p2 { background: rgba(60,130,220,0.35); }
+  /* Claimed boxes use the shared bright player colours (--p1 / --p2) and
+     carry the player's number, so ownership never relies on colour alone. */
+  .db-boxcell.owned { font-weight: 700; font-size: clamp(0.9rem, 4.5vw, 1.4rem); color: #1a1715; }
+  .db-boxcell.owned.p1 { background: var(--p1); }
+  .db-boxcell.owned.p2 { background: var(--p2); }
+  .db-boxcell.owned.p1::after { content: "1"; }
+  .db-boxcell.owned.p2::after { content: "2"; }
+  #score .sc { font-weight: 700; }
+  #score .sc.p1 { color: var(--p1); }
+  #score .sc.p2 { color: var(--p2); }
 
   select {
     background: var(--panel-2);

@@ -96,6 +96,9 @@
   }
 
   function setStatus(msg) { statusEl.textContent = msg; }
+  const slotOf = (p) => p === "X" ? 1 : 2;
+  function humanBadge() { Gamekit.turn(slotOf(human), "Your turn · you're " + human); }
+  function aiBadge() { Gamekit.turn(slotOf(ai), "AI thinking…", true); }
 
   function cancelAI() {
     if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; }
@@ -110,6 +113,7 @@
     turn = ai;
     render(null);
     setStatus("AI thinking…");
+    aiBadge();
     cancelAI();
     aiTimer = setTimeout(aiMove, 200);
   }
@@ -126,11 +130,13 @@
     render(null);
     const forked = countThreats(board, ai) >= 2;
     setStatus("Your turn (" + human + ")." + (forked ? " " + Gamekit.taunt("lastChance") : ""));
+    humanBadge();
   }
 
   function end(w) {
     gameOver = true;
     cancelAI();
+    Gamekit.turn(null);
     if (w.player === "draw") setStatus("Draw.");
     else if (w.player === human) setStatus("You win! 🎉");
     else setStatus("AI wins. " + Gamekit.taunt());
@@ -144,10 +150,12 @@
     if (human === "O") {
       render(null);
       setStatus("AI thinking…");
+    aiBadge();
       aiTimer = setTimeout(aiMove, 200);
     } else {
       render(null);
       setStatus("Your turn (" + human + ").");
+      humanBadge();
     }
   }
 

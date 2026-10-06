@@ -335,6 +335,7 @@
     const targets = (humanTurn && localSelected !== null) ? targetsFor(localBoard, localSelected, localChain !== null) : [];
     renderBoard(localBoard, selectable, localSelected, targets, humanTurn, onClickLocal, localLast);
     if (localOver) {
+      Gamekit.turn(null);
       const winnerColor = other(localCurrent);
       const loserColor = localCurrent;
       const reversed = confidenceGivenTo === loserColor;
@@ -343,10 +344,13 @@
         : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉");
     } else if (aiThinking) {
       statusEl.textContent = "AI thinking…";
+      Gamekit.turn(aiColor, "AI thinking…", true);
     } else {
       const note = confidenceNote; confidenceNote = "";
       const base = aiColor !== null ? (localCurrent === aiColor ? "AI thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
+      const aiTurn = aiColor !== null && localCurrent === aiColor;
+      Gamekit.turn(localCurrent, aiTurn ? "AI thinking…" : aiColor !== null ? "Your move" : `${NAMES[localCurrent]}'s move`, aiTurn);
     }
   }
 

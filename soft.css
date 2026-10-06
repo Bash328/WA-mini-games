@@ -831,3 +831,63 @@ body[class*="g-"] .man-window .man-close:hover {
   color: var(--fg);
   background: rgba(255,255,255,0.06);
 }
+
+/* ── Player colours + turn badge ────────────────────────────── */
+/* Two bright, colour-blind-friendly player colours (orange / cyan) used
+   everywhere a game needs "player 1" and "player 2". Games whose pieces
+   have their own colours override --p1/--p2 below so the badge matches
+   what's on the board. */
+body[class*="g-"] {
+  --p1: #ff9f43;
+  --p2: #38d4ff;
+}
+body.g-tic-tac-toe     { --p1: #ff6b6b; --p2: #4dd9ac; }
+body.g-connect-four    { --p1: #ff6b6b; --p2: #f5c800; }
+body.g-checkers        { --p1: #ff5a4a; --p2: #f1ece2; }
+body.g-pentago         { --p1: #ff5a4a; --p2: #4da3ff; }
+body.g-chess           { --p1: #f4efe6; --p2: #8fa3bf; }
+body.g-reversi         { --p1: #8fa3bf; --p2: #f4efe6; }
+
+/* Built by Gamekit.turn(): one big pill saying whose move it is, in that
+   player's colour, so it reads at a glance from across the table. */
+.turn {
+  --pc: var(--p1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+  padding: 12px 16px;
+  border: 2px solid var(--pc);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  background: color-mix(in srgb, var(--pc) 16%, transparent);
+  color: var(--pc);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+.turn[data-p="1"] { --pc: var(--p1); }
+.turn[data-p="2"] { --pc: var(--p2); }
+.turn-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--pc);
+  animation: turn-pulse 1.6s ease-out infinite;
+}
+.turn.wait {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.7;
+}
+.turn.wait .turn-dot { animation: none; opacity: 0.6; }
+@keyframes turn-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pc) 70%, transparent); }
+  100% { box-shadow: 0 0 0 10px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turn-dot { animation: none; }
+}

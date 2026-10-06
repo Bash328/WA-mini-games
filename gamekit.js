@@ -296,6 +296,29 @@
     return pool[Math.floor(pick * pool.length)];
   }
 
+  // The big "whose move is it" pill (styled in soft.css). slot is 1 or 2
+  // (the player's colour, --p1/--p2); pass a falsy slot to hide it. waiting
+  // dims it for "it's the other side's move / the AI is thinking". The
+  // element is created on first use, right under the status row.
+  function turn(slot, text, waiting) {
+    let el = document.getElementById("turn-badge");
+    if (!slot) { if (el) el.hidden = true; return; }
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "turn-badge";
+      el.className = "turn";
+      el.appendChild(document.createElement("span")).className = "turn-dot";
+      el.appendChild(document.createElement("span")).className = "turn-text";
+      const row = document.querySelector(".panel > .row");
+      if (row) row.parentNode.insertBefore(el, row.nextSibling);
+      else { const panel = document.querySelector(".panel"); if (panel) panel.insertBefore(el, panel.firstChild); }
+    }
+    el.hidden = false;
+    el.dataset.p = String(slot);
+    el.classList.toggle("wait", !!waiting);
+    el.lastChild.textContent = text;
+  }
+
   global.Gamekit = {
     mulberry32,
     hashStr,
@@ -308,5 +331,6 @@
     wireDifficultyChips,
     onLongPress,
     taunt,
+    turn,
   };
 })(window);

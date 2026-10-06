@@ -185,6 +185,7 @@
   function renderLocal() {
     const legal = localOver ? [] : legalMoves(localBoard, localCurrent);
     renderBoard(localBoard, legal, !localOver, playLocal, localLast);
+    Gamekit.turn(localOver ? null : localCurrent, `${NAMES[localCurrent]}'s move`);
     if (localOver) {
       const cnt = counts(localBoard);
       if (cnt[BLACK] === cnt[WHITE]) {

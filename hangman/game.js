@@ -423,9 +423,11 @@
       statusEl.textContent = loStatus === "in_progress"
         ? "Player 2: guess a letter." + (loNote ? " " + loNote : "")
         : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord, loMask));
+      Gamekit.turn(loStatus === "in_progress" ? P2 : null, "Player 2 · guess a letter");
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
     } else {
+      Gamekit.turn(P1, "Player 1 · set a secret word");
       wordEl.textContent = ""; missesEl.textContent = "";
       statusEl.textContent = "Player 1: set a secret word, then hand the device to Player 2.";
       keyboardEl.hidden = true;
