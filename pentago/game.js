@@ -172,6 +172,9 @@
     boardEl.dataset.pendingPlayer = localCurrent;
     renderBoard(localBoard, !localOver, localPending, onCellLocal, localLast);
     renderRotateControls(!localOver && localPending !== null, onRotateLocal);
+    Gamekit.turn(localOver ? null : localCurrent, localPending === null
+      ? `${NAMES[localCurrent]}'s move · place a marble`
+      : `${NAMES[localCurrent]} · now rotate a quadrant`);
     if (localOver) {
       // status text already set by the move that ended the game
     } else {

@@ -150,10 +150,12 @@
     updateScore(lo.p1Wins, lo.p2Wins, lo.n);
     bestofSel.disabled = lo.p1Wins + lo.p2Wins + lo.pending > 0;
     if (loOver) {
+      Gamekit.turn(null);
       updateLast(lo.lastP1, lo.lastP2);
       renderChoiceButtons(false, null);
       return;
     }
+    Gamekit.turn(lo.pending === 0 ? P1 : P2, lo.pending === 0 ? "Player 1 · pick secretly" : "Player 2 · your pick");
     const note = confidenceNote; confidenceNote = "";
     statusEl.textContent = (lo.pending === 0
       ? "Player 1: pick secretly, then hand the device to Player 2."

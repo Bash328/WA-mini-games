@@ -12,6 +12,8 @@
   const bestEl   = document.getElementById("best");
   const undoBtn  = document.getElementById("undo-btn");
   const resetBtn = document.getElementById("reset-btn");
+  const pencilBtn = document.getElementById("pencil-btn");
+  const eraseBtn = document.getElementById("erase-btn");
   const newBtn   = document.getElementById("new-btn");
   const chipsEl  = document.getElementById("chips");
 
@@ -194,6 +196,7 @@
       const d = parseInt(b.dataset.digit, 10);
       b.classList.toggle("done", counts[d] >= N);
     });
+    updateActions();
   }
 
   function isConflict(i) {
@@ -223,35 +226,21 @@
       b.addEventListener("click", () => onDigit(d));
       padEl.appendChild(b);
     }
-    const del = document.createElement("button");
-    del.type = "button";
-    del.className = "btn";
-    del.textContent = "⌫";
-    del.setAttribute("aria-label", "Erase");
-    del.addEventListener("click", () => onDigit(0));
-    padEl.appendChild(del);
-    // Pencil toggle goes in toolbar area too — add as extra row via CSS grid column span
-    // Put pencil as separate row
-    const penWrap = document.createElement("div");
-    penWrap.style.gridColumn = "1 / -1";
-    penWrap.style.display = "flex";
-    penWrap.style.justifyContent = "center";
-    penWrap.style.marginTop = "6px";
-    const pen = document.createElement("button");
-    pen.type = "button";
-    pen.id = "pencil-btn";
-    pen.className = "btn tool-btn";
-    pen.innerHTML = '<span class="glyph">✎</span> pencil';
-    pen.addEventListener("click", () => { pencil = !pencil; updatePencilBtn(); });
-    penWrap.appendChild(pen);
-    padEl.appendChild(penWrap);
   }
 
+  function togglePencil() { pencil = !pencil; updatePencilBtn(); }
+
   function updatePencilBtn() {
-    const b = document.getElementById("pencil-btn");
-    if (!b) return;
-    b.classList.toggle("pencil-on", pencil);
-    b.setAttribute("aria-pressed", pencil ? "true" : "false");
+    pencilBtn.classList.toggle("pencil-on", pencil);
+    pencilBtn.setAttribute("aria-pressed", pencil ? "true" : "false");
+    document.getElementById("pencil-label").textContent = pencil ? "Pencil on" : "Pencil off";
+    boardEl.classList.toggle("pencil-mode", pencil);
+  }
+
+  // Undo needs something to undo; Erase needs a filled (or noted) cell of ours selected.
+  function updateActions() {
+    undoBtn.disabled = won || history.length === 0;
+    eraseBtn.disabled = won || sel < 0 || !!givens[sel] || (!grid[sel] && notes[sel].size === 0);
   }
 
   function onDigit(d) {
@@ -259,7 +248,7 @@
     if (sel < 0) return;
     if (givens[sel]) return;
 
-    history.push({ idx: sel, v: grid[sel], notes: new Set(notes[sel]) });
+    const snap = { idx: sel, v: grid[sel], notes: new Set(notes[sel]) };
 
     if (d === 0) {
       grid[sel] = 0;
@@ -271,6 +260,10 @@
     } else {
       grid[sel] = d;
       notes[sel].clear();
+    }
+    // Only record changes, so Undo never "does nothing".
+    if (grid[sel] !== snap.v || notes[sel].size !== snap.notes.size || [...notes[sel]].some(n => !snap.notes.has(n))) {
+      history.push(snap);
     }
     renderAll();
     checkWin();
@@ -331,17 +324,22 @@
     }
     if (k >= "1" && k <= "6") { onDigit(parseInt(k, 10)); e.preventDefault(); return; }
     if (k === "Backspace" || k === "Delete" || k === "0") { onDigit(0); e.preventDefault(); return; }
-    if (k === "p" || k === "P") { pencil = !pencil; updatePencilBtn(); e.preventDefault(); return; }
+    if (k === "p" || k === "P") { togglePencil(); e.preventDefault(); return; }
+    if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "Z")) { undo(); e.preventDefault(); return; }
   });
 
-  undoBtn.addEventListener("click", () => {
+  function undo() {
     if (won) return;
     const h = history.pop();
     if (!h) return;
     grid[h.idx] = h.v;
     notes[h.idx] = h.notes;
+    sel = h.idx;
     renderAll();
-  });
+  }
+  undoBtn.addEventListener("click", undo);
+  eraseBtn.addEventListener("click", () => onDigit(0));
+  pencilBtn.addEventListener("click", togglePencil);
   resetBtn.addEventListener("click", () => {
     if (!confirm("Clear all your entries?")) return;
     grid = new Uint8Array(givens);

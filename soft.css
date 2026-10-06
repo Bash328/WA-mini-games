@@ -385,63 +385,75 @@ body.g-patches .panel .pt-rect-overlay.bad {
 }
 
 /* ── Mini-Sudoku ────────────────────────────────────────────── */
+/* High-contrast: pale grid lines against near-black cells, a heavy frame
+   and box dividers, bright entered digits, and an amber selection. */
 body.g-mini-sudoku .panel .sk-grid {
-  background: var(--bg);
-  border: 2px solid var(--border-hi);
+  background: #14120f;
+  border: 3px solid #b3a58f;
   border-radius: 14px;
   overflow: hidden;
 }
 body.g-mini-sudoku .panel .sk-cell {
-  background: var(--bg-2);
-  border-color: var(--border);
-  color: var(--teal);
-  font-weight: 600;
+  background: #1d1a16;
+  border-color: #4d463a;
+  color: #7fe3c3;
+  font-weight: 700;
 }
 body.g-mini-sudoku .panel .sk-cell.given {
-  background: rgba(255,255,255,0.06);
-  color: var(--fg);
+  background: #34302a;
+  color: #f7f2ea;
   font-weight: 800;
 }
-body.g-mini-sudoku .panel .sk-cell.sel {
-  background: rgba(90,158,232,0.18);
-  box-shadow: inset 0 0 0 2px rgba(90,158,232,0.6);
-}
-body.g-mini-sudoku .panel .sk-cell.peer {
-  background: rgba(255,255,255,0.04);
-}
+body.g-mini-sudoku .panel .sk-cell.peer { background: #302b24; }
+body.g-mini-sudoku .panel .sk-cell.given.peer { background: #453f35; }
 body.g-mini-sudoku .panel .sk-cell.same-num,
 body.g-mini-sudoku .panel .sk-cell.same {
-  background: rgba(90,158,232,0.10);
+  background: rgba(77,217,172,0.24);
 }
 body.g-mini-sudoku .panel .sk-cell.error,
 body.g-mini-sudoku .panel .sk-cell.conflict {
-  color: var(--coral);
+  background: rgba(255,107,107,0.24);
+  color: #ff9090;
+}
+body.g-mini-sudoku .panel .sk-cell.sel {
+  background: rgba(245,184,0,0.42);
+  box-shadow: inset 0 0 0 3px var(--accent);
+  outline: none;
+}
+body.g-mini-sudoku .panel .sk-grid.pencil-mode .sk-cell.sel {
+  box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 0 6px rgba(245,184,0,0.25);
 }
 body.g-mini-sudoku .panel .sk-note,
-body.g-mini-sudoku .panel .sk-cell .notes { color: var(--muted); }
-body.g-mini-sudoku .panel .sk-cell.box-b { border-right:  2px solid var(--border-hi); }
-body.g-mini-sudoku .panel .sk-cell.box-t { border-bottom: 2px solid var(--border-hi); }
+body.g-mini-sudoku .panel .sk-cell .notes { color: #d9d0c0; }
+body.g-mini-sudoku .panel .sk-cell.box-b { border-right:  3px solid #b3a58f; }
+body.g-mini-sudoku .panel .sk-cell.box-t { border-bottom: 3px solid #b3a58f; }
 body.g-mini-sudoku .panel .sk-cell[data-r="1"],
-body.g-mini-sudoku .panel .sk-cell[data-r="3"] { border-bottom: 2px solid var(--border-hi); }
-body.g-mini-sudoku .panel .sk-cell[data-c="2"] { border-right: 2px solid var(--border-hi); }
-body.g-mini-sudoku .panel .pad-btn,
+body.g-mini-sudoku .panel .sk-cell[data-r="3"] { border-bottom: 3px solid #b3a58f; }
+body.g-mini-sudoku .panel .sk-cell[data-c="2"] { border-right: 3px solid #b3a58f; }
 body.g-mini-sudoku .panel .sk-pad button {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
+  background: #34302a;
+  border: 1px solid #5a5244;
   color: var(--fg);
-  border-radius: 10px;
+  border-radius: 12px;
 }
-body.g-mini-sudoku .panel .pad-btn:hover,
 body.g-mini-sudoku .panel .sk-pad button:hover {
-  background: var(--border);
-  border-color: var(--border-hi);
+  background: #403b32;
+  border-color: #7a705e;
 }
-body.g-mini-sudoku .panel .pad-btn.active,
-body.g-mini-sudoku .panel .sk-pad button.active,
-body.g-mini-sudoku .panel .sk-pad button[aria-pressed="true"] {
-  background: var(--fg);
-  color: var(--bg);
-  border-color: var(--fg);
+body.g-mini-sudoku .panel .sk-act {
+  background: #2f2b25;
+  border: 1px solid #5a5244;
+  color: var(--fg);
+  border-radius: 12px;
+}
+body.g-mini-sudoku .panel .sk-act:hover:not(:disabled) {
+  background: #403b32;
+  border-color: #7a705e;
+}
+body.g-mini-sudoku .panel .sk-act.pencil-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1715;
 }
 
 /* ── Lights Out ─────────────────────────────────────────────── */
@@ -830,4 +842,64 @@ body[class*="g-"] .man-window .man-close { color: var(--muted); }
 body[class*="g-"] .man-window .man-close:hover {
   color: var(--fg);
   background: rgba(255,255,255,0.06);
+}
+
+/* ── Player colours + turn badge ────────────────────────────── */
+/* Two bright, colour-blind-friendly player colours (orange / cyan) used
+   everywhere a game needs "player 1" and "player 2". Games whose pieces
+   have their own colours override --p1/--p2 below so the badge matches
+   what's on the board. */
+body[class*="g-"] {
+  --p1: #ff9f43;
+  --p2: #38d4ff;
+}
+body.g-tic-tac-toe     { --p1: #ff6b6b; --p2: #4dd9ac; }
+body.g-connect-four    { --p1: #ff6b6b; --p2: #f5c800; }
+body.g-checkers        { --p1: #ff5a4a; --p2: #f1ece2; }
+body.g-pentago         { --p1: #ff5a4a; --p2: #4da3ff; }
+body.g-chess           { --p1: #f4efe6; --p2: #8fa3bf; }
+body.g-reversi         { --p1: #8fa3bf; --p2: #f4efe6; }
+
+/* Built by Gamekit.turn(): one big pill saying whose move it is, in that
+   player's colour, so it reads at a glance from across the table. */
+.turn {
+  --pc: var(--p1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+  padding: 12px 16px;
+  border: 2px solid var(--pc);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  background: color-mix(in srgb, var(--pc) 16%, transparent);
+  color: var(--pc);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+.turn[data-p="1"] { --pc: var(--p1); }
+.turn[data-p="2"] { --pc: var(--p2); }
+.turn-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--pc);
+  animation: turn-pulse 1.6s ease-out infinite;
+}
+.turn.wait {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.7;
+}
+.turn.wait .turn-dot { animation: none; opacity: 0.6; }
+@keyframes turn-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pc) 70%, transparent); }
+  100% { box-shadow: 0 0 0 10px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turn-dot { animation: none; }
 }

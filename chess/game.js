@@ -492,6 +492,10 @@ function renderBoard() {
     if (note) confidenceNote = '';
     document.getElementById('status').textContent =
       (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + (inChk ? ' — check!' : '') + note;
+    const aiToMove = thinking || state.turn !== humanColor;
+    Gamekit.turn(state.turn === 'w' ? 1 : 2,
+      aiToMove ? 'AI thinking…' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black') + (inChk ? ' — check!' : ''),
+      aiToMove);
   }
 }
 
@@ -558,20 +562,20 @@ function checkEnd() {
       ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (humanLost ? ' ' + Gamekit.taunt(reversed ? 'reversal' : 'loss') : '')
       : 'Stalemate — draw.';
     document.getElementById('status').textContent = msg;
-    thinking = true; // freeze interaction
+    Gamekit.turn(null); thinking = true; // freeze interaction
     return true;
   }
   if (state.halfmove >= 100) {
     document.getElementById('status').textContent = 'Draw — 50-move rule.';
-    thinking = true; return true;
+    Gamekit.turn(null); thinking = true; return true;
   }
   if (threefold(state)) {
     document.getElementById('status').textContent = 'Draw — threefold repetition.';
-    thinking = true; return true;
+    Gamekit.turn(null); thinking = true; return true;
   }
   if (insufficientMaterial(state)) {
     document.getElementById('status').textContent = 'Draw — insufficient material.';
-    thinking = true; return true;
+    Gamekit.turn(null); thinking = true; return true;
   }
   return false;
 }

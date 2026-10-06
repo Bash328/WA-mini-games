@@ -89,7 +89,7 @@
       boardEl.appendChild(cell);
     }
     const cnt = counts(boxes);
-    scoreEl.textContent = `Player 1: ${cnt[P1]} · Player 2: ${cnt[P2]}`;
+    scoreEl.innerHTML = `<span class="sc p1">Player 1: ${cnt[P1]}</span> · <span class="sc p2">Player 2: ${cnt[P2]}</span>`;
   }
 
   // ---------- 2 players over WhatsApp ----------
@@ -180,6 +180,7 @@
 
   function renderLocal() {
     renderBoard(localEdges, localBoxes, !localOver, playLocal, localLast);
+    Gamekit.turn(localOver ? null : localCurrent, `${NAMES[localCurrent]}'s move`);
     if (localOver) {
       const cnt = counts(localBoxes);
       if (cnt[P1] === cnt[P2]) {

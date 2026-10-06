@@ -41,7 +41,7 @@
     border: 1px solid var(--border);
     padding: 8px;
     border-radius: var(--r-md);
-    width: min(420px, 92vw);
+    width: min(420px, 100%);
     margin: 0 auto;
     aspect-ratio: 1;
     touch-action: none;
@@ -89,6 +89,13 @@
         how to <span class="q">?</span>
       </button>
     </div>
+    <div class="controls" style="justify-content:center;margin-bottom:14px">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="normal" role="tab" type="button">Normal</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+        <button class="chip" data-diff="brutal" role="tab" type="button">Brutal</button>
+      </div>
+    </div>
     <div class="board2048" id="board" role="grid" aria-label="2048 game board" aria-live="polite"></div>
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
@@ -105,7 +112,8 @@
   <ul>
     <li>Every move slides <strong>all</strong> tiles as far as they can go in that direction.</li>
     <li>When two tiles of the same value collide, they merge into one tile of double the value.</li>
-    <li>A new <code>2</code> (or occasionally a <code>4</code>) appears in a random empty cell after each move.</li>
+    <li>A new <code>2</code> (or sometimes a <code>4</code>) appears in an empty cell after each move.</li>
+    <li><strong>Difficulty:</strong> Normal is the classic game. Hard spawns far more 4s. Brutal also often drops the new tile in the spot that blocks you most. Each level keeps its own best score.</li>
     <li>You win when a <code>2048</code> tile is created. Keep going for higher scores.</li>
     <li>You lose when the board is full and no moves are possible.</li>
   </ul>
