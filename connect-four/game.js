@@ -36,6 +36,7 @@
   // a-row open threat scores ±50/-80) rather than material count.
   let confidenceGivenTo = null;
   let confidenceNote = "";
+  let pressureGiven = false; // the AI's-lead mirror of confidence: one lastChance line per game
   const CONFIDENCE_THRESHOLD = 40;
   let humanIs = P1;           // set per mode
   let lastSlot = null;        // highlighted checker in WhatsApp mode
@@ -185,7 +186,10 @@
     const score = evaluate(grid, P1);
     if (Math.abs(score) < CONFIDENCE_THRESHOLD) return;
     const leader = score > 0 ? P1 : P2;
-    if (mode !== "local" && leader !== humanIs) return; // don't taunt the AI's own lead
+    if (mode !== "local" && leader !== humanIs) { // the AI is winning: warn the human, once
+      if (!pressureGiven) { pressureGiven = true; confidenceNote = Gamekit.taunt("lastChance"); }
+      return;
+    }
     confidenceGivenTo = leader;
     const who = mode === "local" ? (leader === P1 ? "Red" : "Yellow") + " — " : "";
     confidenceNote = who + Gamekit.taunt("confidence");
@@ -268,12 +272,12 @@
       const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
         ? (last.p === P1 ? "Red" : "Yellow") + " wins. " + (loser === P1 ? "Red" : "Yellow") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
-        : (last.p === humanIs ? "You win." : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
+        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
       Gamekit.turn(null);
     } else if (isFull(grid)) {
       gameOver = true;
-      statusEl.textContent = "Draw.";
+      statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
       Gamekit.turn(null);
     } else {
       current = current === P1 ? P2 : P1;
@@ -286,7 +290,9 @@
 
   function updateTurnStatus() {
     if (gameOver) return;
-    const note = confidenceNote; confidenceNote = "";
+    // one-shot: kept through the AI's "thinking" screen, cleared once shown
+    const note = current === humanIs || mode === "local" ? confidenceNote : "";
+    if (note) confidenceNote = "";
     if (mode === "local") {
       statusEl.textContent = (current === P1 ? "Red" : "Yellow") + " to move." + (note ? " " + note : "");
       Gamekit.turn(current, (current === P1 ? "Red" : "Yellow") + " to move");
@@ -343,7 +349,7 @@
     current = P1;
     gameOver = false;
     winLine = null;
-    confidenceGivenTo = null; confidenceNote = "";
+    confidenceGivenTo = null; confidenceNote = ""; pressureGiven = false;
     renderShell();
     renderBoard();
     updateTurnStatus();

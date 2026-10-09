@@ -53,6 +53,24 @@
     return won;
   }
 
+  // Windows of WIN_LEN in a line holding WIN_LEN-1 of p's marbles plus one
+  // empty cell: a one-marble-from-winning threat. Rotations can still undo
+  // it, so this is a hint for the taunts, not a guarantee.
+  function fours(board, p) {
+    let n = 0;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dr, dc] of [[0,1],[1,0],[1,1],[1,-1]]) {
+      let mine = 0, empty = 0, ok = true;
+      for (let k = 0; k < WIN_LEN; k++) {
+        const nr = r + dr*k, nc = c + dc*k;
+        if (nr < 0 || nr >= N || nc < 0 || nc >= N) { ok = false; break; }
+        const v = board[idx(nr, nc)];
+        if (v === p) mine++; else if (v === 0) empty++;
+      }
+      if (ok && mine === WIN_LEN - 1 && empty === 1) n++;
+    }
+    return n;
+  }
+
   function outcomeFor(board) {
     const won = winners(board);
     if (won.size === 2) return { status: "draw", winner: null };
@@ -163,8 +181,23 @@
   // ---------- 2 players, same device ----------
   let localBoard, localCurrent, localLast, localPending, localOver;
 
+  // "You've got this in the bag" / "spoke too soon" - see checkers. Here the
+  // lead is "one marble from five while the other side has no such threat".
+  let confidenceGivenTo = null;
+  let confidenceNote = "";
+
+  function checkConfidence() {
+    if (confidenceGivenTo !== null) return;
+    const f1 = fours(localBoard, P1), f2 = fours(localBoard, P2);
+    if (f1 && !f2) confidenceGivenTo = P1;
+    else if (f2 && !f1) confidenceGivenTo = P2;
+    else return;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")} ${NAMES[other(confidenceGivenTo)]} — ${Gamekit.taunt("lastChance")}`;
+  }
+
   function resetLocal() {
     localBoard = newBoard(); localCurrent = P1; localLast = null; localPending = null; localOver = false;
+    confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
   }
 
@@ -178,9 +211,10 @@
     if (localOver) {
       // status text already set by the move that ended the game
     } else {
-      statusEl.textContent = localPending === null
+      statusEl.textContent = (localPending === null
         ? `${NAMES[localCurrent]}'s move — place a marble.`
-        : `${NAMES[localCurrent]}: now rotate a quadrant.`;
+        : `${NAMES[localCurrent]}: now rotate a quadrant.`) + (confidenceNote ? " " + confidenceNote : "");
+      confidenceNote = ""; // one-shot
     }
   }
 
@@ -199,12 +233,13 @@
     const { status, winner } = outcomeFor(localBoard);
     if (status !== "in_progress") {
       localOver = true;
-      statusEl.textContent = status === "draw" ? "Draw."
-        : `${NAMES[winner]} wins. ${NAMES[other(winner)]} — ${Gamekit.taunt("loss")}`;
+      statusEl.textContent = status === "draw" ? "Draw. " + Gamekit.taunt("draw")
+        : `${NAMES[winner]} wins. ${NAMES[other(winner)]} — ${Gamekit.taunt(confidenceGivenTo === other(winner) ? "reversal" : "loss")}`;
       renderLocal();
       return;
     }
     localCurrent = other(localCurrent);
+    checkConfidence();
     renderLocal();
   }
 

@@ -137,8 +137,8 @@
     gameOver = true;
     cancelAI();
     Gamekit.turn(null);
-    if (w.player === "draw") setStatus("Draw.");
-    else if (w.player === human) setStatus("You win! 🎉");
+    if (w.player === "draw") setStatus("Draw. " + Gamekit.taunt("draw"));
+    else if (w.player === human) setStatus("You win! 🎉 " + Gamekit.taunt("win"));
     else setStatus("AI wins. " + Gamekit.taunt());
   }
 

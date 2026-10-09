@@ -380,7 +380,7 @@ function outcome(s) {
     if (inCheck(s, s.turn)) return { status: 'won', winner: opp(s.turn), reason: 'Checkmate.' };
     return { status: 'draw', winner: null, reason: 'Stalemate.' };
   }
-  if (s.halfmove >= 100) return { status: 'draw', winner: null, reason: 'Draw — 50-move rule.' };
+  if (s.halfmove >= 100) return { status: 'draw', winner: null, reason: 'Draw — 50-move rule. ' + Gamekit.taunt('draw') };
   if (insufficientMaterial(s)) return { status: 'draw', winner: null, reason: 'Draw — insufficient material.' };
   return { status: 'in_progress', winner: null, reason: null };
 }
@@ -447,13 +447,17 @@ let lastReason = null;      // WhatsApp mode: why a finished game ended
 // 300 would miss exactly the "up a minor piece" case it's meant to catch.
 let confidenceGivenTo = null;
 let confidenceNote = '';
+let pressureGiven = false; // the AI's-lead mirror of confidence: one lastChance line per game
 const CONFIDENCE_THRESHOLD = 250;
 function checkConfidence() {
   if (confidenceGivenTo !== null || mode !== 'ai') return;
   const score = evaluate(state);
   if (Math.abs(score) < CONFIDENCE_THRESHOLD) return;
   const leaderColor = score > 0 ? 'w' : 'b';
-  if (leaderColor !== humanColor) return; // don't taunt the AI's own lead
+  if (leaderColor !== humanColor) { // the AI is winning: warn the human, once
+    if (!pressureGiven) { pressureGiven = true; confidenceNote = Gamekit.taunt('lastChance'); }
+    return;
+  }
   confidenceGivenTo = leaderColor;
   confidenceNote = Gamekit.taunt('confidence');
 }
@@ -559,18 +563,18 @@ function checkEnd() {
     const humanLost = mode === 'ai' && state.turn === humanColor;
     const reversed = confidenceGivenTo === state.turn;
     const msg = inCheck(state, state.turn)
-      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (humanLost ? ' ' + Gamekit.taunt(reversed ? 'reversal' : 'loss') : '')
-      : 'Stalemate — draw.';
+      ? `Checkmate — ${state.turn === 'w' ? 'Black' : 'White'} wins.` + (mode === 'ai' ? ' ' + Gamekit.taunt(humanLost ? (reversed ? 'reversal' : 'loss') : 'win') : '')
+      : 'Stalemate — draw. ' + Gamekit.taunt('draw');
     document.getElementById('status').textContent = msg;
     Gamekit.turn(null); thinking = true; // freeze interaction
     return true;
   }
   if (state.halfmove >= 100) {
-    document.getElementById('status').textContent = 'Draw — 50-move rule.';
+    document.getElementById('status').textContent = 'Draw — 50-move rule. ' + Gamekit.taunt('draw');
     Gamekit.turn(null); thinking = true; return true;
   }
   if (threefold(state)) {
-    document.getElementById('status').textContent = 'Draw — threefold repetition.';
+    document.getElementById('status').textContent = 'Draw — threefold repetition. ' + Gamekit.taunt('draw');
     Gamekit.turn(null); thinking = true; return true;
   }
   if (insufficientMaterial(state)) {
@@ -584,7 +588,7 @@ function resetSolo() {
   cancelAI();
   state = initialState();
   selected = null; legalFromSel = []; lastMove = null;
-  confidenceGivenTo = null; confidenceNote = '';
+  confidenceGivenTo = null; confidenceNote = ''; pressureGiven = false;
   humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();

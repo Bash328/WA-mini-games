@@ -453,7 +453,8 @@
       const r = result(s, v.viewer);
       setStatus("Game over");
       banner(r.cls, r.text);
-      if (s.status === "won" && s.winner !== v.viewer) note(Gamekit.taunt());
+      // loser gets a roast, winner a gloat (gentler if the loser quit), a draw a shrug
+      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? "loss" : s.resigned ? "forfeit" : "win"));
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {

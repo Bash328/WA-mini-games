@@ -14,6 +14,7 @@ node_modules/
 wrangler.toml
 .assetsignore
 worker/
+taunts.test.mjs
 README.md
 LICENSE
 .gitattributes
