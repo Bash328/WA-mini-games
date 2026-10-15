@@ -31,6 +31,8 @@ const GAMES = {
   "memory":             { title: "memory",             labels: { 1: "Player 1", 2: "Player 2" } },
   "minesweeper":        { title: "minesweeper",        labels: { 1: "Player 1", 2: "Player 2" } },
   "lights-out":         { title: "lights-out",         labels: { 1: "Player 1", 2: "Player 2" } },
+  "battleship":          { title: "battleship",          labels: { 1: "Player 1", 2: "Player 2" } },
+  "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },
 };
 
 const STATUS = { p: "in_progress", w: "won", d: "draw" };

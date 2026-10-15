@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Google tag (gtag.js) — the library fetch is deferred to window load
+     (same snippet as every other page). -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RFN70FPWB1');
+  addEventListener("load", function () {
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
+    document.head.appendChild(s);
+  });
+</script>
+<title>battleship · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1715">
+<meta name="description" content="Battleship — hide your fleet, then sink your friend's, one link at a time over WhatsApp. Also vs the computer or on one device.">
+<meta property="og:title" content="Battleship · two players over WhatsApp">
+<meta property="og:description" content="Hide your fleet, then take turns firing. First to sink all five ships wins.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
+     shared "body[class*='g-'] .panel button" rule. */
+  .bs-wrap { width: min(380px, 100%); margin: 14px auto 0; }
+  .bs-wrap.small { width: min(250px, 70%); }
+  .bs-title { font-size: var(--fs-sm); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin: 0 0 6px; font-weight: 500; }
+  .bs-grid {
+    display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 4px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  #bs .bs-cell {
+    aspect-ratio: 1; width: 100%; min-height: 0; padding: 0; border-radius: 4px;
+    border: 1px solid var(--border); background: #1d3a4a; color: var(--fg);
+    font-family: inherit; font-weight: 700; font-size: 13px; line-height: 1; cursor: default;
+    display: grid; place-items: center;
+  }
+  .bs-wrap.small #bs .bs-cell, #bs-sub .bs-cell { font-size: 10px; }
+  #bs-main.clickable .bs-cell { cursor: pointer; }
+  #bs .bs-cell.ship { background: #8fa3bf; border-color: #c0cde0; }
+  #bs .bs-cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; background: #2d5a73; }
+  #bs .bs-cell.hit { background: #c23b3b; border-color: #ff8a8a; color: #fff; }
+  #bs .bs-cell.sunk { background: #6b1f1f; border-color: #c23b3b; color: #ffb0b0; }
+  #bs .bs-cell.miss { background: #243b47; color: #7fb4cc; }
+  #bs .bs-cell.last { box-shadow: inset 0 0 0 2px var(--accent); }
+  #bs .bs-cell.dim { background: #4b5668; border-color: #6b778c; }
+  #bs .bs-cell.sel-ship { background: #4dd9ac; border-color: #bff5e3; }
+  #bs .bs-cell.bad { background: #8a2b2b; }
+
+  #bs-tray { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
+  #bs-tray .bs-ship {
+    min-height: 34px; padding: 4px 10px; font-size: var(--fs-xs); border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg-2); color: var(--fg); cursor: pointer;
+  }
+  #bs-tray .bs-ship.sel { border-color: var(--accent); color: var(--accent); }
+  #bs-tray .bs-ship.placed { opacity: 0.6; }
+  #bs-tray .bs-ship.placed::after { content: " ✓"; color: var(--accent-2); }
+  .bs-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 0; }
+  #bs-note, #bs-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin: 10px 0 0; min-height: 1.2em; }
+  #bs-note strong { color: var(--fg); font-weight: 600; }
+  #bs-cover { text-align: center; padding: 30px 10px; }
+  #bs-cover p { color: var(--muted); margin: 0 0 14px; }
+
+  select {
+    background: var(--panel-2); color: var(--fg); border: 1px solid var(--border-hi);
+    border-radius: var(--r-md); padding: 8px 10px; font-family: inherit;
+    font-size: var(--fs-sm); min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-battleship">
+<main class="wrap">
+  <div class="topbar">
+    <h1>battleship</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel" id="bs">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="battleship" data-man-title="BATTLESHIP(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="computer">vs computer</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+
+    <div id="bs-cover" hidden>
+      <p id="bs-cover-text"></p>
+      <button class="btn primary" id="bs-cover-btn" type="button"></button>
+    </div>
+
+    <div id="bs-board">
+      <div id="bs-tray" hidden></div>
+      <div class="bs-wrap">
+        <h3 class="bs-title" id="bs-main-title"></h3>
+        <div class="bs-grid" id="bs-main"></div>
+      </div>
+      <p id="bs-note"></p>
+      <div class="bs-actions" id="bs-place-actions" hidden>
+        <button class="btn ghost" id="bs-rotate" type="button">⟳ rotate</button>
+        <button class="btn ghost" id="bs-random" type="button">⚄ random</button>
+        <button class="btn ghost" id="bs-clear" type="button">✕ clear</button>
+        <button class="btn primary" id="bs-ready" type="button">Lock in fleet</button>
+      </div>
+      <div class="bs-actions" id="bs-fire-actions" hidden>
+        <button class="btn primary" id="bs-fire" type="button">Fire!</button>
+        <button class="btn primary" id="bs-end" type="button" hidden>End turn</button>
+      </div>
+      <p id="bs-hint"></p>
+      <div class="bs-wrap small" id="bs-sub-wrap">
+        <h3 class="bs-title" id="bs-sub-title"></h3>
+        <div class="bs-grid" id="bs-sub"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-battleship">
+  <h2>Name</h2>
+  <p>battleship — hide your fleet, sink theirs.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each player secretly places 5 ships on a 10×10 grid: lengths 5, 4, 3, 3 and 2. Ships go straight across or down and can't overlap.</li>
+    <li>Then take turns firing at one square of the enemy grid. You're told hit or miss, and when you've sunk a whole ship.</li>
+    <li>First to sink all five enemy ships wins.</li>
+  </ul>
+
+  <h2>Placing your fleet</h2>
+  <ul>
+    <li>Pick a ship in the tray, tap a square to drop it there, and use <strong>rotate</strong> to flip it across or down. <strong>Random</strong> places everything for you.</li>
+    <li>Tap a placed ship to pick it back up and move it.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Player 1 places their fleet and sends the link. Player 2 places theirs and sends it back. After that you take turns firing, one link per shot.</li>
+    <li>Fleets do technically ride along in the link's data (the same tradeoff as Hangman's word). The page never shows your opponent's ships until the game ends.</li>
+  </ul>
+
+  <h2>Same device &amp; vs computer</h2>
+  <p class="muted">Same device: a cover screen appears between turns so each player's fleet stays hidden. Vs computer: you place your fleet, the computer hides its own and fires back after every shot.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a square</strong> on the enemy grid to aim, then press <strong>Fire!</strong>.</li>
+    <li>Red is a hit, a dark red square is part of a sunk ship, and a blue dot is a miss.</li>
+  </ul>
+</template>
+
+<script src="../taunts.js"></script>
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>

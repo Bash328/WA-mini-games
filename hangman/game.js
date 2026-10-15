@@ -167,7 +167,10 @@
     else if (wrongCount(waWord, mask) >= MAX_WRONG) { status = "won"; winner = P1; }
     waNote = guessNote(waTaunt, waWord, mask, String.fromCharCode(A_CODE + i));
     waNoteMask = mask;
-    link.commit({ board: boardToStr(waWord, mask), status, winner, last: i, nextTurn: P2 });
+    // Keep the turn with the guesser while the game is on. Once it's over
+    // the default (turn goes to the opponent) must apply, otherwise Player 1
+    // opening the final link is treated as Player 2 and sees the result inverted.
+    link.commit({ board: boardToStr(waWord, mask), status, winner, last: i, nextTurn: status === "in_progress" ? P2 : undefined });
   }
 
   // ---------- 2 players, same device ----------

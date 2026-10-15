@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Google tag (gtag.js) — the library fetch is deferred to window load
+     (same snippet as every other page). -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RFN70FPWB1');
+  addEventListener("load", function () {
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
+    document.head.appendChild(s);
+  });
+</script>
+<title>mastermind · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1715">
+<meta name="description" content="Mastermind — crack a friend's secret colour code over WhatsApp, or play against the computer.">
+<meta property="og:title" content="Mastermind · two players over WhatsApp">
+<meta property="og:description" content="One sets a secret colour code. The other has 10 guesses to crack it.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../favicon.svg">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  /* Pegs are buttons, so their rules are #id-prefixed to beat the shared
+     "body[class*='g-'] .panel button" rule (same fix as hangman's keys). */
+  .mm-peg {
+    display: inline-grid; place-items: center; width: 40px; height: 40px;
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.18);
+    font-weight: 700; font-size: 15px; color: #14110d; font-family: inherit;
+    padding: 0; min-height: 0; line-height: 1;
+  }
+  .mm-peg.c0 { background: #ff6b6b; }
+  .mm-peg.c1 { background: #f5c800; }
+  .mm-peg.c2 { background: #4dd9ac; }
+  .mm-peg.c3 { background: #5c9cff; }
+  .mm-peg.c4 { background: #b48cff; }
+  .mm-peg.c5 { background: #ece6dc; }
+  .mm-peg.empty { background: transparent; border: 2px dashed var(--border-hi); color: var(--dim); }
+  .mm-peg.sm { width: 30px; height: 30px; font-size: 12px; }
+
+  #entry { margin: 14px 0; text-align: center; }
+  #entry-label { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 10px; }
+  #slots, #palette { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; }
+  #slots .mm-peg, #palette .mm-peg { cursor: pointer; }
+  #slots .mm-peg.empty { cursor: default; }
+  #palette .mm-peg { width: 46px; height: 46px; font-size: 17px; }
+  #palette .mm-peg:active { transform: scale(0.92); }
+  .mm-actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+
+  #count { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin: 10px 0 6px; }
+  #history { display: flex; flex-direction: column; gap: 8px; margin: 8px auto; width: min(380px, 100%); }
+  .mm-row {
+    display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 10px;
+    padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px;
+  }
+  .mm-n { color: var(--dim); font-size: var(--fs-xs); }
+  .mm-pegs { display: flex; gap: 6px; }
+  .mm-fb { display: grid; grid-template-columns: repeat(2, 12px); gap: 4px; }
+  .mm-fb i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-hi); }
+  .mm-fb i.exact { background: var(--fg); border-color: var(--fg); }
+  .mm-fb i.color { background: transparent; border-color: var(--fg); }
+  #secret-row { text-align: center; margin: 14px 0 4px; }
+  #secret-row p { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 8px; }
+  #secret-row div { display: flex; justify-content: center; gap: 8px; }
+
+  select {
+    background: var(--panel-2); color: var(--fg); border: 1px solid var(--border-hi);
+    border-radius: var(--r-md); padding: 8px 10px; font-family: inherit;
+    font-size: var(--fs-sm); min-height: var(--tap);
+  }
+</style>
+</head>
+<body class="g-mastermind">
+<main class="wrap">
+  <div class="topbar">
+    <h1>mastermind</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="mastermind" data-man-title="MASTERMIND(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="computer">vs computer</option>
+        <option value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div id="entry" hidden>
+      <p id="entry-label"></p>
+      <div id="slots"></div>
+      <div id="palette"></div>
+      <div class="mm-actions">
+        <button class="btn ghost" id="undo-btn" type="button">⌫ undo</button>
+        <button class="btn primary" id="submit-btn" type="button">Guess</button>
+      </div>
+    </div>
+    <div id="secret-row" hidden></div>
+    <p id="count"></p>
+    <div id="history"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-mastermind">
+  <h2>Name</h2>
+  <p>mastermind — crack the secret colour code.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The <strong>Codemaker</strong> picks a secret code: 4 pegs, 6 colours, repeats allowed.</li>
+    <li>The <strong>Codebreaker</strong> has 10 guesses. After each one they get feedback: a filled dot for every peg of the right colour in the right place, and a ring for every peg of a right colour in the wrong place.</li>
+    <li>Crack the code within 10 guesses and the Codebreaker wins. Otherwise the Codemaker does.</li>
+    <li>The dots don't say <em>which</em> pegs scored. That's the puzzle.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is the <strong>Codemaker</strong>: pick a code and send the link.</li>
+    <li>The <strong>Codebreaker</strong> plays all their guesses on their own device, then sends the result link back when the game is over.</li>
+    <li>The code does technically ride along in the link's data (same as Hangman's word). The page just never shows it to the Codebreaker before the game ends.</li>
+  </ul>
+
+  <h2>Same device &amp; vs computer</h2>
+  <p class="muted">Same device: the Codemaker enters a code, then hands the device over without letting the Codebreaker see. Vs computer: the computer picks the code and you break it.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a colour</strong> to add a peg, <strong>tap a peg</strong> in the row to remove it, then press the button to confirm.</li>
+    <li>Every colour has a number on it, so you can tell them apart without relying on colour alone.</li>
+  </ul>
+</template>
+
+<script src="../taunts.js"></script>
+<script src="../gamekit.js"></script>
+<script src="../vendor/lz-string.min.js"></script>
+<script src="../async-share.js"></script>
+<script src="game.js"></script>
+<script defer src="../manpage.js"></script>
+</body>
+</html>

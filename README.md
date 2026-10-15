@@ -23,6 +23,8 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [pentago](pentago/) | **2 players · WhatsApp** (default), local 2 players |
 | [rock-paper-scissors](rock-paper-scissors/) | **2 players · WhatsApp** (default), local 2 players |
 | [hangman](hangman/) | **2 players · WhatsApp** (default), local 2 players |
+| [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
+| [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
@@ -91,6 +93,8 @@ Board formats:
 - **pentago**: 36 characters, one char per cell (`0`/`1`/`2`). A turn is place-then-rotate-a-quadrant, resolved locally before one commit — nothing is sent until the rotation is chosen. 5 in a row after the rotation wins; both players getting 5 at once is a draw.
 - **rock-paper-scissors**: a 6-digit string (best-of, both scores, Player 1's pending hidden pick, and the last completed round's two picks). Player 1's pick genuinely rides along in the link — same tradeoff as Minesweeper's mines — the UI just never renders it until Player 2 has also picked. A tie replays the round.
 - **hangman**: word length + the word + the guessed-letters bitmask in base36. The wrong-guess count isn't stored — it's derived from (word, mask). Player 1 sets the word once; every guess after that is Player 2's (`nextTurn` keeps giving it back to them).
+- **battleship**: a JSON array of four strings `[fleet1, fleet2, shots1, shots2]`. A fleet is 5 ships × (2-digit start cell + `h`/`v`); shots are 2-digit cells in firing order. Player 1 places (move 1), Player 2 places (move 2), then Player 1 fires first and turns alternate (no extra turn on a hit). Hit/miss/sunk are derived from (fleet, shots), never stored. Both fleets ride along in the link, the same tradeoff as Hangman's word.
+- **mastermind**: the secret (4 digits `0`–`5`) followed by each guess (4 digits). Feedback is derived from (secret, guess). Like Hangman, the Codemaker sets the code once and every guess is the Codebreaker's (`nextTurn` keeps it with them until the game ends).
 
 Typical link lengths: ~140–150 for tic-tac-toe and Connect Four, ~150–190 for Memory and Lights Out, ~210–245 for chess, up to ~380 for a busy hard Minesweeper board, and ~110–130 for each of the seven newer games above — they use the same compact-string-board approach from the start, so there was nothing left to shrink.
 
@@ -155,6 +159,12 @@ These play by the same standard rules as the real games — no reinterpretation 
 **Hangman**
 - Player 1 sets a secret word (3–20 letters) once. Every guess after that belongs to Player 2, who keeps guessing link after link — 6 wrong guesses and Player 1 wins, complete the word first and Player 2 does.
 - The word isn't shown to Player 2 before the game ends, the same tradeoff as Rock Paper Scissors' hidden pick.
+
+**Battleship**
+- Both players secretly place 5 ships (5, 4, 3, 3, 2) on a 10×10 grid, then take turns firing. First to sink the whole enemy fleet wins. Also vs a computer (hunt/target AI) and on one device with a cover screen between turns.
+
+**Mastermind**
+- The Codemaker picks a 4-peg code from 6 colours; the Codebreaker has 10 guesses, with exact/colour-only feedback after each. Also vs a computer-chosen code and on one device.
 
 ## Run locally
 
@@ -254,7 +264,9 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── mancala/            │
 ├── pentago/            │
 ├── rock-paper-scissors/│
-├── hangman/            ┘
+├── hangman/            │
+├── battleship/         │
+├── mastermind/         ┘
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 

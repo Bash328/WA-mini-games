@@ -1173,6 +1173,57 @@ window.TAUNT_LINES = {
     ],
   },
 
+  // loss also fires when you resign, so none of these claim you were sunk
+  battleship: {
+    loss: [
+      "The seas were not kind today.",
+      "Glub glub.",
+      "The harbour is quiet tonight.",
+      "Back to port. Slowly.",
+      "That's one for the ship's log.",
+      "Better luck on the next tide.",
+      "The fleet has been... rearranged.",
+    ],
+    win: [
+      "Enemy fleet: sleeping with the fishes.",
+      "Every last ship, gone. Efficient.",
+      "The seas are yours, Admiral.",
+      "Not a single ship left afloat. Ruthless.",
+      "You read their waters like a map.",
+      "That was a clean sweep.",
+    ],
+    forfeit: [
+      "They struck their colours.",
+      "The enemy admiral has left the building.",
+      "Surrender accepted.",
+      "A white flag is a kind of victory.",
+    ],
+  },
+
+  mastermind: {
+    loss: [
+      "The code won this round.",
+      "Colours were involved. You lost anyway.",
+      "The pegs had other plans.",
+      "Back to the colour wheel.",
+      "A lot of pegs, not a lot of answers.",
+      "That code lives to see another day.",
+    ],
+    win: [
+      "Four pegs, one genius.",
+      "Code broken. Ego boosted.",
+      "You read those colours like a book.",
+      "That code never stood a chance.",
+      "Deduction level: unreasonable.",
+      "Cracked it. Smug mode engaged.",
+    ],
+    forfeit: [
+      "They gave up on the colours.",
+      "The code stays a mystery. You win anyway.",
+      "Surrender accepted.",
+    ],
+  },
+
   // game-over line by difficulty; nobody to taunt you, so keep them gentle
   2048: {
     "over-normal": [

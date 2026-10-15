@@ -45,6 +45,15 @@ check("chess maps b -> Black",
   { title: "Your move · chess",
     description: "You're Black, 12 moves in. Open the board to play your turn." });
 
+check("battleship in progress",
+  ogFor("/battleship/", state({ g: "battleship", t: 2, n: 4 })),
+  { title: "Your move · battleship",
+    description: "You're Player 2, 4 moves in. Open the board to play your turn." });
+check("mastermind uses role names",
+  ogFor("/mastermind/", state({ g: "mastermind", t: 2, n: 1 })),
+  { title: "Your move · mastermind",
+    description: "You're Codebreaker, 1 move in. Open the board to play your turn." });
+
 console.log("\nfinished games:");
 check("a win names the winner",
   ogFor("/reversi/", state({ g: "reversi", t: 1, s: "w", w: 2, n: 30 })),
