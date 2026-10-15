@@ -33,10 +33,12 @@ function randomString(chars, n, rand) {
 
 export function newGameId(rand = Math.random) { return randomString(ALNUM, 8, rand); }
 
-export function newRoom(game, code, now, rand = Math.random) {
+export function newRoom(game, code, now, rand = Math.random, config = null) {
   const G = liveGame(game);
   if (!G) return null;
   return {
+    config: config,                       // per-game options (RPS: { bestOf })
+    secret: { 1: 0, 2: 0 },               // hidden picks, never sent to a client
     code: code,
     game: game,
     id: newGameId(rand),
@@ -107,12 +109,17 @@ export function applyMove(room, seat, msg, now) {
   if (msg.n !== prevCount) return { ok: false, reason: "stale" };
 
   const mover = room.order[seat];
-  if (mover !== (prev ? prev.turn : G.first)) return { ok: false, reason: "not-your-turn" };
+  // Simultaneous-pick games have no turns; everything else does.
+  if (!G.hidden && mover !== (prev ? prev.turn : G.first)) return { ok: false, reason: "not-your-turn" };
 
   const s = msg.s;
   if (!shapeOk(s)) return { ok: false, reason: "illegal" };
   if (s.game !== room.game || s.version !== G.version || s.id !== room.id) return { ok: false, reason: "illegal" };
   if (s.moveCount !== prevCount + 1) return { ok: false, reason: "illegal" };
+
+  // A hidden-pick game's state is only ever produced by the server resolving
+  // a round; the one move a client may propose itself is resigning.
+  if (G.hidden && s.resigned !== true) return { ok: false, reason: "illegal" };
 
   let next;
   if (s.resigned === true) {
@@ -136,9 +143,51 @@ export function applyMove(room, seat, msg, now) {
   room.state = next;
   room.lastActive = now;
   room.rematch = { 1: false, 2: false };
+  room.secret = { 1: 0, 2: 0 };
   if (next.status !== "in_progress") room.finishedAt = now;
   return { ok: true, state: next };
 }
+
+/* ---------- hidden picks (Rock Paper Scissors) ---------- */
+
+/* msg: { t:"pick", n, v }. n is the number of rounds already resolved, so a
+   pick for a round that has moved on is "stale". Returns:
+     { ok: true, state }     both are in: the round resolved, state published
+     { ok: true, state: null } this pick is locked, waiting for the other
+     { ok: false, reason }                                                  */
+export function applyPick(room, seat, msg, now) {
+  const G = liveGame(room.game);
+  if (!G || !G.hidden) return { ok: false, reason: "illegal" };
+  if (!bothSeated(room)) return { ok: false, reason: "waiting" };
+  const prev = room.state;
+  if (prev && prev.status !== "in_progress") return { ok: false, reason: "over" };
+  const round = prev ? prev.moveCount : 0;
+  if (msg.n !== round) return { ok: false, reason: "stale" };
+  if (!G.rules.isPick(msg.v)) return { ok: false, reason: "illegal" };
+  if (room.secret[seat]) return { ok: false, reason: "already-picked" };
+
+  room.secret[seat] = msg.v;
+  room.lastActive = now;
+  if (!room.secret[1] || !room.secret[2]) return { ok: true, state: null };
+
+  // Both picks are in: resolve. Player numbers (1 / 2) are the seats' roles.
+  const p1 = room.secret[room.order[1] === 1 ? 1 : 2];
+  const p2 = room.secret[room.order[1] === 1 ? 2 : 1];
+  const r = G.rules.resolveRound(prev ? prev.board : null, room.config, p1, p2);
+  room.state = {
+    game: room.game, version: G.version, id: room.id,
+    turn: 1,                                   // unused in a simultaneous game; any valid player
+    board: r.board, status: r.status, winner: r.winner,
+    moveCount: round + 1, last: r.last,
+  };
+  room.secret = { 1: 0, 2: 0 };
+  room.rematch = { 1: false, 2: false };
+  if (r.status !== "in_progress") room.finishedAt = now;
+  return { ok: true, state: room.state };
+}
+
+/* Who has locked a pick this round — flags only, never the values. */
+export const pickedFlags = (room) => ({ 1: !!room.secret[1], 2: !!room.secret[2] });
 
 /* ---------- rematch ---------- */
 
@@ -152,6 +201,7 @@ export function requestRematch(room, seat, now, rand = Math.random) {
   if (room.rematch[1] && room.rematch[2]) {
     room.order = { 1: room.order[2], 2: room.order[1] };
     room.state = null;
+    room.secret = { 1: 0, 2: 0 };
     room.id = newGameId(rand);
     room.finishedAt = null;
     room.rematch = { 1: false, 2: false };
@@ -191,5 +241,9 @@ export function welcomePayload(room, seat, token) {
     order: room.order, state: room.state,
     seated: { 1: !!room.seats[1], 2: !!room.seats[2] },
     rematch: room.rematch,
+    config: room.config || null,
+    // hidden-pick games: who has locked in, and (only) THIS seat's own pick
+    picked: pickedFlags(room),
+    yourPick: room.secret[seat] || 0,
   };
 }

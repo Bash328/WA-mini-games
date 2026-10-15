@@ -58,6 +58,12 @@
     let closedReason = "", note = "", lobbyError = "";
     let checkedRoom = false;       // asked the server whether a room exists, once
     let confirmed = null;          // the last state the server confirmed (for rollback)
+    // Simultaneous-pick games (Rock Paper Scissors): nobody "has the turn"; each
+    // side locks a secret pick and the server reveals both together.
+    const simultaneous = !!opts.simultaneous;
+    let picked = { 1: false, 2: false }, myPick = 0, config = null;
+    // Per-room options the game lets the host choose (RPS: best-of).
+    const roomOptions = () => (opts.roomOptions ? opts.roomOptions() : null);
 
     /* ---------- small helpers ---------- */
 
@@ -78,6 +84,7 @@
 
     function canMove() {
       if (phase !== "room" || pending || !me || !bothSeated()) return false;
+      if (simultaneous) return !myPick && (!state || state.status === "in_progress");
       if (!state) return me === players[0];
       return state.status === "in_progress" && state.turn === me;
     }
@@ -88,8 +95,16 @@
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
       // No code yet means we are creating: the first socket makes the room
       // (one round trip, not a POST followed by a connect).
-      const path = code ? "/ws?room=" + code : "/new?game=" + encodeURIComponent(opts.game);
+      const path = code ? "/ws?room=" + code : newRoomPath();
       return proto + "//" + location.host + API + path;
+    }
+
+    // "/new?game=..&bestof=5": the options the host picked, for the server to apply.
+    function newRoomPath() {
+      let q = "/new?game=" + encodeURIComponent(opts.game);
+      const o = roomOptions();
+      if (o) Object.keys(o).forEach((k) => { q += "&" + k.toLowerCase() + "=" + encodeURIComponent(o[k]); });
+      return q;
     }
 
     function connect() {
@@ -190,6 +205,7 @@
         if (m.code && m.code !== code) { code = m.code; setParam(code); }
         seat = m.seat; order = m.order; me = order[seat]; gameId = m.id; state = confirmed = m.state || null;
         seated = m.seated; online = m.online || online; rematch = m.rematch || rematch;
+        config = m.config || null; picked = m.picked || { 1: false, 2: false }; myPick = m.yourPick || 0;
         store.set("seat:" + code, m.token);
         phase = "room";
         pending = false;
@@ -198,6 +214,7 @@
       if (m.t === "state") {
         if (!valid(m.s)) return close("out-of-sync");
         state = confirmed = m.s; pending = false; clearTimeout(pendingTimer); note = "";
+        picked = { 1: false, 2: false }; myPick = 0;       // a new round starts clean
         return paint();
       }
       if (m.t === "presence") {
@@ -206,15 +223,18 @@
       }
       if (m.t === "reject") {
         pending = false; clearTimeout(pendingTimer);
+        if (simultaneous && m.reason !== "already-picked") myPick = 0;   // the pick did not land
         if (m.state !== undefined && (m.state === null || valid(m.state))) state = confirmed = m.state;
         else state = confirmed;                       // roll back the optimistic move
         note = REJECTED[m.reason] || "That didn't work.";
         return paint();
       }
       if (m.t === "rematch") { rematch = m.rematch; return paint(); }
+      if (m.t === "picked") { picked = m.picked; return paint(); }
       if (m.t === "rematch-start") {
         order = m.order; me = order[seat]; gameId = m.id; state = null;
         rematch = { 1: false, 2: false }; pending = false; note = "";
+        picked = m.picked || { 1: false, 2: false }; myPick = 0;
         return paint();
       }
       if (m.t === "closed") return close(m.reason);
@@ -235,7 +255,7 @@
       try {
         res = await fetch(API + "/create", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ game: opts.game }),
+          body: JSON.stringify(Object.assign({ game: opts.game }, roomOptions() || {})),
         });
       } catch (e) {
         wantOpen = false; phase = "lobby"; lobbyError = "Couldn't reach the server."; return paint();
@@ -290,7 +310,7 @@
       let sock;
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
       try {
-        sock = new WebSocket(proto + "//" + location.host + API + "/new?game=" + encodeURIComponent(opts.game));
+        sock = new WebSocket(proto + "//" + location.host + API + newRoomPath());
       } catch (e) { return; }
       const w = warm = { sock: sock, helloSent: false, buffered: [] };
       sock.onopen = () => { if (warm === w) { w.helloSent = true; sock.send(JSON.stringify({ t: "hello" })); } };
@@ -387,7 +407,11 @@
 
     function paint() {
       // Always bring the game's own board in line first.
-      opts.onState(phase === "room" ? state : null, phase === "room" && canMove());
+      const inRoom = phase === "room";
+      opts.onState(inRoom ? state : null, inRoom && canMove(), {
+        me: me, seat: seat, picked: picked, myPick: myPick, config: config,
+        seated: bothSeated(), phase: phase,
+      });
       ui.hidden = false;
       ui.replaceChildren();
       Gamekit.turn(null);
@@ -458,6 +482,26 @@
 
       const myTurn = canMove();
       const oppSeat = seat === 1 ? 2 : 1;
+      if (simultaneous) {
+        // No turns: either pick your move, or wait for the other side's.
+        const oppIn = picked[oppSeat];
+        if (!myPick) {
+          setStatus("Pick your move", oppIn ? "your opponent has picked" : "you're both choosing");
+          Gamekit.turn(slotOf(me), "Pick your move");
+        } else {
+          setStatus("Waiting for your opponent", "your pick is locked in");
+          Gamekit.turn(slotOf(other(me)), "Waiting for your opponent", true);
+        }
+        if (!online[oppSeat]) noteP("Your opponent is offline. They can rejoin with the same link.");
+        if (note) noteP(note);
+        if (state && state.status === "in_progress") {
+          actions(button("Admit defeat (coward)", "ghost wa-small", () => {
+            if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
+            resign();
+          }));
+        }
+        return;
+      }
       if (myTurn) {
         setStatus("Your move", "you're " + label(me));
         Gamekit.turn(slotOf(me), "Your move · you're " + label(me));
@@ -505,7 +549,35 @@
       paint();
     }
 
+    // Lock in a secret pick (simultaneous games). Shown at once as "locked";
+    // the server only reveals it once the opponent has picked too.
+    function pick(v) {
+      if (!simultaneous || !canMove()) return;
+      const round = state ? state.moveCount : 0;
+      if (!send({ t: "pick", n: round, v: v })) { note = "Not connected. Reconnecting…"; return paint(); }
+      myPick = v;
+      note = "";
+      paint();
+    }
+
+    // Resigning a simultaneous game isn't turn-bound, so it skips canMove().
+    function resign() {
+      if (!state || state.status !== "in_progress") return;
+      const env = {
+        game: opts.game, version: opts.version, id: gameId,
+        turn: other(me), board: state.board, status: "won", winner: other(me),
+        moveCount: state.moveCount + 1, last: state.last, resigned: true,
+      };
+      if (!send({ t: "move", n: state.moveCount, s: env })) { note = "Not connected. Reconnecting…"; return paint(); }
+      pending = true;
+      paint();
+    }
+
     return {
+      pick: pick,
+      // The host changed a room option while the lobby is up: the spare room
+      // made in advance has the old one, so make another.
+      rewarm() { if (phase === "lobby") { dropWarm(); prewarm(); } },
       show() {
         const param = new URLSearchParams(location.search).get("live");
         const invite = param && CODE_RE.test(param.toUpperCase()) ? param.toUpperCase() : null;

@@ -103,6 +103,7 @@
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
         <option value="whatsapp" selected>2 players · WhatsApp</option>
+        <option value="live" hidden>2 players · live online</option>
         <option value="local">2 players · same device</option>
       </select>
       <select id="bestof" aria-label="Match length">
@@ -139,12 +140,19 @@
 
   <h2>Same device</h2>
   <p class="muted">Player 1 picks, then looks away (or hands off the device) before Player 2 picks — the app doesn't show Player 1's pick until both are in.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>⚡ Play live online</strong>, create a room and send the invite link. You both pick <em>at the same time</em>: your choice stays secret on the server until your opponent has picked too, then both are revealed together.</li>
+    <li>The host chooses best of 3, 5 or 7 before creating the room. A tie just replays the round.</li>
+  </ul>
 </template>
 
 <script src="../taunts.js"></script>
 <script src="../gamekit.js"></script>
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
+<script src="../live-share.js"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 </body>

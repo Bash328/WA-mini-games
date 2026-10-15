@@ -38,7 +38,7 @@ export class LiveRoom extends DurableObject {
       if (await this.ctx.storage.get(ROOM)) return new Response("exists", { status: 409 });
       let body;
       try { body = await request.json(); } catch (e) { return new Response("bad", { status: 400 }); }
-      const room = P.newRoom(body.game, body.code, Date.now());
+      const room = P.newRoom(body.game, body.code, Date.now(), Math.random, body.config || null);
       if (!room) return new Response("unknown game", { status: 400 });
       await this.ctx.storage.put(ROOM, room);
       await this.ctx.storage.setAlarm(P.expiresAt(room));
@@ -106,12 +106,28 @@ export class LiveRoom extends DurableObject {
       return;
     }
 
+    if (msg.t === "pick") {
+      const res = P.applyPick(room, att.seat, msg, now);
+      if (!res.ok) {
+        this.send(ws, { t: "reject", reason: res.reason, state: room.state });
+        return;
+      }
+      await this.persist(room);
+      if (res.state) {
+        this.broadcast({ t: "state", s: res.state, by: att.seat });
+      } else {
+        // flags only: the other side learns THAT a pick is in, never WHAT
+        this.broadcast({ t: "picked", picked: P.pickedFlags(room) });
+      }
+      return;
+    }
+
     if (msg.t === "rematch") {
       const res = P.requestRematch(room, att.seat, now);
       if (!res.ok) return this.reject(ws, res.reason);
       await this.persist(room);
       if (res.started) {
-        this.broadcast({ t: "rematch-start", id: room.id, order: room.order, state: null });
+        this.broadcast({ t: "rematch-start", id: room.id, order: room.order, state: null, picked: P.pickedFlags(room) });
       } else {
         this.broadcast({ t: "rematch", rematch: room.rematch });
       }

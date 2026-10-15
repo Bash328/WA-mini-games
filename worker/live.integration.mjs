@@ -191,6 +191,38 @@ let refused = false;
 try { await openNew("chess"); } catch (e) { refused = true; }
 check("/new refuses a game without live mode", refused);
 
+console.log("\nrock paper scissors (hidden picks):");
+const R1 = await openNew("rock-paper-scissors&bestof=5");
+send(R1, { t: "hello" });
+const wr = await next(R1, ofType("welcome"));
+check("room options are applied (best of 5)", wr.config && wr.config.bestOf === 5, JSON.stringify(wr.config));
+const R2 = await open(wr.code);
+send(R2, { t: "hello" });
+await next(R2, ofType("welcome"));
+send(R1, { t: "pick", n: 0, v: 3 });
+const flag = await next(R2, ofType("picked"));
+check("the opponent only learns that a pick is in", flag.picked["1"] === true && flag.picked["2"] === false && !("v" in flag));
+const seen = JSON.stringify(R2.inbox);
+check("nothing in the opponent's traffic holds the pick", !/"v":3|"yourPick":3/.test(seen), seen.slice(0, 160));
+send(R2, { t: "pick", n: 0, v: 1 });                          // rock vs scissors: seat 2 wins the round
+const rs1 = await next(R1, ofType("state")); await next(R2, ofType("state"));
+check("both picks in: round resolved for both", rs1.s.moveCount === 1 && rs1.s.board.startsWith("5"), rs1.s.board);
+send(R1, { t: "pick", n: 0, v: 2 });
+check("a pick for an already-resolved round is stale", (await next(R1, ofType("reject"))).reason === "stale");
+// a reconnecting picker is told their OWN pick, nothing else
+send(R1, { t: "pick", n: 1, v: 2 });
+await next(R2, ofType("picked"));
+R1.ws.close();
+const R1b = await open(wr.code);
+send(R1b, { t: "hello", token: wr.token });
+const wr2 = await next(R1b, ofType("welcome"));
+check("a reconnect restores your own locked pick", wr2.yourPick === 2 && wr2.picked["1"] === true);
+const wo = JSON.stringify(R2.inbox);
+check("and still tells the opponent nothing", !/"yourPick":2/.test(wo));
+send(R1b, { t: "move", n: 1, s: { game: "rock-paper-scissors", version: 1, id: wr.id, turn: 1, board: "500000", status: "in_progress", winner: null, moveCount: 2, last: 1 } });
+check("a client cannot propose its own board here", (await next(R1b, ofType("reject"))).reason === "illegal");
+R1b.ws.close(); R2.ws.close(); R1.ws.close();
+
 console.log("\nkeep-alive:");
 const pong = await new Promise((resolve) => {
   const t = setTimeout(() => resolve(false), 2000);

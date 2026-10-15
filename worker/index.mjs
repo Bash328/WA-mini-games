@@ -46,14 +46,23 @@ function newCode() {
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 }
 
+/* Room options a game accepts at creation (RPS: best-of). Returns the clean
+   config (possibly null), or false if the options are not acceptable. */
+function roomConfig(game, raw) {
+  const G = liveGame(game);
+  if (!G || typeof G.rules.normalizeConfig !== "function") return null;
+  const cfg = G.rules.normalizeConfig(raw);
+  return cfg || false;
+}
+
 /* Picks a free code and initialises its room. Returns { code, stub } or null. */
-async function createRoom(env, game) {
+async function createRoom(env, game, config) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newCode();
     const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
     const res = await stub.fetch("https://room/init", {
       method: "POST",
-      body: JSON.stringify({ game: game, code: code }),
+      body: JSON.stringify({ game: game, code: code, config: config || null }),
     });
     if (res.status === 200) return { code: code, stub: stub };
     if (res.status !== 409) break;          // 409 = code taken, try another
@@ -100,8 +109,10 @@ async function handleLive(request, env, url) {
     try { body = await request.json(); } catch (e) { return json({ error: "bad-request" }, 400); }
     if (!body || !liveGame(body.game)) return json({ error: "unknown-game" }, 400);
 
+    const cfg = roomConfig(body.game, body);
+    if (cfg === false) return json({ error: "bad-options" }, 400);
     if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
-    const made = await createRoom(env, body.game);
+    const made = await createRoom(env, body.game, cfg);
     return made ? json({ room: made.code }) : json({ error: "unavailable" }, 503);
   }
 
@@ -113,8 +124,10 @@ async function handleLive(request, env, url) {
     if (request.headers.get("Upgrade") !== "websocket") return json({ error: "upgrade-required" }, 426);
     const game = url.searchParams.get("game") || "";
     if (!liveGame(game)) return json({ error: "unknown-game" }, 400);
+    const cfg = roomConfig(game, { bestOf: url.searchParams.get("bestof") || undefined });
+    if (cfg === false) return json({ error: "bad-options" }, 400);
     if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
-    const made = await createRoom(env, game);
+    const made = await createRoom(env, game, cfg);
     if (!made) return json({ error: "unavailable" }, 503);
     return made.stub.fetch(new Request("https://room/ws", request));
   }

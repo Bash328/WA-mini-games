@@ -51,6 +51,22 @@
   // Player 1 always makes the hidden pick that opens a round; Player 2
   // always makes the pick that resolves it — turn alternates normally
   // (no nextTurn override needed), a tie just replays the same round.
+  function validateRps(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== 6 || !/^[0-9]{6}$/.test(b)) return false;
+    const o = strToBoard(b);
+    if (![3, 5, 7].includes(o.n)) return false;
+    const rtw = roundsToWin(o.n);
+    if (o.p1Wins < 0 || o.p1Wins > rtw || o.p2Wins < 0 || o.p2Wins > rtw) return false;
+    if (o.pending < 0 || o.pending > 3) return false;
+    if (o.lastP1 < 0 || o.lastP1 > 3 || o.lastP2 < 0 || o.lastP2 > 3) return false;
+    return Number.isInteger(s.last) && s.last >= 1 && s.last <= 3;
+  }
+  function finalScore(s) {
+    const o = strToBoard(s.board);
+    return `Final score: Player 1 ${o.p1Wins} · Player 2 ${o.p2Wins} (best of ${o.n}).`;
+  }
+
   const link = AsyncShare.start({
     game: "rock-paper-scissors",
     version: 1,
@@ -59,23 +75,54 @@
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== 6 || !/^[0-9]{6}$/.test(b)) return false;
-      const o = strToBoard(b);
-      if (![3, 5, 7].includes(o.n)) return false;
-      const rtw = roundsToWin(o.n);
-      if (o.p1Wins < 0 || o.p1Wins > rtw || o.p2Wins < 0 || o.p2Wins > rtw) return false;
-      if (o.pending < 0 || o.pending > 3) return false;
-      if (o.lastP1 < 0 || o.lastP1 > 3 || o.lastP2 < 0 || o.lastP2 > 3) return false;
-      return Number.isInteger(s.last) && s.last >= 1 && s.last <= 3;
-    },
+    validateBoard: validateRps,
     onState: loadLink,
-    detail: (s) => {
-      const o = strToBoard(s.board);
-      return `Final score: Player 1 ${o.p1Wins} · Player 2 ${o.p2Wins} (best of ${o.n}).`;
-    },
+    detail: finalScore,
   });
+
+  // Live online play. Unlike link play, both players pick at the same time:
+  // each locks a secret pick and the server reveals them together, so
+  // nothing about a pick is ever sent to the opponent early.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "rock-paper-scissors",
+    version: 1,
+    players: [P1, P2],
+    simultaneous: true,
+    roomOptions: () => ({ bestOf: bestofSel.value }),
+    label: (p) => NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateRps,
+    onState: loadLive,
+    detail: finalScore,
+  });
+
+  function loadLive(s, canPick, info) {
+    const inRoom = info.phase === "room";
+    const me = info.me === P2 ? P2 : P1;
+    const b = s ? strToBoard(s.board)
+      : { n: Number(info.config ? info.config.bestOf : bestofSel.value) || 3, p1Wins: 0, p2Wins: 0, pending: 0, lastP1: 0, lastP2: 0 };
+    if (info.config && inRoom) bestofSel.value = String(info.config.bestOf);   // a joiner sees the host's choice
+    bestofSel.disabled = inRoom;
+    const mine = me === P2 ? b.p2Wins : b.p1Wins, theirs = me === P2 ? b.p1Wins : b.p2Wins;
+    scoreEl.textContent = `You: ${mine} · Opponent: ${theirs} (best of ${b.n})`;
+
+    const myLast = me === P2 ? b.lastP2 : b.lastP1, theirLast = me === P2 ? b.lastP1 : b.lastP2;
+    const oppSeat = info.seat === 1 ? 2 : 1;
+    let line = "";
+    if (inRoom && myLast && theirLast) {
+      const verdict = myLast === theirLast ? "a tie, go again" : beats(myLast, theirLast) ? "you took it" : "they took it";
+      line = `Last round: You ${CHOICE_EMOJI[myLast]} ${CHOICE_NAME[myLast]} · Opponent ${CHOICE_EMOJI[theirLast]} ${CHOICE_NAME[theirLast]} — ${verdict}.`;
+    }
+    const over = !!s && s.status !== "in_progress";
+    if (inRoom && !over && info.myPick) {
+      line = `You picked ${CHOICE_EMOJI[info.myPick]} ${CHOICE_NAME[info.myPick]}. Waiting for your opponent…` + (line ? " " + line : "");
+    } else if (inRoom && !over && info.picked && info.picked[oppSeat] && !info.myPick) {
+      line = "Your opponent has picked. Your move!" + (line ? " " + line : "");
+    }
+    lastEl.textContent = line;
+    renderChoiceButtons(inRoom && canPick, (c) => live.pick(c));
+  }
 
   let wa = null, waCanMove = false, waInGame = false;
 
@@ -187,16 +234,36 @@
   }
 
   function applyMode() {
-    const isWA = modeSel.value === "whatsapp";
-    resetBtn.hidden = isWA;
-    if (isWA) { link.show(); return; }
+    const m = modeSel.value;
+    resetBtn.hidden = m === "whatsapp" || m === "live";
+    if (m === "live" && live) { link.hide(); live.show(); return; }
+    if (m === "whatsapp") { if (live) live.hide(); bestofSel.disabled = false; link.show(); return; }
     link.hide();
+    if (live) live.hide();
+    bestofSel.disabled = false;
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
-  bestofSel.addEventListener("change", () => { if (modeSel.value === "local") resetLocal(); });
+  bestofSel.addEventListener("change", () => {
+    if (modeSel.value === "local") resetLocal();
+    if (modeSel.value === "live" && live) live.rewarm();   // the spare room has the old best-of
+  });
+
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+  } else if (live) {
+    fetch("/api/live/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf("rock-paper-scissors") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
+    }).catch(() => { /* live play stays hidden */ });
+  }
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("rock-paper-scissors"));
 
