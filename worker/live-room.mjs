@@ -176,7 +176,12 @@ export class LiveRoom extends DurableObject {
 
   async persist(room) {
     await this.ctx.storage.put(ROOM, room);
-    await this.ctx.storage.setAlarm(P.expiresAt(room));
+    // Only move the expiry alarm when it has drifted noticeably: one storage
+    // write per move instead of two. alarm() re-checks the real expiry, so a
+    // slightly early alarm just reschedules itself.
+    const want = P.expiresAt(room);
+    const cur = await this.ctx.storage.getAlarm();
+    if (cur === null || Math.abs(want - cur) > 30 * 60 * 1000) await this.ctx.storage.setAlarm(want);
   }
 
   online(except) {

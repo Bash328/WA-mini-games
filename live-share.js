@@ -56,6 +56,8 @@
     let pending = false, pendingTimer = null;
     let retries = 0, retryTimer = null, pingTimer = null, pongTimer = null;
     let closedReason = "", note = "", lobbyError = "";
+    let checkedRoom = false;       // asked the server whether a room exists, once
+    let confirmed = null;          // the last state the server confirmed (for rollback)
 
     /* ---------- small helpers ---------- */
 
@@ -86,8 +88,11 @@
       clearTimeout(retryTimer);
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
       let sock;
+      // No code yet means we are creating: the first socket makes the room
+      // (one round trip, not a POST followed by a connect).
+      const path = code ? "/ws?room=" + code : "/new?game=" + encodeURIComponent(opts.game);
       try {
-        sock = new WebSocket(proto + "//" + location.host + API + "/ws?room=" + code);
+        sock = new WebSocket(proto + "//" + location.host + API + path);
       } catch (e) {
         return close("unsupported");
       }
@@ -104,7 +109,12 @@
         ws = null;
         stopPing();
         online = { 1: false, 2: false };
-        if (wantOpen) scheduleRetry();
+        if (!wantOpen) return;
+        // Never got a welcome. Rather than redial blindly, find out why, so
+        // the answer ("no such room", "too many rooms") is immediate.
+        if (!everWelcomed && code === null) return fallbackCreate();
+        if (!everWelcomed && !checkedRoom) { checkedRoom = true; return checkRoom(); }
+        scheduleRetry();
       };
       sock.onerror = () => { /* onclose follows */ };
     }
@@ -164,7 +174,8 @@
       if (m.t === "welcome") {
         if (m.state && !valid(m.state)) return close("out-of-sync");
         everWelcomed = true; retries = 0; note = "";
-        seat = m.seat; order = m.order; me = order[seat]; gameId = m.id; state = m.state || null;
+        if (m.code && m.code !== code) { code = m.code; setParam(code); }
+        seat = m.seat; order = m.order; me = order[seat]; gameId = m.id; state = confirmed = m.state || null;
         seated = m.seated; online = m.online || online; rematch = m.rematch || rematch;
         store.set("seat:" + code, m.token);
         phase = "room";
@@ -173,7 +184,7 @@
       }
       if (m.t === "state") {
         if (!valid(m.s)) return close("out-of-sync");
-        state = m.s; pending = false; clearTimeout(pendingTimer); note = "";
+        state = confirmed = m.s; pending = false; clearTimeout(pendingTimer); note = "";
         return paint();
       }
       if (m.t === "presence") {
@@ -182,7 +193,8 @@
       }
       if (m.t === "reject") {
         pending = false; clearTimeout(pendingTimer);
-        if (m.state !== undefined && (m.state === null || valid(m.state))) state = m.state;
+        if (m.state !== undefined && (m.state === null || valid(m.state))) state = confirmed = m.state;
+        else state = confirmed;                       // roll back the optimistic move
         note = REJECTED[m.reason] || "That didn't work.";
         return paint();
       }
@@ -197,10 +209,15 @@
 
     /* ---------- lobby actions ---------- */
 
-    async function create() {
+    // Open a brand-new room: the socket creates it and the welcome tells us the code.
+    function create() {
       lobbyError = "";
-      phase = "connecting";
-      paint();
+      enter(null);
+    }
+
+    // The socket to a new room could not open. Ask the plain HTTP endpoint,
+    // which says why (rate limit, switched off) instead of just failing.
+    async function fallbackCreate() {
       let res;
       try {
         res = await fetch(API + "/create", {
@@ -208,32 +225,32 @@
           body: JSON.stringify({ game: opts.game }),
         });
       } catch (e) {
-        phase = "lobby"; lobbyError = "Couldn't reach the server."; return paint();
+        wantOpen = false; phase = "lobby"; lobbyError = "Couldn't reach the server."; return paint();
       }
-      if (res.status === 429) { phase = "lobby"; lobbyError = "Too many new rooms right now. Try again in a minute."; return paint(); }
-      if (!res.ok) { phase = "lobby"; lobbyError = "Live play is unavailable right now."; return paint(); }
+      if (res.status === 429) { wantOpen = false; phase = "lobby"; lobbyError = "Too many new rooms right now. Try again in a minute."; return paint(); }
+      if (!res.ok) { wantOpen = false; phase = "lobby"; lobbyError = "Live play is unavailable right now."; return paint(); }
       const body = await res.json();
-      enter(body.room);
+      enter(body.room);                              // the room exists; just connect to it
     }
 
-    // verify: a code someone typed or a link they followed may be stale; ask
-    // first so the answer is immediate instead of a few failed reconnects.
-    async function enter(c, verify) {
-      if (verify) {
-        phase = "connecting";
-        paint();
-        try {
-          const r = await fetch(API + "/exists?room=" + c);
-          const j = await r.json();
-          // Only a definite "no such room" ends it; anything else (an odd
-          // status, a hiccup) falls through and lets the socket decide.
-          if (r.ok && j.exists === false) { code = c; return close("expired"); }
-        } catch (e) { /* let the socket try; it will report if unreachable */ }
-      }
+    // The socket to an existing room failed before saying hello: is the room gone?
+    async function checkRoom() {
+      try {
+        const r = await fetch(API + "/exists?room=" + code);
+        const j = await r.json();
+        // Only a definite "no such room" ends it; anything else (an odd
+        // status, a hiccup) goes back to redialling.
+        if (r.ok && j.exists === false) return close("expired");
+      } catch (e) { /* fall through */ }
+      scheduleRetry();
+    }
+
+    // c: a room code to join, or null to create one. Connects straight away.
+    function enter(c) {
       code = c;
       setParam(code);
-      wantOpen = true; everWelcomed = false; retries = 0; note = "";
-      state = null; seat = 0; me = null; seated = { 1: false, 2: false }; online = { 1: false, 2: false };
+      wantOpen = true; everWelcomed = false; retries = 0; note = ""; checkedRoom = false;
+      state = confirmed = null; seat = 0; me = null; seated = { 1: false, 2: false }; online = { 1: false, 2: false };
       phase = "connecting";
       paint();
       connect();
@@ -243,7 +260,7 @@
       const c = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (!CODE_RE.test(c)) { lobbyError = "Room codes are 6 letters and numbers."; return paint(); }
       lobbyError = "";
-      enter(c, true);
+      enter(c);
     }
 
     function leave() {
@@ -427,23 +444,28 @@
       }
       pending = true;
       note = "";
+      // Show the move at once; the server's echo replaces it, a rejection
+      // rolls it back. The board stays locked while it is in flight.
+      confirmed = state;
+      state = { ...env, resigned: env.resigned };
       // No echo in 8s: assume the socket is stale and redial for the true state.
       clearTimeout(pendingTimer);
-      pendingTimer = setTimeout(() => { pending = false; probe(); paint(); }, 8000);
+      pendingTimer = setTimeout(() => { pending = false; state = confirmed; probe(); paint(); }, 8000);
       paint();
     }
 
     return {
       show() {
         const param = new URLSearchParams(location.search).get("live");
-        // Only offer the room if live play is actually switched on.
-        phase = "connecting";
-        paint();
+        const invite = param && CODE_RE.test(param.toUpperCase()) ? param.toUpperCase() : null;
+        // An invite connects immediately; the "is it switched on" check runs
+        // alongside it (a disabled server refuses the socket anyway).
+        if (invite) enter(invite);
+        else { phase = "connecting"; paint(); }
         fetch(API + "/status").then((r) => r.json()).then((s) => {
           if (!s.enabled) return close("disabled");
-          if (param && CODE_RE.test(param.toUpperCase())) enter(param.toUpperCase(), true);
-          else { phase = "lobby"; paint(); }
-        }).catch(() => close("unreachable"));
+          if (!invite && phase === "connecting") { phase = "lobby"; paint(); }
+        }).catch(() => { if (!invite) close("unreachable"); });
       },
       hide() {
         wantOpen = false;
@@ -460,5 +482,24 @@
     };
   }
 
-  global.LiveShare = { start: start };
+  /* A game's mode menu hides "live online" in a dropdown, which is easy to
+     miss. cta() puts an unmissable button beside it that switches to live
+     mode, and tucks itself away while live mode is the one in use. */
+  function cta(modeSel) {
+    if (!modeSel || modeSel.parentNode.querySelector(".live-cta")) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn live-cta";
+    b.textContent = "\u26a1 Play live online";
+    b.addEventListener("click", () => {
+      modeSel.value = "live";
+      modeSel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    modeSel.parentNode.insertBefore(b, modeSel.nextSibling);
+    const sync = () => { b.hidden = modeSel.value === "live"; };
+    modeSel.addEventListener("change", sync);
+    sync();
+  }
+
+  global.LiveShare = { start: start, cta: cta };
 })(window);

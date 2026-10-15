@@ -46,6 +46,28 @@ function newCode() {
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 }
 
+/* Picks a free code and initialises its room. Returns { code, stub } or null. */
+async function createRoom(env, game) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = newCode();
+    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
+    const res = await stub.fetch("https://room/init", {
+      method: "POST",
+      body: JSON.stringify({ game: game, code: code }),
+    });
+    if (res.status === 200) return { code: code, stub: stub };
+    if (res.status !== 409) break;          // 409 = code taken, try another
+  }
+  return null;
+}
+
+async function underCreateLimit(request, env) {
+  if (!env.CREATE_LIMITER) return true;
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const { success } = await env.CREATE_LIMITER.limit({ key: ip });
+  return success;
+}
+
 async function handleLive(request, env, url) {
   const enabled = env.LIVE_ENABLED !== "0";
   const sub = url.pathname.slice("/api/live/".length);
@@ -78,23 +100,23 @@ async function handleLive(request, env, url) {
     try { body = await request.json(); } catch (e) { return json({ error: "bad-request" }, 400); }
     if (!body || !liveGame(body.game)) return json({ error: "unknown-game" }, 400);
 
-    if (env.CREATE_LIMITER) {
-      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-      const { success } = await env.CREATE_LIMITER.limit({ key: ip });
-      if (!success) return json({ error: "rate-limit" }, 429);
-    }
+    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
+    const made = await createRoom(env, body.game);
+    return made ? json({ room: made.code }) : json({ error: "unavailable" }, 503);
+  }
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = newCode();
-      const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-      const res = await stub.fetch("https://room/init", {
-        method: "POST",
-        body: JSON.stringify({ game: body.game, code: code }),
-      });
-      if (res.status === 200) return json({ room: code });
-      if (res.status !== 409) break;          // 409 = code taken, try another
-    }
-    return json({ error: "unavailable" }, 503);
+  // Create a room AND open its socket in one request: the creator's first
+  // connection makes the room, so there is no separate POST round trip (a
+  // new TLS connection plus a Durable Object cold start) before connecting.
+  // The room code comes back in the "welcome" message.
+  if (sub === "new" && request.method === "GET") {
+    if (request.headers.get("Upgrade") !== "websocket") return json({ error: "upgrade-required" }, 426);
+    const game = url.searchParams.get("game") || "";
+    if (!liveGame(game)) return json({ error: "unknown-game" }, 400);
+    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
+    const made = await createRoom(env, game);
+    if (!made) return json({ error: "unavailable" }, 503);
+    return made.stub.fetch(new Request("https://room/ws", request));
   }
 
   if (sub === "ws" && request.method === "GET") {
@@ -121,6 +143,15 @@ class TitleRewriter {
   element(el) { el.setInnerContent(this.og.title); }
 }
 
+/* Link-preview crawlers only read the <head>. Hand them just that: no
+   scripts, styles or body, so a whole game page (or the hub with its
+   inline art) shrinks to the few hundred bytes a preview card needs. */
+const PREVIEW_BOT = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|Signal/i;
+
+class Drop {
+  element(el) { el.remove(); }
+}
+
 export default {
   async fetch(request, env) {
     // Before anything else, and before touching the assets: www and the
@@ -145,19 +176,29 @@ export default {
     const og = live !== null
       ? ogForLive(url.pathname, live)
       : ogFor(url.pathname, url.searchParams.get("s"));
-    if (!og) return res;
+    const bot = PREVIEW_BOT.test(request.headers.get("User-Agent") || "");
+    if (!og && !bot) return res;
 
-    // A preview varies with ?s= / ?live=, so a cache keyed on the path alone
-    // would hand every player the first player's preview.
+    // A preview varies with ?s= / ?live= (and with who is asking), so a cache
+    // keyed on the path alone would hand every player the first player's preview.
     const out = new Response(res.body, res);
     out.headers.append("Vary", "Accept");
+    out.headers.append("Vary", "User-Agent");
     out.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
     if (live !== null) out.headers.set("X-Robots-Tag", "noindex");
 
-    return new HTMLRewriter()
-      .on('meta[property="og:title"]', new MetaRewriter(og))
-      .on('meta[property="og:description"]', new MetaRewriter(og))
-      .on("title", new TitleRewriter(og))
-      .transform(out);
+    let rw = new HTMLRewriter();
+    if (og) {
+      rw = rw
+        .on('meta[property="og:title"]', new MetaRewriter(og))
+        .on('meta[property="og:description"]', new MetaRewriter(og))
+        .on("title", new TitleRewriter(og));
+    }
+    if (bot) {
+      rw = rw.on("script", new Drop()).on("style", new Drop())
+        .on('link[rel="stylesheet"]', new Drop()).on("body", new Drop())
+        .onDocument({ comments(c) { c.remove(); } });
+    }
+    return rw.transform(out);
   },
 };

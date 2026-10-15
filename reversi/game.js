@@ -256,7 +256,7 @@
     modeSel.value = "live";
   } else if (live) {
     fetch("/api/live/status").then((r) => r.json()).then((st) => {
-      if (st.enabled && st.games.indexOf("reversi") !== -1) liveOpt.hidden = false;
+      if (st.enabled && st.games.indexOf("reversi") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
     }).catch(() => { /* live play stays hidden */ });
   }
   applyMode();

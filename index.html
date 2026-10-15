@@ -70,6 +70,7 @@
     /* card chrome + art tokens: dark by default, flipped for light mode below */
     --card-bg: #0e0c0a; --scrim: 14,12,10; --h: #fff; --p: #f1ece3; --halo: rgba(0,0,0,.9);
     --pill-fg: #5df29a; --pill-bg: rgba(8,28,16,.85); --pill-bd: rgba(93,242,154,.45);
+    --live-fg: #ffd24d; --live-bg: rgba(48,34,4,.88); --live-bd: rgba(255,210,77,.55);
     --a-ink: #ede8e1; --a-hole: #1b1815; --a-cell: #2a2621; --a-line: #4a443a; --a-mine: #4f483c;
     --a-mineline: #6b6355; --a-panel: #241f1a; --a-radar: #10242b; --a-panel2: #2b2620; --a-line2: #3a342c;
     position: relative; display: flex; flex-direction: column; overflow: hidden; color: var(--h);
@@ -80,6 +81,7 @@
   html[data-theme="light"] .card {
     --card-bg: #fffaf2; --scrim: 255,250,242; --h: #231f1a; --p: #3b352c; --halo: rgba(255,250,242,.95);
     --pill-fg: #137a3a; --pill-bg: rgba(37,211,102,.16); --pill-bd: rgba(19,122,58,.4);
+    --live-fg: #7a4d00; --live-bg: rgba(255,200,60,.28); --live-bd: rgba(160,100,0,.45);
     --a-ink: #2b2620; --a-hole: #f6f1e9; --a-cell: #e3dac9; --a-line: #c9bfab; --a-mine: #d9d0be;
     --a-mineline: #b5ab97; --a-panel: #ece4d4; --a-radar: #dcebf0; --a-panel2: #e9e1d1; --a-line2: #cfc5b2;
     box-shadow: 0 1px 3px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.12);
@@ -88,6 +90,7 @@
     html:not([data-theme="dark"]) .card {
       --card-bg: #fffaf2; --scrim: 255,250,242; --h: #231f1a; --p: #3b352c; --halo: rgba(255,250,242,.95);
       --pill-fg: #137a3a; --pill-bg: rgba(37,211,102,.16); --pill-bd: rgba(19,122,58,.4);
+      --live-fg: #7a4d00; --live-bg: rgba(255,200,60,.28); --live-bd: rgba(160,100,0,.45);
       --a-ink: #2b2620; --a-hole: #f6f1e9; --a-cell: #e3dac9; --a-line: #c9bfab; --a-mine: #d9d0be;
       --a-mineline: #b5ab97; --a-panel: #ece4d4; --a-radar: #dcebf0; --a-panel2: #e9e1d1; --a-line2: #cfc5b2;
       box-shadow: 0 1px 3px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.12);
@@ -103,6 +106,9 @@
   }
   .card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--h); text-shadow: 0 1px 2px var(--halo), 0 0 10px var(--halo); }
   .card p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--p); text-shadow: 0 1px 2px var(--halo); }
+  .pills { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pills .pill { margin-top: 0; }
+  .pill.live { color: var(--live-fg); background: var(--live-bg); border-color: var(--live-bd); font-weight: 700; }
   .pill {
     margin-top: auto; align-self: flex-start; font-size: 10px; letter-spacing: .8px; text-transform: uppercase;
     color: var(--pill-fg); background: var(--pill-bg); border: 1px solid var(--pill-bd);
@@ -149,7 +155,7 @@
       <div class="txt">
         <h3>Tic-Tac-Toe</h3>
         <p>Trade moves by link. Or try the unbeatable AI.</p>
-        <span class="pill">WhatsApp</span>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Live</span></div>
       </div>
     </a>
     <a class="card" style="--c:#4dd9ac" href="chess/">
@@ -165,7 +171,7 @@
       <div class="txt">
         <h3>Connect Four</h3>
         <p>Drop a checker, send the board back. AI and local modes too.</p>
-        <span class="pill">WhatsApp</span>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Live</span></div>
       </div>
     </a>
     <a class="card" style="--c:#a78bfa" href="checkers/">
@@ -205,7 +211,7 @@
       <div class="txt">
         <h3>Reversi</h3>
         <p>Flip your opponent's discs to yours.</p>
-        <span class="pill">WhatsApp</span>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Live</span></div>
       </div>
     </a>
     <a class="card" style="--c:#f5b800" href="memory/">
@@ -221,7 +227,7 @@
       <div class="txt">
         <h3>Dots and Boxes</h3>
         <p>Draw a line. Complete a box and go again.</p>
-        <span class="pill">WhatsApp</span>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Live</span></div>
       </div>
     </a>
     <a class="card" style="--c:#8b9cf7" href="mancala/">
@@ -253,7 +259,7 @@
       <div class="txt">
         <h3>Lights Out</h3>
         <p>Take turns. Whoever clears the board wins.</p>
-        <span class="pill">WhatsApp</span>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Live</span></div>
       </div>
     </a>
   </nav>

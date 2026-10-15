@@ -165,6 +165,32 @@ for (let i = 0; i < 60; i++) burst.ws.send(JSON.stringify({ t: "wat" }));
 for (let i = 0; i < 40 && !limited; i++) { await sleep(100); limited = burst.inbox.some((m) => m.reason === "rate-limit"); }
 check("a flood is rate limited", limited);
 
+console.log("\ncreate-by-socket (one round trip):");
+function openNew(game) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${WS_BASE}/api/live/new?game=${game}`, { headers: { Origin: ORIGIN } });
+    const c = { ws, inbox: [], waiters: [], closed: false };
+    ws.addEventListener("message", (e) => {
+      let m; try { m = JSON.parse(e.data); } catch (err) { return; }
+      const i = c.waiters.findIndex((w) => w.pred(m));
+      if (i >= 0) c.waiters.splice(i, 1)[0].resolve(m); else c.inbox.push(m);
+    });
+    ws.addEventListener("close", () => { c.closed = true; });
+    ws.addEventListener("open", () => resolve(c));
+    ws.addEventListener("error", () => reject(new Error("socket error")));
+  });
+}
+const N1 = await openNew("tic-tac-toe");
+send(N1, { t: "hello" });
+const wn = await next(N1, ofType("welcome"));
+check("a socket to /new makes a room and welcomes the creator", wn.seat === 1 && /^[A-HJ-NP-Z2-9]{6}$/.test(wn.code), JSON.stringify(wn).slice(0, 120));
+const N2 = await open(wn.code);
+send(N2, { t: "hello" });
+check("the code from welcome can be joined", (await next(N2, ofType("welcome"))).seat === 2);
+let refused = false;
+try { await openNew("chess"); } catch (e) { refused = true; }
+check("/new refuses a game without live mode", refused);
+
 console.log("\nkeep-alive:");
 const pong = await new Promise((resolve) => {
   const t = setTimeout(() => resolve(false), 2000);
@@ -173,6 +199,6 @@ const pong = await new Promise((resolve) => {
 });
 check('"ping" is answered with "pong"', pong);
 
-for (const c of [A2, B, C, D, stranger, burst]) { try { c.ws.close(); } catch (e) { /* ignore */ } }
+for (const c of [A2, B, C, D, stranger, burst, N1, N2]) { try { c.ws.close(); } catch (e) { /* ignore */ } }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

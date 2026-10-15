@@ -479,7 +479,7 @@
   const liveOpt = modeSel.querySelector('option[value="live"]');
   if (live && !invited) {
     fetch("/api/live/status").then((r) => r.json()).then((st) => {
-      if (st.enabled && st.games.indexOf("connect-four") !== -1) liveOpt.hidden = false;
+      if (st.enabled && st.games.indexOf("connect-four") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
     }).catch(() => { /* live play stays hidden */ });
   } else if (live && invited) {
     liveOpt.hidden = false;

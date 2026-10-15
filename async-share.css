@@ -61,3 +61,17 @@ body[class*="g-"] .panel .btn.wa-small {
   font-size: var(--fs-sm);
   min-height: var(--tap);
 }
+
+/* "Play live online": the unmissable way into live rooms (live-share.js cta()). */
+body[class*="g-"] .panel .btn.live-cta {
+  background: linear-gradient(135deg, #ffd24d, #ff9f43);
+  border-color: #ffd24d;
+  color: #1a1306;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(255, 190, 60, 0.28);
+}
+body[class*="g-"] .panel .btn.live-cta:hover {
+  background: linear-gradient(135deg, #ffe07a, #ffb066);
+  border-color: #ffe07a;
+  color: #1a1306;
+}
