@@ -38,3 +38,29 @@ binding = "ASSETS"
 # possible. If invocation count ever matters more than simplicity, this
 # can become an array of route patterns covering only the game pages.
 run_worker_first = true
+
+# ---- Live online play (worker/live-room.mjs) ------------------------------
+# One Durable Object per room holds the game state and relays moves between
+# the two players over a hibernating WebSocket. WhatsApp link-passing mode
+# needs none of this and keeps working if live play is switched off.
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "LiveRoom"
+
+# SQLite-backed storage, the type new Durable Objects should use.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LiveRoom"]
+
+[vars]
+# Kill switch: set to "0" and redeploy. The API answers 503, open rooms are
+# closed, and the games hide the "live online" option on their next probe.
+LIVE_ENABLED = "1"
+
+# At most 20 new rooms per minute per IP.
+[[ratelimits]]
+name = "CREATE_LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 20
+  period = 60

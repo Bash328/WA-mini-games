@@ -28,6 +28,19 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
+## Live online play (prototype: Tic-Tac-Toe)
+
+An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
+
+- **Server:** one Durable Object per room (`worker/live-room.mjs`) holds the authoritative state and relays moves over a hibernating WebSocket. All room logic is pure and unit-tested in `worker/live-protocol.mjs`; each game's server-side move rules live in `worker/rules/<game>.mjs` and are registered in `worker/live-games.mjs`. A game without a rules module can't be played live.
+- **Client:** `live-share.js` mirrors `AsyncShare`'s controller (`show / hide / commit / newGame / canMove`), so a game adds live mode by pointing its existing link code at it. It waits for the server's echo instead of applying moves optimistically, and on every reconnect the server replays the whole state.
+- **API** (same origin only): `GET /api/live/status`, `GET /api/live/exists?room=`, `POST /api/live/create {game}`, `GET /api/live/ws?room=` (WebSocket).
+- **Limits:** 2 seats, 2 KB messages, a per-socket rate limit, 20 new rooms per minute per IP, rooms deleted after 24 h idle / 1 h after finishing.
+- **Kill switch:** set `LIVE_ENABLED = "0"` in `wrangler.toml` and deploy: the API answers 503, open rooms close, and games hide the option.
+- **Hidden-information games** (Hangman, Battleship, Mastermind, Rock Paper Scissors) are intentionally not live-enabled: their secrets would be visible in the socket traffic.
+
+Tests: `node worker/rules/tic-tac-toe.test.mjs`, `node worker/live-protocol.test.mjs`, and, against a running `wrangler dev`, `node worker/live.integration.mjs`.
+
 ## How play-by-link works
 
 1. Open a game page with no `?s=` in the URL. You get a fresh board; make the first move.
@@ -248,7 +261,8 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── manpage.js          "? man" help overlay
 ├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
 ├── manifest.json       PWA manifest
-├── worker/             Cloudflare Worker: per-state link previews, + its node test
+├── live-share.js       live online play client (WebSocket rooms)
+├── worker/             Cloudflare Worker: link previews, live rooms (Durable Object), + node tests
 ├── wrangler.toml       Workers config (the assets directory is the repo root)
 ├── _headers            Cache-Control for static assets
 ├── .assetsignore       repo files that are not part of the published site

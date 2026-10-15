@@ -10,9 +10,12 @@
   let board, human, ai, turn, gameOver;
   let aiTimer = null;
   let cellEls = [];
-  let mode = "whatsapp";      // "whatsapp" | "ai"
-  let lastMove = null;        // highlighted cell in WhatsApp mode
-  let linkCanMove = false;    // WhatsApp mode: is it this viewer's move?
+  let mode = "whatsapp";      // "whatsapp" | "live" | "ai"
+  let lastMove = null;        // highlighted cell in WhatsApp / live mode
+  let linkCanMove = false;    // WhatsApp / live mode: is it this viewer's move?
+  // Both link modes share the same board + state envelope; only the way a
+  // move travels differs (a link vs a live socket).
+  const isLinked = () => mode === "whatsapp" || mode === "live";
 
   const boardEl = document.getElementById("board");
   const statusEl = document.getElementById("status");
@@ -90,8 +93,8 @@
       el.classList.toggle("x", v === "X");
       el.classList.toggle("o", v === "O");
       el.classList.toggle("win", !!(winInfo && winInfo.line.includes(i)));
-      el.classList.toggle("last", mode === "whatsapp" && lastMove === i);
-      el.disabled = !!v || !!winInfo || (mode === "whatsapp" ? !linkCanMove : turn !== human);
+      el.classList.toggle("last", isLinked() && lastMove === i);
+      el.disabled = !!v || !!winInfo || (isLinked() ? !linkCanMove : turn !== human);
     }
   }
 
@@ -105,7 +108,7 @@
   }
 
   function play(i) {
-    if (mode === "whatsapp") return playLink(i);
+    if (isLinked()) return playLink(i);
     if (gameOver || board[i] || turn !== human) return;
     board[i] = human;
     const w = winner(board);
@@ -171,6 +174,15 @@
   function boardToStr(b) { return b.map(v => v === null ? "." : v).join(""); }
   function strToBoard(s) { return s.split("").map(c => c === "." ? null : c); }
 
+  function validateTtt(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== 9 || !/^[.XO]{9}$/.test(b)) return false;
+    // a resignation adds a move to the count without adding a mark
+    const filled = b.split("").filter(c => c !== ".").length;
+    if (filled !== s.moveCount && !(s.resigned && filled === s.moveCount - 1)) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < 9 && b[s.last] !== ".";
+  }
+
   const link = AsyncShare.start({
     game: "tic-tac-toe",
     version: 2,
@@ -178,14 +190,22 @@
     players: ["X", "O"],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== 9 || !/^[.XO]{9}$/.test(b)) return false;
-      if (b.split("").filter(c => c !== ".").length !== s.moveCount) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < 9 && b[s.last] !== ".";
-    },
+    validateBoard: validateTtt,
     onState: loadLink,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room
+  // instead of a link. LiveShare is absent only if its script failed to load.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "tic-tac-toe",
+    version: 2,
+    players: ["X", "O"],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateTtt,
+    onState: loadLink,
+  });
+  const activeLink = () => (mode === "live" && live ? live : link);
 
   function loadLink(state, canMove) {
     cancelAI();
@@ -202,7 +222,7 @@
     if (!linkCanMove || board[i]) return;
     board[i] = turn;
     const w = winner(board);
-    link.commit({
+    activeLink().commit({
       board: boardToStr(board),
       status: !w ? "in_progress" : w.player === "draw" ? "draw" : "won",
       winner: w && w.player !== "draw" ? w.player : null,
@@ -213,14 +233,19 @@
   function applyMode() {
     toggleBtn.hidden = mode !== "ai";
     if (mode === "whatsapp") {
+      if (live) live.hide();
       link.show();
+    } else if (mode === "live" && live) {
+      link.hide();
+      live.show();
     } else {
       link.hide();
+      if (live) live.hide();
       reset();
     }
   }
 
-  resetBtn.addEventListener("click", () => (mode === "whatsapp" ? link.newGame() : reset()));
+  resetBtn.addEventListener("click", () => (isLinked() ? activeLink().newGame() : reset()));
   toggleBtn.addEventListener("click", () => {
     human = human === "X" ? "O" : "X";
     ai = human === "X" ? "O" : "X";
@@ -235,6 +260,20 @@
   human = "X"; ai = "O";
   buildBoard();
   updateToggleLabel();
+
+  // The live option stays hidden until the server says live play is on. A
+  // ?live=CODE invite link opens straight into live mode (the way ?s= does
+  // for WhatsApp mode); LiveShare shows its own message if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    mode = "live";
+    liveOpt.hidden = false;
+  } else if (live) {
+    fetch("/api/live/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf("tic-tac-toe") !== -1) liveOpt.hidden = false;
+    }).catch(() => { /* live play stays hidden */ });
+  }
   modeSel.value = mode;
   applyMode();
 })();

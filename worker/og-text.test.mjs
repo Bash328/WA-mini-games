@@ -3,7 +3,7 @@
    async-share.js encodes them. */
 
 import LZString from "../vendor/lz-string.min.js";
-import { ogFor, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
+import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
 
 const enc = (o) =>
   LZString.compressToEncodedURIComponent(JSON.stringify(o)).replace(/\+/g, "_");
@@ -63,6 +63,17 @@ check("a draw",
   ogFor("/tic-tac-toe/", state({ g: "tic-tac-toe", v: 2, t: "X", s: "d", n: 9 })),
   { title: "Draw · tic-tac-toe",
     description: "Game over after 9 moves. Open to see the final board." });
+
+console.log("\nlive invite links:");
+check("valid tic-tac-toe invite",
+  ogForLive("/tic-tac-toe/", "K7P2QX"),
+  { title: "Join a live game · tic-tac-toe",
+    description: "You've been invited to play tic-tac-toe in real time. Tap to join, no sign-up." });
+check("game without live mode is left alone", ogForLive("/chess/", "K7P2QX"), null);
+check("bad code is left alone", ogForLive("/tic-tac-toe/", "k7p2qx"), null);
+check("ambiguous characters are not valid", ogForLive("/tic-tac-toe/", "K7P2QO"), null);
+check("missing code", ogForLive("/tic-tac-toe/", null), null);
+check("the code is never echoed", JSON.stringify(ogForLive("/tic-tac-toe/", "K7P2QX")).includes("K7P2QX"), false);
 
 console.log("\nanything suspect falls back to the page's static tags (null):");
 check("no state param", ogFor("/tic-tac-toe/", null), null);

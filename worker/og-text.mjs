@@ -12,6 +12,7 @@
    ============================================================ */
 
 import LZString from "../vendor/lz-string.min.js";
+import { liveGame } from "./live-games.mjs";
 
 /* Mirrors each game's AsyncShare.start({ title, players, label }). Kept
    here rather than imported because game.js files are browser scripts,
@@ -110,3 +111,20 @@ export function ogFor(pathname, stateParam) {
 }
 
 export const SUPPORTED_GAMES = Object.keys(GAMES);
+
+/* A "?live=CODE" invite link. Only a well-formed code for a game that can
+   be played live gets custom text; the code itself is never echoed into
+   the page (the preview just invites). Returns { title, description } or
+   null. */
+export const LIVE_CODE = /^[A-HJ-NP-Z2-9]{6}$/;
+export function ogForLive(pathname, code) {
+  const slug = slugFor(pathname);
+  if (!liveGame(slug) || typeof code !== "string" || !LIVE_CODE.test(code)) return null;
+  const meta = Object.prototype.hasOwnProperty.call(GAMES, slug) ? GAMES[slug] : null;
+  if (!meta) return null;
+  return {
+    title: "Join a live game · " + meta.title,
+    description: "You've been invited to play " + meta.title + " in real time. Tap to join, no sign-up.",
+  };
+}
+
