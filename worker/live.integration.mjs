@@ -153,7 +153,7 @@ B.ws.send("{not json");
 check("malformed JSON is rejected", (await next(B, ofType("reject"))).reason === "bad-json");
 const D = await open(code);
 D.ws.send("x".repeat(3000));
-await sleep(300);
+for (let i = 0; i < 40 && !D.closed; i++) await sleep(100);   // allow for network latency
 check("oversized message closes the socket", D.closed === true);
 let bad = false;
 try { await open(code, "https://evil.example"); } catch (e) { bad = true; }
@@ -161,8 +161,7 @@ check("WebSocket from another origin is refused", bad);
 const burst = await open((await (await api("/api/live/create", { method: "POST", body: JSON.stringify({ game: "tic-tac-toe" }) })).json()).room);
 let limited = false;
 for (let i = 0; i < 60; i++) burst.ws.send(JSON.stringify({ t: "wat" }));
-await sleep(500);
-limited = burst.inbox.some((m) => m.reason === "rate-limit");
+for (let i = 0; i < 40 && !limited; i++) { await sleep(100); limited = burst.inbox.some((m) => m.reason === "rate-limit"); }
 check("a flood is rate limited", limited);
 
 console.log("\nkeep-alive:");
