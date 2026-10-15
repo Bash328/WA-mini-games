@@ -84,25 +84,38 @@
 
     /* ---------- connection ---------- */
 
-    function connect() {
-      clearTimeout(retryTimer);
+    function socketUrl() {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      let sock;
       // No code yet means we are creating: the first socket makes the room
       // (one round trip, not a POST followed by a connect).
       const path = code ? "/ws?room=" + code : "/new?game=" + encodeURIComponent(opts.game);
+      return proto + "//" + location.host + API + path;
+    }
+
+    function connect() {
+      clearTimeout(retryTimer);
+      let sock;
       try {
-        sock = new WebSocket(proto + "//" + location.host + API + path);
+        sock = new WebSocket(socketUrl());
       } catch (e) {
         return close("unsupported");
       }
+      attach(sock, false);
+    }
+
+    // Wire a socket up as THE connection. helloSent: a pre-warmed socket
+    // said hello as soon as it opened, before anyone adopted it.
+    function attach(sock, helloSent) {
       ws = sock;
-      sock.onopen = () => {
+      const ready = () => {
         if (ws !== sock) return;
-        const token = store.get("seat:" + code, null);
-        send(token ? { t: "hello", token: token } : { t: "hello" });
+        if (!helloSent) {
+          const token = store.get("seat:" + code, null);
+          send(token ? { t: "hello", token: token } : { t: "hello" });
+        }
         startPing();
       };
+      if (sock.readyState === 1) ready(); else sock.onopen = ready;
       sock.onmessage = (e) => { if (ws === sock) onMessage(e.data); };
       sock.onclose = () => {
         if (ws !== sock) return;
@@ -253,7 +266,44 @@
       state = confirmed = null; seat = 0; me = null; seated = { 1: false, 2: false }; online = { 1: false, 2: false };
       phase = "connecting";
       paint();
+      if (c === null && warm) {
+        // The room was already made while the lobby was on screen: take it.
+        const w = warm;
+        warm = null;
+        attach(w.sock, w.helloSent);
+        w.buffered.forEach((data) => onMessage(data));
+        return;
+      }
+      dropWarm();
       connect();
+    }
+
+    /* ---------- pre-warmed room ----------
+       The first contact with a brand-new Durable Object is the slow part of
+       making a room (about a second from some places). While the lobby is on
+       screen we make one in the background, so "Create" is instant. An
+       unused one is tidied away by the server after a couple of hours. */
+    let warm = null;               // { sock, helloSent, buffered: [raw messages] }
+
+    function prewarm() {
+      if (warm || phase !== "lobby") return;
+      let sock;
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      try {
+        sock = new WebSocket(proto + "//" + location.host + API + "/new?game=" + encodeURIComponent(opts.game));
+      } catch (e) { return; }
+      const w = warm = { sock: sock, helloSent: false, buffered: [] };
+      sock.onopen = () => { if (warm === w) { w.helloSent = true; sock.send(JSON.stringify({ t: "hello" })); } };
+      sock.onmessage = (e) => { if (warm === w) w.buffered.push(e.data); };
+      sock.onclose = () => { if (warm === w) warm = null; };
+      sock.onerror = () => { /* onclose follows */ };
+    }
+
+    function dropWarm() {
+      if (!warm) return;
+      const w = warm;
+      warm = null;
+      try { w.sock.close(); } catch (e) { /* ignore */ }
     }
 
     function joinTyped(raw) {
@@ -356,6 +406,7 @@
     }
 
     function paintLobby() {
+      prewarm();
       setStatus("Live online", "play in real time");
       noteP("Create a room and send the link to a friend, or join one with its code. Moves show up instantly — no link-passing.");
       actions(button("Create a live room", "primary", create));
@@ -469,6 +520,7 @@
       },
       hide() {
         wantOpen = false;
+        dropWarm();
         clearTimeout(retryTimer); clearTimeout(pendingTimer); stopPing();
         if (ws) { const s = ws; ws = null; try { s.close(); } catch (e) { /* ignore */ } }
         phase = "idle";

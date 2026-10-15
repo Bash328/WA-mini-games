@@ -1,7 +1,7 @@
 /* Run: node worker/live-protocol.test.mjs */
 import {
   newRoom, join, bothSeated, applyMove, requestRematch, expiresAt, takeToken,
-  IDLE_MS, FINISHED_MS,
+  IDLE_MS, FINISHED_MS, WAITING_MS,
 } from "./live-protocol.mjs";
 
 let pass = 0, fail = 0;
@@ -130,6 +130,12 @@ console.log("\nexpiry:");
   check("activity pushes it back", expiresAt(room), T0 + 1 + IDLE_MS);
   room.finishedAt = T0 + 5;
   check("a finished room expires in 1h", expiresAt(room), T0 + 5 + FINISHED_MS);
+  const lonely = newRoom("tic-tac-toe", "ABC234", T0);
+  check("a room nobody joined expires in 2h", expiresAt(lonely), T0 + WAITING_MS);
+  join(lonely, null, mint, T0);
+  check("with only the host in it, still 2h", expiresAt(lonely), T0 + WAITING_MS);
+  join(lonely, null, mint, T0);
+  check("once both are in, the normal 24h applies", expiresAt(lonely), T0 + IDLE_MS);
 }
 
 console.log("\nrate limit:");

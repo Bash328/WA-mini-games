@@ -20,6 +20,7 @@ import { liveGame } from "./live-games.mjs";
 export const MAX_MESSAGE_CHARS = 2048;
 export const IDLE_MS = 24 * 60 * 60 * 1000;       // an unfinished room
 export const FINISHED_MS = 60 * 60 * 1000;        // after the game is over
+export const WAITING_MS = 2 * 60 * 60 * 1000;     // a room still waiting for its second player
 const STATUSES = ["in_progress", "won", "draw"];
 
 const ALNUM = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -162,7 +163,11 @@ export function requestRematch(room, seat, now, rand = Math.random) {
 /* ---------- expiry ---------- */
 
 export function expiresAt(room) {
-  return room.finishedAt !== null ? room.finishedAt + FINISHED_MS : room.lastActive + IDLE_MS;
+  if (room.finishedAt !== null) return room.finishedAt + FINISHED_MS;
+  // A room made in advance (the lobby pre-warms one) that nobody joined
+  // is tidied away sooner than a game in progress.
+  const waiting = !room.state && !(room.seats[1] && room.seats[2]);
+  return room.lastActive + (waiting ? WAITING_MS : IDLE_MS);
 }
 
 /* ---------- abuse limits ---------- */
