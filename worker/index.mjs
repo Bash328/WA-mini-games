@@ -55,6 +55,17 @@ async function handleLive(request, env, url) {
   }
   if (!enabled) return json({ error: "disabled" }, 503);
 
+  // Read-only and carries no secrets, so it needs no Origin check: browsers
+  // do not send Origin on same-origin GET requests, so requiring it would
+  // make every legitimate lookup fail.
+  if (sub === "exists" && request.method === "GET") {
+    const code = url.searchParams.get("room") || "";
+    if (!CODE_RE.test(code)) return json({ exists: false });
+    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
+    const res = await stub.fetch("https://room/exists");
+    return json({ exists: res.status === 200 });
+  }
+
   // Same-origin only. (Local scripts without a browser can opt out with
   // LIVE_ALLOW_NO_ORIGIN, set only in local dev.)
   const origin = request.headers.get("Origin");
@@ -84,14 +95,6 @@ async function handleLive(request, env, url) {
       if (res.status !== 409) break;          // 409 = code taken, try another
     }
     return json({ error: "unavailable" }, 503);
-  }
-
-  if (sub === "exists" && request.method === "GET") {
-    const code = url.searchParams.get("room") || "";
-    if (!CODE_RE.test(code)) return json({ exists: false });
-    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-    const res = await stub.fetch("https://room/exists");
-    return json({ exists: res.status === 200 });
   }
 
   if (sub === "ws" && request.method === "GET") {

@@ -225,7 +225,9 @@
         try {
           const r = await fetch(API + "/exists?room=" + c);
           const j = await r.json();
-          if (!j.exists) { code = c; return close("expired"); }
+          // Only a definite "no such room" ends it; anything else (an odd
+          // status, a hiccup) falls through and lets the socket decide.
+          if (r.ok && j.exists === false) { code = c; return close("expired"); }
         } catch (e) { /* let the socket try; it will report if unreachable */ }
       }
       code = c;

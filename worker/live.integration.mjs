@@ -68,8 +68,9 @@ const made = await api("/api/live/create", { method: "POST", body: JSON.stringif
 const { room: code } = await made.json();
 check("room code is 6 safe characters", /^[A-HJ-NP-Z2-9]{6}$/.test(code), code);
 
-const ex1 = await (await api("/api/live/exists?room=" + code)).json();
-const ex2 = await (await api("/api/live/exists?room=AAAAAA")).json();
+// Browsers send no Origin on a same-origin GET, so this must work without one.
+const ex1 = await (await api("/api/live/exists?room=" + code, {}, null)).json();
+const ex2 = await (await api("/api/live/exists?room=AAAAAA", {}, null)).json();
 check("exists reports a live room and a missing one", ex1.exists === true && ex2.exists === false, JSON.stringify([ex1, ex2]));
 
 console.log("\njoining:");
