@@ -79,3 +79,24 @@ body[class*="g-"] .panel .btn.live-cta:hover {
 /* The Online button stays on the same line as the mode menu, whatever the width. */
 .controls .live-cta { white-space: nowrap; flex: 0 0 auto; padding-left: 12px; padding-right: 12px; }
 .controls select { min-width: 0; max-width: 100%; }
+
+/* The room code in a live game's waiting panel: large, easy to read out and to tap. */
+.live-code-box { text-align: center; margin: 4px 0 14px; }
+body[class*="g-"] .panel .live-code {
+  font-family: inherit;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+  padding: 12px 22px 12px 26px;
+  min-height: 0;
+  border-radius: 16px;
+  border: 2px dashed var(--border-hi);
+  background: var(--panel-2);
+  color: var(--fg);
+  cursor: pointer;
+  -webkit-user-select: all;
+  user-select: all;
+}
+body[class*="g-"] .panel .live-code:hover { border-color: var(--accent); background: var(--panel-2); color: var(--fg); }
+.live-code-hint { color: var(--muted); font-size: var(--fs-sm); margin-top: 6px; min-height: 1.4em; }

@@ -106,7 +106,8 @@
   }
   .card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--h); text-shadow: 0 1px 2px var(--halo), 0 0 10px var(--halo); }
   .card p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--p); text-shadow: 0 1px 2px var(--halo); }
-  .pills { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  /* WhatsApp at the left, Online at the right: one row, bottom of the card */
+  .pills { margin-top: auto; display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; align-items: center; }
   .pills .pill { margin-top: 0; }
   .pill.live { color: var(--live-fg); background: var(--live-bg); border-color: var(--live-bd); font-weight: 700; }
   .pill {
@@ -118,6 +119,7 @@
     .txt { margin-top: -12px; padding: 18px 12px 12px; background: linear-gradient(to bottom, rgba(var(--scrim),0) 0, rgba(var(--scrim),.9) 12px, rgb(var(--scrim)) 20px); }
     .card h3 { font-size: 15px; }
     .card p { font-size: 11.5px; }
+    .pills .pill { font-size: 9px; letter-spacing: .4px; padding: 2px 6px; }
   }
 
   .footer {
@@ -155,7 +157,7 @@
       <div class="txt">
         <h3>Tic-Tac-Toe</h3>
         <p>Trade moves by link. Or try the unbeatable AI.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
     <a class="card" style="--c:#4dd9ac" href="chess/">
@@ -171,7 +173,7 @@
       <div class="txt">
         <h3>Connect Four</h3>
         <p>Drop a checker, send the board back. AI and local modes too.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
     <a class="card" style="--c:#a78bfa" href="checkers/">
@@ -203,7 +205,7 @@
       <div class="txt">
         <h3>Rock Paper Scissors</h3>
         <p>Best of 3, 5, or 7. Your pick stays hidden.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
     <a class="card" style="--c:#ff6b6b" href="reversi/">
@@ -211,7 +213,7 @@
       <div class="txt">
         <h3>Reversi</h3>
         <p>Flip your opponent's discs to yours.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
     <a class="card" style="--c:#f5b800" href="memory/">
@@ -227,7 +229,7 @@
       <div class="txt">
         <h3>Dots and Boxes</h3>
         <p>Draw a line. Complete a box and go again.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
     <a class="card" style="--c:#8b9cf7" href="mancala/">
@@ -259,7 +261,7 @@
       <div class="txt">
         <h3>Lights Out</h3>
         <p>Take turns. Whoever clears the board wins.</p>
-        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">⚡ Online</span></div>
+        <div class="pills"><span class="pill">WhatsApp</span><span class="pill live">Online</span></div>
       </div>
     </a>
   </nav>

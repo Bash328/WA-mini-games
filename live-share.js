@@ -386,15 +386,32 @@
       a.rel = "noopener";
       return a;
     }
-    function copyButton() {
-      const b = button("Copy link", "ghost", () => {
-        const done = (ok) => {
-          b.textContent = ok ? "Copied!" : "Copy failed — use the address bar";
-          setTimeout(() => { b.textContent = "Copy link"; }, 1800);
-        };
-        if (navigator.clipboard && global.isSecureContext) {
-          navigator.clipboard.writeText(inviteLink()).then(() => done(true), () => done(false));
-        } else done(false);
+    // Copy text to the clipboard: the async API where it exists, otherwise
+    // the old select-and-copy trick (it still works in many in-app browsers).
+    function copyTo(value, done) {
+      if (navigator.clipboard && global.isSecureContext) {
+        navigator.clipboard.writeText(value).then(() => done(true), () => done(legacyCopy(value)));
+      } else done(legacyCopy(value));
+    }
+    function legacyCopy(value) {
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, value.length);
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { /* ignore */ }
+      ta.remove();
+      return ok;
+    }
+    function copyButton(label, value) {
+      const b = button(label, "ghost", () => {
+        copyTo(value(), (ok) => {
+          b.textContent = ok ? "Copied!" : "Copy failed — select it and copy";
+          setTimeout(() => { b.textContent = label; }, 1800);
+        });
       });
       return b;
     }
@@ -460,8 +477,22 @@
       if (!bothSeated()) {
         setStatus("Waiting for your opponent", "room " + code);
         Gamekit.turn(slotOf(me), "Waiting for your opponent", true);
-        banner("", "Room " + code + " is open. The game starts the moment your friend joins.");
-        actions(shareButton(), copyButton());
+        banner("", "Your room is open. The game starts the moment your friend joins.");
+        // The code, big and tappable: tap it (or the button) to copy.
+        const box = el("div", "live-code-box");
+        const codeBtn = el("button", "live-code", code.slice(0, 3) + " " + code.slice(3));
+        codeBtn.type = "button";
+        codeBtn.setAttribute("aria-label", "Room code " + code.split("").join(" ") + ". Tap to copy.");
+        const hint = el("div", "live-code-hint", "Room code · tap to copy");
+        codeBtn.addEventListener("click", () => {
+          copyTo(code, (ok) => {
+            hint.textContent = ok ? "Copied! Send it to your friend" : "Couldn't copy — select and copy it";
+            setTimeout(() => { hint.textContent = "Room code · tap to copy"; }, 2000);
+          });
+        });
+        box.append(codeBtn, hint);
+        ui.appendChild(box);
+        actions(shareButton(), copyButton("Copy link", inviteLink), copyButton("Copy code", () => code));
         if (note) noteP(note);
         return actions(button("Leave room", "ghost wa-small", leave));
       }
@@ -614,7 +645,7 @@
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn live-cta";
-    b.textContent = "\u26a1 Online";
+    b.textContent = "Online";
     b.addEventListener("click", () => {
       modeSel.value = "live";
       modeSel.dispatchEvent(new Event("change", { bubbles: true }));
