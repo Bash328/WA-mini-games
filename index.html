@@ -40,6 +40,21 @@
 <style>
   /* Hub: uses the game pages' warm dark theme (body.g-hub picks up the
      body[class*="g-"] tokens in shared.css). */
+  /* Light variant of the warm theme. shared.css pins game tokens on body,
+     so the hub overrides them here: explicit toggle, else system setting. */
+  body.g-hub { --wa: #25d366; }
+  html[data-theme="light"] body.g-hub {
+    --bg: #f6f1e9; --bg-2: #efe8dc; --panel: #fffaf2; --panel-2: #f6f1e9;
+    --fg: #231f1a; --muted: #6b6459; --dim: #a39b8c;
+    --border: #ddd3c2; --border-hi: #c9bca5; --accent: #b87d00; --wa: #1a9f4b;
+  }
+  @media (prefers-color-scheme: light) {
+    html:not([data-theme="dark"]) body.g-hub {
+      --bg: #f6f1e9; --bg-2: #efe8dc; --panel: #fffaf2; --panel-2: #f6f1e9;
+      --fg: #231f1a; --muted: #6b6459; --dim: #a39b8c;
+      --border: #ddd3c2; --border-hi: #c9bca5; --accent: #b87d00; --wa: #1a9f4b;
+    }
+  }
   .wrap { max-width: 1000px; padding: 40px 20px 64px; }
   .brand { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 6px; }
   .brand span { color: var(--accent); }
@@ -68,8 +83,8 @@
   /* margin-top:auto pins the badge to the bottom-left of every card */
   .pill {
     margin-top: auto; align-self: flex-start;
-    font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: #25d366;
-    background: rgba(37,211,102,.12); padding: 2px 8px; border-radius: 999px;
+    font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: var(--wa);
+    background: color-mix(in srgb, var(--wa) 14%, transparent); padding: 2px 8px; border-radius: 999px;
   }
 
   .footer {
@@ -78,7 +93,13 @@
   }
   .footer a { color: var(--muted); text-decoration: underline; }
   .footer a:hover { color: var(--fg); }
-  .footer .links { display: flex; gap: 14px; }
+  .footer .links { display: flex; gap: 14px; align-items: center; }
+  .theme-toggle {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 4px 10px; min-height: 28px; border-radius: 8px; font-family: inherit;
+    font-size: 11px; letter-spacing: .5px; text-transform: uppercase; cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--fg); border-color: var(--border-hi); }
 </style>
 </head>
 <body class="g-hub">
@@ -209,10 +230,32 @@
   <footer class="footer">
     <div>Based on <a href="https://github.com/wavde/games">wavde/games</a> &copy; Tejas Wavde · MIT</div>
     <div class="links">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">theme</button>
       <a href="privacy/">privacy</a>
       <a href="https://github.com/Bash328/WA-mini-games">source</a>
     </div>
   </footer>
 </main>
+<script>
+  // Theme toggle: cycles dark -> light -> system
+  (function () {
+    const KEY = "games:theme";
+    const btn = document.getElementById("theme-toggle");
+    const html = document.documentElement;
+    function apply(mode) {
+      if (mode === "light" || mode === "dark") html.setAttribute("data-theme", mode);
+      else html.removeAttribute("data-theme");
+      btn.textContent = "theme: " + (mode || "system");
+      try { mode ? localStorage.setItem(KEY, mode) : localStorage.removeItem(KEY); } catch (e) {}
+    }
+    let mode = null;
+    try { mode = localStorage.getItem(KEY); } catch (e) {}
+    apply(mode);
+    btn.addEventListener("click", () => {
+      const cur = html.getAttribute("data-theme");
+      apply(cur === "dark" ? "light" : cur === "light" ? null : "dark");
+    });
+  })();
+</script>
 </body>
 </html>
