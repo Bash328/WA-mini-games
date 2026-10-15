@@ -63,7 +63,12 @@
   #board .db-edge:not(.drawn):not(:disabled):hover { background: var(--border-hi); }
   /* Drawn edges are disabled buttons, which the shared CSS fades; keep them solid. */
   #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: var(--fg); opacity: 1; }
-  #board .db-edge.last, #board .db-edge.last:disabled { background: #f5c800; opacity: 1; }
+  /* each player's lines in their own colour (same colours as their boxes) */
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: var(--p1); }
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: var(--p2); }
+  /* the most recent line is ringed, so it still reads as "last" in either colour */
+  #board .db-edge.last, #board .db-edge.last:disabled { opacity: 1; box-shadow: 0 0 0 2px #f5c800; position: relative; z-index: 1; }
+  #board .db-edge.last:not(.p1):not(.p2) { background: #f5c800; }
   .db-boxcell { border-radius: 2px; }
   /* Claimed boxes use the shared bright player colours (--p1 / --p2) and
      carry the player's number, so ownership never relies on colour alone. */
@@ -105,7 +110,7 @@
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
         <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="live" hidden>2 players · live online</option>
+        <option value="live" hidden>2 players · online</option>
         <option value="local">2 players · same device</option>
       </select>
     </div>
@@ -144,7 +149,7 @@
 
   <h2>Live online</h2>
   <ul>
-    <li>Tap <strong>⚡ Play live online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
+    <li>Tap <strong>⚡ Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
     <li>If someone drops out they can rejoin with the same link. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
   </ul>
 </template>

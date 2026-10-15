@@ -75,3 +75,7 @@ body[class*="g-"] .panel .btn.live-cta:hover {
   border-color: #ffe07a;
   color: #1a1306;
 }
+
+/* The Online button stays on the same line as the mode menu, whatever the width. */
+.controls .live-cta { white-space: nowrap; flex: 0 0 auto; padding-left: 12px; padding-right: 12px; }
+.controls select { min-width: 0; max-width: 100%; }

@@ -614,7 +614,7 @@
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn live-cta";
-    b.textContent = "\u26a1 Play live online";
+    b.textContent = "\u26a1 Online";
     b.addEventListener("click", () => {
       modeSel.value = "live";
       modeSel.dispatchEvent(new Event("change", { bubbles: true }));

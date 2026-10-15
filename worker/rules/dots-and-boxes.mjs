@@ -1,9 +1,10 @@
 /* ============================================================
    rules/dots-and-boxes.mjs — server-side rules for live Dots and Boxes.
 
-   Wire board (same as dots-and-boxes/game.js): 56 chars — 40 edge flags
-   ('0' / '1': 20 horizontal then 20 vertical) then 16 box owners
-   ('0' / '1' / '2'). 5x5 dots -> 4x4 boxes. Completing a box (or two)
+   Wire board (same as dots-and-boxes/game.js): 56 chars — 40 edge cells
+   (20 horizontal then 20 vertical; '0' undrawn, '1' drawn by an unknown
+   hand in a link from before lines had owners, '2' Player 1's, '3' Player
+   2's) then 16 box owners ('0' / '1' / '2'). 5x5 dots -> 4x4 boxes. Completing a box (or two)
    grants another turn. Players are the numbers 1 and 2.
    ============================================================ */
 
@@ -39,11 +40,11 @@ function touching(edge) {
    many boxes it just completed. */
 export function drawEdge(board, edge, player) {
   const cells = board.split("");
-  cells[edge] = "1";
+  cells[edge] = String(player + 1);
   let claimed = 0;
   for (const bi of touching(edge)) {
     const r = Math.floor(bi / BOXES), c = bi % BOXES;
-    if (cells[EDGE_COUNT + bi] === "0" && boxEdges(r, c).every((i) => cells[i] === "1")) {
+    if (cells[EDGE_COUNT + bi] === "0" && boxEdges(r, c).every((i) => cells[i] !== "0")) {
       cells[EDGE_COUNT + bi] = String(player);
       claimed++;
     }
@@ -57,7 +58,7 @@ export function counts(board) {
   return { 1: a, 2: b };
 }
 
-const edgesDone = (board) => board.slice(0, EDGE_COUNT).split("").every((ch) => ch === "1");
+const edgesDone = (board) => board.slice(0, EDGE_COUNT).split("").every((ch) => ch !== "0");
 
 /* The wire result of player drawing edge. */
 export function resolve(board, edge, player) {
@@ -82,7 +83,7 @@ export function validateTransition(prev, next, mover) {
   if (typeof before !== "string" || before.length !== EDGE_COUNT + BOX_COUNT) return bad;
   const after = next.board;
   if (typeof after !== "string" || after.length !== EDGE_COUNT + BOX_COUNT) return bad;
-  if (!/^[01]+$/.test(after.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(after.slice(EDGE_COUNT))) return bad;
+  if (!/^[0-3]+$/.test(after.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(after.slice(EDGE_COUNT))) return bad;
   const edge = next.last;
   if (!Number.isInteger(edge) || edge < 0 || edge >= EDGE_COUNT) return bad;
   if (before[edge] !== "0") return bad;

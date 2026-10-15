@@ -24,7 +24,7 @@
   function boxEdgeIdxs(r, c) { return [hIdx(r, c), hIdx(r + 1, c), vIdx(r, c), vIdx(r, c + 1)]; }
   function boxesTouchingH(r, c) { const out = []; if (r - 1 >= 0) out.push(boxIdx(r - 1, c)); if (r < BOXES) out.push(boxIdx(r, c)); return out; }
   function boxesTouchingV(r, c) { const out = []; if (c - 1 >= 0) out.push(boxIdx(r, c - 1)); if (c < BOXES) out.push(boxIdx(r, c)); return out; }
-  function boxComplete(edges, r, c) { return boxEdgeIdxs(r, c).every(i => edges[i] === 1); }
+  function boxComplete(edges, r, c) { return boxEdgeIdxs(r, c).every(i => edges[i] !== 0); }
 
   function newEdges() { return new Array(EDGE_COUNT).fill(0); }
   function newBoxes() { return new Array(BOX_COUNT).fill(0); }
@@ -35,7 +35,9 @@
   function drawEdge(edges, boxes, kind, r, c, player) {
     const ei = kind === "h" ? hIdx(r, c) : vIdx(r, c);
     if (edges[ei]) return 0;
-    edges[ei] = 1;
+    // 2 = Player 1's line, 3 = Player 2's (1 is a line from a link made before
+    // lines had owners: drawn, owner unknown)
+    edges[ei] = player + 1;
     const touching = kind === "h" ? boxesTouchingH(r, c) : boxesTouchingV(r, c);
     let claimed = 0;
     for (const bi of touching) {
@@ -51,6 +53,8 @@
     return { [P1]: p1, [P2]: p2 };
   }
 
+  const edgeClass = (v) => v ? " drawn" + (v > 1 ? " p" + (v - 1) : "") : "";
+  const edgesDrawn = (edges) => edges.filter(Boolean).length;
   const GRID = 2 * DOTS - 1; // 9: interleaved dot/edge/box grid
   function cellType(R, C) { return (R % 2 === 0) ? (C % 2 === 0 ? "dot" : "h") : (C % 2 === 0 ? "v" : "box"); }
 
@@ -67,7 +71,7 @@
         cell.className = "db-cell db-hcell";
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "db-edge db-h" + (edges[ei] ? " drawn" : "") + (ei === lastEdge ? " last" : "");
+        btn.className = "db-edge db-h" + edgeClass(edges[ei]) + (ei === lastEdge ? " last" : "");
         btn.disabled = !!edges[ei] || !canClick;
         btn.setAttribute("aria-label", "Horizontal edge row " + r + " col " + c);
         btn.addEventListener("click", () => onEdge("h", r, c));
@@ -77,7 +81,7 @@
         cell.className = "db-cell db-vcell";
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "db-edge db-v" + (edges[ei] ? " drawn" : "") + (ei === lastEdge ? " last" : "");
+        btn.className = "db-edge db-v" + edgeClass(edges[ei]) + (ei === lastEdge ? " last" : "");
         btn.disabled = !!edges[ei] || !canClick;
         btn.setAttribute("aria-label", "Vertical edge row " + r + " col " + c);
         btn.addEventListener("click", () => onEdge("v", r, c));
@@ -100,8 +104,8 @@
   function validateDab(s) {
     const b = s.board;
     if (typeof b !== "string" || b.length !== EDGE_COUNT + BOX_COUNT) return false;
-    if (!/^[01]+$/.test(b.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(b.slice(EDGE_COUNT))) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < EDGE_COUNT && b[s.last] === "1";
+    if (!/^[0-3]+$/.test(b.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(b.slice(EDGE_COUNT))) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < EDGE_COUNT && b[s.last] !== "0";
   }
   function finalBoxes(s) {
     const cnt = counts(s.board.slice(EDGE_COUNT).split("").map(Number));
@@ -155,7 +159,7 @@
     const ei = kind === "h" ? hIdx(r, c) : vIdx(r, c);
     if (waEdges[ei]) return;
     const claimed = drawEdge(waEdges, waBoxes, kind, r, c, waCurrent);
-    const moveCountAfter = waEdges.reduce((a, x) => a + x, 0);
+    const moveCountAfter = edgesDrawn(waEdges);
     let status = "in_progress", winner = null;
     if (moveCountAfter === EDGE_COUNT) {
       const cnt = counts(waBoxes);
@@ -221,7 +225,7 @@
     if (localEdges[ei]) return;
     const claimed = drawEdge(localEdges, localBoxes, kind, r, c, localCurrent);
     localLast = ei;
-    if (localEdges.reduce((a, x) => a + x, 0) === EDGE_COUNT) { localOver = true; renderLocal(); return; }
+    if (edgesDrawn(localEdges) === EDGE_COUNT) { localOver = true; renderLocal(); return; }
     if (claimed === 0) localCurrent = other(localCurrent);
     checkConfidence();
     renderLocal();
