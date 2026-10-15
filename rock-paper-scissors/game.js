@@ -136,7 +136,8 @@
     if (lo.p1Wins === rtw - 1 && lo.p2Wins === 0) confidenceGivenTo = P1;
     else if (lo.p2Wins === rtw - 1 && lo.p1Wins === 0) confidenceGivenTo = P2;
     else return;
-    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+    const trailing = confidenceGivenTo === P1 ? P2 : P1;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")} ${NAMES[trailing]} — ${Gamekit.taunt("lastChance")}`;
   }
 
   function resetLocal() {

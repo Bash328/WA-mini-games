@@ -301,6 +301,7 @@
   // every turn.
   let confidenceGivenTo = null;
   let confidenceNote = "";
+  let pressureGiven = false; // the AI's-lead mirror of confidence: one lastChance line per game
   const LEAD_THRESHOLD = 6; // evaluate()'s units: a man is 3, so ~2 pieces up
 
   function checkConfidence() {
@@ -308,7 +309,10 @@
     const score = evaluate(localBoard, P1);
     if (Math.abs(score) < LEAD_THRESHOLD) return;
     const leader = score > 0 ? P1 : P2;
-    if (aiColor !== null && leader === aiColor) return;
+    if (aiColor !== null && leader === aiColor) { // the AI is winning: warn the human, once
+      if (!pressureGiven) { pressureGiven = true; confidenceNote = Gamekit.taunt("lastChance"); }
+      return;
+    }
     confidenceGivenTo = leader;
     const who = aiColor !== null ? "" : NAMES[leader] + " — ";
     confidenceNote = who + Gamekit.taunt("confidence");
@@ -324,7 +328,7 @@
     localBoard = initialBoard();
     localCurrent = P1;
     localSelected = null; localChain = null; localLast = null; localOver = false;
-    confidenceGivenTo = null; confidenceNote = "";
+    confidenceGivenTo = null; confidenceNote = ""; pressureGiven = false;
     renderLocal();
     maybeAITurn();
   }
@@ -341,12 +345,15 @@
       const reversed = confidenceGivenTo === loserColor;
       statusEl.textContent = aiColor === null
         ? `${NAMES[winnerColor]} wins.` + (reversed ? " " + Gamekit.taunt("reversal") : "")
-        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉");
+        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
     } else if (aiThinking) {
       statusEl.textContent = "AI thinking…";
       Gamekit.turn(aiColor, "AI thinking…", true);
     } else {
-      const note = confidenceNote; confidenceNote = "";
+      // one-shot: kept through the AI's turn, cleared once shown
+      const aiTurnNow = aiColor !== null && localCurrent === aiColor;
+      const note = aiTurnNow ? "" : confidenceNote;
+      if (note) confidenceNote = "";
       const base = aiColor !== null ? (localCurrent === aiColor ? "AI thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
       const aiTurn = aiColor !== null && localCurrent === aiColor;

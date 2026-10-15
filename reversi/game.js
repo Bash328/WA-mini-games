@@ -170,7 +170,7 @@
     const diff = cnt[BLACK] - cnt[WHITE];
     if (Math.abs(diff) < LEAD_THRESHOLD) return;
     confidenceGivenTo = diff > 0 ? BLACK : WHITE;
-    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")} ${NAMES[confidenceGivenTo === BLACK ? WHITE : BLACK]} — ${Gamekit.taunt("lastChance")}`;
   }
 
   function resetLocal() {
@@ -189,7 +189,7 @@
     if (localOver) {
       const cnt = counts(localBoard);
       if (cnt[BLACK] === cnt[WHITE]) {
-        statusEl.textContent = "Draw.";
+        statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
       } else {
         const winnerColor = cnt[BLACK] > cnt[WHITE] ? BLACK : WHITE;
         const loserColor = other(winnerColor);

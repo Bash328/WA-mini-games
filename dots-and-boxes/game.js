@@ -169,7 +169,7 @@
     const diff = cnt[P1] - cnt[P2];
     if (Math.abs(diff) < LEAD_THRESHOLD) return;
     confidenceGivenTo = diff > 0 ? P1 : P2;
-    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")}`;
+    confidenceNote = `${NAMES[confidenceGivenTo]} — ${Gamekit.taunt("confidence")} ${NAMES[confidenceGivenTo === P1 ? P2 : P1]} — ${Gamekit.taunt("lastChance")}`;
   }
 
   function resetLocal() {
@@ -184,7 +184,7 @@
     if (localOver) {
       const cnt = counts(localBoxes);
       if (cnt[P1] === cnt[P2]) {
-        statusEl.textContent = "Draw.";
+        statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
       } else {
         const winnerColor = cnt[P1] > cnt[P2] ? P1 : P2;
         const loserColor = other(winnerColor);

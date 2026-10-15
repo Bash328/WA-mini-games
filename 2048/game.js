@@ -103,7 +103,7 @@ function move(dir) {
   if (score > best) store.set(bestKey(), score);
   addTile();
   render();
-  if (!canMove()) { over = true; document.getElementById('over-msg').textContent = '· Game over.'; }
+  if (!canMove()) { over = true; document.getElementById('over-msg').textContent = '· Game over. ' + Gamekit.taunt('over-' + diff); }
 }
 
 function rot(m) {
