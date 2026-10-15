@@ -38,256 +38,181 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="shared.css">
 <style>
-  /* Hub-specific overrides on top of shared.css tokens */
-  .wrap { max-width: 1000px; padding: 56px 24px 80px; }
-  @media (max-width: 560px) { .wrap { padding: 32px 16px 48px; } }
+  /* Hub: uses the game pages' warm dark theme (body.g-hub picks up the
+     body[class*="g-"] tokens in shared.css). */
+  .wrap { max-width: 1000px; padding: 40px 20px 64px; }
+  .brand { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 6px; }
+  .brand span { color: var(--accent); }
+  .lede { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 0 28px; line-height: 1.5; }
+  .lede b { color: var(--fg); font-weight: 600; }
+  .sec { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; font-weight: 500; }
 
-  .hero {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 48px;
-    align-items: start;
-    margin-bottom: 48px;
-  }
-  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; gap: 20px; } }
-
-  .hero .ascii {
-    font-size: 11px;
-  }
-  @media (min-width: 720px) { .hero .ascii { font-size: 14px; } }
-
-  .tag {
-    text-transform: uppercase;
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 0.5px;
-    margin: 0 0 14px;
-  }
-  .tag .dot { color: var(--accent); }
-
-  .lede {
-    font-size: 20px;
-    line-height: 1.4;
-    color: var(--fg);
-    margin: 0 0 18px;
-    letter-spacing: -0.2px;
-    font-weight: 400;
-  }
-  .lede .mute { color: var(--muted); }
-  @media (max-width: 560px) { .lede { font-size: 17px; } }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 0;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--bg-2);
-  }
-  .card {
-    display: block;
-    padding: 22px 20px;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-2);
-    transition: background 0.15s ease;
-    position: relative;
-    min-height: 110px;
-  }
-  .card:hover { background: var(--panel); color: var(--fg); }
-  .card:hover .arrow { color: var(--accent); transform: translateX(2px); }
-  .card .num {
-    color: var(--dim);
-    font-size: 11px;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-  }
-  .card h3 {
-    margin: 0 0 6px;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: -0.2px;
-    color: var(--fg);
-  }
-  .card p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.5;
-  }
-  .card .arrow {
-    position: absolute;
-    top: 22px;
-    right: 20px;
-    color: var(--dim);
-    transition: color 0.15s, transform 0.15s;
-    font-size: 14px;
-  }
-  .card .badge {
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: var(--accent-2);
-    text-transform: uppercase;
-  }
-  .card .badge.wa { color: #25d366; }
-
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   /* Phones: two columns so more games fit on screen */
-  @media (max-width: 560px) {
-    .grid { grid-template-columns: repeat(2, 1fr); }
-    .card { padding: 16px 14px; min-height: 120px; }
-    .card .arrow { top: 16px; right: 14px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+  .card {
+    display: flex; flex-direction: column;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.18);
+    transition: transform .12s, border-color .15s;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--c); color: var(--fg); }
+  .ico {
+    display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 12px;
+    border-radius: 12px; background: color-mix(in srgb, var(--c) 22%, transparent);
+    color: var(--c); font-weight: 700; font-size: 20px;
+  }
+  .card h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+  .card p { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+  /* margin-top:auto pins the badge to the bottom-left of every card */
+  .pill {
+    margin-top: auto; align-self: flex-start;
+    font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: #25d366;
+    background: rgba(37,211,102,.12); padding: 2px 8px; border-radius: 999px;
   }
 
   .footer {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    justify-content: space-between;
+    margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;
   }
-  .footer a { color: var(--muted); }
+  .footer a { color: var(--muted); text-decoration: underline; }
   .footer a:hover { color: var(--fg); }
-  .footer .links { display: flex; gap: 14px; flex-wrap: wrap; }
-
-  /* Theme toggle in footer */
-  .theme-toggle {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 4px 10px;
-    min-height: 28px;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .theme-toggle:hover { color: var(--fg); border-color: var(--border-hi); }
+  .footer .links { display: flex; gap: 14px; }
 </style>
 </head>
-<body>
+<body class="g-hub">
 <main class="wrap">
-  <header class="hero">
-    <pre class="ascii" aria-hidden="true"> ██████╗  █████╗ ███╗   ███╗███████╗███████╗
-██╔════╝ ██╔══██╗████╗ ████║██╔════╝██╔════╝
-██║  ███╗███████║██╔████╔██║█████╗  ███████╗
-██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ╚════██║
-╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗███████║
- ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝</pre>
-    <div>
-      <p class="tag"><span class="dot">▍</span> A small, handcrafted arcade</p>
-      <p class="lede">Play a friend over WhatsApp. <span class="mute">Make a move, send the link, wait for theirs — no logins, no server, no ads. Plus classics and logic puzzles to play solo.</span></p>
-      <div class="prompt"><span class="sigil">$</span><span class="cmd">pick-a-game</span><span class="caret"></span></div>
-    </div>
-  </header>
+  <h1 class="brand">WA <span>Mini Games</span></h1>
+  <p class="lede"><b>Play a friend over WhatsApp.</b> Make a move, send the link, wait for theirs. No logins, no server, no ads. Plus classics and logic puzzles to play solo.</p>
 
-  <h2 class="section-head">Play a friend on WhatsApp</h2>
+  <h2 class="sec">Play a friend on WhatsApp</h2>
   <nav class="grid" aria-label="Two-player games over WhatsApp">
-    <a class="card" href="hangman/">
-      <div class="num">01</div><h3>Hangman</h3><p>One sets a secret word. The other guesses it.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#ff6b6b" href="hangman/">
+      <span class="ico" aria-hidden="true">H</span>
+      <h3>Hangman</h3>
+      <p>One sets a secret word. The other guesses it.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="tic-tac-toe/">
-      <div class="num">02</div><h3>Tic-Tac-Toe</h3><p>Trade moves by link. Or try the unbeatable AI.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#f5b800" href="tic-tac-toe/">
+      <span class="ico" aria-hidden="true">T</span>
+      <h3>Tic-Tac-Toe</h3>
+      <p>Trade moves by link. Or try the unbeatable AI.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="connect-four/">
-      <div class="num">03</div><h3>Connect Four</h3><p>Drop a checker, send the board back. AI and local modes too.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#4dd9ac" href="connect-four/">
+      <span class="ico" aria-hidden="true">C</span>
+      <h3>Connect Four</h3>
+      <p>Drop a checker, send the board back. AI and local modes too.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="minesweeper/">
-      <div class="num">04</div><h3>Minesweeper</h3><p>Take turns revealing. Hit a mine and you lose.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#8b9cf7" href="minesweeper/">
+      <span class="ico" aria-hidden="true">M</span>
+      <h3>Minesweeper</h3>
+      <p>Take turns revealing. Hit a mine and you lose.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="chess/">
-      <div class="num">05</div><h3>Chess</h3><p>Full rules, one move-link at a time. AI mode too.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#a78bfa" href="chess/">
+      <span class="ico" aria-hidden="true">C</span>
+      <h3>Chess</h3>
+      <p>Full rules, one move-link at a time. AI mode too.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="memory/">
-      <div class="num">06</div><h3>Memory Match</h3><p>A match keeps your turn; a miss passes it on.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#6dd58c" href="memory/">
+      <span class="ico" aria-hidden="true">M</span>
+      <h3>Memory Match</h3>
+      <p>A match keeps your turn; a miss passes it on.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="lights-out/">
-      <div class="num">07</div><h3>Lights Out</h3><p>Take turns. Whoever clears the board wins.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#ff8a5c" href="lights-out/">
+      <span class="ico" aria-hidden="true">L</span>
+      <h3>Lights Out</h3>
+      <p>Take turns. Whoever clears the board wins.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="reversi/">
-      <div class="num">08</div><h3>Reversi</h3><p>Flip your opponent's discs to yours.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#5c84ab" href="reversi/">
+      <span class="ico" aria-hidden="true">R</span>
+      <h3>Reversi</h3>
+      <p>Flip your opponent's discs to yours.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="checkers/">
-      <div class="num">09</div><h3>Checkers</h3><p>Jump your way across the board. Captures are mandatory.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#ff6b6b" href="checkers/">
+      <span class="ico" aria-hidden="true">C</span>
+      <h3>Checkers</h3>
+      <p>Jump your way across the board. Captures are mandatory.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="dots-and-boxes/">
-      <div class="num">10</div><h3>Dots and Boxes</h3><p>Draw a line. Complete a box and go again.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#f5b800" href="dots-and-boxes/">
+      <span class="ico" aria-hidden="true">D</span>
+      <h3>Dots and Boxes</h3>
+      <p>Draw a line. Complete a box and go again.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="mancala/">
-      <div class="num">11</div><h3>Mancala</h3><p>Sow your seeds. Land in your store, go again.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#4dd9ac" href="mancala/">
+      <span class="ico" aria-hidden="true">M</span>
+      <h3>Mancala</h3>
+      <p>Sow your seeds. Land in your store, go again.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="pentago/">
-      <div class="num">12</div><h3>Pentago</h3><p>Place a marble, rotate a quadrant. Five in a row wins.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#8b9cf7" href="pentago/">
+      <span class="ico" aria-hidden="true">P</span>
+      <h3>Pentago</h3>
+      <p>Place a marble, rotate a quadrant. Five in a row wins.</p>
+      <span class="pill">WhatsApp</span>
     </a>
-    <a class="card" href="rock-paper-scissors/">
-      <div class="num">13</div><h3>Rock Paper Scissors</h3><p>Best of 3, 5, or 7. Your pick stays hidden.</p><span class="badge wa">whatsapp</span><span class="arrow">→</span>
+    <a class="card" style="--c:#a78bfa" href="rock-paper-scissors/">
+      <span class="ico" aria-hidden="true">R</span>
+      <h3>Rock Paper Scissors</h3>
+      <p>Best of 3, 5, or 7. Your pick stays hidden.</p>
+      <span class="pill">WhatsApp</span>
     </a>
   </nav>
 
-  <h2 class="section-head">Classics</h2>
+  <h2 class="sec">Classics</h2>
   <nav class="grid" aria-label="Classic games">
-    <a class="card" href="2048/">
-      <div class="num">14</div><h3>2048</h3><p>Slide and merge. Reach the tile.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#6dd58c" href="2048/">
+      <span class="ico" aria-hidden="true">2</span>
+      <h3>2048</h3>
+      <p>Slide and merge. Reach the tile.</p>
     </a>
   </nav>
 
-  <h2 class="section-head">Logic Puzzles</h2>
+  <h2 class="sec">Logic Puzzles</h2>
   <nav class="grid" aria-label="Logic puzzle games">
-    <a class="card" href="mini-sudoku/">
-      <div class="num">15</div><h3>Mini Sudoku</h3><p>6×6 grid, 2×3 boxes. Three difficulties.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#ff8a5c" href="mini-sudoku/">
+      <span class="ico" aria-hidden="true">M</span>
+      <h3>Mini Sudoku</h3>
+      <p>6×6 grid, 2×3 boxes. Three difficulties.</p>
     </a>
-    <a class="card" href="tango/">
-      <div class="num">16</div><h3>Tango</h3><p>Suns and moons. No three in a row.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#5c84ab" href="tango/">
+      <span class="ico" aria-hidden="true">T</span>
+      <h3>Tango</h3>
+      <p>Suns and moons. No three in a row.</p>
     </a>
-    <a class="card" href="queens/">
-      <div class="num">17</div><h3>Queens</h3><p>One per row, column, and region.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#ff6b6b" href="queens/">
+      <span class="ico" aria-hidden="true">Q</span>
+      <h3>Queens</h3>
+      <p>One per row, column, and region.</p>
     </a>
-    <a class="card" href="zip/">
-      <div class="num">18</div><h3>Zip</h3><p>Draw one path. Visit the numbers in order.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#f5b800" href="zip/">
+      <span class="ico" aria-hidden="true">Z</span>
+      <h3>Zip</h3>
+      <p>Draw one path. Visit the numbers in order.</p>
     </a>
-    <a class="card" href="patches/">
-      <div class="num">19</div><h3>Patches</h3><p>Cover the grid with shaped rectangles.</p><span class="arrow">→</span>
+    <a class="card" style="--c:#4dd9ac" href="patches/">
+      <span class="ico" aria-hidden="true">P</span>
+      <h3>Patches</h3>
+      <p>Cover the grid with shaped rectangles.</p>
     </a>
   </nav>
 
   <footer class="footer">
     <div>Based on <a href="https://github.com/wavde/games">wavde/games</a> &copy; Tejas Wavde · MIT</div>
     <div class="links">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">theme</button>
       <a href="privacy/">privacy</a>
       <a href="https://github.com/Bash328/WA-mini-games">source</a>
     </div>
   </footer>
 </main>
-<script>
-  // Theme toggle: cycles dark → light → system
-  (function () {
-    const KEY = "games:theme";
-    const btn = document.getElementById("theme-toggle");
-    const html = document.documentElement;
-    function apply(mode) {
-      if (mode === "light" || mode === "dark") html.setAttribute("data-theme", mode);
-      else html.removeAttribute("data-theme");
-      btn.textContent = "theme: " + (mode || "system");
-      try { mode ? localStorage.setItem(KEY, mode) : localStorage.removeItem(KEY); } catch (e) {}
-    }
-    let mode = null;
-    try { mode = localStorage.getItem(KEY); } catch (e) {}
-    apply(mode);
-    btn.addEventListener("click", () => {
-      const cur = html.getAttribute("data-theme");
-      const next = cur === "dark" ? "light" : cur === "light" ? null : "dark";
-      apply(next);
-    });
-  })();
-</script>
 </body>
 </html>
