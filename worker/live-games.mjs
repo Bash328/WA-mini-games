@@ -12,15 +12,22 @@
    ============================================================ */
 
 import * as ticTacToe from "./rules/tic-tac-toe.mjs";
+import * as connectFour from "./rules/connect-four.mjs";
+import * as reversi from "./rules/reversi.mjs";
+import * as dotsAndBoxes from "./rules/dots-and-boxes.mjs";
+import * as lightsOut from "./rules/lights-out.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
     version: 2,
     players: ["X", "O"],
     first: "X",                   // the player who opens
-    initialBoard: ticTacToe.EMPTY,
     rules: ticTacToe,
   },
+  "connect-four":   { version: 2, players: [1, 2], first: 1, rules: connectFour },
+  "reversi":        { version: 1, players: [1, 2], first: 1, rules: reversi },
+  "dots-and-boxes": { version: 1, players: [1, 2], first: 1, rules: dotsAndBoxes },
+  "lights-out":     { version: 1, players: [1, 2], first: 1, rules: lightsOut },
 };
 
 export function liveGame(slug) {

@@ -21,8 +21,13 @@
   if (!DEPTHS[diff]) diff = "medium";
   let mode = store.get("mode", "whatsapp");
   if (!["whatsapp", "ai-first-p1", "ai-first-p2", "local"].includes(mode)) mode = "whatsapp";
-  // A shared link always opens the two-player game.
+  // A shared link always opens the two-player game; a ?live= invite opens a live room.
+  const invited = new URLSearchParams(location.search).has("live");
   if (new URLSearchParams(location.search).has("s")) mode = "whatsapp";
+  else if (invited) mode = "live";
+  // Both link modes share the same board and state envelope; only the way a
+  // move travels differs (a link vs a live socket).
+  const isLinked = () => mode === "whatsapp" || mode === "live";
   modeSel.value = mode;
 
   let grid = newGrid();       // 6×7, grid[r][c]
@@ -80,7 +85,7 @@
         el.classList.remove("p1", "p2", "win", "last");
         if (grid[r][c] === P1) el.classList.add("p1");
         else if (grid[r][c] === P2) el.classList.add("p2");
-        if (mode === "whatsapp" && lastSlot === i) el.classList.add("last");
+        if (isLinked() && lastSlot === i) el.classList.add("last");
       }
     }
     if (winLine) {
@@ -91,7 +96,7 @@
     // Disable full columns
     for (let c = 0; c < COLS; c++) {
       const btn = colsEl.children[c];
-      btn.disabled = gameOver || thinking || grid[0][c] !== EMPTY || (mode === "whatsapp" && !linkCanMove);
+      btn.disabled = gameOver || thinking || grid[0][c] !== EMPTY || (isLinked() && !linkCanMove);
     }
   }
 
@@ -253,7 +258,7 @@
   }
 
   function onColClick(c) {
-    if (mode === "whatsapp") return playLink(c);
+    if (isLinked()) return playLink(c);
     if (gameOver || thinking || mode !== "local" && current !== humanIs) return;
     if (!playMove(c)) return;
     advance();
@@ -326,16 +331,18 @@
   }
 
   function applyMode() {
-    const wa = mode === "whatsapp";
+    const wa = isLinked();
     chipsEl.hidden = wa;
     undoBtn.hidden = wa;
     legendEl.innerHTML = wa ? LEGEND_LINK : LEGEND_SOLO;
     if (wa) {
       cancelAI();
-      link.show();
+      if (mode === "live" && live) { link.hide(); live.show(); }
+      else { if (live) live.hide(); link.show(); }
       return;
     }
     link.hide();
+    if (live) live.hide();
     if (mode === "ai-first-p1") humanIs = P1;
     else if (mode === "ai-first-p2") humanIs = P2;
     else humanIs = P1; // unused in local
@@ -364,6 +371,15 @@
   const COLORS = { [P1]: "Red", [P2]: "Yellow" };
   const LEGEND_LINK = 'Red <span class="c4-key p1">●</span> · Yellow <span class="c4-key p2">●</span>';
 
+  function validateC4(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== ROWS * COLS || !/^[012]+$/.test(b)) return false;
+    // a resignation adds a move to the count without adding a checker
+    const filled = b.split("").filter(c => c !== "0").length;
+    if (filled !== s.moveCount && !(s.resigned && filled === s.moveCount - 1)) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
+  }
+
   const link = AsyncShare.start({
     game: "connect-four",
     version: 2,
@@ -372,14 +388,22 @@
     label: (p) => COLORS[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== ROWS * COLS || !/^[012]+$/.test(b)) return false;
-      if (b.split("").filter(c => c !== "0").length !== s.moveCount) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
-    },
+    validateBoard: validateC4,
     onState: loadLink,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "connect-four",
+    version: 2,
+    players: [P1, P2],
+    label: (p) => COLORS[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateC4,
+    onState: loadLink,
+  });
+  const activeLink = () => (mode === "live" && live ? live : link);
 
   function loadLink(state, canMove) {
     cancelAI();
@@ -403,7 +427,7 @@
     makeMove(c, current);
     const last = history[history.length - 1];
     const win = winAt(grid, last.r, last.c, last.p);
-    link.commit({
+    activeLink().commit({
       board: grid.flatMap(row => Array.from(row)).join(""),
       status: win ? "won" : isFull(grid) ? "draw" : "in_progress",
       winner: win ? last.p : null,
@@ -412,7 +436,7 @@
   }
 
   undoBtn.addEventListener("click", () => {
-    if (thinking || mode === "whatsapp") return;
+    if (thinking || isLinked()) return;
     if (history.length === 0) return;
     // Undo last move; in AI mode, undo the pair so it's the player's turn again.
     undoMove();
@@ -428,11 +452,11 @@
     updateTurnStatus();
   });
 
-  resetBtn.addEventListener("click", () => (mode === "whatsapp" ? link.newGame() : reset()));
+  resetBtn.addEventListener("click", () => (isLinked() ? activeLink().newGame() : reset()));
 
   modeSel.addEventListener("change", () => {
     mode = modeSel.value;
-    store.set("mode", mode);
+    if (mode !== "live") store.set("mode", mode);   // a live room is never the remembered default
     applyMode();
   });
 
@@ -449,6 +473,18 @@
   if (!DEPTHS[diff]) diff = "medium";
 
   // Init
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  if (live && !invited) {
+    fetch("/api/live/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf("connect-four") !== -1) liveOpt.hidden = false;
+    }).catch(() => { /* live play stays hidden */ });
+  } else if (live && invited) {
+    liveOpt.hidden = false;
+  }
+  modeSel.value = mode;
   renderShell();
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("connect-four"));

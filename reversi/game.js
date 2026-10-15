@@ -94,6 +94,16 @@
   // control returns to the same player (nextTurn), or — if neither side can
   // move — the game ends right here, using async-share's nextTurn/"another
   // turn" support (see async-share.js).
+  function validateReversi(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
+  }
+  function finalCount(s) {
+    const cnt = counts(s.board.split("").map(Number));
+    return `Final: Black ${cnt[BLACK]} · White ${cnt[WHITE]}.`;
+  }
+
   const link = AsyncShare.start({
     game: "reversi",
     version: 1,
@@ -102,17 +112,24 @@
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
-    },
+    validateBoard: validateReversi,
     onState: loadLink,
-    detail: (s) => {
-      const cnt = counts(s.board.split("").map(Number));
-      return `Final: Black ${cnt[BLACK]} · White ${cnt[WHITE]}.`;
-    },
+    detail: finalCount,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "reversi",
+    version: 1,
+    players: [BLACK, WHITE],
+    label: (p) => NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateReversi,
+    onState: loadLink,
+    detail: finalCount,
+  });
+  const activeLink = () => (modeSel.value === "live" && live ? live : link);
 
   let waBoard = initialBoard();
   let waCurrent = BLACK;
@@ -148,7 +165,7 @@
         nextTurn = waCurrent; // opponent has no legal move — pass back
       }
     }
-    link.commit({ board: board.join(""), status, winner, last: i, nextTurn });
+    activeLink().commit({ board: board.join(""), status, winner, last: i, nextTurn });
   }
 
   // ---------- 2 players, same device ----------
@@ -217,15 +234,31 @@
   }
 
   function applyMode() {
-    const wa = modeSel.value === "whatsapp";
-    resetBtn.hidden = wa;
-    if (wa) { link.show(); return; }
+    const m = modeSel.value;
+    resetBtn.hidden = m === "whatsapp" || m === "live";
+    if (m === "live" && live) { link.hide(); live.show(); return; }
+    if (m === "whatsapp") { if (live) live.hide(); link.show(); return; }
     link.hide();
+    if (live) live.hide();
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+  } else if (live) {
+    fetch("/api/live/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf("reversi") !== -1) liveOpt.hidden = false;
+    }).catch(() => { /* live play stays hidden */ });
+  }
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("reversi"));
 

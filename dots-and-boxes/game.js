@@ -97,6 +97,17 @@
   // 16 chars of '0'/'1'/'2' (box owner). Completing a box (or two, since an
   // edge can finish two at once) grants another turn, via async-share's
   // nextTurn support — same mechanism as Reversi's pass.
+  function validateDab(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== EDGE_COUNT + BOX_COUNT) return false;
+    if (!/^[01]+$/.test(b.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(b.slice(EDGE_COUNT))) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < EDGE_COUNT && b[s.last] === "1";
+  }
+  function finalBoxes(s) {
+    const cnt = counts(s.board.slice(EDGE_COUNT).split("").map(Number));
+    return `Final boxes: Player 1 ${cnt[P1]} · Player 2 ${cnt[P2]}.`;
+  }
+
   const link = AsyncShare.start({
     game: "dots-and-boxes",
     version: 1,
@@ -105,19 +116,24 @@
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== EDGE_COUNT + BOX_COUNT) return false;
-      if (!/^[01]+$/.test(b.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(b.slice(EDGE_COUNT))) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < EDGE_COUNT && b[s.last] === "1";
-    },
+    validateBoard: validateDab,
     onState: loadLink,
-    detail: (s) => {
-      const boxes = s.board.slice(EDGE_COUNT).split("").map(Number);
-      const cnt = counts(boxes);
-      return `Final boxes: Player 1 ${cnt[P1]} · Player 2 ${cnt[P2]}.`;
-    },
+    detail: finalBoxes,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "dots-and-boxes",
+    version: 1,
+    players: [P1, P2],
+    label: (p) => NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateDab,
+    onState: loadLink,
+    detail: finalBoxes,
+  });
+  const activeLink = () => (modeSel.value === "live" && live ? live : link);
 
   let waEdges = newEdges(), waBoxes = newBoxes(), waCurrent = P1, waLast = null, waCanMove = false;
 
@@ -146,8 +162,10 @@
       status = cnt[P1] === cnt[P2] ? "draw" : "won";
       winner = cnt[P1] === cnt[P2] ? null : (cnt[P1] > cnt[P2] ? P1 : P2);
     }
-    const nextTurn = claimed > 0 ? waCurrent : other(waCurrent);
-    link.commit({
+    // Completing a box earns another turn, except on the last edge: the game
+    // is over, and the turn must pass so the opponent sees the right result.
+    const nextTurn = status === "in_progress" && claimed > 0 ? waCurrent : other(waCurrent);
+    activeLink().commit({
       board: waEdges.join("") + waBoxes.join(""),
       status, winner, last: ei, nextTurn,
     });
@@ -210,15 +228,31 @@
   }
 
   function applyMode() {
-    const wa = modeSel.value === "whatsapp";
-    resetBtn.hidden = wa;
-    if (wa) { link.show(); return; }
+    const m = modeSel.value;
+    resetBtn.hidden = m === "whatsapp" || m === "live";
+    if (m === "live" && live) { link.hide(); live.show(); return; }
+    if (m === "whatsapp") { if (live) live.hide(); link.show(); return; }
     link.hide();
+    if (live) live.hide();
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+  } else if (live) {
+    fetch("/api/live/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf("dots-and-boxes") !== -1) liveOpt.hidden = false;
+    }).catch(() => { /* live play stays hidden */ });
+  }
   applyMode();
   window.addEventListener("load", () => Manpage.autoOpen("dots-and-boxes"));
 

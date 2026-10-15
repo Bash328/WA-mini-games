@@ -28,7 +28,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
-## Live online play (prototype: Tic-Tac-Toe)
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out)
 
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 
@@ -39,7 +39,9 @@ An optional mode next to WhatsApp: one player creates a room, the other opens th
 - **Kill switch:** set `LIVE_ENABLED = "0"` in `wrangler.toml` and deploy: the API answers 503, open rooms close, and games hide the option.
 - **Hidden-information games** (Hangman, Battleship, Mastermind, Rock Paper Scissors) are intentionally not live-enabled: their secrets would be visible in the socket traffic.
 
-Tests: `node worker/rules/tic-tac-toe.test.mjs`, `node worker/live-protocol.test.mjs`, and, against a running `wrangler dev`, `node worker/live.integration.mjs`.
+Tests: `node worker/rules/tic-tac-toe.test.mjs`, `node worker/rules/wave1.test.mjs` (thousands of random legal games for the other four, pushed through the real room protocol), `node worker/live-protocol.test.mjs`, and, against a running `wrangler dev`, `node worker/live.integration.mjs`.
+
+To add a game: write `worker/rules/<game>.mjs` exporting `validateTransition(prev, next, mover)` (return `{ ok, nextTurn? }`), register it in `worker/live-games.mjs`, then in the game's `game.js` create a `LiveShare` next to its `AsyncShare` with the same `validateBoard`/`onState` and route `commit` through whichever is active (see `reversi/game.js`).
 
 ## How play-by-link works
 
