@@ -16,6 +16,7 @@ wrangler.toml
 worker/
 taunts.test.mjs
 README.md
+TODO.md
 LICENSE
 .gitattributes
 .gitignore
