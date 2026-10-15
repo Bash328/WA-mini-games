@@ -15,7 +15,6 @@
    ============================================================ */
 
 import { ogFor } from "./og-text.mjs";
-import { canonicalRedirect } from "./canonical.mjs";
 
 class MetaRewriter {
   constructor(og) { this.og = og; }
@@ -35,8 +34,12 @@ export default {
   async fetch(request, env) {
     // Before anything else, and before touching the assets: www and the
     // apex were each serving their own indexable copy of every page.
-    const canonical = canonicalRedirect(request.url);
-    if (canonical) return Response.redirect(canonical, 301);
+    // Rebuilt from a parsed URL so the path and ?s= (the game) survive.
+    const u = new URL(request.url);
+    if (u.hostname.startsWith("www.")) {
+      u.hostname = u.hostname.slice(4);
+      return Response.redirect(u.toString(), 301);
+    }
 
     const res = await env.ASSETS.fetch(request);
 

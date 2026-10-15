@@ -3,7 +3,7 @@
 
    Usage (per-game):
 
-     <link rel="stylesheet" href="../manpage.css">
+     <link rel="stylesheet" href="../shared.css">
      <script defer src="../manpage.js"></script>
 
      <button class="btn ghost tool-btn man-trigger"

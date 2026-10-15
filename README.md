@@ -234,9 +234,8 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── async-share.css     share panel styles (shared tokens)
 ├── vendor/             lz-string 1.5.0 + its MIT license
 ├── fonts/              self-hosted Fira Mono (woff2) + its OFL license
-├── shared.css          design tokens, @font-face, buttons, panels, light mode
-├── soft.css            warm dark theme for game pages
-├── manpage.css/.js     "? man" help overlay
+├── shared.css          design tokens, @font-face, buttons, panels, light mode, game-page theme, help overlay
+├── manpage.js          "? man" help overlay
 ├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
 ├── manifest.json       PWA manifest
 ├── worker/             Cloudflare Worker: per-state link previews, + its node test
