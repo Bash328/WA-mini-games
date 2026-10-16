@@ -18,6 +18,7 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../async-share.css">
+<script>if (new Date().getMonth() === 9 || /[?&]theme=halloween/.test(location.search)) document.documentElement.classList.add("c8-hw");</script>
 <style>
   /* ---------- cards ---------- */
   #c8 .c8-card {
@@ -118,6 +119,18 @@
   .c8-guide dd { margin: 0; }
   @media (max-width: 520px) { .c8-guide dl { grid-template-columns: 1fr; gap: 0; } .c8-guide dt { white-space: normal; margin-top: 8px; } }
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+  /* ---------- Halloween (October only, or add ?theme=halloween to preview) ---------- */
+  html.c8-hw body[class] { --accent: #ff8a1f; --bg: #120820; --bg-2: #1e0f36; --panel: #2a1245; --panel-2: #1e0f36; --fg: #f3e9ff; --text: #f3e9ff; --muted: #c9b3e8; --dim: #8e78b3; --border: #4a2a78; --border-hi: #6b3fb5; background: #120820; color: #f3e9ff; }
+  .c8-hw .panel { background: linear-gradient(180deg, #2a1245, #170a2a 60%); border-color: #ff8a1f; }
+  .c8-hw .panel::before { content: "\1F383  \1F987  \1F577\FE0F  \1F987  \1F383"; display: block; text-align: center; letter-spacing: 6px; font-size: 18px; margin-bottom: 8px; }
+  .c8-hw h1::after { content: " \1F383"; }
+  .c8-hw .c8-opp, .c8-hw .c8-chip, .c8-hw .c8-banner, .c8-hw .c8-hint, .c8-hw .c8-hint.idle { background: rgba(255,255,255,.07); border-color: #6b3fb5; color: #f3e9ff; }
+  .c8-hw .c8-opp.turn, .c8-hw .c8-banner.you, .c8-hw .c8-hint { border-color: #ff8a1f; }
+  .c8-hw .c8-pile, .c8-hw .c8-log, .c8-hw .c8-opp .st, .c8-hw .c8-hint .why { color: #c9b3e8; }
+  .c8-hw #c8 .c8-card { background: #f4e6c8; border-color: #b8975a; --ink: #2a1740; }
+  .c8-hw #c8 .c8-card.red { --ink: #c2410c; }
+  .c8-hw #c8 .c8-card.joker { --ink: #7c2dd6; }
+  .c8-hw #c8 .c8-card.back { background: radial-gradient(circle at 50% 50%, #ff8a1f 0 24%, transparent 25%), repeating-linear-gradient(45deg, #2a1245 0 6px, #3d1c66 6px 12px); border-color: #ff8a1f; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>

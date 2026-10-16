@@ -2,6 +2,7 @@
   "use strict";
 
   const C = globalThis.Crazy8;
+  const JK = document.documentElement.classList.contains("c8-hw") ? String.fromCodePoint(0x1F383) : "★";
   const SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const SUIT_NAME = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
   const RANK_NAME = { A: "Ace", J: "Jack", Q: "Queen", K: "King", X: "Joker" };
@@ -47,7 +48,7 @@
     if (o.button) e.type = "button";
     e.className = "c8-card" + (o.cls ? " " + o.cls : "");
     if (!c) { e.classList.add("back"); e.setAttribute("aria-hidden", "true"); return e; }
-    if (C.isJoker(c)) { e.classList.add("joker"); e.append(el("span", "r", "JOKER"), el("span", "m", "★"), el("span", "s", "★")); }
+    if (C.isJoker(c)) { e.classList.add("joker"); e.append(el("span", "r", "JOKER"), el("span", "m", JK), el("span", "s", JK)); }
     else {
       const s = C.suitOf(c);
       if (s === "H" || s === "D") e.classList.add("red");
