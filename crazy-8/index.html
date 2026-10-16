@@ -18,7 +18,8 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../async-share.css">
-<script>if (new Date().getMonth() === 9 || /[?&]theme=halloween/.test(location.search)) document.documentElement.classList.add("c8-hw");</script>
+<script>window.c8Theme = function (pref) { return pref === "classic" || pref === "halloween" ? pref : new Date().getMonth() === 9 ? "halloween" : "classic"; };
+try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || localStorage.getItem("crazy-8:theme"); document.documentElement.setAttribute("data-c8theme", window.c8Theme(p)); } catch (e) { document.documentElement.setAttribute("data-c8theme", window.c8Theme()); }</script>
 <style>
   /* ---------- cards ---------- */
   #c8 .c8-card {
@@ -119,18 +120,30 @@
   .c8-guide dd { margin: 0; }
   @media (max-width: 520px) { .c8-guide dl { grid-template-columns: 1fr; gap: 0; } .c8-guide dt { white-space: normal; margin-top: 8px; } }
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
-  /* ---------- Halloween (October only, or add ?theme=halloween to preview) ---------- */
-  html.c8-hw body[class] { --accent: #ff8a1f; --bg: #120820; --bg-2: #1e0f36; --panel: #2a1245; --panel-2: #1e0f36; --fg: #f3e9ff; --text: #f3e9ff; --muted: #c9b3e8; --dim: #8e78b3; --border: #4a2a78; --border-hi: #6b3fb5; background: #120820; color: #f3e9ff; }
-  .c8-hw .panel { background: linear-gradient(180deg, #2a1245, #170a2a 60%); border-color: #ff8a1f; }
-  .c8-hw .panel::before { content: "\1F383  \1F987  \1F577\FE0F  \1F987  \1F383"; display: block; text-align: center; letter-spacing: 6px; font-size: 18px; margin-bottom: 8px; }
-  .c8-hw h1::after { content: " \1F383"; }
-  .c8-hw .c8-opp, .c8-hw .c8-chip, .c8-hw .c8-banner, .c8-hw .c8-hint, .c8-hw .c8-hint.idle { background: rgba(255,255,255,.07); border-color: #6b3fb5; color: #f3e9ff; }
-  .c8-hw .c8-opp.turn, .c8-hw .c8-banner.you, .c8-hw .c8-hint { border-color: #ff8a1f; }
-  .c8-hw .c8-pile, .c8-hw .c8-log, .c8-hw .c8-opp .st, .c8-hw .c8-hint .why { color: #c9b3e8; }
-  .c8-hw #c8 .c8-card { background: #f4e6c8; border-color: #b8975a; --ink: #2a1740; }
-  .c8-hw #c8 .c8-card.red { --ink: #c2410c; }
-  .c8-hw #c8 .c8-card.joker { --ink: #7c2dd6; }
-  .c8-hw #c8 .c8-card.back { background: radial-gradient(circle at 50% 50%, #ff8a1f 0 24%, transparent 25%), repeating-linear-gradient(45deg, #2a1245 0 6px, #3d1c66 6px 12px); border-color: #ff8a1f; }
+  /* ---------- card themes: classic (no overrides) and halloween (set by html[data-c8theme]) ---------- */
+  html[data-c8theme="halloween"] {
+    --c8-pumpkin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='14' y='3' width='4' height='7' rx='1.5' fill='%234f8a2b'/%3E%3Cellipse cx='16' cy='19' rx='13.5' ry='10.5' fill='%23ff8a1f'/%3E%3Cpath d='M10 9.5c-5 4-5 15 0 19M22 9.5c5 4 5 15 0 19M16 9v21' stroke='%23c2410c' stroke-width='1.6' fill='none'/%3E%3Cpath d='M9.5 15l3.5 4.5 3-4.5zM16.5 15l3 4.5 3.5-4.5z' fill='%232a1245'/%3E%3Cpath d='M10 23.5l3-2 3 2 3-2 3 2' stroke='%232a1245' stroke-width='2' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E"); --c8-bat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 20'%3E%3Cpath d='M16 5l2-4 1 5c4-3 9-3 13-1-3 2-3 5-3 8-2-2-5-2-6 1-1-3-4-4-7 0-3-4-6-3-7 0-1-3-4-3-6-1 0-3 0-6-3-8 4-2 9-2 13 1l1-5z' fill='%230a0412' stroke='%238e78b3' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E"); --c8-spider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 0v10' stroke='%238e78b3' stroke-width='1'/%3E%3Cpath d='M12 14L5 9M11 17L3 17M12 20L5 26M20 14l7-5M21 17l8 0M20 20l7 6' stroke='%238e78b3' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='16' cy='20' rx='6' ry='7' fill='%230a0412' stroke='%238e78b3' stroke-width='1'/%3E%3Ccircle cx='16' cy='12.5' r='3.6' fill='%230a0412' stroke='%238e78b3' stroke-width='1'/%3E%3Ccircle cx='14.6' cy='12' r='.9' fill='%23ff8a1f'/%3E%3Ccircle cx='17.4' cy='12' r='.9' fill='%23ff8a1f'/%3E%3C/svg%3E"); --c8-web: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg stroke='%23000' stroke-opacity='.28' stroke-width='1' fill='none'%3E%3Cpath d='M40 0L0 0M40 0L0 14M40 0L0 28M40 0L14 40M40 0L28 40M40 0L40 40'/%3E%3Cpath d='M30 0Q28 12 40 14M20 0Q18 20 40 24M10 0Q8 28 40 34'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  html[data-c8theme="halloween"] body[class] { --accent: #ff8a1f; --bg: #120820; --bg-2: #1e0f36; --panel: #2a1245; --panel-2: #1e0f36; --fg: #f3e9ff; --text: #f3e9ff; --muted: #c9b3e8; --dim: #8e78b3; --border: #4a2a78; --border-hi: #6b3fb5; background: #120820; color: #f3e9ff; }
+  [data-c8theme="halloween"] .panel { background: linear-gradient(180deg, #2a1245, #170a2a 60%); border-color: #ff8a1f; }
+  [data-c8theme="halloween"] .panel::before {
+    content: ""; display: block; height: 30px; margin-bottom: 8px;
+    background: var(--c8-pumpkin) 6% 50% / 28px 28px no-repeat, var(--c8-bat) 27% 50% / 34px 21px no-repeat, var(--c8-spider) 50% 50% / 28px 28px no-repeat,
+                var(--c8-bat) 73% 50% / 34px 21px no-repeat, var(--c8-pumpkin) 94% 50% / 28px 28px no-repeat;
+  }
+  [data-c8theme="halloween"] h1::after { content: ""; display: inline-block; width: 1em; height: 1em; margin-left: .3em; vertical-align: -.12em; background: var(--c8-pumpkin) center / contain no-repeat; }
+  [data-c8theme="halloween"] .c8-opp, [data-c8theme="halloween"] .c8-chip, [data-c8theme="halloween"] .c8-banner, [data-c8theme="halloween"] .c8-hint, [data-c8theme="halloween"] .c8-hint.idle { background: rgba(255,255,255,.07); border-color: #6b3fb5; color: #f3e9ff; }
+  [data-c8theme="halloween"] .c8-opp.turn, [data-c8theme="halloween"] .c8-banner.you, [data-c8theme="halloween"] .c8-hint { border-color: #ff8a1f; }
+  [data-c8theme="halloween"] .c8-pile, [data-c8theme="halloween"] .c8-log, [data-c8theme="halloween"] .c8-opp .st, [data-c8theme="halloween"] .c8-hint .why { color: #c9b3e8; }
+  [data-c8theme="halloween"] #c8 .c8-card { background: #f4e6c8; border-color: #b8975a; --ink: #2a1740; }
+  [data-c8theme="halloween"] #c8 .c8-card.red { --ink: #c2410c; }
+  [data-c8theme="halloween"] #c8 .c8-card.joker { --ink: #7c2dd6; }
+  [data-c8theme="halloween"] #c8 .c8-card:not(.back)::after { content: ""; position: absolute; top: 0; right: 0; width: 40%; aspect-ratio: 1; background: var(--c8-web) center / contain no-repeat; border-top-right-radius: 7px; pointer-events: none; }
+  [data-c8theme="halloween"] #c8 .c8-card.joker .m, [data-c8theme="halloween"] #c8 .c8-card.joker .s { font-size: 0; background: var(--c8-pumpkin) center / contain no-repeat; }
+  [data-c8theme="halloween"] #c8 .c8-card.joker .m { inset: 24% 14%; opacity: .35; }
+  [data-c8theme="halloween"] #c8 .c8-card.joker .s { width: 44%; aspect-ratio: 1; }
+  [data-c8theme="halloween"] #c8 .c8-card.back { background: var(--c8-pumpkin) center / 58% no-repeat, repeating-linear-gradient(45deg, #2a1245 0 6px, #3d1c66 6px 12px); border-color: #ff8a1f; }
+  [data-c8theme="halloween"] #c8 .c8-card.back.sm { background-size: 0 0, auto; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -165,6 +178,11 @@
       <select id="gmode" aria-label="Game type">
         <option data-short="Normal" value="normal" selected>Normal: first out wins</option>
         <option data-short="Tournament" value="tournament">Tournament: last one holding cards is out</option>
+      </select>
+      <select id="ctheme" aria-label="Card theme">
+        <option data-short="Cards: auto" value="auto">Cards: auto (seasonal)</option>
+        <option data-short="Cards: classic" value="classic">Cards: classic</option>
+        <option data-short="Cards: halloween" value="halloween">Cards: halloween</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>

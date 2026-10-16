@@ -2,7 +2,6 @@
   "use strict";
 
   const C = globalThis.Crazy8;
-  const JK = document.documentElement.classList.contains("c8-hw") ? String.fromCodePoint(0x1F383) : "★";
   const SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const SUIT_NAME = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
   const RANK_NAME = { A: "Ace", J: "Jack", Q: "Queen", K: "King", X: "Joker" };
@@ -26,6 +25,9 @@
   if (mode !== "computer" && mode !== "live") mode = "computer";
   modeSel.value = mode;
   botsSel.value = store.get("bots", "2") || "2";
+  const themeSel = $("ctheme");
+  themeSel.value = ["classic", "halloween"].includes(store.get("theme", "auto")) ? store.get("theme") : "auto";
+  themeSel.addEventListener("change", () => { store.set("theme", themeSel.value); document.documentElement.setAttribute("data-c8theme", window.c8Theme(themeSel.value)); });
   gmodeSel.value = store.get("gmode", "normal") === "tournament" ? "tournament" : "normal";
 
   // ---------- one model for the screen, whether the game is local or online ----------
@@ -48,7 +50,7 @@
     if (o.button) e.type = "button";
     e.className = "c8-card" + (o.cls ? " " + o.cls : "");
     if (!c) { e.classList.add("back"); e.setAttribute("aria-hidden", "true"); return e; }
-    if (C.isJoker(c)) { e.classList.add("joker"); e.append(el("span", "r", "JOKER"), el("span", "m", JK), el("span", "s", JK)); }
+    if (C.isJoker(c)) { e.classList.add("joker"); e.append(el("span", "r", "JOKER"), el("span", "m", "★"), el("span", "s", "★")); }
     else {
       const s = C.suitOf(c);
       if (s === "H" || s === "D") e.classList.add("red");
