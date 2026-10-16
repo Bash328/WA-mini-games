@@ -102,6 +102,7 @@
     min-height: var(--tap);
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-chess">
 <main class="wrap">
@@ -122,12 +123,12 @@
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="ai">vs AI</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="vs computer" value="ai">vs computer</option>
       </select>
       <button id="undo" hidden>Undo</button>
       <button id="flip">Flip board</button>
-      <select id="level" aria-label="AI level" hidden>
+      <select id="level" aria-label="Computer level" hidden>
         <option value="1">Easy (depth 1)</option>
         <option value="2" selected>Normal (depth 2)</option>
         <option value="3">Hard (depth 3)</option>
@@ -163,7 +164,7 @@
   <ul>
     <li><strong>Tap</strong> one of your pieces to select it. Legal destinations are highlighted with dots (moves) or rings (captures).</li>
     <li><strong>Tap a highlighted square</strong> to move there. Tap the piece again to deselect.</li>
-    <li>Switch the mode to <code>vs AI</code> to play solo. <code>Undo</code> takes back one full pair of moves there; choose <code>Easy / Normal / Hard</code> for engine strength.</li>
+    <li>Switch the mode to <code>vs computer</code> to play solo. <code>Undo</code> takes back one full pair of moves there; choose <code>Easy / Normal / Hard</code> for engine strength.</li>
   </ul>
 
   <h2>Notes</h2>

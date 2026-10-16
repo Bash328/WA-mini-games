@@ -1,7 +1,7 @@
 /* Run: node worker/live-protocol.test.mjs */
 import {
   newRoom, join, bothSeated, applyMove, requestRematch, expiresAt, takeToken,
-  IDLE_MS, FINISHED_MS, WAITING_MS,
+  IDLE_MS, FINISHED_MS, WAITING_MS, checkTaunt, ANGEL_COUNT, DEVIL_COUNT,
 } from "./live-protocol.mjs";
 
 let pass = 0, fail = 0;
@@ -145,6 +145,19 @@ console.log("\nrate limit:");
   check("a burst of 40 lets 20 through", allowed, 20);
   const later = takeToken(bucket, 5000 + 2000);
   check("refills over time", later.allowed, true);
+}
+
+console.log("\ntaunts:");
+{
+  const ok = (m) => checkTaunt(m, 0, 10_000).ok;
+  check("a valid angel id passes", ok({ k: "a", i: 0 }), true);
+  check("last devil id passes", ok({ k: "d", i: DEVIL_COUNT - 1 }), true);
+  check("id past the end is refused", ok({ k: "a", i: ANGEL_COUNT }), false);
+  check("negative id is refused", ok({ k: "a", i: -1 }), false);
+  check("free text is refused", ok({ k: "a", i: "hi" }), false);
+  check("unknown kind is refused", ok({ k: "x", i: 0 }), false);
+  check("too soon after the last is rate limited", checkTaunt({ k: "a", i: 1 }, 9_000, 10_000).reason, "rate-limit");
+  check("fine once the gap has passed", checkTaunt({ k: "a", i: 1 }, 6_000, 10_000).ok, true);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

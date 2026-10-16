@@ -122,6 +122,21 @@ export class LiveRoom extends DurableObject {
       return;
     }
 
+    if (msg.t === "taunt") {
+      // Relayed to the OTHER seat only, and only once both are in the room.
+      if (!P.bothSeated(room)) return this.reject(ws, "waiting");
+      const res = P.checkTaunt(msg, att.tauntAt, now);
+      if (!res.ok) return this.reject(ws, res.reason);
+      att.tauntAt = now;
+      ws.serializeAttachment(att);
+      for (const other of this.ctx.getWebSockets()) {
+        if (other === ws) continue;
+        const a = other.deserializeAttachment();
+        if (a && a.seat && a.seat !== att.seat) this.send(other, { t: "taunt", k: res.k, i: res.i });
+      }
+      return;
+    }
+
     if (msg.t === "rematch") {
       const res = P.requestRematch(room, att.seat, now);
       if (!res.ok) return this.reject(ws, res.reason);

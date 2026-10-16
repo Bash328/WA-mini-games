@@ -101,7 +101,7 @@
   function setStatus(msg) { statusEl.textContent = msg; }
   const slotOf = (p) => p === "X" ? 1 : 2;
   function humanBadge() { Gamekit.turn(slotOf(human), "Your turn · you're " + human); }
-  function aiBadge() { Gamekit.turn(slotOf(ai), "AI thinking…", true); }
+  function aiBadge() { Gamekit.turn(slotOf(ai), "Computer thinking…", true); }
 
   function cancelAI() {
     if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; }
@@ -115,7 +115,7 @@
     if (w) { render(w); return end(w); }
     turn = ai;
     render(null);
-    setStatus("AI thinking…");
+    setStatus("Computer thinking…");
     aiBadge();
     cancelAI();
     aiTimer = setTimeout(aiMove, 200);
@@ -142,7 +142,7 @@
     Gamekit.turn(null);
     if (w.player === "draw") setStatus("Draw. " + Gamekit.taunt("draw"));
     else if (w.player === human) setStatus("You win! 🎉 " + Gamekit.taunt("win"));
-    else setStatus("AI wins. " + Gamekit.taunt());
+    else setStatus("Computer wins. " + Gamekit.taunt());
   }
 
   function reset() {
@@ -152,7 +152,7 @@
     turn = "X";
     if (human === "O") {
       render(null);
-      setStatus("AI thinking…");
+      setStatus("Computer thinking…");
     aiBadge();
       aiTimer = setTimeout(aiMove, 200);
     } else {
@@ -292,7 +292,7 @@
     board = s.board.slice(); turn = s.turn; gameOver = false;
     render(null);
     if (turn === human) { setStatus("Your turn (" + human + ")."); humanBadge(); }
-    else { setStatus("AI thinking…"); aiBadge(); aiTimer = setTimeout(aiMove, 200); }
+    else { setStatus("Computer thinking…"); aiBadge(); aiTimer = setTimeout(aiMove, 200); }
     return true;
   });
   if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();

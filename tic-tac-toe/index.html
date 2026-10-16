@@ -24,7 +24,7 @@
 <title>tic-tac-toe · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Tic-Tac-Toe — play a friend by sending moves over WhatsApp, or take on an unbeatable minimax AI.">
+<meta name="description" content="Tic-Tac-Toe — play a friend by sending moves over WhatsApp, or take on an unbeatable minimax computer.">
 <meta property="og:title" content="Tic-Tac-Toe · two players over WhatsApp">
 <meta property="og:description" content="Open the board, make your move, and send the link back.">
 <meta property="og:type" content="website">
@@ -75,6 +75,7 @@
     outline-offset: -6px;
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-tic-tac-toe">
 <main class="wrap">
@@ -94,9 +95,9 @@
     <div class="controls center" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="live" hidden>2 players · online</option>
-        <option value="ai">vs AI</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="vs computer" value="ai">vs computer</option>
       </select>
       <button id="toggle" hidden>Play as O</button>
     </div>
@@ -105,7 +106,7 @@
 
 <template id="man-tic-tac-toe">
   <h2>Name</h2>
-  <p>tic-tac-toe — three in a row, against a friend over WhatsApp or an unbeatable AI.</p>
+  <p>tic-tac-toe — three in a row, against a friend over WhatsApp or an unbeatable computer.</p>
 
   <h2>Synopsis</h2>
   <p>Take turns marking cells on a 3×3 grid. First to line up three wins.</p>
@@ -127,11 +128,11 @@
   <h2>Controls</h2>
   <ul>
     <li><strong>Tap / click</strong> any empty cell to place your mark.</li>
-    <li><code>New game</code> starts over. Switch the mode to <code>vs AI</code> to play solo; <code>Play as O</code> lets the AI open.</li>
+    <li><code>New game</code> starts over. Switch the mode to <code>vs computer</code> to play solo; <code>Play as O</code> lets the computer open.</li>
   </ul>
 
   <h2>Notes</h2>
-  <p class="muted">The AI uses full-tree minimax, so perfect play will always draw. Aim for a tie.</p>
+  <p class="muted">The computer uses full-tree minimax, so perfect play will always draw. Aim for a tie.</p>
 
   <h2>Live online</h2>
   <ul>

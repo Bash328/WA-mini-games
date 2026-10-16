@@ -277,7 +277,7 @@
       const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
         ? (last.p === P1 ? "Red" : "Yellow") + " wins. " + (loser === P1 ? "Red" : "Yellow") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
-        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
+        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
       Gamekit.turn(null);
     } else if (isFull(grid)) {
@@ -305,8 +305,8 @@
       statusEl.textContent = "Your turn · drop a checker." + (note ? " " + note : "");
       Gamekit.turn(current, "Your turn · you're " + (current === P1 ? "Red" : "Yellow"));
     } else {
-      statusEl.textContent = "AI thinking…";
-      Gamekit.turn(current, "AI thinking…", true);
+      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(current, "Computer thinking…", true);
     }
   }
 
@@ -442,7 +442,7 @@
     // HUMAN's turn again: after the computer's winning move that means taking
     // back its move and yours, and if the human plays second and everything is
     // undone, the computer simply opens again. (It used to stop after one
-    // move and leave the page on "AI thinking" with nothing moving.)
+    // move and leave the page on "Computer thinking" with nothing moving.)
     cancelAI();
     const next = () => (history.length % 2 === 0 ? P1 : P2);
     undoMove();

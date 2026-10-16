@@ -103,6 +103,7 @@
     min-height: var(--tap);
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-minesweeper">
 <main class="wrap">
@@ -122,8 +123,8 @@
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="solo">Solo</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Solo" value="solo">Solo</option>
       </select>
       <select id="diff" aria-label="Difficulty">
         <option value="easy">Easy · 9×9 · 10 mines</option>

@@ -495,10 +495,10 @@ function renderBoard() {
     const note = (!thinking && state.turn === humanColor && confidenceNote) ? ' ' + confidenceNote : '';
     if (note) confidenceNote = '';
     document.getElementById('status').textContent =
-      (thinking ? 'AI thinking…' : (state.turn === humanColor ? 'Your move.' : 'AI to move.')) + (inChk ? ' — check!' : '') + note;
+      (thinking ? 'Computer thinking…' : (state.turn === humanColor ? 'Your move.' : 'Computer to move.')) + (inChk ? ' — check!' : '') + note;
     const aiToMove = thinking || state.turn !== humanColor;
     Gamekit.turn(state.turn === 'w' ? 1 : 2,
-      aiToMove ? 'AI thinking…' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black') + (inChk ? ' — check!' : ''),
+      aiToMove ? 'Computer thinking…' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black') + (inChk ? ' — check!' : ''),
       aiToMove);
   }
 }
@@ -592,7 +592,7 @@ function resetSolo() {
   humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();
-  document.getElementById('status').textContent = humanColor === 'b' ? 'AI is thinking…' : 'Your move.';
+  document.getElementById('status').textContent = humanColor === 'b' ? 'Computer is thinking…' : 'Your move.';
   if (humanColor === 'b') aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
 }
 
@@ -703,7 +703,7 @@ undoBtn.addEventListener('click', () => {
   if (state.turn !== humanColor) {
     // everything was undone and the computer plays first: let it open again
     // instead of leaving the board waiting for a move that never comes
-    document.getElementById('status').textContent = 'AI is thinking…';
+    document.getElementById('status').textContent = 'Computer is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';
@@ -740,7 +740,7 @@ const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.le
   lastMove = null; selected = null; legalFromSel = [];
   renderBoard();
   if (state.turn !== humanColor) {
-    document.getElementById('status').textContent = 'AI is thinking…';
+    document.getElementById('status').textContent = 'Computer is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';

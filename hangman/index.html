@@ -99,6 +99,7 @@
     min-height: var(--tap);
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-hangman">
 <main class="wrap">
@@ -115,8 +116,8 @@
     </div>
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="local">2 players · same device</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Same device" value="local">2 players · same device</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>

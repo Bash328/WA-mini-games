@@ -73,6 +73,7 @@
   @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
   .tile.merged { animation: pop 0.18s ease-out; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-2048">
 <main class="wrap">
@@ -97,7 +98,7 @@
     <div class="board2048" id="board" role="grid" aria-label="2048 game board" aria-live="polite"></div>
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
-      <span class="kbd">↑ ← ↓ →</span> or swipe
+      <span class="kbd">↑ ← ↓ → or swipe</span>
     </div>
   </div>
 </main>

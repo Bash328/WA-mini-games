@@ -7,7 +7,7 @@ import vm from "node:vm";
 const win = {};
 vm.runInNewContext(readFileSync(new URL("./taunts.js", import.meta.url), "utf8"), { window: win });
 const T = win.TAUNT_LINES;
-const SHARED = ["loss", "reversal", "confidence", "lastChance", "win", "forfeit", "draw"];
+const SHARED = ["loss", "reversal", "confidence", "lastChance", "win", "forfeit", "draw", "resigned", "losingHint"];
 const MAX_LEN = 90, MAX_POOLS_PER_PHRASE = 2;
 
 const problems = [];
@@ -15,7 +15,7 @@ const phraseUse = new Map(); // sentence -> Set of "game.category"
 for (const [game, block] of Object.entries(T)) {
   for (const [cat, lines] of Object.entries(block)) {
     const where = `${game}.${cat}`;
-    if (game === "_" && !SHARED.includes(cat)) problems.push(`${where}: unknown generic category`);
+    if (game === "online" ? !["angel", "devil"].includes(cat) : (game === "_" || game === "_computer") && !SHARED.includes(cat)) problems.push(`${where}: unknown generic category`);
     if (!lines.length) problems.push(`${where}: empty`);
     if (new Set(lines).size !== lines.length) problems.push(`${where}: duplicate line`);
     for (const l of lines) {
@@ -32,6 +32,12 @@ for (const [game, block] of Object.entries(T)) {
 for (const [s, pools] of phraseUse) {
   if (pools.size > MAX_POOLS_PER_PHRASE) problems.push(`"${s}" is in ${pools.size} pools: ${[...pools].join(", ")}`);
 }
+
+// the server validates taunt ids by count; it must match the lists here
+const proto = readFileSync(new URL("./worker/live-protocol.mjs", import.meta.url), "utf8");
+const count = (name) => Number((proto.match(new RegExp("export const " + name + " = (\\d+)")) || [])[1]);
+if (count("ANGEL_COUNT") !== T.online.angel.length) problems.push("ANGEL_COUNT does not match online.angel");
+if (count("DEVIL_COUNT") !== T.online.devil.length) problems.push("DEVIL_COUNT does not match online.devil");
 
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 console.log("taunts.js ok");

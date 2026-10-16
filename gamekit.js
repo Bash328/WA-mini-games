@@ -122,7 +122,7 @@
     };
   }
 
-  // Friendly trash talk, in any mode (solo vs AI, local 2-player, or
+  // Friendly trash talk, in any mode (solo vs computer, local 2-player, or
   // WhatsApp). Picked at render time, not stored anywhere — nothing here
   // rides along in a shared link, so two players can see different lines
   // for the same result with no desync risk.
@@ -141,29 +141,65 @@
   // state to know it from.
   const TAUNT_MEM = storage("taunt:");
   const GAME_ID = (location.pathname.match(/([^/]+)\/(?:index\.html)?$/) || [])[1] || "";
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  // Who is on the other side, read from the page's mode menu so no game has
+  // to say: "computer" | "local" (same device) | "live" | "link" (WhatsApp) | "solo".
+  function modeKind() {
+    const s = document.getElementById("mode");
+    const v = s ? s.value : "";
+    if (/^(ai|computer)/.test(v)) return "computer";
+    if (v === "local") return "local";
+    if (v === "live") return "live";
+    if (v === "whatsapp") return "link";
+    return "solo";
+  }
+
+  // The lines a taunt may use depend on the mode (see taunts.js): against the
+  // computer the `_computer` pool replaces the generic one, and in every other
+  // mode a line that mentions "the computer" is skipped, so a line can never
+  // claim something the mode makes untrue. In a link or live game that has an
+  // Admit defeat button, a "you're behind" taunt is sometimes the Admit defeat
+  // nudge instead, and very rarely the button itself winks (shared.css).
+  const recent = [];                 // the last few lines handed out, so the strip can find them
   function taunt(category, game) {
     const all = global.TAUNT_LINES || {};
-    const generic = all._ || {};
+    const kind = modeKind();
+    const computer = kind === "computer";
+    if (category === "lastChance" && (kind === "link" || kind === "live") && $(".wa-resign-row")) {
+      if (Math.random() < 0.5) category = "losingHint";
+      if (Math.random() < 0.1) {
+        document.body.dataset.wink = "1";
+        setTimeout(() => { delete document.body.dataset.wink; }, 20000);
+      }
+    }
     const mine = all[game || GAME_ID] || {};
-    // a category only a game defines (e.g. 2048's "over-hard") has no generic pool
-    const cat = generic[category] || mine[category] ? category : "loss";
-    const own = mine[cat];
-    const useOwn = own && own.length && (!generic[cat] || Math.random() < 0.5);
-    const pool = useOwn ? own : (generic[cat] || []);
+    const ok = (l) => computer === /\bcomputer\b/i.test(l);
+    const gen = (c) => ((computer ? all._computer : all._) || {})[c] || [];
+    // a category only the game defines (2048's "over-hard") has no generic pool and no mode filter
+    const own = (c) => (mine[c] || []).filter((l) => ok(l) || !(all._ || {})[c]);
+    const cat = gen(category).length || own(category).length ? category : "loss";
+    const g = gen(cat), o = own(cat);
+    const useOwn = o.length > 0 && (!g.length || Math.random() < 0.5);
+    const pool = useOwn ? o : (g.length ? g : o);
     if (!pool.length) return "";
-    const key = cat + ":" + (useOwn ? (game || GAME_ID) : "_");
+    const key = cat + ":" + (useOwn ? (game || GAME_ID) : computer ? "c" : "_");
     const seen = TAUNT_MEM.getJSON(key, []);
-    const fresh = pool.filter(l => seen.indexOf(l) === -1);
+    const fresh = pool.filter((l) => seen.indexOf(l) === -1);
     const from = fresh.length ? fresh : pool;
     const line = from[Math.floor(Math.random() * from.length)];
     // forget the oldest once most of the pool has been used
     TAUNT_MEM.setJSON(key, seen.concat(line).slice(-Math.max(1, Math.floor(pool.length * 0.7))));
+    recent.push(line);
+    if (recent.length > 8) recent.shift();
+    queueScan();
     return line;
   }
 
   // The big "whose move is it" pill (styled in shared.css). slot is 1 or 2
   // (the player's colour, --p1/--p2); pass a falsy slot to hide it. waiting
-  // dims it for "it's the other side's move / the AI is thinking". The
+  // dims it for "it's the other side's move / the Computer is thinking". The
   // element is created on first use, right under the status row.
   function turn(slot, text, waiting) {
     let el = document.getElementById("turn-badge");
@@ -262,6 +298,300 @@
     setTimeout(() => { el.classList.add("fade"); setTimeout(() => el.remove(), 600); }, 3500);
   }
 
+  /* ---------- The strip above the board: taunts, results, taunts from your opponent ----------
+     Games put a taunt inside their small status line, which was easy to miss.
+     Instead of editing every game, the strip watches the panel: when the
+     status (or a share-panel note) contains a taunt Gamekit.taunt() handed out,
+     or the status announces the result ("Red wins.", "Draw.", "Boom."), the
+     text is shown big in this strip, right above the board, and the small
+     original is hidden. The strip's space is reserved up front on the
+     games that taunt, so nothing moves when a message arrives. */
+  let slotEl = null, scanQueued = false;
+  function ensureSlot() {
+    if (slotEl && slotEl.isConnected) return slotEl;
+    const panel = $(".panel");
+    if (!panel || !/\bg-/.test(document.body.className)) return null;
+    slotEl = document.createElement("div");
+    slotEl.id = "gk-slot";
+    slotEl.className = "gk-slot";
+    if (document.getElementById("wa-ui") || GAME_ID === "2048") slotEl.dataset.reserve = "1";
+    const say = document.createElement("p");
+    say.className = "gk-say";
+    say.hidden = true;
+    say.setAttribute("aria-live", "polite");
+    const msg = document.createElement("div");
+    msg.className = "gk-msg";
+    msg.hidden = true;
+    msg.setAttribute("role", "status");
+    slotEl.append(say, msg);
+    const ref = document.getElementById("wa-ui");
+    if (ref) ref.after(slotEl);
+    else {
+      let b = document.getElementById("board");
+      if (b) { while (b.parentNode !== panel) b = b.parentNode; b.before(slotEl); } else panel.appendChild(slotEl);
+    }
+    return slotEl;
+  }
+
+  const END_RE = /(\bwins?\b[.!]|\bwins the match|\byou win\b|\byou won\b|^draw\s*[.—:!-]|\bstalemate\b|\bcheckmate\b|\bcracked it\b|\bout of guesses\b|\bboom\b|\bsolved\b|\bit's a draw\b|\byou lose\b)/i;
+  const WIN_RE = /\b(you win|you won|cracked it|solved)\b/i;
+  const BAD_RE = /\b(computer wins|you lose|boom|out of guesses|lost)\b/i;
+
+  function scan() {
+    scanQueued = false;
+    const s = ensureSlot();
+    if (!s) return;
+    const msg = s.querySelector(".gk-msg");
+    $$(".gk-moved").forEach((e) => e.classList.remove("gk-moved"));
+    let src = null;
+    if (recent.length) {
+      src = $$("#over-msg, #status, .wa-note").find((e) => {
+        const t = e.textContent;
+        return t && recent.some((l) => t.indexOf(l) !== -1);
+      }) || null;
+    }
+    if (!src) {
+      const st = document.getElementById("status");
+      const t = st ? st.textContent.trim() : "";
+      if (t && t !== "Game over" && END_RE.test(t)) src = st;
+    }
+    let text = "", tone = "";
+    if (src) {
+      text = src.textContent.replace(/^[\s·]+/, "").replace(/\s+/g, " ").trim();
+      src.classList.add("gk-moved");
+      tone = WIN_RE.test(text) ? "win" : BAD_RE.test(text) ? "bad" : "";
+    }
+    if (msg.textContent !== text) msg.textContent = text;
+    msg.hidden = !text;
+    msg.className = "gk-msg" + (tone ? " " + tone : "");
+  }
+  function queueScan() {
+    if (scanQueued) return;
+    scanQueued = true;
+    (global.requestAnimationFrame || setTimeout)(scan);
+  }
+  function watchPanel() {
+    const panel = $(".panel");
+    if (!panel || typeof MutationObserver === "undefined") return;
+    new MutationObserver((muts) => {
+      if (muts.every((m) => slotEl && slotEl.contains(m.target))) return;
+      queueScan();
+    }).observe(panel, { childList: true, subtree: true, characterData: true });
+    queueScan();
+  }
+
+  // A message FROM the opponent (online taunts): shown in the strip for a few seconds.
+  let sayTimer = null;
+  function say(text, kind) {
+    const s = ensureSlot();
+    if (!s) return;
+    const p = s.querySelector(".gk-say");
+    p.textContent = text;
+    p.dataset.kind = kind || "";
+    p.hidden = false;
+    clearTimeout(sayTimer);
+    sayTimer = setTimeout(() => { p.hidden = true; }, 6000);
+  }
+
+  /* ---------- Custom select ----------
+     Replaces every native <select> with one styled, keyboard-accessible menu.
+     The native element stays in the page (visually hidden) and stays the
+     source of truth, so games keep reading and setting `.value`, listening
+     for "change", toggling `hidden` on it or on its options. A value set
+     from code is picked up by wrapping the element's own `value` property. */
+  const mk = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  const SEL_VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  let selCount = 0;
+  function enhanceSelect(sel) {
+    if (sel.dataset.gk) return;
+    sel.dataset.gk = "1";
+    const id = "gk-sel-" + ++selCount;
+    const wrap = mk("span", "gk-select");
+    sel.before(wrap);
+    wrap.appendChild(sel);
+    sel.classList.add("gk-native");
+    sel.tabIndex = -1;
+    sel.setAttribute("aria-hidden", "true");
+    const btn = mk("button", "gk-sel-btn");
+    btn.type = "button";
+    btn.setAttribute("aria-haspopup", "listbox");
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", sel.getAttribute("aria-label") || "Choose");
+    btn.innerHTML = '<span class="gk-t"></span><span class="gk-c" aria-hidden="true">▾</span>';
+    const list = mk("ul", "gk-sel-list");
+    list.id = id;
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+    btn.setAttribute("aria-controls", id);
+    wrap.append(btn, list);
+
+    let items = [], active = 0;
+    const text = (o) => (o.dataset.short || o.textContent).trim();
+    function sync() {
+      const o = sel.options[sel.selectedIndex];
+      btn.firstChild.textContent = o ? text(o) : "";
+      wrap.hidden = sel.hidden;
+      btn.disabled = sel.disabled;
+    }
+    function mark() {
+      Array.from(list.children).forEach((li, i) => {
+        li.classList.toggle("on", i === active);
+        li.setAttribute("aria-selected", items[i].value === sel.value ? "true" : "false");
+      });
+      const li = list.children[active];
+      if (li && li.scrollIntoView) li.scrollIntoView({ block: "nearest" });
+    }
+    function open() {
+      items = Array.from(sel.options).filter((o) => !o.hidden && !o.disabled);
+      list.replaceChildren(...items.map((o) => {
+        const li = mk("li");
+        li.setAttribute("role", "option");
+        li.textContent = o.textContent.trim();
+        return li;
+      }));
+      active = Math.max(0, items.findIndex((o) => o.value === sel.value));
+      list.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      mark();
+    }
+    function close(refocus) {
+      list.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus();
+    }
+    function choose(i) {
+      const o = items[i];
+      close(true);
+      if (!o || o.value === sel.value) return;
+      SEL_VALUE.set.call(sel, o.value);
+      sync();
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    btn.addEventListener("click", () => (list.hidden ? open() : close(false)));
+    btn.addEventListener("keydown", (e) => {
+      if (list.hidden) {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); open(); }
+        return;
+      }
+      const n = items.length;
+      if (e.key === "ArrowDown") active = (active + 1) % n;
+      else if (e.key === "ArrowUp") active = (active + n - 1) % n;
+      else if (e.key === "Home") active = 0;
+      else if (e.key === "End") active = n - 1;
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); return choose(active); }
+      else if (e.key === "Escape") { e.preventDefault(); return close(true); }
+      else if (e.key === "Tab") return close(false);
+      else return;
+      e.preventDefault();
+      mark();
+    });
+    list.addEventListener("click", (e) => {
+      const li = e.target.closest("li");
+      if (li) choose(Array.prototype.indexOf.call(list.children, li));
+    });
+    document.addEventListener("click", (e) => { if (!list.hidden && !wrap.contains(e.target)) close(false); });
+    Object.defineProperty(sel, "value", {
+      configurable: true,
+      get() { return SEL_VALUE.get.call(sel); },
+      set(v) { SEL_VALUE.set.call(sel, v); sync(); },
+    });
+    new MutationObserver(sync).observe(sel, { attributes: true, childList: true, subtree: true, characterData: true });
+    sel.addEventListener("change", sync);
+    sync();
+  }
+
+  /* ---------- One standard page layout ----------
+     Every game page is rebuilt into the same shape on load, by MOVING its
+     existing elements (so ids, listeners and the games' own code are
+     untouched):
+       top bar   ← all games · title ·······  theme · how to ?
+       status row
+       [ mode ▾ ][ Online ][ New game ]         (one line)
+       difficulty / size / options              (chips, selects)
+       share panel · taunt & result strip · the board
+       undo · hint · flip · reset               (below the board) */
+  const THEME_KEY = "games:theme";
+  function themeButton() {
+    const b = mk("button", "gk-theme");
+    b.type = "button";
+    const root = document.documentElement;
+    const paint = () => {
+      const m = root.getAttribute("data-theme");
+      b.textContent = m === "light" ? "☀" : m === "dark" ? "☾" : "◐";
+      b.setAttribute("aria-label", "Theme: " + (m || "system") + ". Tap to change.");
+      b.title = "Theme: " + (m || "system");
+    };
+    b.addEventListener("click", () => {
+      const cur = root.getAttribute("data-theme");
+      const next = cur === "dark" ? "light" : cur === "light" ? null : "dark";
+      if (next) root.setAttribute("data-theme", next); else root.removeAttribute("data-theme");
+      try { next ? localStorage.setItem(THEME_KEY, next) : localStorage.removeItem(THEME_KEY); } catch (e) { /* ignore */ }
+      paint();
+    });
+    paint();
+    return b;
+  }
+
+  const ACT_ORDER = { undo: 1, "undo-btn": 1, "hint-btn": 2, flip: 3 };
+  function layout() {
+    const body = document.body, panel = $(".panel");
+    if (!panel || !/\bg-/.test(body.className) || body.classList.contains("g-hub") || body.dataset.gkLayout) return;
+    body.dataset.gkLayout = "1";
+
+    const top = $(".topbar");
+    if (top) {
+      const how = $(".man-trigger", panel);
+      const back = $(".back", top);
+      if (back) {
+        back.setAttribute("aria-label", "All games");
+        back.innerHTML = '←<span class="gk-hide-sm"> all games</span>';
+        top.insertBefore(back, top.firstChild);
+      }
+      const right = mk("div", "gk-top-r");
+      right.appendChild(themeButton());
+      if (how) right.appendChild(how);
+      top.appendChild(right);
+    }
+
+    const mode = $("#mode", panel);
+    const kids = [];
+    Array.from(panel.children).forEach((c) => {
+      if (c.matches(".controls, .game-controls")) Array.from(c.children).forEach((k) => kids.push({ k: k, tool: false, box: c }));
+      else if (c.matches(".toolbar")) Array.from(c.children).forEach((k) => kids.push({ k: k, tool: true, box: c }));
+    });
+    const ctl = mk("div", "gk-ctl");
+    const opts = mk("div", "gk-opts");
+    let acts = Array.from(panel.children).find((c) => c.matches(".toolbar"));
+    if (!acts) acts = mk("div", "toolbar");
+    acts.classList.add("gk-acts");
+    const newBtns = [];
+    kids.forEach(({ k, tool }) => {
+      if (k === mode) ctl.insertBefore(k, ctl.firstChild);
+      else if (k.id === "new-btn" || k.id === "reset" || (k.id === "reset-btn" && /new/i.test(k.textContent))) newBtns.push(k);
+      else if (tool || k.id in ACT_ORDER) { k.style.order = ACT_ORDER[k.id] || 9; acts.appendChild(k); }
+      else opts.appendChild(k);
+    });
+    newBtns.forEach((b) => {
+      b.classList.remove("primary");
+      b.classList.add("btn", "ghost", "tool-btn", "gk-new");
+      b.innerHTML = '<span class="glyph">↻</span> New game';
+      ctl.appendChild(b);
+    });
+    const row = $(".row", panel) || null;
+    if (row) row.after(ctl, opts); else panel.prepend(ctl, opts);
+    kids.forEach(({ box }) => { if (box !== acts && !box.children.length) box.remove(); });
+    if (!acts.isConnected) { const fn = $(".footer-note", panel); if (fn) fn.before(acts); else panel.appendChild(acts); }
+    if (!acts.children.length) acts.hidden = true;
+    if (!ctl.children.length) ctl.hidden = true;
+  }
+
+  function init() {
+    layout();
+    $$("select").forEach(enhanceSelect);
+    watchPanel();
+  }
+  init();
+
   global.Gamekit = {
     mulberry32,
     dailySeed,
@@ -271,6 +601,8 @@
     fmtTime,
     wireDifficultyChips,
     taunt,
+    modeKind,
+    say,
     turn,
     resume,
     notice,

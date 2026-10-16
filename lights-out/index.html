@@ -82,6 +82,7 @@
     min-height: var(--tap);
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-lights-out">
 <main class="wrap">
@@ -99,9 +100,9 @@
     </div>
     <div class="game-controls">
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="live" hidden>2 players · online</option>
-        <option value="solo">Solo</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Solo" value="solo">Solo</option>
       </select>
       <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
         <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>

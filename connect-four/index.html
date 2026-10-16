@@ -24,7 +24,7 @@
 <title>connect-four · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Connect Four — play a friend by sending moves over WhatsApp, vs AI at three depths, or locally.">
+<meta name="description" content="Connect Four — play a friend by sending moves over WhatsApp, vs computer at three depths, or locally.">
 <meta property="og:title" content="Connect Four · two players over WhatsApp">
 <meta property="og:description" content="Open the board, drop a checker, and send the link back.">
 <meta property="og:type" content="website">
@@ -129,6 +129,7 @@
     min-height: var(--tap);
   }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
 <body class="g-connect-four">
 <main class="wrap">
@@ -139,23 +140,23 @@
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Your move.</p>
-      <p class="status" id="legend">You <span class="hot">●</span> · AI <span class="ok">●</span></p>
+      <p class="status" id="legend">You <span class="hot">●</span> · Computer <span class="ok">●</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="connect-four" data-man-title="CONNECT-FOUR(1)" type="button">
         how to <span class="q">?</span>
       </button>
     </div>
     <div class="game-controls">
-      <div class="chips" id="chips" role="tablist" aria-label="AI difficulty">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
         <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
         <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
         <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
       </div>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="live" hidden>2 players · online</option>
-        <option value="ai-first-p1">You first vs AI</option>
-        <option value="ai-first-p2">AI first vs AI</option>
-        <option value="local">2 players local</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer · you first" value="ai-first-p1">You first vs computer</option>
+        <option data-short="Computer · it first" value="ai-first-p2">Computer first</option>
+        <option data-short="Same device" value="local">2 players local</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
@@ -192,12 +193,12 @@
   <ul>
     <li><strong>Tap / click</strong> the arrow above any column to drop your checker there.</li>
     <li><code>↻ new game</code> resets the board.</li>
-    <li>Use the <code>Mode</code> selector to play the AI or pass-and-play locally. <code>↶ undo</code> is available in those modes.</li>
+    <li>Use the <code>Mode</code> selector to play the computer or pass-and-play locally. <code>↶ undo</code> is available in those modes.</li>
   </ul>
 
-  <h2>Difficulty (vs AI)</h2>
+  <h2>Difficulty (vs computer)</h2>
   <ul>
-    <li><strong>Easy</strong> — AI searches depth 2 (1 full ply + reply). Beatable by a novice.</li>
+    <li><strong>Easy</strong> — the computer searches depth 2 (1 full ply + reply). Beatable by a novice.</li>
     <li><strong>Medium</strong> — depth 4. Exploits obvious traps.</li>
     <li><strong>Hard</strong> — depth 6. Uses alpha-beta pruning and center-weighted evaluation. Tough.</li>
   </ul>

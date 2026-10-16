@@ -239,6 +239,12 @@
         note = REJECTED[m.reason] || "That didn't work.";
         return paint();
       }
+      if (m.t === "taunt") {
+        const L = tauntLines();
+        const list = m.k === "a" ? L.angel : m.k === "d" ? L.devil : null;
+        if (list && list[m.i] && !muted()) Gamekit.say((m.k === "a" ? "\u{1F607} " : "\u{1F608} ") + list[m.i], m.k === "a" ? "angel" : "devil");
+        return;
+      }
       if (m.t === "rematch") { rematch = m.rematch; return paint(); }
       if (m.t === "picked") { picked = m.picked; return paint(); }
       if (m.t === "rematch-start") {
@@ -485,6 +491,46 @@
       if (lobbyError) noteP(lobbyError);
     }
 
+    /* Angel and devil taunts: two suggestions, one tap sends one. Only a
+       position in a fixed list travels (see taunts.js, online); the server
+       relays it to the other seat and limits it to one every 3 seconds. */
+    const tauntLines = () => (global.TAUNT_LINES && global.TAUNT_LINES.online) || { angel: [], devil: [] };
+    const sugg = { a: -1, d: -1 };
+    let tauntCool = false;
+    const muted = () => store.get("taunt-mute", "0") === "1";
+    function suggest(k) {
+      const list = k === "a" ? tauntLines().angel : tauntLines().devil;
+      if (!list.length) return;
+      let i;
+      do { i = Math.floor(Math.random() * list.length); } while (list.length > 1 && i === sugg[k]);
+      sugg[k] = i;
+    }
+    function tauntRow() {
+      const L = tauntLines();
+      if (!L.angel.length || !L.devil.length) return;
+      const wrap = el("div", "live-taunts");
+      [["a", "\u{1F607}", "angel"], ["d", "\u{1F608}", "devil"]].forEach(([k, icon, name]) => {
+        if (sugg[k] < 0) suggest(k);
+        const line = L[name][sugg[k]];
+        const b = button(icon + " " + line, "ghost live-taunt " + name, () => {
+          if (tauntCool) return;
+          if (!send({ t: "taunt", k: k, i: sugg[k] })) return;
+          Gamekit.say("You: " + line, name);
+          suggest(k);
+          tauntCool = true;
+          setTimeout(() => { tauntCool = false; if (phase === "room") paint(); }, 3000);
+          paint();
+        });
+        b.disabled = tauntCool;
+        wrap.appendChild(b);
+      });
+      ui.appendChild(wrap);
+      ui.appendChild(button(muted() ? "Unmute taunts" : "Mute taunts", "ghost wa-small live-mute", () => {
+        store.set("taunt-mute", muted() ? "0" : "1");
+        paint();
+      }));
+    }
+
     function paintRoom() {
       const finished = !!state && state.status !== "in_progress";
 
@@ -492,21 +538,19 @@
         clearStatus();
         Gamekit.turn(slotOf(me), "Waiting for your opponent", true);
         banner("", "Your room is open. The game starts the moment your friend joins.");
-        // The code, big and tappable: tap it (or the button) to copy.
+        // The code and its Copy button, side by side.
         const box = el("div", "live-code-box");
-        const codeBtn = el("button", "live-code", code.slice(0, 3) + " " + code.slice(3));
-        codeBtn.type = "button";
-        codeBtn.setAttribute("aria-label", "Room code " + code.split("").join(" ") + ". Tap to copy.");
-        const hint = el("div", "live-code-hint", "Room code · tap to copy");
-        codeBtn.addEventListener("click", () => {
+        const codeTxt = el("span", "live-code", code.slice(0, 3) + " " + code.slice(3));
+        codeTxt.setAttribute("aria-label", "Room code " + code.split("").join(" "));
+        const copyCode = button("Copy code", "ghost live-copy", () => {
           copyTo(code, (ok) => {
-            hint.textContent = ok ? "Copied! Send it to your friend" : "Couldn't copy — select and copy it";
-            setTimeout(() => { hint.textContent = "Room code · tap to copy"; }, 2000);
+            copyCode.textContent = ok ? "Copied!" : "Select it and copy";
+            setTimeout(() => { copyCode.textContent = "Copy code"; }, 1800);
           });
         });
-        box.append(codeBtn, hint);
+        box.append(codeTxt, copyCode);
         ui.appendChild(box);
-        actions(shareButton(), copyButton("Copy link", inviteLink), copyButton("Copy code", () => code));
+        actions(shareButton(), copyButton("Copy link", inviteLink));
         if (note) noteP(note);
         return actions(button("Leave room", "ghost wa-small", leave));
       }
@@ -515,7 +559,7 @@
         const r = result();
         setStatus("Game over");
         banner(r.cls, r.text);
-        noteP(Gamekit.taunt(state.status === "draw" ? "draw" : state.winner !== me ? "loss" : state.resigned ? "forfeit" : "win"));
+        noteP(Gamekit.taunt(state.status === "draw" ? "draw" : state.winner !== me ? (state.resigned ? "resigned" : "loss") : state.resigned ? "forfeit" : "win"));
         const oppSeat = seat === 1 ? 2 : 1;
         let rm;
         if (rematch[seat]) { rm = button("Waiting for them…", "ghost", () => {}); rm.disabled = true; }
@@ -539,6 +583,7 @@
         }
         if (!online[oppSeat]) noteP("Your opponent is offline. They can rejoin with the same link.");
         if (note) noteP(note);
+        tauntRow();
         if (state && state.status === "in_progress") {
           resignSlot(true, () => {
             if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
@@ -556,6 +601,7 @@
       }
       if (!online[oppSeat]) noteP("Your opponent is offline. They can rejoin with the same link.");
       if (note) noteP(note);
+      tauntRow();
       if (state && myTurn) {
         resignSlot(true, () => {
           if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
@@ -655,7 +701,8 @@
      miss. cta() puts an unmissable button beside it that switches to live
      mode, and tucks itself away while live mode is the one in use. */
   function cta(modeSel) {
-    if (!modeSel || modeSel.parentNode.querySelector(".live-cta")) return;
+    const anchor = modeSel && (modeSel.closest(".gk-select") || modeSel);
+    if (!modeSel || anchor.parentNode.querySelector(".live-cta")) return;
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn live-cta";
@@ -664,7 +711,7 @@
       modeSel.value = "live";
       modeSel.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    modeSel.parentNode.insertBefore(b, modeSel.nextSibling);
+    anchor.parentNode.insertBefore(b, anchor.nextSibling);
     const sync = () => { b.hidden = modeSel.value === "live"; };
     modeSel.addEventListener("change", sync);
     sync();

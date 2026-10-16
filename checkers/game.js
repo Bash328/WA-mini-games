@@ -279,7 +279,7 @@
     link.commit({ board: waBoard.join(""), status, winner, last: waLast });
   }
 
-  // ---------- 2 players same device, or 1 vs AI ----------
+  // ---------- 2 players same device, or 1 vs computer ----------
   // Shared state for both sub-modes; aiColor is null for local pass-and-play,
   // or the color the AI plays (always P2 - the human is always P1) when
   // modeSel is "ai".
@@ -345,19 +345,19 @@
       const reversed = confidenceGivenTo === loserColor;
       statusEl.textContent = aiColor === null
         ? `${NAMES[winnerColor]} wins.` + (reversed ? " " + Gamekit.taunt("reversal") : "")
-        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
+        : (winnerColor === aiColor ? "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
     } else if (aiThinking) {
-      statusEl.textContent = "AI thinking…";
-      Gamekit.turn(aiColor, "AI thinking…", true);
+      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(aiColor, "Computer thinking…", true);
     } else {
       // one-shot: kept through the AI's turn, cleared once shown
       const aiTurnNow = aiColor !== null && localCurrent === aiColor;
       const note = aiTurnNow ? "" : confidenceNote;
       if (note) confidenceNote = "";
-      const base = aiColor !== null ? (localCurrent === aiColor ? "AI thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
+      const base = aiColor !== null ? (localCurrent === aiColor ? "Computer thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
       const aiTurn = aiColor !== null && localCurrent === aiColor;
-      Gamekit.turn(localCurrent, aiTurn ? "AI thinking…" : aiColor !== null ? "Your move" : `${NAMES[localCurrent]}'s move`, aiTurn);
+      Gamekit.turn(localCurrent, aiTurn ? "Computer thinking…" : aiColor !== null ? "Your move" : `${NAMES[localCurrent]}'s move`, aiTurn);
     }
   }
 

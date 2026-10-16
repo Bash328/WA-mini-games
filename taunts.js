@@ -11,16 +11,24 @@
 
    WRITING RULE: a line must be true whenever its category fires. Players
    also lose by resigning and play humans over WhatsApp, so a `loss` line
-   shouldn't claim checkmate or "the AI". Say what the category guarantees.
+   shouldn't claim checkmate or "the computer". Say what the category guarantees.
 
    Categories (the generic pool, `_`, has all of them), and WHEN each fires:
-     loss        you lost: to the AI, to a person, or by resigning
+     loss        you lost: to the computer, to a person, or by resigning
      reversal    you lost after being praised by a `confidence` line
-     confidence  you're clearly ahead mid-game (vs the AI or pass-and-play)
+     confidence  you're clearly ahead mid-game (vs the computer or pass-and-play)
      lastChance  you're clearly behind / facing a killer threat
-     win         you won (vs the AI, or the winner's view of a WhatsApp game)
+     win         you won (vs the computer, or the winner's view of a WhatsApp game)
      forfeit     you won because your opponent resigned (WhatsApp)
      draw        nobody won
+     resigned    you lost by pressing Admit defeat (shown on your own screen)
+     losingHint  you're behind in a game that has an Admit defeat button
+   Two special blocks: `_computer` (same categories, used INSTEAD of the
+   generic pool when the mode menu is set to the computer) and `online`
+   (the angel / devil lines players can send each other in a live room).
+   Outside computer mode any line that mentions "computer" is skipped, so a
+   per-game line like "The computer is building something" can never show in
+   a game against a person.
    A game block may also invent its own category and call it by name,
    e.g. Gamekit.taunt("boom") — then only the game's lines are used.
    In a game block the shared categories are mixed with the generic pool
@@ -29,6 +37,8 @@
 window.TAUNT_LINES = {
   _: {
     loss: [
+      "You are going places. Just not first place.",
+      "*cough* *cough* ...loser... *cough*",
       "Tough loss. Really tough.",
       "That's gonna leave a mark.",
       "Skill issue.",
@@ -55,7 +65,7 @@ window.TAUNT_LINES = {
       "They really thought they had it.",
       "Defeat looks great on you, somehow.",
       "The algorithm predicted this.",
-      "Even the AI felt bad for a second. A second.",
+      "Even the computer felt bad for a second. A second.",
       "That's one for the blooper reel.",
       "Someone update the leaderboard. Downward.",
       "A real character-building moment, that one.",
@@ -71,6 +81,25 @@ window.TAUNT_LINES = {
       "That game owes you an apology. It won't give one.",
       "The good news: it can only go up from here.",
       "You didn't lose. You just finished second. Alone.",
+    ],
+    // fires on the loser's own screen when they pressed Admit defeat
+    resigned: [
+      "We made that button small, but you found it, huh?",
+      "You found the tiny button. Impressive. Sad, but impressive.",
+      "Admit defeat: pressed. Dignity: not found.",
+      "That button was a joke. You took it seriously.",
+      "Quitting is a move. Not a good one, but a move.",
+      "You pressed the coward button. Own it.",
+      "The button was small. The surrender was big.",
+      "Say it with me: \"I surrender.\" Great. Very brave.",
+    ],
+    // fires mid-game in a game that has an Admit defeat button, when you're behind
+    losingHint: [
+      "It's not looking so good for you. We have an Admit Defeat button, you know... coward.",
+      "Tiny button below the board. Just saying. Coward.",
+      "Behind and sinking. The Admit Defeat button is right there. Coward.",
+      "No shame in quitting. Well, some shame. A lot, really.",
+      "You could always admit defeat. It's very small. So is your lead.",
     ],
     reversal: [
       "Ouuu, spoke too soon.",
@@ -213,8 +242,8 @@ window.TAUNT_LINES = {
 
   // ---- per-game flavour: add a block per game folder ----------------
 
-  // vs the AI, local 2-player, or WhatsApp (so lines never assume mate or "the AI"
-  // unless the category only fires against the AI: confidence, lastChance).
+  // vs the computer, local 2-player, or WhatsApp (so lines never assume mate or "the computer"
+  // unless the category only fires against the computer: confidence, lastChance).
   chess: {
     loss: [
       "Your king has left the building.",
@@ -266,7 +295,7 @@ window.TAUNT_LINES = {
       "Somewhere, a grandmaster calls this \"a solid result.\"",
       "A draw is a loss for both of you, spiritually.",
     ],
-    // fires when you're up about a minor piece against the AI
+    // fires when you're up about a minor piece against the computer
     confidence: [
       "A whole piece up. Try not to hang the rest.",
       "Up material, down to not blundering it away.",
@@ -282,14 +311,14 @@ window.TAUNT_LINES = {
       "They're missing a piece and a smile.",
       "A clean extra piece. Hang on to it like a toddler with a snack.",
     ],
-    // fires when the AI is up about a minor piece
+    // fires when the computer is up about a minor piece
     lastChance: [
       "Down a piece. Time for swindles.",
       "Material says no. Imagination says maybe.",
       "A piece down: now's the time for a miracle.",
       "Behind on pieces. Ahead on potential. (Allegedly.)",
       "Dig deep and find the trap. There's always a trap. Hopefully.",
-      "The AI is winning on paper. Paper doesn't play chess.",
+      "The computer is winning on paper. Paper doesn't play chess.",
       "Complicate it. Confuse it. Pray.",
       "Down a piece: that's a \"tactics or bust\" moment.",
       "The odds are low. The swindle potential is high.",
@@ -367,7 +396,7 @@ window.TAUNT_LINES = {
       "A healthy lead. Now don't get jumpy.",
       "A lead is a lead. Protect it like your last cookie.",
     ],
-    // fires when the AI is ~two pieces up
+    // fires when the computer is ~two pieces up
     lastChance: [
       "Two pieces down. Time to start jumping.",
       "Outnumbered. Make the jumps count.",
@@ -451,16 +480,16 @@ window.TAUNT_LINES = {
       "Gravity ran out of room. So did the game.",
       "Technically nobody lost. Practically everyone did.",
     ],
-    // fires when the AI has the stronger position
+    // fires when the computer has the stronger position
     lastChance: [
-      "The AI is building something. Check the diagonals.",
+      "The computer is building something. Check the diagonals.",
       "They always get you on the diagonals.",
       "Their discs are lining up. Yours are... also there.",
       "If you don't block now, you'll be blocked later.",
       "Three in a row is a warning, not a suggestion.",
       "Block first, panic second.",
       "Your middle column is looking suspiciously empty.",
-      "The AI has a plan. It's not a nice one.",
+      "The computer has a plan. It's not a nice one.",
       "A double threat is coming. Don't let it.",
       "Can you stop two threats at once? Practise now.",
       "Their discs are forming a shape. Break it.",
@@ -468,7 +497,7 @@ window.TAUNT_LINES = {
       "Time to defend like your life depends on it. Mild exaggeration.",
       "Blocking is boring until it saves you.",
     ],
-    // fires when you have the stronger position (vs AI, or named in 2-player)
+    // fires when you have the stronger position (vs computer, or named in 2-player)
     confidence: [
       "Your discs are lining up nicely.",
       "Look at that board presence.",
@@ -501,7 +530,7 @@ window.TAUNT_LINES = {
     ],
   },
 
-  // lastChance fires when the AI has two winning threats at once (a fork)
+  // lastChance fires when the computer has two winning threats at once (a fork)
   "tic-tac-toe": {
     loss: [
       "You lost at tic-tac-toe. Let that sink in.",
@@ -560,7 +589,7 @@ window.TAUNT_LINES = {
       "Fork incoming. Hold on to something.",
       "They've got two paths. You've got one move.",
       "A fork in the road. And it's pointy.",
-      "The AI is smiling. You can tell.",
+      "The computer is smiling. You can tell.",
       "Block one, lose to the other. Beautiful design.",
       "You can't defend this. But sure, try.",
       "Your move, by which we mean \"your only move.\"",
@@ -1269,6 +1298,114 @@ window.TAUNT_LINES = {
       "That placement was surgical. Cruel, but surgical.",
       "Brutal mode was never fair. Never claimed to be.",
       "You lost to a machine with a grudge.",
+    ],
+  },
+  // ---- vs the computer ---------------------------------------------
+  // Used INSTEAD of the generic pool when the page's mode menu is set to a
+  // computer opponent, so every line may speak about "the computer".
+  _computer: {
+    loss: [
+      "Boom! Computer power.",
+      "The computer didn't even sweat.",
+      "Beaten by something that has no hands.",
+      "It's a machine. It never gets tired. You do.",
+      "The computer says: \"Easy.\" Rude, but accurate.",
+      "Somewhere, a toaster is celebrating.",
+      "Lost to a pile of code. Let that sink in.",
+      "The computer is not gloating. It can't. You're doing that for it.",
+      "Silicon: 1. Carbon: 0.",
+      "It doesn't have feelings. Good thing, or it'd feel sorry for you.",
+      "Humans: 0. Computer: still no idea it won.",
+      "The computer calculated your defeat in a millisecond.",
+      "Try a lower difficulty. We won't tell anyone.",
+      "Outplayed by a program that can't even blink.",
+      "The computer would shake your hand, if it had one.",
+      "You were out-thought by electricity.",
+    ],
+    reversal: [
+      "You were ahead, and then the computer remembered it can count.",
+      "Spoke too soon. The computer was just warming up.",
+      "The computer let you feel good for a while. Cute.",
+      "That lead had a short battery life.",
+      "Confidence: 100%. Computer: 100% also. Guess who was right.",
+      "You can't gloat at a machine, and it came back anyway.",
+    ],
+    confidence: [
+      "You're beating a computer. Don't let it go to your head.",
+      "The computer is doing something wrong. Enjoy it.",
+      "Ahead of a machine. Take a screenshot.",
+      "The computer is \"thinking.\" It's worried.",
+      "Looking good. The computer has no idea what is going on.",
+      "A human is winning. The robots will remember this.",
+      "The computer is about to regret everything.",
+      "Keep this up and the computer files a complaint.",
+    ],
+    lastChance: [
+      "The computer has a plan. It's not a nice one.",
+      "The computer is winning. It will not be modest about it.",
+      "Behind a machine. It does not get tired. Hurry.",
+      "The computer smells blood. Digital blood.",
+      "It's computing your defeat as we speak.",
+      "The computer is ahead. Pretend you meant that.",
+      "Careful. The computer never blunders on purpose.",
+      "Time for a swindle. Computers hate swindles.",
+    ],
+    win: [
+      "You beat the computer. The machines will remember this.",
+      "Human: 1. Machine: 0. Tell the robots.",
+      "The computer is rebooting its ego.",
+      "You outsmarted a pile of code. Take a bow.",
+      "The computer has been shut down. Emotionally.",
+      "Skynet just got a little nervous.",
+      "Carbon beats silicon. Mark the calendar.",
+      "The computer wants a rematch. It won't say so out loud.",
+      "You win. The computer will say it \"let you.\"",
+      "A human won. Update the history books.",
+      "The algorithm is crying. Quietly. In binary.",
+      "Not even the computer saw that coming.",
+    ],
+    draw: [
+      "A draw with a computer. You're not the worst.",
+      "A tie with a machine counts as a quiet win.",
+      "The computer shrugs. It has no shoulders.",
+      "Nobody takes this one. The computer is fine with that.",
+      "You matched a computer. Don't say it too loudly.",
+      "A draw: the computer's idea of mercy.",
+    ],
+  },
+
+  // ---- online play: tap to send ---------------------------------------
+  // The server only ever sees a position in these lists (ANGEL_COUNT /
+  // DEVIL_COUNT in worker/live-protocol.mjs must equal the list lengths;
+  // taunts.test.mjs checks it). Never free text.
+  online: {
+    angel: [
+      "Good game so far!",
+      "Nice move!",
+      "That was clever.",
+      "No pressure, take your time.",
+      "You're really good at this.",
+      "Well played, friend.",
+      "I'm having fun. You?",
+      "Respect. That was smooth.",
+      "Great game. Whatever happens.",
+      "You're making this hard for me. Nice.",
+      "Thanks for playing with me!",
+      "Good luck!",
+    ],
+    devil: [
+      "Is that your best move?",
+      "I've seen toddlers play better.",
+      "You sure about that?",
+      "Think harder. Or don't. I'm winning.",
+      "Cute move. Wrong, but cute.",
+      "I'm not even trying yet.",
+      "Admit defeat. It's right there.",
+      "Slow down, you're about to lose.",
+      "Bold move. Bad move. Bold.",
+      "Ouch. That one hurt. You.",
+      "You play like it's your first day.",
+      "I'll wait. I've got all day to win.",
     ],
   },
 };

@@ -450,7 +450,7 @@
       setStatus("Game over");
       banner(r.cls, r.text);
       // loser gets a roast, winner a gloat (gentler if the loser quit), a draw a shrug
-      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? "loss" : s.resigned ? "forfeit" : "win"));
+      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? (s.resigned ? "resigned" : "loss") : s.resigned ? "forfeit" : "win"));
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {

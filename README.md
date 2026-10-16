@@ -10,10 +10,10 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 | Game | Modes |
 |---|---|
-| [tic-tac-toe](tic-tac-toe/) | **2 players · WhatsApp** (default), vs AI |
-| [connect-four](connect-four/) | **2 players · WhatsApp** (default), vs AI at 3 depths, local 2 players |
+| [tic-tac-toe](tic-tac-toe/) | **2 players · WhatsApp** (default), vs computer |
+| [connect-four](connect-four/) | **2 players · WhatsApp** (default), vs computer at 3 depths, local 2 players |
 | [minesweeper](minesweeper/) | **2 players · WhatsApp** (default), solo |
-| [chess](chess/) | **2 players · WhatsApp** (default), vs AI at 3 depths |
+| [chess](chess/) | **2 players · WhatsApp** (default), vs computer at 3 depths |
 | [memory](memory/) | **2 players · WhatsApp** (default), solo (race the clock) |
 | [lights-out](lights-out/) | **2 players · WhatsApp** (default), solo |
 | [reversi](reversi/) | **2 players · WhatsApp** (default), local 2 players |
@@ -26,7 +26,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 
-Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
+Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
 ## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out)
 
@@ -270,7 +270,7 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── .assetsignore       repo files that are not part of the published site
 ├── tic-tac-toe/        ┐
 ├── connect-four/       │
-├── minesweeper/        ├ WhatsApp two-player + solo/AI modes (adapted from wavde/games)
+├── minesweeper/        ├ WhatsApp two-player + solo/computer modes (adapted from wavde/games)
 ├── chess/              │
 ├── memory/             │
 ├── lights-out/         ┘
