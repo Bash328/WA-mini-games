@@ -6,18 +6,18 @@ Everything asked for so far, grouped by area. Sections 1–5, 7 and 8 are built;
 ## How to work through this
 Every bug fixed in one game must be checked in **all** the others, so the same mistake is not repeated. For each fix, grep or test every game page for the same pattern, and add it to the list below if it keeps coming back.
 
-**Cross-game checklist** (run it on all 21 games after any UI or logic change):
-- [ ] Undo and reset leave the right player to move
-- [ ] No duplicate "your move / you're Player N" text (one status, one badge)
-- [ ] Controls (difficulty, new game, undo, timer, moves, best) are in the standard place
-- [ ] Nothing above the board appears or disappears during play (no layout shift between turns)
-- [ ] "how to ?" is top right
-- [ ] Game-over state is obvious
-- [ ] Nothing is cut off on a phone (every board size and difficulty)
-- [ ] Taunt wording is true for the mode it appears in (vs computer, local, link, online)
-- [ ] Survives an accidental refresh (`Gamekit.resume`; restore must run AFTER the game's final `applyMode()`)
-- [ ] Buttons used as cells/pegs beat the shared `body[class*="g-"] .panel button` rule (background, radius, 40px min-height): prefix the page's selector with an id or `body.g-<game> .panel`
-- [ ] Anything generated from a seed is bounded by step counts, never the clock (daily puzzles must match on every device)
+**Cross-game checklist** (run it on all 23 games after any UI or logic change; last run in full on 2026-10-16: pages at 320 / 390 / 1000 px in both themes, taunts in every mode, board stability, refresh, undo):
+- [x] Undo and reset leave the right player to move
+- [x] No duplicate "your move / you're Player N" text (one status, one badge)
+- [x] Controls (difficulty, new game, undo, timer, moves, best) are in the standard place
+- [ ] Nothing above the board appears or disappears during play (no layout shift between turns). Solo, computer, same-device and live play are checked and steady; WhatsApp link play still shifts a little when the "send the link" panel replaces the "make your move" note (see section 1)
+- [x] "how to ?" is top right
+- [x] Game-over state is obvious
+- [x] Nothing is cut off on a phone (every board size and difficulty)
+- [x] Taunt wording is true for the mode it appears in (vs computer, local, link, online)
+- [x] Survives an accidental refresh (`Gamekit.resume`; restore must run AFTER the game's final `applyMode()`)
+- [x] Buttons used as cells/pegs beat the shared `body[class*="g-"] .panel button` rule (background, radius, 40px min-height): prefix the page's selector with an id or `body.g-<game> .panel`
+- [x] Anything generated from a seed is bounded by step counts, never the clock (daily puzzles must match on every device)
 
 ---
 
