@@ -144,7 +144,7 @@ document.getElementById('board').addEventListener('touchend', e=>{
 });
 
 document.getElementById('reset').addEventListener('click', reset);
-Gamekit.wireDifficultyChips({
+const chips = Gamekit.wireDifficultyChips({
   el: document.getElementById('chips'),
   difficulties: Object.keys(DIFFS),
   initial: diff,
@@ -153,3 +153,16 @@ Gamekit.wireDifficultyChips({
   onChange: (d) => { diff = d; reset(); },
 });
 reset();
+
+// A refresh keeps the game: the board, score and difficulty.
+const resumer = Gamekit.resume('2048', () => over ? null : { diff, grid, score }, (s) => {
+  const ok = DIFFS[s.diff] && Array.isArray(s.grid) && s.grid.length === N &&
+    s.grid.every(r => Array.isArray(r) && r.length === N && r.every(v => Number.isInteger(v) && v >= 0)) &&
+    Number.isInteger(s.score) && s.score >= 0;
+  if (!ok) return false;
+  diff = s.diff; chips.show(diff);
+  grid = s.grid.map(r => r.slice()); score = s.score; over = false;
+  render();
+  return true;
+});
+resumer.restore();

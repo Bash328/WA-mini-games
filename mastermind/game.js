@@ -299,8 +299,25 @@
 
   resetBtn.addEventListener("click", newLocal);
   modeSel.addEventListener("change", applyMode);
+
+  // A refresh keeps a game against the computer or on one device: the code and the guesses so far.
+  // (Link and online games are not saved here.)
+  const resumer = Gamekit.resume("mastermind", () => (modeSel.value === "whatsapp" || loState !== "play" || !loSecret ||
+      (modeSel.value === "computer" && loGuesses.length === 0)) ? null : {
+    mode: modeSel.value, secret: loSecret, guesses: loGuesses,
+  }, (s) => {
+    const code = (a) => Array.isArray(a) && a.length === LEN && a.every(v => Number.isInteger(v) && v >= 0 && v < COLORS);
+    if (!["computer", "local"].includes(s.mode) || !code(s.secret) || !Array.isArray(s.guesses)) return false;
+    if (s.guesses.length >= MAX_GUESSES || !s.guesses.every(code) || s.guesses.some(g => isCracked(s.secret, g))) return false;
+    modeSel.value = s.mode; applyMode();
+    loSecret = s.secret.slice(); loGuesses = s.guesses.map(g => g.slice()); loState = "play";
+    renderLocal();
+    return true;
+  });
+
   buildPalette();
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("mastermind"));
 
   window.__mastermindTest = { feedback, boardToStr, strToBoard, validBoardStr, isCracked, MAX_GUESSES };

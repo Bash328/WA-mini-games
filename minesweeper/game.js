@@ -282,3 +282,29 @@ window.addEventListener('resize', () => { if (!over) render(); });
 modeSel.addEventListener('change', () => { mode = modeSel.value; applyMode(); });
 modeSel.value = mode;
 applyMode();
+
+// A refresh keeps a solo game in progress: mines, what is open, your flags and the clock.
+// (Link games live in the URL, so they are not saved here.)
+const resumer = Gamekit.resume('minesweeper', () => (mode !== 'solo' || over || firstClick) ? null : {
+  d: document.getElementById('diff').value,
+  cells: Array.from(cells), mines: Array.from(mines), revealed: Array.from(revealed), flags: Array.from(flags),
+  elapsed: Math.floor((Date.now() - timerStart) / 1000),
+}, (s) => {
+  if (!Object.prototype.hasOwnProperty.call(DIFFS, s.d)) return false;
+  const n = DIFFS[s.d][0] * DIFFS[s.d][1];
+  const arrOk = (a) => Array.isArray(a) && a.length === n && a.every(Number.isInteger);
+  if (![s.cells, s.mines, s.revealed, s.flags].every(arrOk)) return false;
+  mode = 'solo'; modeSel.value = 'solo';
+  document.getElementById('diff').value = s.d;
+  applyMode();                         // solo controls, then reset() sizes the board
+  cells = Int8Array.from(s.cells); mines = Uint8Array.from(s.mines);
+  revealed = Uint8Array.from(s.revealed); flags = Uint8Array.from(s.flags);
+  firstClick = false; over = false; won = false;
+  startTimer();                        // starts the clock and its display...
+  const e = Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0;
+  timerStart = Date.now() - e * 1000; elapsed = e;   // ...then back-date it
+  document.getElementById('time').textContent = e + 's';
+  render(); updateHud();
+  return true;
+});
+if (!/[?&](s|live)=/.test(location.search)) resumer.restore();

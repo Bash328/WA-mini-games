@@ -1538,6 +1538,11 @@ body.g-reversi         { --p1: #8fa3bf; --p2: #f4efe6; }
   letter-spacing: 0.02em;
   text-align: center;
 }
+/* One fixed-size line, so "Your move · you're Player 1" and "Waiting for
+   Player 2" are the same height and the board below never shifts between
+   turns (it used to wrap to two lines on narrow phones for the longer one). */
+.turn { min-height: 52px; font-size: clamp(13px, 4.3vw, var(--fs-lg)); }
+.turn-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .turn[data-p="1"] { --pc: var(--p1); }
 .turn[data-p="2"] { --pc: var(--p2); }
 .turn-dot {
@@ -1561,3 +1566,15 @@ body.g-reversi         { --p1: #8fa3bf; --p2: #f4efe6; }
 @media (prefers-reduced-motion: reduce) {
   .turn-dot { animation: none; }
 }
+
+/* An empty status line (the turn badge says it all) takes no room. */
+.status:empty, .status.dup { display: none; }
+
+/* "Picked up where you left off." after a refresh (Gamekit.resume). */
+.game-notice {
+  margin: 0 0 12px; padding: 8px 12px; text-align: center; font-size: var(--fs-sm);
+  color: var(--accent-2); border: 1px solid var(--accent-2); border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-2) 10%, transparent);
+  transition: opacity .5s ease;
+}
+.game-notice.fade { opacity: 0; }

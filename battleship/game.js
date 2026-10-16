@@ -656,6 +656,32 @@
   resetBtn.addEventListener("click", newLocal);
   modeSel.addEventListener("change", applyMode);
   applyMode();
+
+  // A refresh keeps a game against the computer or on one device once the battle has started:
+  // both fleets and every shot. (A half-finished fleet placement is not kept. Link and online
+  // games are not saved here.) On one device the cover screen comes back first, so a refresh
+  // never shows one player the other's fleet.
+  const resumer = Gamekit.resume("battleship", () => (modeSel.value === "whatsapp" || !lo || lo.phase !== "battle") ? null : {
+    vsComputer: lo.vsComputer, F: lo.F, S: lo.S, turn: lo.turn, handoff: lo.handoff, pending: lo.pending,
+  }, (s) => {
+    const shotsOk = (a) => Array.isArray(a) && a.length <= CELLS && a.every(v => Number.isInteger(v) && v >= 0 && v < CELLS) && new Set(a).size === a.length;
+    if (!s.F || !validFleet(s.F[P1]) || !validFleet(s.F[P2]) || !s.S || !shotsOk(s.S[P1]) || !shotsOk(s.S[P2])) return false;
+    if (s.turn !== P1 && s.turn !== P2) return false;
+    if (allSunk(s.F[P2], s.S[P1]) || allSunk(s.F[P1], s.S[P2])) return false;
+    modeSel.value = s.vsComputer ? "computer" : "local";
+    applyMode();                                   // fresh game for that mode (sets the handlers)
+    lo.F = { [P1]: s.F[P1], [P2]: s.F[P2] };
+    lo.S = { [P1]: s.S[P1].slice(), [P2]: s.S[P2].slice() };
+    lo.phase = "battle"; lo.placer = P1; lo.turn = s.turn;
+    lo.handoff = !!s.handoff && !s.vsComputer && !!s.pending && Number.isInteger(s.pending.cell);
+    lo.pending = lo.handoff ? { by: s.pending.by, cell: s.pending.cell, res: s.pending.res } : null;
+    lo.cover = s.vsComputer ? null : lo.turn;      // hide the fleets until the right player takes over
+    lo.report = "Welcome back. Pick up where you left off.";
+    lo.hl = { mine: -1, theirs: -1 };
+    renderLocal();
+    return true;
+  });
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("battleship"));
 
   window.__battleshipTest = {

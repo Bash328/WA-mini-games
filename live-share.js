@@ -58,6 +58,16 @@
     let closedReason = "", note = "", lobbyError = "";
     let checkedRoom = false;       // asked the server whether a room exists, once
     let confirmed = null;          // the last state the server confirmed (for rollback)
+    // "Admit defeat": the one slot below the board, shared with AsyncShare, so
+    // the board never jumps when the button comes and goes.
+    const resignRow = AsyncShare.resignRow(ui);
+    const resignOff = () => { resignRow.style.display = "none"; resignRow.replaceChildren(); };
+    function resignSlot(visible, handler) {
+      resignRow.replaceChildren();
+      if (handler) resignRow.appendChild(button("Admit defeat (coward)", "ghost wa-small", handler));
+      resignRow.style.display = "";
+      resignRow.style.visibility = visible ? "visible" : "hidden";
+    }
     // Simultaneous-pick games (Rock Paper Scissors): nobody "has the turn"; each
     // side locks a secret pick and the server reveals both together.
     const simultaneous = !!opts.simultaneous;
@@ -364,6 +374,9 @@
       buttons.forEach((b) => row.appendChild(b));
       ui.appendChild(row);
     }
+    // The big turn badge already says whose move it is, so while it is showing
+    // the small status line stays empty instead of repeating it.
+    function clearStatus() { statusEl.replaceChildren(); }
     function setStatus(bold, rest) {
       statusEl.replaceChildren(el("strong", "", bold));
       if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
@@ -431,6 +444,7 @@
       });
       ui.hidden = false;
       ui.replaceChildren();
+      resignOff();
       Gamekit.turn(null);
 
       if (phase === "lobby") return paintLobby();
@@ -475,7 +489,7 @@
       const finished = !!state && state.status !== "in_progress";
 
       if (!bothSeated()) {
-        setStatus("Waiting for your opponent", "room " + code);
+        clearStatus();
         Gamekit.turn(slotOf(me), "Waiting for your opponent", true);
         banner("", "Your room is open. The game starts the moment your friend joins.");
         // The code, big and tappable: tap it (or the button) to copy.
@@ -517,37 +531,37 @@
         // No turns: either pick your move, or wait for the other side's.
         const oppIn = picked[oppSeat];
         if (!myPick) {
-          setStatus("Pick your move", oppIn ? "your opponent has picked" : "you're both choosing");
+          clearStatus();
           Gamekit.turn(slotOf(me), "Pick your move");
         } else {
-          setStatus("Waiting for your opponent", "your pick is locked in");
+          clearStatus();
           Gamekit.turn(slotOf(other(me)), "Waiting for your opponent", true);
         }
         if (!online[oppSeat]) noteP("Your opponent is offline. They can rejoin with the same link.");
         if (note) noteP(note);
         if (state && state.status === "in_progress") {
-          actions(button("Admit defeat (coward)", "ghost wa-small", () => {
+          resignSlot(true, () => {
             if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
             resign();
-          }));
-        }
+          });
+        } else resignSlot(false);
         return;
       }
       if (myTurn) {
-        setStatus("Your move", "you're " + label(me));
+        clearStatus();
         Gamekit.turn(slotOf(me), "Your move · you're " + label(me));
       } else {
-        setStatus("Waiting for " + label(other(me)));
+        clearStatus();
         Gamekit.turn(slotOf(other(me)), "Waiting for " + label(other(me)), true);
       }
       if (!online[oppSeat]) noteP("Your opponent is offline. They can rejoin with the same link.");
       if (note) noteP(note);
       if (state && myTurn) {
-        actions(button("Admit defeat (coward)", "ghost wa-small", () => {
+        resignSlot(true, () => {
           if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
           commit({ board: state.board, status: "won", winner: other(me), last: state.last, resigned: true });
-        }));
-      }
+        });
+      } else resignSlot(false);
     }
 
     /* ---------- controller surface (same shape as AsyncShare) ---------- */

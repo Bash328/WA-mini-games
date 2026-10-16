@@ -264,3 +264,31 @@ document.getElementById('mode').addEventListener('change', (e) => { mode = e.tar
 
 document.getElementById('mode').value = mode;
 applyMode();
+
+// A refresh keeps a solo game in progress: the deck, matches, moves and the clock.
+// (Link games live in the URL, so they are not saved here.)
+const resumer = Gamekit.resume('memory', () => (mode !== 'solo' || !startTime || matched === cards.length) ? null : {
+  size: size,
+  // two cards turned up and waiting to flip back would only confuse a restored game
+  cards: cards.map(c => ({ emoji: c.emoji, color: c.color, matched: c.matched })),
+  moves: moves, elapsed: Math.floor((Date.now() - startTime) / 1000),
+}, (s) => {
+  if (![4, 6, 8].includes(s.size) || !Array.isArray(s.cards) || s.cards.length !== s.size * s.size) return false;
+  if (!s.cards.every(c => c && typeof c.emoji === 'string' && typeof c.color === 'string' && typeof c.matched === 'boolean')) return false;
+  mode = 'solo'; document.getElementById('mode').value = 'solo';
+  document.getElementById('size').value = String(s.size);
+  applyMode();                         // solo controls, then resetSolo() deals a deck
+  cards = s.cards.map((c, i) => ({ id: i, emoji: c.emoji, color: c.color, flipped: false, matched: c.matched }));
+  flipped = []; locked = false;
+  matched = cards.filter(c => c.matched).length;
+  moves = Number.isInteger(s.moves) && s.moves >= 0 ? s.moves : 0;
+  document.getElementById('moves').textContent = moves;
+  const e = Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0;
+  clearInterval(timerId);
+  startTimer();
+  startTime = Date.now() - e * 1000;
+  document.getElementById('time').textContent = e;
+  renderSolo();
+  return true;
+});
+if (!/[?&](s|live)=/.test(location.search)) resumer.restore();

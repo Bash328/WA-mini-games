@@ -276,4 +276,24 @@
   }
   modeSel.value = mode;
   applyMode();
+
+  // A refresh keeps a game against the computer: the board and which side you play.
+  // (Link and online games live in the URL / the room, so they are not saved here.)
+  const resumer = Gamekit.resume("tic-tac-toe", () => (mode !== "ai" || gameOver || !board || !board.some(v => v)) ? null : {
+    board: board, human: human, turn: turn,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== 9 || !s.board.every(v => v === null || v === "X" || v === "O")) return false;
+    if ((s.human !== "X" && s.human !== "O") || (s.turn !== "X" && s.turn !== "O")) return false;
+    if (winner(s.board)) return false;
+    mode = "ai"; modeSel.value = "ai";
+    applyMode();                         // computer mode: fresh board, side buttons
+    cancelAI();
+    human = s.human; ai = human === "X" ? "O" : "X"; updateToggleLabel();
+    board = s.board.slice(); turn = s.turn; gameOver = false;
+    render(null);
+    if (turn === human) { setStatus("Your turn (" + human + ")."); humanBadge(); }
+    else { setStatus("AI thinking…"); aiBadge(); aiTimer = setTimeout(aiMove, 200); }
+    return true;
+  });
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
 })();

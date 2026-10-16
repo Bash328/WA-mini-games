@@ -243,6 +243,20 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("dots-and-boxes", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    edges: localEdges, boxes: localBoxes, current: localCurrent, last: localLast,
+  }, (s) => {
+    if (!Array.isArray(s.edges) || s.edges.length !== EDGE_COUNT || !s.edges.every(v => Number.isInteger(v) && v >= 0 && v <= 3)) return false;
+    if (!Array.isArray(s.boxes) || s.boxes.length !== BOX_COUNT || !s.boxes.every(v => v === 0 || v === 1 || v === 2)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    modeSel.value = "local"; applyMode();
+    localEdges = s.edges.slice(); localBoxes = s.boxes.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
+    renderLocal();
+    return true;
+  });
 
   // The live option stays hidden until the server says live play is on for
   // this game. A ?live=CODE invite link opens straight into live mode (the
@@ -258,6 +272,7 @@
     }).catch(() => { /* live play stays hidden */ });
   }
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("dots-and-boxes"));
 
   window.__dabTest = { hIdx, vIdx, boxIdx, drawEdge, newEdges, newBoxes, EDGE_COUNT, BOX_COUNT, P1, P2 };

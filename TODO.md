@@ -15,24 +15,21 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 - [ ] Game-over state is obvious
 - [ ] Nothing is cut off on a phone (every board size and difficulty)
 - [ ] Taunt wording is true for the mode it appears in (vs computer, local, link, online)
-- [ ] Survives an accidental refresh
+- [ ] Survives an accidental refresh (`Gamekit.resume`; restore must run AFTER the game's final `applyMode()`)
+- [ ] Buttons used as cells/pegs beat the shared `body[class*="g-"] .panel button` rule (background, radius, 40px min-height): prefix the page's selector with an id or `body.g-<game> .panel`
+- [ ] Anything generated from a seed is bounded by step counts, never the clock (daily puzzles must match on every device)
 
 ---
 
-## 1. Bugs and broken things
-- [ ] **Zip:** loads slowly, and picking **Hard freezes** the page. Profile the puzzle generator; likely an unbounded search. Cap it, or generate in a worker or in steps.
-- [ ] **Queens, Hard:** some bottom cells are cut off. Check the grid sizing at every difficulty, on a phone.
-- [ ] **Undo vs computer** (found in Connect Four): undoing returns to the *computer's* turn, so the page sits on "AI thinking…". It must return to the player's turn. Check every game that has undo against the computer.
-- [ ] **Duplicate "your move / you're Player N":** Pentago and Mancala (and check the rest) show the status in the top corner *and* the badge. Remove the small corner one.
-- [ ] **Mastermind:** the prompt says "pick 4 colours" but the pegs are numbered. Fix the wording, or show real colours with the number as a small label.
-- [ ] **Accidental refresh mid-game:** decide and build what survives it.
-  - Link and online games already restore (state is in the URL, or the room is rejoined with the seat token).
-  - Solo, vs computer and same-device games lose everything. Save the game to local storage on each move and offer "Resume your game".
-  - Don't resume a finished game; don't restore a stale daily puzzle.
-- [ ] **Online screen shifts every move.** Root cause (found by you): the **Admit defeat** button appears only on your turn, and it sits between the board and the info above it, so the board jumps each time it shows or hides.
-  - Fix: move Admit defeat to **below the board** (no jump above it), and keep its space reserved or always present so nothing below moves either.
-  - Also make the "waiting" and "your turn" badges the same height and width, in case they contribute.
-  - This is shared code (`async-share.js` and `live-share.js`), so fix it once and check all link and online games; WhatsApp link mode has the same placement.
+## 1. Bugs and broken things — DONE
+- [x] **Zip** loaded slowly and **Hard froze**. The uniqueness check searched an astronomically large space with no limit. Generation is now bounded by step counts (not the clock, so the daily puzzle is still identical on every device): about 10–30 ms on every difficulty, tested over 180 seeds.
+- [x] **Queens, Hard:** bottom cells were clipped. The cells are buttons and the shared button `min-height` beat the page's own CSS, so rows outgrew the square grid on a phone. Fixed, and confirmed by a layout scan (clipped before, fine after).
+- [x] **Undo vs the computer** left the page on "AI thinking…". Connect Four now keeps undoing until it is your turn (and the computer re-opens if you play second). Chess had the same hole when you play Black. Checked every game that has undo.
+- [x] **Duplicate "your move / you're Player N":** the turn badge and the small status line said the same thing in *every* link and online game. Link and online games now leave the status empty while the badge shows; other modes hide the status automatically when it only repeats the badge (`Gamekit` does this, so no game has to remember). Status text that adds something (a taunt, "hand the device to Player 2") stays.
+- [x] **Mastermind:** the pegs were plain numbered squares (the shared button style beat the colours), so "pick 4 colours" made no sense. Pegs are coloured again, numbers kept as a label.
+- [x] **Accidental refresh:** every solo, vs-computer and same-device game now resumes (`Gamekit.resume`): 2048, Queens, Zip, Tango, Mini Sudoku, Patches, Lights Out (solo), Minesweeper (solo), Memory (solo), Tic-Tac-Toe, Connect Four, Chess, Checkers, Reversi, Dots and Boxes, Mancala, Pentago, Rock Paper Scissors, Hangman, Mastermind, Battleship. Saved when the page is hidden or unloaded, discarded after 12 hours and for finished games; corrupt saves are ignored. Link and online games already survive a refresh. A "Picked up where you left off." note shows on resume. Same-device Battleship returns to a cover screen so no fleet is shown.
+- [x] **Online screen shifting every move:** Admit defeat moved to one fixed slot **below the board** (shared by link and online play), always reserved during a game, and the turn badge is one fixed height.
+  - Still shifts a little in **link** mode: the "Move made, now send the link" panel above the board is taller than the "make your move" note. That is the share panel, not a bug, but it could be moved below the board too.
 
 ## 2. Wording and naming
 - [ ] Rename **"vs AI" to "vs computer"** everywhere (menus, how-to text, taunts, hub copy).

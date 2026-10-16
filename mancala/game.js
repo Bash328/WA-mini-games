@@ -228,7 +228,21 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("mancala", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    board: localBoard, current: localCurrent, last: localLast,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== 14 || !s.board.every(v => Number.isInteger(v) && v >= 0)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    modeSel.value = "local"; applyMode();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
+    renderLocal();
+    return true;
+  });
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("mancala"));
 
   window.__mancalaTest = { initialBoard, sow, endgame, rowIndices, storeOf, other, P1, P2 };

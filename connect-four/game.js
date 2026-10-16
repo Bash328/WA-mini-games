@@ -438,18 +438,21 @@
   undoBtn.addEventListener("click", () => {
     if (thinking || isLinked()) return;
     if (history.length === 0) return;
-    // Undo last move; in AI mode, undo the pair so it's the player's turn again.
+    // Undo the last move. Against the computer, keep undoing until it is the
+    // HUMAN's turn again: after the computer's winning move that means taking
+    // back its move and yours, and if the human plays second and everything is
+    // undone, the computer simply opens again. (It used to stop after one
+    // move and leave the page on "AI thinking" with nothing moving.)
+    cancelAI();
+    const next = () => (history.length % 2 === 0 ? P1 : P2);
     undoMove();
-    if (mode !== "local" && !gameOver && history.length > 0) {
-      const last = history[history.length - 1];
-      if (last.p === humanIs) undoMove();
-    }
+    while (mode !== "local" && history.length > 0 && next() !== humanIs) undoMove();
     gameOver = false;
     winLine = null;
-    // Recompute whose turn it is based on history
-    current = history.length % 2 === 0 ? P1 : P2;
+    current = next();
     renderBoard();
     updateTurnStatus();
+    if (mode !== "local" && current !== humanIs) advance();   // the computer's turn: make it move
   });
 
   resetBtn.addEventListener("click", () => (isLinked() ? activeLink().newGame() : reset()));
@@ -460,7 +463,7 @@
     applyMode();
   });
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -487,5 +490,33 @@
   modeSel.value = mode;
   renderShell();
   applyMode();
+
+  // A refresh keeps a game against the computer (or on one device): it is rebuilt
+  // by replaying the moves. Link and online games are not saved here.
+  const resumer = Gamekit.resume("connect-four", () => (isLinked() || gameOver || history.length === 0) ? null : {
+    mode: mode, diff: diff, moves: history.map(h => [h.r, h.c, h.p]),
+  }, (s) => {
+    if (!["ai-first-p1", "ai-first-p2", "local"].includes(s.mode) || !DEPTHS[s.diff] || !Array.isArray(s.moves) || s.moves.length > ROWS * COLS) return false;
+    // replay on a scratch grid first: every move must be a legal drop by the right player
+    const g = newGrid();
+    for (let i = 0; i < s.moves.length; i++) {
+      const m = s.moves[i];
+      if (!Array.isArray(m) || m.length !== 3) return false;
+      const [r, c, p] = m;
+      if (!Number.isInteger(c) || c < 0 || c >= COLS || dropRow(g, c) !== r || p !== (i % 2 === 0 ? P1 : P2)) return false;
+      g[r][c] = p;
+    }
+    mode = s.mode; modeSel.value = mode; store.set("mode", mode);
+    diff = s.diff; chips.show(diff);
+    applyMode();                          // resets the game for that mode
+    cancelAI();
+    grid = g; history = s.moves.map(([r, c, p]) => ({ r, c, p }));
+    gameOver = false; winLine = null;
+    current = history.length % 2 === 0 ? P1 : P2;
+    renderBoard(); updateTurnStatus();
+    if (mode !== "local" && current !== humanIs) advance();
+    return true;
+  });
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("connect-four"));
 })();

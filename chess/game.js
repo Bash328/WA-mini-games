@@ -700,7 +700,14 @@ undoBtn.addEventListener('click', () => {
   if (state.turn !== humanColor && state.history.length > 0) undoMove(state);
   lastMove = null; selected = null; legalFromSel = [];
   renderBoard();
-  document.getElementById('status').textContent = 'Your move.';
+  if (state.turn !== humanColor) {
+    // everything was undone and the computer plays first: let it open again
+    // instead of leaving the board waiting for a move that never comes
+    document.getElementById('status').textContent = 'AI is thinking…';
+    aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
+  } else {
+    document.getElementById('status').textContent = 'Your move.';
+  }
 });
 
 flipBtn.addEventListener('click', () => { flipped = !flipped; renderBoard(); });
@@ -709,3 +716,35 @@ modeSel.addEventListener('change', () => { mode = modeSel.value; applyMode(); })
 
 modeSel.value = mode;
 applyMode();
+
+// A refresh keeps a game against the computer: the position, your side and the level.
+// (Undo history and repetition tracking start fresh. Link games live in the URL.)
+const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.length === 0 || outcome(state).status !== 'in_progress') ? null : {
+  b: boardToStr(state.board), castle: castleToStr(state.castling),
+  ep: state.ep ? state.ep.r * 8 + state.ep.c : null, half: state.halfmove, turn: state.turn,
+  human: humanColor, level: levelSel.value,
+}, (s) => {
+  if (typeof s.b !== 'string' || !/^[.pnbrqkPNBRQK]{64}$/.test(s.b)) return false;
+  if ((s.b.match(/K/g) || []).length !== 1 || (s.b.match(/k/g) || []).length !== 1) return false;
+  if (typeof s.castle !== 'string' || !/^(-|[KQkq]{1,4})$/.test(s.castle)) return false;
+  if (!(s.ep === null || (Number.isInteger(s.ep) && s.ep >= 0 && s.ep < 64))) return false;
+  if (!Number.isInteger(s.half) || s.half < 0 || s.half > 150) return false;
+  if ((s.turn !== 'w' && s.turn !== 'b') || (s.human !== 'w' && s.human !== 'b')) return false;
+  if (![...levelSel.options].some(o => o.value === s.level)) return false;
+  mode = 'ai'; modeSel.value = 'ai';
+  sideSel.value = s.human; levelSel.value = s.level;
+  applyMode();                                   // computer game, fresh board for that side
+  cancelAI();
+  state = stateFromLinkBoard({ b: s.b, castle: s.castle, ep: s.ep, half: s.half }, s.turn);
+  humanColor = s.human; flipped = humanColor === 'b';
+  lastMove = null; selected = null; legalFromSel = [];
+  renderBoard();
+  if (state.turn !== humanColor) {
+    document.getElementById('status').textContent = 'AI is thinking…';
+    aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
+  } else {
+    document.getElementById('status').textContent = 'Your move.';
+  }
+  return true;
+});
+if (!/[?&](s|live)=/.test(location.search)) resumer.restore();

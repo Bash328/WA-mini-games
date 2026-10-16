@@ -32,21 +32,23 @@
 <link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
-  /* Pegs are buttons, so their rules are #id-prefixed to beat the shared
-     "body[class*='g-'] .panel button" rule (same fix as hangman's keys). */
-  .mm-peg {
+  /* Pegs. The ones in #slots and #palette are <button>s, and the shared
+     "body[class*='g-'] .panel button" rule (background, 10px radius, 40px
+     min-height, padding) out-ranks a plain class, which is why they showed as
+     plain numbered squares with no colour. Prefixing with #entry wins. */
+  .mm-peg, #entry .mm-peg {
     display: inline-grid; place-items: center; width: 40px; height: 40px;
     border-radius: 50%; border: 2px solid rgba(255,255,255,0.18);
     font-weight: 700; font-size: 15px; color: #14110d; font-family: inherit;
-    padding: 0; min-height: 0; line-height: 1;
+    padding: 0; min-height: 0; min-width: 0; line-height: 1;
   }
-  .mm-peg.c0 { background: #ff6b6b; }
-  .mm-peg.c1 { background: #f5c800; }
-  .mm-peg.c2 { background: #4dd9ac; }
-  .mm-peg.c3 { background: #5c9cff; }
-  .mm-peg.c4 { background: #b48cff; }
-  .mm-peg.c5 { background: #ece6dc; }
-  .mm-peg.empty { background: transparent; border: 2px dashed var(--border-hi); color: var(--dim); }
+  .mm-peg.c0, #entry .mm-peg.c0 { background: #ff6b6b; }
+  .mm-peg.c1, #entry .mm-peg.c1 { background: #f5c800; }
+  .mm-peg.c2, #entry .mm-peg.c2 { background: #4dd9ac; }
+  .mm-peg.c3, #entry .mm-peg.c3 { background: #5c9cff; }
+  .mm-peg.c4, #entry .mm-peg.c4 { background: #b48cff; }
+  .mm-peg.c5, #entry .mm-peg.c5 { background: #ece6dc; }
+  .mm-peg.empty, #entry .mm-peg.empty { background: transparent; border: 2px dashed var(--border-hi); color: var(--dim); }
   .mm-peg.sm { width: 30px; height: 30px; font-size: 12px; }
 
   #entry { margin: 14px 0; text-align: center; }
@@ -54,8 +56,9 @@
   #slots, #palette { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; }
   #slots .mm-peg, #palette .mm-peg { cursor: pointer; }
   #slots .mm-peg.empty { cursor: default; }
-  #palette .mm-peg { width: 46px; height: 46px; font-size: 17px; }
-  #palette .mm-peg:active { transform: scale(0.92); }
+  #entry #palette .mm-peg { width: 46px; height: 46px; font-size: 17px; }
+  #entry #palette .mm-peg:hover { filter: brightness(1.1); }
+  #entry #palette .mm-peg:active { transform: scale(0.92); }
   .mm-actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 
   #count { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin: 10px 0 6px; }

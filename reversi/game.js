@@ -245,6 +245,19 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("reversi", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    board: localBoard, current: localCurrent, last: localLast,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== N * N || !s.board.every(v => v === 0 || v === 1 || v === 2)) return false;
+    if (s.current !== BLACK && s.current !== WHITE) return false;
+    modeSel.value = "local"; applyMode();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
+    renderLocal();
+    return true;
+  });
 
   // The live option stays hidden until the server says live play is on for
   // this game. A ?live=CODE invite link opens straight into live mode (the
@@ -260,6 +273,7 @@
     }).catch(() => { /* live play stays hidden */ });
   }
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("reversi"));
 
   // Exposed only so the e2e suite can drive edge cases (a pass, a double

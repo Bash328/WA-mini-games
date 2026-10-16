@@ -468,6 +468,21 @@
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
   applyMode();
+
+  // A refresh keeps a same-device game: the secret word and the letters tried.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("hangman", () => (modeSel.value !== "local" || !loWord || loStatus !== "in_progress") ? null : {
+    word: loWord, mask: loMask,
+  }, (s) => {
+    if (typeof s.word !== "string" || normalizeWord(s.word) !== s.word || !validWord(s.word)) return false;
+    if (!Number.isInteger(s.mask) || s.mask < 0 || s.mask >= (1 << 26)) return false;
+    if (wrongCount(s.word, s.mask) >= MAX_WRONG || isSolved(s.word, s.mask)) return false;
+    modeSel.value = "local"; applyMode();
+    loWord = s.word; loMask = s.mask; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
+    renderLocal();
+    return true;
+  });
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("hangman"));
 
   window.__hangmanTest = { boardToStr, strToBoard, wrongCount, isSolved, normalizeWord, validWord, MAX_WRONG };

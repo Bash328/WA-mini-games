@@ -54,6 +54,11 @@
     background: transparent;
     color: var(--fg);
   }
+  /* The cells are <button>s, and the shared button rule (min-height: 40-44px)
+     out-ranks the plain .qn-cell above. On an 8x8 board on a phone each cell is
+     narrower than that, so rows grew past the square grid and the bottom of the
+     board was clipped. */
+  body.g-queens .panel .qn-cell { min-height: 0; min-width: 0; }
   .qn-cell .mk {
     color: var(--fg);
     opacity: 0.5;

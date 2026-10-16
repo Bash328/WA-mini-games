@@ -34,6 +34,7 @@
   let timerInterval = null;
   let elapsed = 0;
   let cellEls = [];
+  let curSeed = 0;       // the puzzle on screen can be rebuilt from this + diff
 
   function idx(r, c) { return r * N + c; }
   function rof(i) { return Math.floor(i / N); }
@@ -120,6 +121,7 @@
 
   function newPuzzle(seedOverride) {
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("mini-sudoku", diff);
+    curSeed = seed;
     givens = generate(seed);
     grid = new Uint8Array(givens);
     notes = [];
@@ -354,7 +356,7 @@
   });
   newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -368,5 +370,34 @@
   renderPad();
   newPuzzle();
   updateStatus();
+
+  // A refresh keeps the puzzle, your digits and pencil notes, undo history and the clock.
+  const resumer = Gamekit.resume("mini-sudoku", () => won ? null : {
+    diff: diff, seed: curSeed, grid: Array.from(grid),
+    notes: notes.map(n => Array.from(n)),
+    history: history.map(h => ({ idx: h.idx, v: h.v, notes: Array.from(h.notes) })),
+    pencil: pencil, elapsed: Math.floor((Date.now() - timerStart) / 1000),
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.grid) || s.grid.length !== N * N) return false;
+    if (!s.grid.every(v => Number.isInteger(v) && v >= 0 && v <= N)) return false;
+    if (!Array.isArray(s.notes) || s.notes.length !== N * N) return false;
+    diff = s.diff; chips.show(diff);
+    newPuzzle(s.seed);
+    for (let i = 0; i < N * N; i++) {
+      if (givens[i]) continue;
+      grid[i] = s.grid[i];
+      notes[i] = new Set((Array.isArray(s.notes[i]) ? s.notes[i] : []).filter(n => Number.isInteger(n) && n >= 1 && n <= N));
+    }
+    history = Array.isArray(s.history)
+      ? s.history.filter(h => h && Number.isInteger(h.idx) && h.idx >= 0 && h.idx < N * N && Number.isInteger(h.v) && Array.isArray(h.notes))
+          .map(h => ({ idx: h.idx, v: h.v, notes: new Set(h.notes) }))
+      : [];
+    pencil = !!s.pencil; updatePencilBtn();
+    timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
+    timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
+    renderAll(); updateStatus();
+    return true;
+  });
+  resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("mini-sudoku"));
 })();

@@ -246,6 +246,24 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device match: the score, the last round and a pick already made.
+  // (Link and online games are not saved here.)
+  const resumer = Gamekit.resume("rock-paper-scissors", () => (modeSel.value !== "local" || loOver || !lo ||
+      (lo.p1Wins + lo.p2Wins + lo.pending + lo.lastP1) === 0) ? null : { lo: lo }, (s) => {
+    const o = s.lo;
+    if (!o || ![3, 5, 7].includes(o.n)) return false;
+    const rtw = roundsToWin(o.n);
+    const ok = [o.p1Wins, o.p2Wins].every(v => Number.isInteger(v) && v >= 0 && v < rtw) &&
+      [o.pending, o.lastP1, o.lastP2].every(v => Number.isInteger(v) && v >= 0 && v <= 3);
+    if (!ok) return false;
+    modeSel.value = "local"; bestofSel.value = String(o.n);
+    applyMode();
+    lo = { n: o.n, p1Wins: o.p1Wins, p2Wins: o.p2Wins, pending: o.pending, lastP1: o.lastP1, lastP2: o.lastP2 };
+    loOver = false;
+    renderLocal();
+    return true;
+  });
+
   bestofSel.addEventListener("change", () => {
     if (modeSel.value === "local") resetLocal();
     if (modeSel.value === "live" && live) live.rewarm();   // the spare room has the old best-of
@@ -265,6 +283,7 @@
     }).catch(() => { /* live play stays hidden */ });
   }
   applyMode();
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("rock-paper-scissors"));
 
   window.__rpsTest = { beats, roundsToWin, boardToStr, strToBoard };

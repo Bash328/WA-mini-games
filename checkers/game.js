@@ -411,7 +411,7 @@
     }, 300);
   }
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: Object.keys(AI_DEPTHS),
     storage: aiStore,
@@ -435,6 +435,27 @@
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
   applyMode();
+
+  // A refresh keeps a game against the computer or on one device. Link games live in the URL.
+  const resumer = Gamekit.resume("checkers", () => (modeSel.value === "whatsapp" || localOver || localLast === null) ? null : {
+    mode: modeSel.value, diff: aiDiff, board: localBoard, current: localCurrent, chain: localChain, last: localLast,
+  }, (s) => {
+    if (!["ai", "local"].includes(s.mode) || !AI_DEPTHS[s.diff]) return false;
+    if (!Array.isArray(s.board) || s.board.length !== N * N || !s.board.every(v => Number.isInteger(v) && v >= 0 && v <= 4)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    if (s.chain !== null && !(Number.isInteger(s.chain) && s.chain >= 0 && s.chain < N * N)) return false;
+    modeSel.value = s.mode;
+    aiDiff = s.diff; chips.show(aiDiff);
+    applyMode();                       // computer / same-device setup, fresh board
+    cancelAI();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localChain = s.chain; localSelected = s.chain; localLast = Number.isInteger(s.last) ? s.last : null;
+    localOver = false;
+    renderLocal();
+    maybeAITurn();
+    return true;
+  });
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("checkers"));
 
   window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2, allTurns, pickAITurn, AI_DEPTHS, evaluate };

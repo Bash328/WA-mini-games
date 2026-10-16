@@ -253,7 +253,22 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("pentago", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    board: localBoard, current: localCurrent, last: localLast, pending: localPending,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== 36 || !s.board.every(v => v === 0 || v === 1 || v === 2)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    if (s.pending !== null && !(Number.isInteger(s.pending) && s.pending >= 0 && s.pending < 36 && s.board[s.pending] === 0)) return false;
+    modeSel.value = "local"; applyMode();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localPending = s.pending; localOver = false;
+    renderLocal();
+    return true;
+  });
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("pentago"));
 
   window.__pentagoTest = { newBoard, rotateQuadrant, winners, outcomeFor, QUADS };

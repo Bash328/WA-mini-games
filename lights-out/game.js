@@ -63,9 +63,11 @@
   let moves = 0;
   let won = false;
   let cellEls = [];
+  let curSeed = 0;       // the solo puzzle on screen can be rebuilt from this + diff
 
   function newPuzzle(seedOverride) {
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("lights-out", diff);
+    curSeed = seed;
     initial = generate(seed, DIFFS[diff]);
     board = new Uint8Array(initial);
     history = [];
@@ -273,7 +275,7 @@
   // Difficulty chips — used for the pre-game puzzle preview in WhatsApp
   // mode (re-rolls it) and for solo puzzles; disabled once a WhatsApp game
   // has actually started, since the board no longer depends on difficulty.
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -310,5 +312,25 @@
 
   modeSel.value = mode;
   applyMode();
+
+  // A refresh keeps a solo puzzle in progress: the lights, undo history and move count.
+  // (Link and online games are not saved here: they live in the URL / the room.)
+  const resumer = Gamekit.resume("lights-out", () => (mode !== "solo" || won || moves === 0) ? null : {
+    diff: diff, seed: curSeed, board: Array.from(board), history: history.map(h => Array.from(h)), moves: moves,
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.board) || s.board.length !== N * N) return false;
+    if (!s.board.every(v => v === 0 || v === 1)) return false;
+    mode = "solo"; modeSel.value = "solo";
+    diff = s.diff; chips.show(diff);
+    applyMode();                      // shows the solo controls, deals a puzzle
+    newPuzzle(s.seed);
+    board = new Uint8Array(s.board);
+    history = (Array.isArray(s.history) ? s.history : []).filter(h => Array.isArray(h) && h.length === N * N).map(h => new Uint8Array(h));
+    moves = Number.isInteger(s.moves) && s.moves >= 0 ? s.moves : history.length;
+    syncLights(); updateStatus();
+    return true;
+  });
+  // Only offer to resume when the player is not arriving from a shared / invite link.
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("lights-out"));
 })();

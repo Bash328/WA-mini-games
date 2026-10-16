@@ -72,6 +72,9 @@
       setJSON: function (key, obj) {
         try { this.set(key, JSON.stringify(obj)); } catch (e) {}
       },
+      remove: function (key) {
+        try { localStorage.removeItem(prefix + key); } catch (e) {}
+      },
     };
   }
 
@@ -114,6 +117,8 @@
     return {
       get: () => current,
       set: (d) => { if (diffs.includes(d)) apply(d, true); },
+      // highlight d (and remember it) WITHOUT calling onChange: for restoring a saved game
+      show: (d) => { if (diffs.includes(d)) apply(d, false); },
     };
   }
 
@@ -162,7 +167,7 @@
   // element is created on first use, right under the status row.
   function turn(slot, text, waiting) {
     let el = document.getElementById("turn-badge");
-    if (!slot) { if (el) el.hidden = true; return; }
+    if (!slot) { if (el) el.hidden = true; syncStatus(); return; }
     if (!el) {
       el = document.createElement("div");
       el.id = "turn-badge";
@@ -177,6 +182,84 @@
     el.dataset.p = String(slot);
     el.classList.toggle("wait", !!waiting);
     el.lastChild.textContent = text;
+    watchStatus();
+    syncStatus();
+  }
+
+  // The turn badge and the small #status line often said the same thing
+  // ("Red to move." under a pill reading "Red to move"). Whenever every word
+  // of the status already appears in the badge, hide the status; if it says
+  // more (a taunt, an instruction, a score), it stays. Re-checked whenever
+  // the badge changes or the status text does, so no game has to remember.
+  const words = (t) => String(t).toLowerCase().replace(/[^a-z0-9' ]+/g, " ").split(/\s+/).filter(Boolean);
+  function syncStatus() {
+    const st = document.getElementById("status");
+    if (!st) return;
+    const badge = document.getElementById("turn-badge");
+    let dup = false;
+    if (badge && !badge.hidden) {
+      const have = new Set(words(badge.textContent));
+      const w = words(st.textContent);
+      dup = w.length > 0 && w.every((x) => have.has(x));
+    }
+    st.classList.toggle("dup", dup);
+  }
+  let statusWatcher = null;
+  function watchStatus() {
+    if (statusWatcher || typeof MutationObserver === "undefined") return;
+    const st = document.getElementById("status");
+    if (!st) return;
+    statusWatcher = new MutationObserver(syncStatus);
+    statusWatcher.observe(st, { childList: true, characterData: true, subtree: true });
+  }
+
+  /* ---------- Resume after an accidental refresh ----------
+     Solo, vs-computer and same-device games keep their whole state in memory,
+     so a refresh (or the phone killing a background tab) lost the game.
+     resume(id, get, set) fixes that for a game with two small functions:
+       get()  -> a JSON-safe snapshot of the game in progress, or null when
+                 there is nothing worth keeping (a fresh or finished game)
+       set(s) -> rebuild the game from a snapshot; return true if it took
+     The snapshot is saved when the page is hidden or unloaded (that is what
+     a refresh does), and thrown away after 12 hours. Link and live games do
+     not use this: they already live in the URL or in the server's room. */
+  const RESUME = storage("resume:");
+  const RESUME_TTL = 12 * 60 * 60 * 1000;
+  function resume(id, get, set) {
+    function save() {
+      try {
+        const snap = get();
+        if (snap) RESUME.setJSON(id, { t: Date.now(), s: snap }); else RESUME.remove(id);
+      } catch (e) { /* never let saving break a game */ }
+    }
+    global.addEventListener("pagehide", save);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
+    return {
+      save: save,
+      clear: () => RESUME.remove(id),
+      // Call once the game has started up. Returns true if a saved game was put back.
+      restore() {
+        const rec = RESUME.getJSON(id, null);
+        if (!rec || !rec.s || Date.now() - rec.t > RESUME_TTL) { RESUME.remove(id); return false; }
+        let ok = false;
+        try { ok = !!set(rec.s); } catch (e) { ok = false; }
+        if (ok) notice("Picked up where you left off.");
+        else RESUME.remove(id);
+        return ok;
+      },
+    };
+  }
+
+  // A short-lived line at the top of the game panel ("Picked up where you left off.").
+  function notice(text) {
+    const panel = document.querySelector(".panel");
+    if (!panel) return;
+    const el = document.createElement("div");
+    el.className = "game-notice";
+    el.setAttribute("role", "status");
+    el.textContent = text;
+    panel.insertBefore(el, panel.firstChild);
+    setTimeout(() => { el.classList.add("fade"); setTimeout(() => el.remove(), 600); }, 3500);
   }
 
   global.Gamekit = {
@@ -189,5 +272,7 @@
     wireDifficultyChips,
     taunt,
     turn,
+    resume,
+    notice,
   };
 })(window);
