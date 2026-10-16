@@ -1,12 +1,21 @@
 (function () {
   "use strict";
 
-  const DOTS = 5;                 // 5x5 dots -> 4x4 boxes
-  const BOXES = DOTS - 1;         // 4
-  const H_COUNT = DOTS * BOXES;   // 20 horizontal edges
-  const V_COUNT = BOXES * DOTS;   // 20 vertical edges
-  const EDGE_COUNT = H_COUNT + V_COUNT; // 40
-  const BOX_COUNT = BOXES * BOXES;      // 16
+  // The board size: N boxes a side (3-6), chosen by whoever makes the first
+  // move and kept in the game state (the first character of the wire board).
+  // setSize() changes every count below at once.
+  const SIZES = [3, 4, 5, 6];
+  let BOXES, DOTS, H_COUNT, V_COUNT, EDGE_COUNT, BOX_COUNT, GRID;
+  function setSize(n) {
+    BOXES = n; DOTS = n + 1;
+    H_COUNT = DOTS * BOXES;       // horizontal edges
+    V_COUNT = BOXES * DOTS;       // vertical edges
+    EDGE_COUNT = H_COUNT + V_COUNT;
+    BOX_COUNT = BOXES * BOXES;
+    GRID = 2 * DOTS - 1;          // interleaved dot/edge/box grid
+  }
+  const edgeCountOf = (n) => 2 * n * (n + 1);
+  setSize(4);
   const P1 = 1, P2 = 2;
   const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
 
@@ -15,6 +24,8 @@
   const scoreEl = document.getElementById("score");
   const modeSel = document.getElementById("mode");
   const resetBtn = document.getElementById("reset-btn");
+  const sizeSel = document.getElementById("size");
+  const store = Gamekit.storage("dots-and-boxes:");
 
   const hIdx = (r, c) => r * BOXES + c;                 // r: 0..DOTS-1, c: 0..BOXES-1
   const vIdx = (r, c) => H_COUNT + r * DOTS + c;         // r: 0..BOXES-1, c: 0..DOTS-1
@@ -55,11 +66,12 @@
 
   const edgeClass = (v) => v ? " drawn" + (v > 1 ? " p" + (v - 1) : "") : "";
   const edgesDrawn = (edges) => edges.filter(Boolean).length;
-  const GRID = 2 * DOTS - 1; // 9: interleaved dot/edge/box grid
   function cellType(R, C) { return (R % 2 === 0) ? (C % 2 === 0 ? "dot" : "h") : (C % 2 === 0 ? "v" : "box"); }
 
   function renderBoard(edges, boxes, canClick, onEdge, lastEdge) {
     boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = "10px repeat(" + BOXES + ", 1fr 10px)";
+    boardEl.style.gridTemplateRows = "10px repeat(" + BOXES + ", 1fr 10px)";
     for (let R = 0; R < GRID; R++) for (let C = 0; C < GRID; C++) {
       const type = cellType(R, C);
       const cell = document.createElement("div");
@@ -97,24 +109,30 @@
   }
 
   // ---------- 2 players over WhatsApp ----------
-  // board: a 56-char string — 40 chars of '0'/'1' (edges, drawn or not) then
-  // 16 chars of '0'/'1'/'2' (box owner). Completing a box (or two, since an
+  // board (version 2): the size N as one digit (3-6), then 2N(N+1) edge chars
+  // ('0' undrawn, '1' drawn by an unknown hand, '2' / '3' Player 1's / 2's), then
+  // N*N box owners ('0' / '1' / '2'). Completing a box (or two, since an
   // edge can finish two at once) grants another turn, via async-share's
   // nextTurn support — same mechanism as Reversi's pass.
   function validateDab(s) {
     const b = s.board;
-    if (typeof b !== "string" || b.length !== EDGE_COUNT + BOX_COUNT) return false;
-    if (!/^[0-3]+$/.test(b.slice(0, EDGE_COUNT)) || !/^[012]+$/.test(b.slice(EDGE_COUNT))) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < EDGE_COUNT && b[s.last] !== "0";
+    if (typeof b !== "string") return false;
+    const n = Number(b[0]);
+    if (!SIZES.includes(n)) return false;
+    const edges = edgeCountOf(n);
+    if (b.length !== 1 + edges + n * n) return false;
+    if (!/^[0-3]+$/.test(b.slice(1, 1 + edges)) || !/^[012]+$/.test(b.slice(1 + edges))) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < edges && b[1 + s.last] !== "0";
   }
   function finalBoxes(s) {
-    const cnt = counts(s.board.slice(EDGE_COUNT).split("").map(Number));
+    const n = Number(s.board[0]);
+    const cnt = counts(s.board.slice(1 + edgeCountOf(n)).split("").map(Number));
     return `Final boxes: Player 1 ${cnt[P1]} · Player 2 ${cnt[P2]}.`;
   }
 
   const link = AsyncShare.start({
     game: "dots-and-boxes",
-    version: 1,
+    version: 2,
     title: "dots and boxes",
     players: [P1, P2],
     label: (p) => NAMES[p],
@@ -128,7 +146,7 @@
   // Live online play: same board and rules, moves go over a WebSocket room.
   const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
     game: "dots-and-boxes",
-    version: 1,
+    version: 2,
     players: [P1, P2],
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
@@ -141,16 +159,22 @@
 
   let waEdges = newEdges(), waBoxes = newBoxes(), waCurrent = P1, waLast = null, waCanMove = false;
 
+  let waStarted = false;
   function loadLink(s, canMove) {
+    waStarted = !!s;
     if (s) {
-      waEdges = s.board.slice(0, EDGE_COUNT).split("").map(Number);
-      waBoxes = s.board.slice(EDGE_COUNT).split("").map(Number);
+      setSize(Number(s.board[0]));
+      waEdges = s.board.slice(1, 1 + EDGE_COUNT).split("").map(Number);
+      waBoxes = s.board.slice(1 + EDGE_COUNT).split("").map(Number);
       waCurrent = s.turn;
       waLast = s.last;
+      sizeSel.value = String(BOXES);               // a joiner sees the starter's choice
     } else {
+      setSize(Number(sizeSel.value));
       waEdges = newEdges(); waBoxes = newBoxes(); waCurrent = P1; waLast = null;
     }
     waCanMove = canMove;
+    sizeSel.disabled = waStarted;
     renderBoard(waEdges, waBoxes, waCanMove, playLink, waLast);
   }
 
@@ -170,7 +194,7 @@
     // is over, and the turn must pass so the opponent sees the right result.
     const nextTurn = status === "in_progress" && claimed > 0 ? waCurrent : other(waCurrent);
     activeLink().commit({
-      board: waEdges.join("") + waBoxes.join(""),
+      board: BOXES + waEdges.join("") + waBoxes.join(""),
       status, winner, last: ei, nextTurn,
     });
   }
@@ -195,6 +219,8 @@
   }
 
   function resetLocal() {
+    setSize(Number(sizeSel.value));
+    sizeSel.disabled = false;
     localEdges = newEdges(); localBoxes = newBoxes(); localCurrent = P1; localLast = null; localOver = false;
     confidenceGivenTo = null; confidenceNote = "";
     renderLocal();
@@ -221,6 +247,7 @@
 
   function playLocal(kind, r, c) {
     if (localOver) return;
+    sizeSel.disabled = true;                       // the size is fixed once play starts
     const ei = kind === "h" ? hIdx(r, c) : vIdx(r, c);
     if (localEdges[ei]) return;
     const claimed = drawEdge(localEdges, localBoxes, kind, r, c, localCurrent);
@@ -243,15 +270,25 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // Choosing a size before the first move: redraw an empty board of that size.
+  sizeSel.addEventListener("change", () => {
+    store.set("size", sizeSel.value);
+    if (modeSel.value === "local") resetLocal();
+    else if (!waStarted) loadLink(null, waCanMove);
+  });
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)
   const resumer = Gamekit.resume("dots-and-boxes", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
-    edges: localEdges, boxes: localBoxes, current: localCurrent, last: localLast,
+    n: BOXES, edges: localEdges, boxes: localBoxes, current: localCurrent, last: localLast,
   }, (s) => {
+    if (!SIZES.includes(s.n)) return false;
+    setSize(s.n);
     if (!Array.isArray(s.edges) || s.edges.length !== EDGE_COUNT || !s.edges.every(v => Number.isInteger(v) && v >= 0 && v <= 3)) return false;
     if (!Array.isArray(s.boxes) || s.boxes.length !== BOX_COUNT || !s.boxes.every(v => v === 0 || v === 1 || v === 2)) return false;
     if (s.current !== P1 && s.current !== P2) return false;
+    sizeSel.value = String(s.n);
     modeSel.value = "local"; applyMode();
+    setSize(s.n); sizeSel.disabled = true;
     localEdges = s.edges.slice(); localBoxes = s.boxes.slice(); localCurrent = s.current;
     localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
     renderLocal();
@@ -271,9 +308,11 @@
       if (st.enabled && st.games.indexOf("dots-and-boxes") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
     }).catch(() => { /* live play stays hidden */ });
   }
+  const savedSize = store.get("size", "4");
+  if (SIZES.includes(Number(savedSize))) sizeSel.value = savedSize;
   applyMode();
   if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("dots-and-boxes"));
 
-  window.__dabTest = { hIdx, vIdx, boxIdx, drawEdge, newEdges, newBoxes, EDGE_COUNT, BOX_COUNT, P1, P2 };
+  window.__dabTest = { hIdx, vIdx, boxIdx, drawEdge, newEdges, newBoxes, setSize, P1, P2 };
 })();

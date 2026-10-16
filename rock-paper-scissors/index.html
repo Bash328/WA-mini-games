@@ -71,8 +71,24 @@
     #choices .rps-choice:hover { background: var(--panel); border-color: var(--accent); }
   }
   #choices .rps-choice:active { border-color: var(--accent); }
-  .rps-emoji { font-size: 2.4rem; line-height: 1; }
-  #last-round { color: var(--muted); font-size: var(--fs-sm); text-align: center; margin: 4px 0; }
+  .rps-hand { display: inline-block; line-height: 0; }
+  .rps-hand svg { width: 44px; height: 62px; }
+  .rps-hand.flip svg { transform: scaleX(-1); }
+
+  /* The score: one big number a side. The last round sits under it in a
+     fixed-height box so the buttons below never move when it fills in. */
+  .rps-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 4px 0 8px; text-align: center; }
+  .rps-side { display: flex; flex-direction: column; gap: 2px; }
+  .rps-name { font-size: var(--fs-sm); color: var(--muted); }
+  .rps-num { font-size: 52px; font-weight: 700; line-height: 1; color: var(--accent); }
+  .rps-mid { font-size: var(--fs-sm); color: var(--muted); display: flex; flex-direction: column; }
+  .rps-last { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+  .rps-faceoff { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .rps-faceoff .rps-hand svg { width: 64px; height: 90px; }
+  .rps-fighter { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: var(--fs-xs); color: var(--muted); }
+  .rps-vs { color: var(--dim); font-size: var(--fs-sm); }
+  .rps-verdict { margin: 0; font-weight: 700; font-size: var(--fs-md); }
+  .rps-note { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
 
   select {
     background: var(--panel-2);
@@ -96,7 +112,6 @@
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Your move.</p>
-      <p class="status" id="score">Player 1: 0 · Player 2: 0 (best of 3)</p>
       <button class="btn ghost tool-btn man-trigger" data-man="rock-paper-scissors" data-man-title="ROCK-PAPER-SCISSORS(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -114,7 +129,8 @@
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
-    <p id="last-round"></p>
+    <div id="score" class="rps-score" aria-live="polite"></div>
+    <div id="last-round" class="rps-last"></div>
     <div class="rps-choices" id="choices"></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new match</button>

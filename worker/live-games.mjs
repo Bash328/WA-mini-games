@@ -27,7 +27,7 @@ export const LIVE_GAMES = {
   },
   "connect-four":   { version: 2, players: [1, 2], first: 1, rules: connectFour },
   "reversi":        { version: 1, players: [1, 2], first: 1, rules: reversi },
-  "dots-and-boxes": { version: 1, players: [1, 2], first: 1, rules: dotsAndBoxes },
+  "dots-and-boxes": { version: 2, players: [1, 2], first: 1, rules: dotsAndBoxes },
   "lights-out":     { version: 1, players: [1, 2], first: 1, rules: lightsOut },
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.

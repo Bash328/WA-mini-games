@@ -1727,3 +1727,6 @@ html[data-theme="light"] body.g-lights-out .panel .lo-cell:not(.on) { background
   html:not([data-theme="dark"]) body.g-lights-out .panel .lo-grid { background: #e6dcc9; }
   html:not([data-theme="dark"]) body.g-lights-out .panel .lo-cell:not(.on) { background: #d8cdb8; border-color: #c9bca5; }
 }
+
+.gk-msg .gk-head { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--muted); margin-bottom: 4px; }
+.gk-msg .gk-tail { display: block; }

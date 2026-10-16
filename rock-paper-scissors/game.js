@@ -4,7 +4,15 @@
   const P1 = 1, P2 = 2;
   const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
   const CHOICE_NAME = { 1: "Rock", 2: "Paper", 3: "Scissors" };
-  const CHOICE_EMOJI = { 1: "🪨", 2: "📄", 3: "✂️" };
+  const HAND_SVG = {
+    1: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-15" y="-12" width="30" height="30" rx="11" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="-10.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="-3.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="3.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><line x1="-7" y1="-7" x2="-7" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><line x1="0" y1="-7" x2="0" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><line x1="7" y1="-7" x2="7" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><ellipse cx="-3" cy="9.5" rx="13" ry="6" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round" transform="rotate(-10 -3 9.5)"/></g></svg>',
+    2: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-13.5" y="-4" width="27" height="28" rx="10" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-12.899999999999999" y="-29" width="6.6" height="35" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-6.5" y="-35" width="6.6" height="41" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-0.09999999999999964" y="-33" width="6.6" height="39" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="6.3" y="-26" width="6.6" height="32" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><g transform="rotate(-38 -13 12)"><rect x="-27" y="4" width="9" height="20" rx="4.5" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><rect x="-13.5" y="8" width="27" height="16" rx="8" fill="#f4a27a" /></g></svg>',
+    3: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><g transform="rotate(-15 -4 4)"><rect x="-8" y="-32" width="7.4" height="40" rx="3.7" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><g transform="rotate(13 5 4)"><rect x="1.5" y="-36" width="7.4" height="44" rx="3.7" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><rect x="-13" y="2" width="26" height="22" rx="9" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="5.5" cy="4" r="5" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="11" cy="7" r="4.4" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><ellipse cx="-2" cy="13" rx="9.5" ry="5.2" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round" transform="rotate(-22 -2 13)"/></g></svg>',
+  };
+
+  // The same hand drawings as the hub card, in place of emoji.
+  const hand = (c, cls) => '<span class="rps-hand' + (cls ? " " + cls : "") + '">' + HAND_SVG[c] + "</span>";
+  const esc = (t) => String(t).replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
 
   const statusEl = document.getElementById("status");
   const scoreEl = document.getElementById("score");
@@ -21,11 +29,26 @@
   function boardToStr(o) { return "" + o.n + o.p1Wins + o.p2Wins + o.pending + o.lastP1 + o.lastP2; }
   function strToBoard(s) { return { n: +s[0], p1Wins: +s[1], p2Wins: +s[2], pending: +s[3], lastP1: +s[4], lastP2: +s[5] }; }
 
-  function updateScore(p1, p2, n) { scoreEl.textContent = `Player 1: ${p1} · Player 2: ${p2} (best of ${n})`; }
-  function updateLast(lp1, lp2) {
-    lastEl.textContent = (lp1 && lp2)
-      ? `Last round: Player 1 ${CHOICE_EMOJI[lp1]} ${CHOICE_NAME[lp1]} · Player 2 ${CHOICE_EMOJI[lp2]} ${CHOICE_NAME[lp2]}`
-      : "";
+  // The score: one big number per side, with how many wins the match needs.
+  function setScore(aName, a, bName, b, n) {
+    scoreEl.innerHTML =
+      '<div class="rps-side"><span class="rps-name">' + esc(aName) + '</span><span class="rps-num">' + a + "</span></div>" +
+      '<div class="rps-mid">first to ' + roundsToWin(n) + "<small>best of " + n + "</small></div>" +
+      '<div class="rps-side"><span class="rps-name">' + esc(bName) + '</span><span class="rps-num">' + b + "</span></div>";
+  }
+  function updateScore(p1, p2, n) { setScore("Player 1", p1, "Player 2", p2, n); }
+
+  // The last round: both hands face to face, with who took it.
+  function faceoff(aName, a, bName, b, verdict, note) {
+    return (note ? '<p class="rps-note">' + esc(note) + "</p>" : "") + (a && b
+      ? '<div class="rps-faceoff"><div class="rps-fighter">' + hand(a) + "<span>" + esc(aName) + " · " + CHOICE_NAME[a] + "</span></div>" +
+        '<div class="rps-vs">vs</div><div class="rps-fighter">' + hand(b, "flip") + "<span>" + esc(bName) + " · " + CHOICE_NAME[b] + "</span></div></div>" +
+        '<p class="rps-verdict">' + esc(verdict) + "</p>"
+      : "");
+  }
+  function updateLast(lp1, lp2, note) {
+    const verdict = lp1 === lp2 ? "A tie. Go again." : beats(lp1, lp2) ? "Player 1 took it." : "Player 2 took it.";
+    lastEl.innerHTML = faceoff("Player 1", lp1, "Player 2", lp2, verdict, note);
   }
   function renderChoiceButtons(show, onPick) {
     choicesEl.hidden = !show;
@@ -35,7 +58,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "rps-choice";
-      b.innerHTML = `<span class="rps-emoji">${CHOICE_EMOJI[c]}</span><span>${CHOICE_NAME[c]}</span>`;
+      b.innerHTML = hand(c) + `<span>${CHOICE_NAME[c]}</span>`;
       b.addEventListener("click", () => onPick(c));
       choicesEl.appendChild(b);
     });
@@ -105,22 +128,16 @@
     if (info.config && inRoom) bestofSel.value = String(info.config.bestOf);   // a joiner sees the host's choice
     bestofSel.disabled = inRoom;
     const mine = me === P2 ? b.p2Wins : b.p1Wins, theirs = me === P2 ? b.p1Wins : b.p2Wins;
-    scoreEl.textContent = `You: ${mine} · Opponent: ${theirs} (best of ${b.n})`;
+    setScore("You", mine, "Opponent", theirs, b.n);
 
     const myLast = me === P2 ? b.lastP2 : b.lastP1, theirLast = me === P2 ? b.lastP1 : b.lastP2;
     const oppSeat = info.seat === 1 ? 2 : 1;
-    let line = "";
-    if (inRoom && myLast && theirLast) {
-      const verdict = myLast === theirLast ? "a tie, go again" : beats(myLast, theirLast) ? "you took it" : "they took it";
-      line = `Last round: You ${CHOICE_EMOJI[myLast]} ${CHOICE_NAME[myLast]} · Opponent ${CHOICE_EMOJI[theirLast]} ${CHOICE_NAME[theirLast]} — ${verdict}.`;
-    }
     const over = !!s && s.status !== "in_progress";
-    if (inRoom && !over && info.myPick) {
-      line = `You picked ${CHOICE_EMOJI[info.myPick]} ${CHOICE_NAME[info.myPick]}. Waiting for your opponent…` + (line ? " " + line : "");
-    } else if (inRoom && !over && info.picked && info.picked[oppSeat] && !info.myPick) {
-      line = "Your opponent has picked. Your move!" + (line ? " " + line : "");
-    }
-    lastEl.textContent = line;
+    let note = "";
+    if (inRoom && !over && info.myPick) note = `You picked ${CHOICE_NAME[info.myPick]}. Waiting for your opponent…`;
+    else if (inRoom && !over && info.picked && info.picked[oppSeat] && !info.myPick) note = "Your opponent has picked. Your move!";
+    const verdict = myLast === theirLast ? "A tie. Go again." : beats(myLast, theirLast) ? "You took it." : "They took it.";
+    lastEl.innerHTML = faceoff("You", inRoom ? myLast : 0, "Opponent", inRoom ? theirLast : 0, verdict, note);
     renderChoiceButtons(inRoom && canPick, (c) => live.pick(c));
   }
 
@@ -136,7 +153,7 @@
     // helpful) to remind them what THEY picked — that's their own info, not
     // a leak to the opponent, who sees their own pending flag as 0 instead.
     if (!canMove && wa.pending !== 0 && s && s.status === "in_progress") {
-      lastEl.textContent = `You picked ${CHOICE_EMOJI[wa.pending]} ${CHOICE_NAME[wa.pending]} — waiting for Player 2.`;
+      lastEl.innerHTML = '<p class="rps-note">' + esc(`You picked ${CHOICE_NAME[wa.pending]} — waiting for Player 2.`) + "</p>";
     } else {
       updateLast(wa.lastP1, wa.lastP2);
     }

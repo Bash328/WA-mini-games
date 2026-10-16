@@ -355,13 +355,29 @@
       const t = st ? st.textContent.trim() : "";
       if (t && t !== "Game over" && END_RE.test(t)) src = st;
     }
-    let text = "", tone = "";
+    let text = "", head = "", tone = "";
     if (src) {
-      text = src.textContent.replace(/^[\s·]+/, "").replace(/\s+/g, " ").trim();
+      const full = src.textContent.replace(/^[\s·]+/, "").replace(/\s+/g, " ").trim();
+      text = full;
       src.classList.add("gk-moved");
-      tone = WIN_RE.test(text) ? "win" : BAD_RE.test(text) ? "bad" : "";
+      // A taunt that follows an instruction ("Player 1: pick secretly. Player 1 —
+      // taunt"): the taunt is the big text, the instruction stays small above it.
+      // A result ("Red wins. Yellow — taunt") is kept whole.
+      if (!END_RE.test(full)) {
+        let at = -1;
+        recent.forEach((l) => { const k = full.indexOf(l); if (k >= 0 && (at < 0 || k < at)) at = k; });
+        const cut = Math.max(full.lastIndexOf(". ", at), full.lastIndexOf("! ", at), full.lastIndexOf("? ", at));
+        if (at > 0 && cut >= 0) { head = full.slice(0, cut + 1); text = full.slice(cut + 2); }
+      }
+      tone = WIN_RE.test(full) ? "win" : BAD_RE.test(full) ? "bad" : "";
     }
-    if (msg.textContent !== text) msg.textContent = text;
+    const key = head + "|" + text;
+    if (msg.dataset.key !== key) {
+      msg.dataset.key = key;
+      msg.replaceChildren();
+      if (head) { const h = mk("span", "gk-head"); h.textContent = head; msg.appendChild(h); }
+      if (text) { const t = mk("span", "gk-tail"); t.textContent = text; msg.appendChild(t); }
+    }
     msg.hidden = !text;
     msg.className = "gk-msg" + (tone ? " " + tone : "");
   }

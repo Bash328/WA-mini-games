@@ -109,6 +109,12 @@
       </button>
     </div>
     <div class="controls" style="justify-content:center">
+      <select id="size" aria-label="Board size">
+        <option value="3">3×3 boxes</option>
+        <option value="4" selected>4×4 boxes</option>
+        <option value="5">5×5 boxes</option>
+        <option value="6">6×6 boxes</option>
+      </select>
       <select id="mode" aria-label="Mode">
         <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
         <option data-short="Online" value="live" hidden>2 players · online</option>
@@ -129,7 +135,7 @@
 
   <h2>Rules</h2>
   <ul>
-    <li>A 5×5 grid of dots (16 boxes). On your turn, draw one line between two adjacent dots.</li>
+    <li>A grid of dots, from 3×3 up to 6×6 boxes (4×4 is the default). The player who makes the first move picks the size with the <strong>Board size</strong> menu; it is locked once play starts. On your turn, draw one line between two adjacent dots.</li>
     <li>If your line completes the 4th side of a box (or two boxes at once, when a line borders both), you claim it — and you <strong>go again</strong>.</li>
     <li>When every line is drawn, whoever claimed more boxes wins. Equal counts are a draw.</li>
   </ul>

@@ -130,9 +130,10 @@ console.log("dots and boxes:");
   let finished = 0, games = 0, extraTurns = 0;
   for (let g = 0; g < 200; g++) {
     const room = roomFor("dots-and-boxes");
-    let board = db.EMPTY, mover = 1, guard = 0, ok = true;
-    while (guard++ < 60) {
-      const free = [...Array(db.EDGE_COUNT).keys()].filter((i) => board[i] === "0");
+    const size = db.SIZES[g % db.SIZES.length];
+    let board = db.emptyBoard(size), mover = 1, guard = 0, ok = true;
+    while (guard++ < 200) {
+      const free = [...Array(db.geom(size).edges).keys()].filter((i) => board[1 + i] === "0");
       const m = db.resolve(board, pick(free), mover);
       const r = send(room, mover, m);
       if (!r.ok) { check("d&b random move accepted", false, r.reason); ok = false; break; }
@@ -152,9 +153,12 @@ console.log("dots and boxes:");
   const m1 = db.resolve(db.EMPTY, 0, 1);
   check("d&b: drawing an edge", send(room, 1, m1).ok === true);
   const stolen = db.resolve(m1.board, 1, 2);
-  stolen.board = stolen.board.slice(0, db.EDGE_COUNT) + "1" + stolen.board.slice(db.EDGE_COUNT + 1);
+  stolen.board = stolen.board.slice(0, 1 + db.EDGE_COUNT) + "1" + stolen.board.slice(1 + db.EDGE_COUNT + 1);
   check("d&b: claiming a box that isn't complete is refused", send(room, 2, stolen).reason === "illegal");
   const redraw = db.resolve(m1.board, 0, 2);
+  check("d&b: changing the size mid-game is refused", send(room, 2, { ...db.resolve(db.emptyBoard(5), 0, 2) }).reason === "illegal");
+  check("d&b: a size nobody offers is refused", send(roomFor("dots-and-boxes"), 1, { ...m1, board: "9" + m1.board.slice(1) }).reason === "illegal");
+  check("d&b: the first move can pick any offered size", db.SIZES.every((n) => send(roomFor("dots-and-boxes"), 1, db.resolve(db.emptyBoard(n), 0, 1)).ok === true));
   check("d&b: redrawing a drawn edge is refused", send(room, 2, { ...redraw, board: m1.board }).reason === "illegal");
 }
 
