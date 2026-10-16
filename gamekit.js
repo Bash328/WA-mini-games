@@ -561,7 +561,7 @@
       const back = $(".back", top);
       if (back) {
         back.setAttribute("aria-label", "All games");
-        back.innerHTML = '←<span class="gk-hide-sm"> all games</span>';
+        back.innerHTML = '←<span class="gk-hide-sm">all games</span>';
         top.insertBefore(back, top.firstChild);
       }
       const right = mk("div", "gk-top-r");
