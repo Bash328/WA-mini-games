@@ -531,6 +531,41 @@
       }));
     }
 
+    /* "Poke a friend": ask a friend by username to join this room, with a
+       notification (account.js; the home page is where a name is picked).
+       Shown only when this site has push set up. */
+    let pokeMsg = "", pokeOn = null;      // pokeOn: does this site have push? (asked once)
+    function pokeRow() {
+      if (typeof Account === "undefined") return;
+      if (pokeOn === null) { Account.status().then((st) => { pokeOn = !!st.push; if (phase === "room") paint(); }); return; }
+      if (!pokeOn) return;
+      if (!Account.me()) {
+        const a = el("a", "wa-note", "Pick a username on the home page to poke friends into a game.");
+        a.href = "/#account";
+        ui.appendChild(el("p", "wa-note")).appendChild(a);
+        return;
+      }
+      const input = el("input");
+      input.type = "text"; input.maxLength = 16; input.placeholder = "friend's username";
+      input.autocomplete = "off"; input.autocapitalize = "off"; input.spellcheck = false;
+      input.setAttribute("aria-label", "Friend's username");
+      input.style.cssText = "background:var(--panel-2);color:var(--fg);border:1px solid var(--border-hi);" +
+        "border-radius:10px;padding:8px 12px;font:inherit;font-size:16px;min-height:44px;width:13em;min-width:0";
+      const go = button("Poke", "ghost", async () => {
+        if (!input.value.trim() || go.disabled) return;
+        go.disabled = true;
+        const r = await Account.poke(input.value, opts.game, code);
+        pokeMsg = r.text;
+        go.disabled = false;
+        if (phase === "room") paint();
+      });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") go.click(); });
+      const row = el("div", "wa-actions");
+      row.append(input, go);
+      ui.appendChild(row);
+      if (pokeMsg) noteP(pokeMsg);
+    }
+
     function paintRoom() {
       const finished = !!state && state.status !== "in_progress";
 
@@ -551,6 +586,7 @@
         box.append(codeTxt, copyCode);
         ui.appendChild(box);
         actions(shareButton(), copyButton("Copy link", inviteLink));
+        pokeRow();
         if (note) noteP(note);
         return actions(button("Leave room", "ghost wa-small", leave));
       }

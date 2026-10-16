@@ -34,7 +34,7 @@
 <meta property="og:url" content="https://wa-minigames.online/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="shared.css">
 <style>
@@ -62,6 +62,25 @@
   .lede b { color: var(--fg); font-weight: 600; }
   .sec { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; font-weight: 500; }
 
+  /* "Your name": username, notifications, install (account-ui.js) */
+  .acct { margin-top: 36px; }
+  .acct-box { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 18px; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+  .acct-box p { margin: 0; }
+  .acct-note, .acct-hint { color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .acct-who { font-size: 16px; }
+  .acct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+  .acct-box input[type="text"] { flex: 1 1 160px; min-width: 0; background: var(--bg-2); color: var(--fg); border: 1px solid var(--border-hi); border-radius: 10px; padding: 0 12px; min-height: 40px; font: inherit; font-size: 16px; }
+  .acct-box button { min-height: 40px; padding: 0 14px; background: var(--bg-2); color: var(--fg); border: 1px solid var(--border-hi); border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .acct-box button:hover { border-color: var(--accent); }
+  .acct-box button:disabled { opacity: .5; cursor: default; }
+  .acct-box .acct-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
+  .acct-box .acct-link { align-self: flex-start; background: none; border: 0; padding: 0; min-height: 32px; color: var(--muted); text-decoration: underline; }
+  .acct-box .acct-chip { min-height: 30px; padding: 0 10px; margin: 0 6px 6px 0; border-radius: 999px; }
+  .acct-check { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .acct-msg { font-size: 13px; min-height: 1.3em; color: var(--muted); }
+  .acct-msg.ok { color: var(--forest); }
+  .acct-msg.bad { color: var(--coral); }
+  .acct-install { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   /* Phones: two columns so more games fit on screen */
   @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
@@ -316,6 +335,11 @@
     </a>
   </nav>
 
+  <section class="acct" id="account" aria-labelledby="acct-h">
+    <h2 class="sec" id="acct-h">Your name</h2>
+    <div class="acct-box" id="acct-box"><noscript>Needs JavaScript.</noscript></div>
+  </section>
+
   <footer class="footer">
     <div>Based on <a href="https://github.com/wavde/games">wavde/games</a> &copy; Tejas Wavde · MIT</div>
     <div class="links">
@@ -325,6 +349,8 @@
     </div>
   </footer>
 </main>
+<script src="account.js"></script>
+<script src="account-ui.js"></script>
 <script>
   // Theme toggle: cycles dark -> light -> system
   (function () {

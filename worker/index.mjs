@@ -233,6 +233,17 @@ export default {
     if (u.pathname.startsWith("/api/live/")) return handleLive(request, env, u);
     if (u.pathname.startsWith("/api/user/")) return handleUser(request, env, u);
 
+    // The service worker has to be revalidated every time (so an update reaches
+    // people) and may control the whole site.
+    if (u.pathname === "/sw.js") {
+      const sw = await env.ASSETS.fetch(request);
+      const out = new Response(sw.body, sw);
+      out.headers.set("Cache-Control", "no-cache");
+      out.headers.set("Content-Type", "text/javascript; charset=utf-8");
+      out.headers.set("Service-Worker-Allowed", "/");
+      return out;
+    }
+
     const res = await env.ASSETS.fetch(request);
 
     // Only HTML is worth rewriting, and only when the link carries state.
