@@ -100,6 +100,24 @@
     return out;
   }
 
+  // A Share button just above the install instructions. The share sheet is also where a phone offers
+  // "Add to Home Screen", so one tap gets people there; without a share sheet it copies the link.
+  function shareRow() {
+    const url = location.origin + "/";
+    const canShare = typeof navigator.share === "function";
+    const label = Account.needsIOSHint() ? "Share · Add to Home Screen" : "Share";
+    const b = h("button", { type: "button", class: "acct-primary", onclick: async () => {
+      try {
+        if (canShare) await navigator.share({ title: "WA mini-games", text: "Two-player games over WhatsApp. No logins.", url: url });
+        else { await navigator.clipboard.writeText(url); b.textContent = "Link copied"; setTimeout(() => { b.textContent = label; }, 1800); }
+      } catch (e) { /* the person closed the share sheet */ }
+    } }, label);
+    const hint = canShare
+      ? (Account.needsIOSHint() ? "Opens the share sheet. Choose “Add to Home Screen”." : "Send the site to a friend, or pick “Add to Home Screen”.")
+      : "Copies the link so you can send it or bookmark it.";
+    return h("div", { class: "acct-install" }, b, h("span", { class: "acct-hint" }, hint));
+  }
+
   function installRow() {
     if (Account.standalone()) return null;
     if (Account.canInstall()) {
@@ -116,6 +134,7 @@
   function render() {
     root.replaceChildren(...(Account.me() && profile ? signedIn() : pickName()));
     if (msg) root.appendChild(h("p", { class: "acct-msg bad", role: "alert" }, msg));
+    root.appendChild(shareRow());
     const inst = installRow();
     if (inst) root.appendChild(inst);
   }

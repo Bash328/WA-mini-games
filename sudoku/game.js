@@ -1,0 +1,421 @@
+(function () {
+  "use strict";
+
+  const N = 9;
+  const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const DIFFS = { easy: 40, medium: 34, hard: 28 };   // clues left in the puzzle
+
+  const boardEl  = document.getElementById("board");
+  const padEl    = document.getElementById("pad");
+  const statusEl = document.getElementById("status");
+  const timeEl   = document.getElementById("time");
+  const bestEl   = document.getElementById("best");
+  const undoBtn  = document.getElementById("undo-btn");
+  const resetBtn = document.getElementById("reset-btn");
+  const pencilBtn = document.getElementById("pencil-btn");
+  const eraseBtn = document.getElementById("erase-btn");
+  const newBtn   = document.getElementById("new-btn");
+  const chipsEl  = document.getElementById("chips");
+
+  const store = Gamekit.storage("sudoku:");
+
+  let diff = store.get("diff", "medium");
+  if (!DIFFS[diff]) diff = "medium";
+
+  // State
+  let givens = new Uint8Array(N * N);   // 0 or 1-6 (initial puzzle)
+  let grid = new Uint8Array(N * N);     // current values
+  let notes = [];                        // array of Sets per cell
+  let history = [];
+  let sel = -1;                          // selected index
+  let pencil = false;
+  let won = false;
+  let timerStart = 0;
+  let timerInterval = null;
+  let elapsed = 0;
+  let cellEls = [];
+  let curSeed = 0;       // the puzzle on screen can be rebuilt from this + diff
+
+  function idx(r, c) { return r * N + c; }
+  function rof(i) { return Math.floor(i / N); }
+  function cof(i) { return i % N; }
+  function box(r, c) { return Math.floor(r / 3) * 3 + Math.floor(c / 3); }
+
+  function allowed(g, r, c, v) {
+    for (let i = 0; i < N; i++) {
+      if (g[idx(r, i)] === v) return false;
+      if (g[idx(i, c)] === v) return false;
+    }
+    const br = Math.floor(r / 3) * 3;
+    const bc = Math.floor(c / 3) * 3;
+    for (let rr = br; rr < br + 3; rr++)
+      for (let cc = bc; cc < bc + 3; cc++)
+        if (g[idx(rr, cc)] === v) return false;
+    return true;
+  }
+
+  // Candidates for a cell as a bitmask (bit v set = digit v still possible).
+  function cands(g, pos) {
+    const r = rof(pos), c = cof(pos);
+    let used = 0;
+    for (let i = 0; i < N; i++) { used |= 1 << g[idx(r, i)]; used |= 1 << g[idx(i, c)]; }
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let rr = br; rr < br + 3; rr++) for (let cc = bc; cc < bc + 3; cc++) used |= 1 << g[idx(rr, cc)];
+    return ~used & 0x3FE;                       // bits 1..9
+  }
+  const popcount = (m) => { let n = 0; while (m) { m &= m - 1; n++; } return n; };
+
+  // Count solutions up to `limit`, always branching on the emptiest-choice cell. `budget` bounds
+  // the search by nodes; if it runs out the answer is -1 ("too hard to be sure").
+  function countSolutions(g, limit, budget) {
+    let nodes = 0;
+    function go() {
+      if (++nodes > budget) return -1;
+      let best = -1, bestMask = 0, bestN = 10;
+      for (let i = 0; i < N * N; i++) {
+        if (g[i]) continue;
+        const m = cands(g, i), n = popcount(m);
+        if (n < bestN) { best = i; bestMask = m; bestN = n; if (n <= 1) break; }
+      }
+      if (best === -1) return 1;
+      if (bestN === 0) return 0;
+      let count = 0;
+      for (let v = 1; v <= N; v++) {
+        if (!(bestMask & (1 << v))) continue;
+        g[best] = v;
+        const k = go();
+        g[best] = 0;
+        if (k < 0) return -1;
+        count += k;
+        if (count >= limit) return count;
+      }
+      return count;
+    }
+    return go();
+  }
+
+  // Fill the whole grid with a random valid solution (also most-constrained-first).
+  function fillRandom(g, rng) {
+    let best = -1, bestMask = 0, bestN = 10;
+    for (let i = 0; i < N * N; i++) {
+      if (g[i]) continue;
+      const m = cands(g, i), n = popcount(m);
+      if (n < bestN) { best = i; bestMask = m; bestN = n; if (n <= 1) break; }
+    }
+    if (best === -1) return true;
+    const digs = [];
+    for (let v = 1; v <= N; v++) if (bestMask & (1 << v)) digs.push(v);
+    Gamekit.shuffle(digs, rng);
+    for (const v of digs) {
+      g[best] = v;
+      if (fillRandom(g, rng)) return true;
+      g[best] = 0;
+    }
+    return false;
+  }
+
+  // Remove clues one by one, keeping each removal only if the solution stays unique.
+  function dig(g, targetClues, rng) {
+    const order = [];
+    for (let i = 0; i < N * N; i++) order.push(i);
+    Gamekit.shuffle(order, rng);
+    let clues = N * N;
+    for (const i of order) {
+      if (clues <= targetClues) break;
+      const saved = g[i];
+      g[i] = 0;
+      if (countSolutions(Uint8Array.from(g), 2, 4000) !== 1) g[i] = saved; else clues--;
+    }
+    return clues;
+  }
+
+  function generate(seed) {
+    const rng = Gamekit.mulberry32(seed);
+    const g = new Uint8Array(N * N);
+    fillRandom(g, rng);
+    dig(g, DIFFS[diff], rng);
+    return g;
+  }
+
+  function newPuzzle(seedOverride) {
+    const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("sudoku", diff);
+    curSeed = seed;
+    givens = generate(seed);
+    grid = new Uint8Array(givens);
+    notes = [];
+    for (let i = 0; i < N * N; i++) notes.push(new Set());
+    history = [];
+    sel = -1;
+    pencil = false;
+    won = false;
+    elapsed = 0;
+    timerStart = Date.now();
+    startTimer();
+    renderShell();
+    renderAll();
+    updateStatus();
+    updatePencilBtn();
+  }
+
+  function renderShell() {
+    boardEl.innerHTML = "";
+    cellEls = [];
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        const cell = document.createElement("div");
+        cell.className = "sk-cell fade-in" + (givens[idx(r, c)] ? " given" : "");
+        cell.dataset.r = String(r);
+        cell.dataset.c = String(c);
+        cell.style.animationDelay = ((r * N + c) * 10) + "ms";
+        const i = idx(r, c);
+        cell.addEventListener("click", () => { sel = i; renderAll(); });
+        boardEl.appendChild(cell);
+        cellEls.push(cell);
+      }
+    }
+  }
+
+  function renderAll() {
+    for (let i = 0; i < N * N; i++) {
+      const el = cellEls[i];
+      el.classList.remove("sel", "peer", "same-num", "conflict");
+      el.innerHTML = "";
+      const v = grid[i];
+      if (v) {
+        el.textContent = String(v);
+      } else if (notes[i].size > 0) {
+        const nDiv = document.createElement("div");
+        nDiv.className = "notes";
+        for (let n = 1; n <= N; n++) {
+          const s = document.createElement("span");
+          s.textContent = notes[i].has(n) ? String(n) : "";
+          nDiv.appendChild(s);
+        }
+        el.appendChild(nDiv);
+      }
+    }
+    if (sel >= 0) {
+      const sr = rof(sel), sc = cof(sel), sv = grid[sel];
+      const sbox = box(sr, sc);
+      for (let i = 0; i < N * N; i++) {
+        const r = rof(i), c = cof(i);
+        if (i === sel) cellEls[i].classList.add("sel");
+        else if (r === sr || c === sc || box(r, c) === sbox) cellEls[i].classList.add("peer");
+        if (sv && grid[i] === sv && i !== sel) cellEls[i].classList.add("same-num");
+      }
+    }
+    // Conflicts
+    for (let i = 0; i < N * N; i++) {
+      if (!grid[i] || givens[i]) continue;
+      if (isConflict(i)) cellEls[i].classList.add("conflict");
+    }
+    // Pad digit "done" state (digit appears 6 times)
+    const counts = new Array(N + 1).fill(0);
+    for (let i = 0; i < N * N; i++) if (grid[i]) counts[grid[i]]++;
+    padEl.querySelectorAll("[data-digit]").forEach(b => {
+      const d = parseInt(b.dataset.digit, 10);
+      b.classList.toggle("done", counts[d] >= N);
+    });
+    updateActions();
+  }
+
+  function isConflict(i) {
+    const v = grid[i];
+    if (!v) return false;
+    const r = rof(i), c = cof(i);
+    for (let k = 0; k < N; k++) {
+      if (k !== c && grid[idx(r, k)] === v) return true;
+      if (k !== r && grid[idx(k, c)] === v) return true;
+    }
+    const br = Math.floor(r / 3) * 3;
+    const bc = Math.floor(c / 3) * 3;
+    for (let rr = br; rr < br + 3; rr++)
+      for (let cc = bc; cc < bc + 3; cc++)
+        if ((rr !== r || cc !== c) && grid[idx(rr, cc)] === v) return true;
+    return false;
+  }
+
+  function renderPad() {
+    padEl.innerHTML = "";
+    for (let d = 1; d <= N; d++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn";
+      b.dataset.digit = String(d);
+      b.textContent = String(d);
+      b.addEventListener("click", () => onDigit(d));
+      padEl.appendChild(b);
+    }
+  }
+
+  function togglePencil() { pencil = !pencil; updatePencilBtn(); }
+
+  function updatePencilBtn() {
+    pencilBtn.classList.toggle("pencil-on", pencil);
+    pencilBtn.setAttribute("aria-pressed", pencil ? "true" : "false");
+    document.getElementById("pencil-label").textContent = pencil ? "Pencil on" : "Pencil off";
+    boardEl.classList.toggle("pencil-mode", pencil);
+  }
+
+  // Undo needs something to undo; Erase needs a filled (or noted) cell of ours selected.
+  function updateActions() {
+    undoBtn.disabled = won || history.length === 0;
+    eraseBtn.disabled = won || sel < 0 || !!givens[sel] || (!grid[sel] && notes[sel].size === 0);
+  }
+
+  function onDigit(d) {
+    if (won) return;
+    if (sel < 0) return;
+    if (givens[sel]) return;
+
+    const snap = { idx: sel, v: grid[sel], notes: new Set(notes[sel]) };
+
+    if (d === 0) {
+      grid[sel] = 0;
+      notes[sel].clear();
+    } else if (pencil) {
+      if (grid[sel]) grid[sel] = 0;
+      if (notes[sel].has(d)) notes[sel].delete(d);
+      else notes[sel].add(d);
+    } else {
+      grid[sel] = d;
+      notes[sel].clear();
+    }
+    // Only record changes, so Undo never "does nothing".
+    if (grid[sel] !== snap.v || notes[sel].size !== snap.notes.size || [...notes[sel]].some(n => !snap.notes.has(n))) {
+      history.push(snap);
+    }
+    renderAll();
+    checkWin();
+  }
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timeEl.textContent = Gamekit.fmtTime(0);
+    timerInterval = setInterval(() => {
+      if (won) return;
+      const s = Math.floor((Date.now() - timerStart) / 1000);
+      timeEl.textContent = Gamekit.fmtTime(s);
+    }, 500);
+  }
+
+  function updateStatus() {
+    const best = store.getInt("best:" + diff, null);
+    bestEl.textContent = best === null ? "—" : Gamekit.fmtTime(best);
+  }
+
+  function checkWin() {
+    for (let i = 0; i < N * N; i++) if (!grid[i]) return;
+    // Validate
+    for (let i = 0; i < N * N; i++) if (isConflict(i)) {
+      statusEl.innerHTML = '<span class="bad">Not quite — fix conflicts.</span>';
+      return;
+    }
+    won = true;
+    const s = Math.floor((Date.now() - timerStart) / 1000);
+    elapsed = s;
+    const best = store.getInt("best:" + diff, null);
+    if (best === null || s < best) {
+      store.set("best:" + diff, s);
+      bestEl.textContent = Gamekit.fmtTime(s);
+    }
+    statusEl.innerHTML = '<span class="ok">Solved in ' + Gamekit.fmtTime(s) + '.</span>';
+  }
+
+  // Keyboard
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, select, textarea")) return;
+    if (document.querySelector(".man-backdrop")) return;
+    if (won) return;
+    const k = e.key;
+    if (k === "ArrowLeft" || k === "ArrowRight" || k === "ArrowUp" || k === "ArrowDown") {
+      if (sel < 0) { sel = 0; }
+      else {
+        let r = rof(sel), c = cof(sel);
+        if (k === "ArrowLeft")  c = (c + N - 1) % N;
+        if (k === "ArrowRight") c = (c + 1) % N;
+        if (k === "ArrowUp")    r = (r + N - 1) % N;
+        if (k === "ArrowDown")  r = (r + 1) % N;
+        sel = idx(r, c);
+      }
+      e.preventDefault();
+      renderAll();
+      return;
+    }
+    if (k >= "1" && k <= "9") { onDigit(parseInt(k, 10)); e.preventDefault(); return; }
+    if (k === "Backspace" || k === "Delete" || k === "0") { onDigit(0); e.preventDefault(); return; }
+    if (k === "p" || k === "P") { togglePencil(); e.preventDefault(); return; }
+    if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "Z")) { undo(); e.preventDefault(); return; }
+  });
+
+  function undo() {
+    if (won) return;
+    const h = history.pop();
+    if (!h) return;
+    grid[h.idx] = h.v;
+    notes[h.idx] = h.notes;
+    sel = h.idx;
+    renderAll();
+  }
+  undoBtn.addEventListener("click", undo);
+  eraseBtn.addEventListener("click", () => onDigit(0));
+  pencilBtn.addEventListener("click", togglePencil);
+  resetBtn.addEventListener("click", () => {
+    if (!confirm("Clear all your entries?")) return;
+    grid = new Uint8Array(givens);
+    notes = notes.map(() => new Set());
+    history = [];
+    won = false;
+    sel = -1;
+    timerStart = Date.now();
+    startTimer();
+    statusEl.textContent = "Fill each row, column, and 3×3 box with 1–9.";
+    renderAll();
+  });
+  newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
+
+  const chips = Gamekit.wireDifficultyChips({
+    el: chipsEl,
+    difficulties: ["easy", "medium", "hard"],
+    initial: diff,
+    storage: store,
+    storageKey: "diff",
+    onChange: (d) => { diff = d; newPuzzle(); updateStatus(); },
+  });
+  diff = store.get("diff", diff);
+  if (!DIFFS[diff]) diff = "medium";
+
+  renderPad();
+  newPuzzle();
+  updateStatus();
+
+  // A refresh keeps the puzzle, your digits and pencil notes, undo history and the clock.
+  const resumer = Gamekit.resume("sudoku", () => won ? null : {
+    diff: diff, seed: curSeed, grid: Array.from(grid),
+    notes: notes.map(n => Array.from(n)),
+    history: history.map(h => ({ idx: h.idx, v: h.v, notes: Array.from(h.notes) })),
+    pencil: pencil, elapsed: Math.floor((Date.now() - timerStart) / 1000),
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.grid) || s.grid.length !== N * N) return false;
+    if (!s.grid.every(v => Number.isInteger(v) && v >= 0 && v <= N)) return false;
+    if (!Array.isArray(s.notes) || s.notes.length !== N * N) return false;
+    diff = s.diff; chips.show(diff);
+    newPuzzle(s.seed);
+    for (let i = 0; i < N * N; i++) {
+      if (givens[i]) continue;
+      grid[i] = s.grid[i];
+      notes[i] = new Set((Array.isArray(s.notes[i]) ? s.notes[i] : []).filter(n => Number.isInteger(n) && n >= 1 && n <= N));
+    }
+    history = Array.isArray(s.history)
+      ? s.history.filter(h => h && Number.isInteger(h.idx) && h.idx >= 0 && h.idx < N * N && Number.isInteger(h.v) && Array.isArray(h.notes))
+          .map(h => ({ idx: h.idx, v: h.v, notes: new Set(h.notes) }))
+      : [];
+    pencil = !!s.pencil; updatePencilBtn();
+    timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
+    timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
+    renderAll(); updateStatus();
+    return true;
+  });
+  resumer.restore();
+  window.addEventListener("load", () => Manpage.autoOpen("sudoku"));
+})();
