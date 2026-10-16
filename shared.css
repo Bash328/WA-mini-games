@@ -1033,73 +1033,85 @@ body.g-patches .panel .pt-rect-overlay.bad {
   background: rgba(255,107,107,0.12);
 }
 
-/* ── Mini-Sudoku ────────────────────────────────────────────── */
+/* ── Mini-Sudoku and Sudoku ─────────────────────────────────── */
 /* High-contrast: pale grid lines against near-black cells, a heavy frame
-   and box dividers, bright entered digits, and an amber selection. */
-body.g-mini-sudoku .panel .sk-grid {
-  background: #14120f;
-  border: 3px solid #b3a58f;
+   and box dividers, bright entered digits, and an amber selection. The
+   colours are variables so the light theme can swap them (see the light-theme
+   block at the end of this file). */
+body.g-mini-sudoku, body.g-sudoku {
+  --sk-grid: #14120f; --sk-line: #b3a58f; --sk-cell: #1d1a16; --sk-cell-b: #4d463a; --sk-digit: #7fe3c3;
+  --sk-given: #34302a; --sk-given-fg: #f7f2ea; --sk-peer: #302b24; --sk-given-peer: #453f35; --sk-note: #d9d0c0;
+  --sk-btn: #34302a; --sk-btn-b: #5a5244; --sk-btn-hover: #403b32; --sk-btn-hover-b: #7a705e; --sk-act: #2f2b25;
+}
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-grid {
+  background: var(--sk-grid);
+  border: 3px solid var(--sk-line);
   border-radius: 14px;
   overflow: hidden;
 }
-body.g-mini-sudoku .panel .sk-cell {
-  background: #1d1a16;
-  border-color: #4d463a;
-  color: #7fe3c3;
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell {
+  background: var(--sk-cell);
+  border-color: var(--sk-cell-b);
+  color: var(--sk-digit);
   font-weight: 700;
 }
-body.g-mini-sudoku .panel .sk-cell.given {
-  background: #34302a;
-  color: #f7f2ea;
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.given {
+  background: var(--sk-given);
+  color: var(--sk-given-fg);
   font-weight: 800;
 }
-body.g-mini-sudoku .panel .sk-cell.peer { background: #302b24; }
-body.g-mini-sudoku .panel .sk-cell.given.peer { background: #453f35; }
-body.g-mini-sudoku .panel .sk-cell.same-num,
-body.g-mini-sudoku .panel .sk-cell.same {
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.peer { background: var(--sk-peer); }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.given.peer { background: var(--sk-given-peer); }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.same-num,
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.same {
   background: rgba(77,217,172,0.24);
 }
-body.g-mini-sudoku .panel .sk-cell.error,
-body.g-mini-sudoku .panel .sk-cell.conflict {
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.error,
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.conflict {
   background: rgba(255,107,107,0.24);
   color: #ff9090;
 }
-body.g-mini-sudoku .panel .sk-cell.sel {
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.sel {
   background: rgba(245,184,0,0.42);
   box-shadow: inset 0 0 0 3px var(--accent);
   outline: none;
 }
-body.g-mini-sudoku .panel .sk-grid.pencil-mode .sk-cell.sel {
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-grid.pencil-mode .sk-cell.sel {
   box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 0 6px rgba(245,184,0,0.25);
 }
-body.g-mini-sudoku .panel .sk-note,
-body.g-mini-sudoku .panel .sk-cell .notes { color: #d9d0c0; }
-body.g-mini-sudoku .panel .sk-cell.box-b { border-right:  3px solid #b3a58f; }
-body.g-mini-sudoku .panel .sk-cell.box-t { border-bottom: 3px solid #b3a58f; }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-note,
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell .notes { color: var(--sk-note); }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.box-b { border-right:  3px solid var(--sk-line); }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-cell.box-t { border-bottom: 3px solid var(--sk-line); }
+/* box dividers: 2x3 boxes in Mini-Sudoku, 3x3 in Sudoku */
 body.g-mini-sudoku .panel .sk-cell[data-r="1"],
-body.g-mini-sudoku .panel .sk-cell[data-r="3"] { border-bottom: 3px solid #b3a58f; }
-body.g-mini-sudoku .panel .sk-cell[data-c="2"] { border-right: 3px solid #b3a58f; }
-body.g-mini-sudoku .panel .sk-pad button {
-  background: #34302a;
-  border: 1px solid #5a5244;
+body.g-mini-sudoku .panel .sk-cell[data-r="3"],
+body.g-sudoku .panel .sk-cell[data-r="2"],
+body.g-sudoku .panel .sk-cell[data-r="5"] { border-bottom: 3px solid var(--sk-line); }
+body.g-mini-sudoku .panel .sk-cell[data-c="2"],
+body.g-sudoku .panel .sk-cell[data-c="2"],
+body.g-sudoku .panel .sk-cell[data-c="5"] { border-right: 3px solid var(--sk-line); }
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-pad button {
+  background: var(--sk-btn);
+  border: 1px solid var(--sk-btn-b);
   color: var(--fg);
   border-radius: 12px;
 }
-body.g-mini-sudoku .panel .sk-pad button:hover {
-  background: #403b32;
-  border-color: #7a705e;
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-pad button:hover {
+  background: var(--sk-btn-hover);
+  border-color: var(--sk-btn-hover-b);
 }
-body.g-mini-sudoku .panel .sk-act {
-  background: #2f2b25;
-  border: 1px solid #5a5244;
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-act {
+  background: var(--sk-act);
+  border: 1px solid var(--sk-btn-b);
   color: var(--fg);
   border-radius: 12px;
 }
-body.g-mini-sudoku .panel .sk-act:hover:not(:disabled) {
-  background: #403b32;
-  border-color: #7a705e;
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-act:hover:not(:disabled) {
+  background: var(--sk-btn-hover);
+  border-color: var(--sk-btn-hover-b);
 }
-body.g-mini-sudoku .panel .sk-act.pencil-on {
+:is(body.g-mini-sudoku, body.g-sudoku) .panel .sk-act.pencil-on {
   background: var(--accent);
   border-color: var(--accent);
   color: #1a1715;
@@ -1728,3 +1740,11 @@ body.g-gomoku { --p1: #8fa3bf; --p2: #f4efe6; }
 body.g-hex { --p1: #ff6b6b; --p2: #5c9cff; }
 body.g-ultimate-tic-tac-toe { --p1: #f5b800; --p2: #4dd9ac; }
 body.g-blokus-duo { --p1: #ff9f43; --p2: #8f74f5; }
+
+/* light theme: Sudoku colours, and primary buttons that turned white-on-white when hovered */
+html[data-theme="light"] :is(body.g-mini-sudoku, body.g-sudoku) { --sk-grid: #e6dcc9; --sk-line: #8a7a5e; --sk-cell: #fbf7ee; --sk-cell-b: #cfc4ad; --sk-digit: #1f8f6a; --sk-given: #e3d9c4; --sk-given-fg: #231f1a; --sk-peer: #f1eadb; --sk-given-peer: #d9ceb7; --sk-note: #6b6459; --sk-btn: #efe8da; --sk-btn-b: #c9bca5; --sk-btn-hover: #e6dcc9; --sk-btn-hover-b: #a39b8c; --sk-act: #efe8da; }
+html[data-theme="light"] body[class*="g-"] .panel button.primary:hover, html[data-theme="light"] body[class*="g-"] .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) :is(body.g-mini-sudoku, body.g-sudoku) { --sk-grid: #e6dcc9; --sk-line: #8a7a5e; --sk-cell: #fbf7ee; --sk-cell-b: #cfc4ad; --sk-digit: #1f8f6a; --sk-given: #e3d9c4; --sk-given-fg: #231f1a; --sk-peer: #f1eadb; --sk-given-peer: #d9ceb7; --sk-note: #6b6459; --sk-btn: #efe8da; --sk-btn-b: #c9bca5; --sk-btn-hover: #e6dcc9; --sk-btn-hover-b: #a39b8c; --sk-act: #efe8da; }
+  html:not([data-theme="dark"]) body[class*="g-"] .panel button.primary:hover, html:not([data-theme="dark"]) body[class*="g-"] .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
+}
