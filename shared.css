@@ -1730,3 +1730,6 @@ html[data-theme="light"] body.g-lights-out .panel .lo-cell:not(.on) { background
 
 .gk-msg .gk-head { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--muted); margin-bottom: 4px; }
 .gk-msg .gk-tail { display: block; }
+
+/* New games: turn-badge colours */
+body.g-gomoku { --p1: #8fa3bf; --p2: #f4efe6; }

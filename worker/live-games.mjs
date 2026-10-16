@@ -17,6 +17,7 @@ import * as reversi from "./rules/reversi.mjs";
 import * as dotsAndBoxes from "./rules/dots-and-boxes.mjs";
 import * as lightsOut from "./rules/lights-out.mjs";
 import * as rockPaperScissors from "./rules/rock-paper-scissors.mjs";
+import * as gomoku from "./rules/gomoku.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
@@ -29,6 +30,7 @@ export const LIVE_GAMES = {
   "reversi":        { version: 1, players: [1, 2], first: 1, rules: reversi },
   "dots-and-boxes": { version: 2, players: [1, 2], first: 1, rules: dotsAndBoxes },
   "lights-out":     { version: 1, players: [1, 2], first: 1, rules: lightsOut },
+  "gomoku":         { version: 1, players: [1, 2], first: 1, rules: gomoku },
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.
   "rock-paper-scissors": { version: 1, players: [1, 2], first: 1, hidden: true, rules: rockPaperScissors },

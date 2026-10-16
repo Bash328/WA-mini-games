@@ -33,6 +33,8 @@ const GAMES = {
   "minesweeper":        { title: "minesweeper",        labels: { 1: "Player 1", 2: "Player 2" } },
   "lights-out":         { title: "lights-out",         labels: { 1: "Player 1", 2: "Player 2" } },
   "battleship":          { title: "battleship",          labels: { 1: "Player 1", 2: "Player 2" } },
+  "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
+  "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
   "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },
 };
 

@@ -1300,6 +1300,54 @@ window.TAUNT_LINES = {
       "You lost to a machine with a grudge.",
     ],
   },
+  gomoku: {
+    loss: [
+      "They got five. You got a lot of blocking.",
+      "You blocked the wrong end. Classic.",
+      "That open three was a flashing sign.",
+      "Fifteen by fifteen, and you missed the one square that mattered.",
+      "Gomoku is just tic-tac-toe for people who like losing slowly.",
+      "You saw it coming from three moves away. Then did nothing.",
+      "They built a line, you built a fence. Theirs was longer.",
+    ],
+    win: [
+      "A clean five. No notes.",
+      "That open three had no answer.",
+      "You played the whole board. They played the corner.",
+      "Two threats at once. Beautiful. Cruel.",
+      "Stones don't lie: that was a good line.",
+      "You made the board look small.",
+    ],
+    draw: [
+      "A full board and no five. You both blocked everything.",
+      "Two hundred and twenty-five stones, zero winners.",
+      "Nobody lined up five. Nobody lost. Nobody enjoyed it.",
+    ],
+  },
+
+  pig: {
+    loss: [
+      "You pushed your luck and it pushed back.",
+      "One more roll. Always one more roll.",
+      "Greed has a die face, and it's a one.",
+      "You were at 18. You were at 18!",
+      "Hold at 20. It's right there in the how-to.",
+      "A pig could've banked that.",
+      "The die has no feelings. It has a one.",
+    ],
+    win: [
+      "You held your nerve. And then you held.",
+      "Pig champion. Nobody asked for a title, but here it is.",
+      "Bacon secured.",
+      "Smart holds, steady rolls. Boring. Effective.",
+      "You rolled the dice and the dice rolled over.",
+      "A hundred points, zero regrets.",
+    ],
+    draw: [
+      "There are no draws in pig. Something has gone very wrong.",
+    ],
+  },
+
   // ---- vs the computer ---------------------------------------------
   // Used INSTEAD of the generic pool when the page's mode menu is set to a
   // computer opponent, so every line may speak about "the computer".

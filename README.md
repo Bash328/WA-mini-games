@@ -25,10 +25,12 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [hangman](hangman/) | **2 players · WhatsApp** (default), local 2 players |
 | [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
+| [gomoku](gomoku/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [pig](pig/) | **2 players · WhatsApp** (default), vs computer at 3 levels, same device |
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
-## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out)
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku)
 
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 
@@ -158,8 +160,14 @@ These play by the same standard rules as the real games — no reinterpretation 
 - No legal move on your turn loses immediately.
 
 **Dots and Boxes**
-- 5×5 dot grid (16 boxes). Draw one line per turn; completing a box (or two at once) claims it and grants another turn.
+- A grid from 3×3 up to 6×6 boxes (4×4 by default, chosen by whoever makes the first move). Draw one line per turn; completing a box (or two at once) claims it and grants another turn.
 - Most boxes when every line is drawn wins.
+
+**Gomoku**
+- 15×15 board, Black opens, five or more in a row (any direction) wins; a full board is a draw. On a touchscreen the first tap previews a stone and the second tap places it. Computer: a pattern-scoring heuristic (hard also looks one reply ahead). Link, live and same-device play.
+
+**Pig**
+- Roll as often as you like adding to a turn total; a 1 loses the turn, "hold" banks it. First to 100. A whole turn is one link. The roller's browser makes the dice, so over WhatsApp it runs on trust (like Minesweeper's mines); for the same reason Pig has no live mode.
 
 **Mancala (Kalah)**
 - Standard Kalah: sow counter-clockwise skipping the opponent's store, land in your own store for another turn, capture an opposite pit by landing your last seed in your own empty one.
@@ -180,6 +188,42 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Mastermind**
 - The Codemaker picks a 4-peg code from 6 colours; the Codebreaker has 10 guesses, with exact/colour-only feedback after each. Also vs a computer-chosen code and on one device.
+
+## Usernames, notifications and the installable app
+
+Optional and separate from the games: none of it is needed to play.
+
+- **Username.** The home page's "Your name" panel lets a player pick a name (3 to 16 letters, digits and `_`, case-insensitive, a blocklist for offensive and reserved names). One Durable Object, `UserRegistry` (`worker/user-registry.mjs`), holds every name, so it is unique by construction. The server mints a secret token, keeps only its hash, and the browser keeps the token: whoever holds it owns the name. There is no recovery; lose the token and the name is gone. Unused for 90 days a name is freed. Rules and limits are pure functions in `worker/users.mjs`.
+- **Poke a friend.** In a live room's waiting screen a signed-in player can type a friend's username and "Poke". The server checks the room is real and open, then sends a Web Push (RFC 8291 encryption, RFC 8292 VAPID, written with WebCrypto in `worker/webpush.mjs`, no library) that opens the room when tapped. Limits: 10 pokes an hour per sender, 20 an hour per receiver, one per two minutes per pair. A muted person or someone who blocked the sender is never reached, and the sender is not told.
+- **Install.** `manifest.json` plus PNG icons make the site installable; the home page offers "Install the app" where the browser allows it and explains Add to Home Screen on iPhone (where notifications work from the installed app). The service worker (`sw.js`) does only push and notification clicks; it caches nothing.
+- **API** (same origin only): `GET /api/user/status`; `POST /api/user/{check,claim,ping,push,settings,release,poke}`.
+
+### Switching pokes on
+
+Usernames work as soon as the Worker is deployed (the `UserRegistry` migration is in `wrangler.toml`). Pokes need a push key pair:
+
+```
+node worker/vapid-keys.mjs                    # prints a public and a private key
+# put the public key in wrangler.toml:  VAPID_PUBLIC_KEY = "..."   (and set VAPID_SUBJECT to your mailto:)
+npx wrangler secret put VAPID_PRIVATE_KEY     # paste the private key
+npx wrangler deploy
+```
+
+With `VAPID_PUBLIC_KEY` empty the site simply hides every notification control. Keep the private key: replacing it makes saved subscriptions stop working until people turn notifications on again.
+
+## Tests
+
+| Command | Covers |
+|---|---|
+| `node taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
+| `node worker/live-protocol.test.mjs` | the live-room rules, including taunt validation |
+| `node worker/rules/wave1.test.mjs` | thousands of random games per live game, Dots and Boxes at every size |
+| `node worker/rules/gomoku.test.mjs` | Gomoku rules through the real room protocol |
+| `node worker/webpush.test.mjs` | push encryption against the RFC 8291 worked example, VAPID signature, allowed endpoints |
+| `node worker/users.test.mjs` | username and poke rules |
+| `node worker/live.integration.mjs`, `node worker/users.integration.mjs` | against a running `wrangler dev` (the second uses a fake push service and decrypts what it receives) |
+
+For the integration tests start `npx wrangler dev --persist-to ../.wrangler-state --port 8788 --var VAPID_PUBLIC_KEY:<pub> --var VAPID_PRIVATE_KEY:<priv> --var PUSH_ALLOW_LOCAL:1 --var LIVE_ALLOW_NO_ORIGIN:1` and run them with `BASE=http://localhost:8788`.
 
 ## Run locally
 
@@ -261,9 +305,11 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── fonts/              self-hosted Fira Mono (woff2) + its OFL license
 ├── shared.css          design tokens, @font-face, buttons, panels, light mode, game-page theme, help overlay
 ├── manpage.js          "? man" help overlay
-├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
-├── manifest.json       PWA manifest
-├── live-share.js       live online play client (WebSocket rooms)
+├── gamekit.js          shared helpers (PRNG, storage, chips) AND the standard page layout, taunt strip, custom select, theme toggle
+├── manifest.json       PWA manifest (+ icon-*.png, apple-touch-icon.png)
+├── live-share.js       live online play client (WebSocket rooms, online taunts, poke a friend)
+├── account.js, account-ui.js, sw.js   username, notifications, install (see above)
+├── taunts.js           every taunt line, including the computer-only pool and the online angel/devil lines
 ├── worker/             Cloudflare Worker: link previews, live rooms (Durable Object), + node tests
 ├── wrangler.toml       Workers config (the assets directory is the repo root)
 ├── _headers            Cache-Control for static assets
@@ -283,6 +329,7 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── hangman/            │
 ├── battleship/         │
 ├── mastermind/         ┘
+├── gomoku/ pig/        ← WhatsApp + computer + local (Gomoku also live)
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 

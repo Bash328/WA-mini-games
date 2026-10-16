@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Google tag (gtag.js) — the library fetch is deferred to window load (same snippet as the other games). -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RFN70FPWB1');
+  addEventListener("load", function () {
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
+    document.head.appendChild(s);
+  });
+</script>
+<title>pig · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Pig — a dice game of nerve. Roll to build your turn, hold to bank it, and never roll a 1. First to 100 wins. Over WhatsApp, against the computer, or on one device.">
+<meta property="og:title" content="Pig · push-your-luck dice, two players over WhatsApp">
+<meta property="og:description" content="Roll, bank, or bust. First to 100 wins. Send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .pig-main { max-width: 420px; margin: 0 auto; }
+  .pig-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pig-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; border: 2px solid var(--border); border-radius: 14px; background: var(--bg-2); }
+  .pig-card.on { border-color: var(--accent); }
+  .pig-card.won { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 14%, transparent); }
+  .pig-name { font-size: var(--fs-sm); color: var(--muted); }
+  .pig-num { font-size: 44px; font-weight: 700; line-height: 1; color: var(--fg); }
+  .pig-bar { width: 100%; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .pig-bar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .pig-stage { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 16px 0 6px; min-height: 120px; }
+  .pig-die svg { width: 96px; height: 96px; display: block; }
+  .pig-die svg rect { fill: #fbf7ee; stroke: #b9b09c; stroke-width: 2.5; }
+  .pig-die svg circle { fill: #231f1a; }
+  .pig-die svg circle.one { fill: #d8362c; }
+  .pig-die.bust svg rect { fill: #fde2de; stroke: #d8362c; }
+  .pig-turn { min-height: 3em; text-align: center; font-size: var(--fs-md); color: var(--muted); }
+  .pig-turn b { color: var(--fg); font-size: 22px; }
+  .pig-rolls { display: block; margin-top: 4px; }
+  .pig-rolls i { display: inline-block; min-width: 1.7em; margin: 0 2px; padding: 1px 4px; border-radius: 6px; background: var(--bg-2); border: 1px solid var(--border); font-style: normal; font-size: var(--fs-sm); color: var(--fg); }
+  .pig-rolls i.one { color: var(--coral); border-color: var(--coral); }
+  .pig-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 10px; }
+  #pig-btns button { min-height: 56px; font-size: var(--fs-lg); font-weight: 600; border-radius: 14px; }
+  #pig-btns .primary { background: var(--accent); color: #1a1210; border-color: var(--accent); }
+  .pig-last { min-height: 2.6em; margin: 10px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-pig">
+<main class="wrap">
+  <div class="topbar">
+    <h1>pig</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your turn.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="pig" data-man-title="PIG(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="vs computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="pig-main" id="board">
+      <div class="pig-scores" id="pig-score"></div>
+      <div class="pig-stage"><div class="pig-die" id="pig-die"></div></div>
+      <div class="pig-turn" id="pig-turn"></div>
+      <div class="pig-btns" id="pig-btns">
+        <button class="btn" id="roll-btn" type="button" disabled>Roll</button>
+        <button class="btn primary" id="hold-btn" type="button" disabled>Hold</button>
+      </div>
+      <p class="pig-last" id="pig-last"></p>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-pig">
+  <h2>Name</h2>
+  <p>pig — a dice game of nerve. First to 100 wins.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>On your turn, <strong>roll</strong> a die as many times as you like, adding each roll to your <strong>turn total</strong>.</li>
+    <li>Roll a <strong>1</strong> and you score nothing this turn: the turn total is lost and it's the other player's go.</li>
+    <li>Or <strong>hold</strong> to bank your turn total into your score and end your turn.</li>
+    <li>The first player to reach <strong>100</strong> points wins.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Player 1</strong>. A whole turn is one link: roll and hold (or bust), then tap <code>Send on WhatsApp</code>.</li>
+    <li>Your friend sees what you rolled, takes their own turn, and sends a link back.</li>
+    <li>Your browser makes your rolls, so this one runs on trust: there's no referee checking the dice.</li>
+  </ul>
+
+  <h2>Against the computer</h2>
+  <ul>
+    <li><strong>Easy</strong> banks as soon as it has 12. <strong>Medium</strong> holds at 20, the classic rule of thumb. <strong>Hard</strong> reads the score: it presses on when you're close to winning and plays safe when it's well ahead.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Over a whole game, holding at about 20 is hard to beat: the chance of rolling a 1 before you get there is about the same as what you'd lose. Take bigger risks only when you're behind and the other side is near 100.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>
