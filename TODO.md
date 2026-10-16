@@ -10,6 +10,7 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 - [ ] Undo and reset leave the right player to move
 - [ ] No duplicate "your move / you're Player N" text (one status, one badge)
 - [ ] Controls (difficulty, new game, undo, timer, moves, best) are in the standard place
+- [ ] Nothing above the board appears or disappears during play (no layout shift between turns)
 - [ ] "how to ?" is top right
 - [ ] Game-over state is obvious
 - [ ] Nothing is cut off on a phone (every board size and difficulty)
@@ -28,7 +29,10 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
   - Link and online games already restore (state is in the URL, or the room is rejoined with the seat token).
   - Solo, vs computer and same-device games lose everything. Save the game to local storage on each move and offer "Resume your game".
   - Don't resume a finished game; don't restore a stale daily puzzle.
-- [ ] **Online badges shift the screen:** the "waiting" and "your turn" badges are different sizes, so the layout jumps every time a move is made. Make them the same height and width.
+- [ ] **Online screen shifts every move.** Root cause (found by you): the **Admit defeat** button appears only on your turn, and it sits between the board and the info above it, so the board jumps each time it shows or hides.
+  - Fix: move Admit defeat to **below the board** (no jump above it), and keep its space reserved or always present so nothing below moves either.
+  - Also make the "waiting" and "your turn" badges the same height and width, in case they contribute.
+  - This is shared code (`async-share.js` and `live-share.js`), so fix it once and check all link and online games; WhatsApp link mode has the same placement.
 
 ## 2. Wording and naming
 - [ ] Rename **"vs AI" to "vs computer"** everywhere (menus, how-to text, taunts, hub copy).
