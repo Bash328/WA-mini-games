@@ -304,9 +304,7 @@
     liveOpt.hidden = false;
     modeSel.value = "live";
   } else if (live) {
-    fetch("/api/live/status").then((r) => r.json()).then((st) => {
-      if (st.enabled && st.games.indexOf("dots-and-boxes") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
-    }).catch(() => { /* live play stays hidden */ });
+    LiveShare.enable(modeSel, "dots-and-boxes");
   }
   const savedSize = store.get("size", "4");
   if (SIZES.includes(Number(savedSize))) sizeSel.value = savedSize;
@@ -314,5 +312,4 @@
   if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("dots-and-boxes"));
 
-  window.__dabTest = { hIdx, vIdx, boxIdx, drawEdge, newEdges, newBoxes, setSize, P1, P2 };
 })();

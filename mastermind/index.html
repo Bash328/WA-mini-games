@@ -2,20 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load
-     (same snippet as every other page). -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js"></script>
 <title>mastermind · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a1715">
@@ -77,11 +64,6 @@
   #secret-row p { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 8px; }
   #secret-row div { display: flex; justify-content: center; gap: 8px; }
 
-  select {
-    background: var(--panel-2); color: var(--fg); border: 1px solid var(--border-hi);
-    border-radius: var(--r-md); padding: 8px 10px; font-family: inherit;
-    font-size: var(--fs-sm); min-height: var(--tap);
-  }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>

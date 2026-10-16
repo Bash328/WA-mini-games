@@ -361,12 +361,7 @@
 
     /* ---------- DOM ---------- */
 
-    function el(tag, cls, text) {
-      const e = document.createElement(tag);
-      if (cls) e.className = cls;
-      if (text) e.textContent = text;
-      return e;
-    }
+    const el = (tag, cls, text) => Account.h(tag, cls ? { class: cls } : {}, ...(text ? [text] : []));
     function banner(cls, text) { ui.appendChild(el("div", "banner" + (cls ? " " + cls : ""), text)); }
     function noteP(text) { ui.appendChild(el("p", "wa-note", text)); }
     function button(text, cls, onClick) {
@@ -753,5 +748,16 @@
     sync();
   }
 
-  global.LiveShare = { start: start, cta: cta };
+  /* Reveals a game's "online" mode option once the server says live play is
+     on for it (and adds the Online button). A ?live= invite shows it at
+     once: the caller passes invited=true and the game switches mode itself. */
+  function enable(modeSel, slug, invited) {
+    const opt = modeSel.querySelector('option[value="live"]');
+    if (invited) { opt.hidden = false; return; }
+    fetch(API + "/status").then((r) => r.json()).then((st) => {
+      if (st.enabled && st.games.indexOf(slug) !== -1) { opt.hidden = false; cta(modeSel); }
+    }).catch(() => { /* live play stays hidden */ });
+  }
+
+  global.LiveShare = { start: start, cta: cta, enable: enable };
 })(window);

@@ -150,10 +150,10 @@ console.log("dots and boxes:");
   check("d&b: extra turns granted", extraTurns > 0, extraTurns);
 
   const room = roomFor("dots-and-boxes");
-  const m1 = db.resolve(db.EMPTY, 0, 1);
+  const m1 = db.resolve(db.emptyBoard(), 0, 1);
   check("d&b: drawing an edge", send(room, 1, m1).ok === true);
   const stolen = db.resolve(m1.board, 1, 2);
-  stolen.board = stolen.board.slice(0, 1 + db.EDGE_COUNT) + "1" + stolen.board.slice(1 + db.EDGE_COUNT + 1);
+  stolen.board = stolen.board.slice(0, 1 + db.geom(4).edges) + "1" + stolen.board.slice(1 + db.geom(4).edges + 1);
   check("d&b: claiming a box that isn't complete is refused", send(room, 2, stolen).reason === "illegal");
   const redraw = db.resolve(m1.board, 0, 2);
   check("d&b: changing the size mid-game is refused", send(room, 2, { ...db.resolve(db.emptyBoard(5), 0, 2) }).reason === "illegal");

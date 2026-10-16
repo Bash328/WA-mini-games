@@ -143,10 +143,10 @@ export class UserRegistry extends DurableObject {
         else {
           const res = await sendPush(target.sub, {
             t: "poke", from: me.name, game: body.game,
-            title: me.name + " wants to play " + U.POKE_GAMES_TITLE(body.game),
+            title: me.name + " wants to play " + body.game.replace(/-/g, " "),
             body: "Tap to join their live room.",
             url: "/" + body.game + "/?live=" + body.room,
-          }, this.env, this.fetchPush);
+          }, this.env);
           if (res.gone) target.sub = null;
           if (!res.ok) delivered = false;
         }
@@ -157,8 +157,6 @@ export class UserRegistry extends DurableObject {
     });
   }
 
-  // overridable in tests; the real thing is the global fetch
-  get fetchPush() { return (...a) => fetch(...a); }
 
   /* ---------- housekeeping ---------- */
 

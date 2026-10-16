@@ -344,9 +344,7 @@
   const liveOpt = modeSel.querySelector('option[value="live"]');
   if (live && invited) liveOpt.hidden = false;
   else if (live) {
-    fetch("/api/live/status").then((r) => r.json()).then((st) => {
-      if (st.enabled && st.games.indexOf("gomoku") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
-    }).catch(() => { /* live play stays hidden */ });
+    LiveShare.enable(modeSel, "gomoku");
   }
   applyMode();
 
@@ -373,5 +371,4 @@
   if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("gomoku"));
 
-  window.__gmTest = { lineAt, aiPick, candidates, SIZE };
 })();

@@ -277,5 +277,4 @@
   if (!new URLSearchParams(location.search).has("s")) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("pig"));
 
-  window.__pigTest = { holdAt, dieSvg };
 })();

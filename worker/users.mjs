@@ -57,15 +57,6 @@ export function checkName(raw) {
   return { ok: true, name, key };
 }
 
-export const REASON_TEXT = {
-  type: "Pick a name.",
-  length: "Names are 3 to 16 characters.",
-  chars: "Use letters, numbers and _ only, with at least one letter.",
-  reserved: "That name is reserved. Pick another.",
-  offensive: "That name isn't allowed. Pick another.",
-  taken: "That name is taken. Pick another.",
-};
-
 /* ---------- tokens ---------- */
 
 export function newToken() {
@@ -145,4 +136,3 @@ export function canDeliver(from, target) {
   return !target.muted && !target.blocked.includes(from.key) && !!target.sub;
 }
 
-export const POKE_GAMES_TITLE = (slug) => String(slug).replace(/-/g, " ");

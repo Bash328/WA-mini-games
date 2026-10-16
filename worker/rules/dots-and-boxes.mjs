@@ -20,9 +20,6 @@ export function geom(n) {
   return { n, dots, h, v, edges: h + v, boxes: n * n };
 }
 export const emptyBoard = (n = DEFAULT_SIZE) => String(n) + "0".repeat(geom(n).edges + geom(n).boxes);
-export const EMPTY = emptyBoard();                     // a fresh 4x4 game
-export const EDGE_COUNT = geom(DEFAULT_SIZE).edges;    // 40
-export const BOX_COUNT = geom(DEFAULT_SIZE).boxes;     // 16
 
 const sizeOf = (board) => Number(String(board)[0]);
 const other = (p) => (p === 1 ? 2 : 1);

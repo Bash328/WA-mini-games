@@ -295,13 +295,10 @@
     liveOpt.hidden = false;
     modeSel.value = "live";
   } else if (live) {
-    fetch("/api/live/status").then((r) => r.json()).then((st) => {
-      if (st.enabled && st.games.indexOf("rock-paper-scissors") !== -1) { liveOpt.hidden = false; LiveShare.cta(modeSel); }
-    }).catch(() => { /* live play stays hidden */ });
+    LiveShare.enable(modeSel, "rock-paper-scissors");
   }
   applyMode();
   if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("rock-paper-scissors"));
 
-  window.__rpsTest = { beats, roundsToWin, boardToStr, strToBoard };
 })();

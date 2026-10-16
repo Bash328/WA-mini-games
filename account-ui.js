@@ -5,16 +5,7 @@
   const root = document.getElementById("acct-box");
   if (!root || typeof Account === "undefined") return;
 
-  function h(tag, props, ...kids) {
-    const e = document.createElement(tag);
-    Object.entries(props || {}).forEach(([k, v]) => {
-      if (k === "class") e.className = v;
-      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
-      else if (v !== false && v !== null && v !== undefined) e.setAttribute(k, v === true ? "" : v);
-    });
-    kids.flat().forEach((c) => e.append(c));
-    return e;
-  }
+  const h = Account.h;
 
   let profile = null;          // { name, push, muted, blocked } once the server has answered
   let pushAvailable = false;

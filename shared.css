@@ -305,15 +305,6 @@ button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visi
 }
 
 /* ---------- Controls rows + toolbars ---------- */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-top: 14px;
-}
-.controls.center { justify-content: center; }
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;

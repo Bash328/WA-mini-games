@@ -151,8 +151,21 @@
     return !!choice && choice.outcome === "accepted";
   }
 
+  // A tiny element builder, shared with live-share.js and account-ui.js:
+  // h("button", { class: "x", onclick: fn, disabled: true }, "label", child, ...)
+  function h(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    Object.entries(props || {}).forEach(([k, v]) => {
+      if (k === "class") e.className = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else if (v !== false && v !== null && v !== undefined) e.setAttribute(k, v === true ? "" : v);
+    });
+    kids.flat().forEach((c) => e.append(c));
+    return e;
+  }
+
   global.Account = {
-    me, check, claim, release, ping, settings, status, poke,
+    h, me, check, claim, release, ping, settings, status, poke,
     REASONS, pushSupported, enableNotifications, disableNotifications, registerWorker,
     canInstall: () => !!installEvent && !standalone(),
     needsIOSHint: () => isIOS() && !standalone(),
