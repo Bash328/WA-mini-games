@@ -31,6 +31,8 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [hex](hex/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [blokus-duo](blokus-duo/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 
+**[crazy-8](crazy-8/)**: cards for 1 to 4 (online rooms with a server-held deck, or against 1 to 3 computers); see below.
+
 **Solo puzzles added:** [sudoku](sudoku/) (9×9), [nonogram](nonogram/) (5×5, 8×8, 10×10, every puzzle solvable by line logic), [word-guess](word-guess/) (five-letter words, daily or random, shareable result) and [word-ladder](word-ladder/) (change one letter at a time).
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
@@ -183,6 +185,11 @@ These play by the same standard rules as the real games — no reinterpretation 
 **Blokus Duo**
 - 14×14, 21 pieces each, start on the ringed squares, later pieces touch your own only at corners. A player with no move is skipped (the link says so); fewest squares left wins (−15 for placing all, −20 if the last was the single square). **The rules are one file, `blokus-duo/rules.js`**, loaded by the page and imported by the Worker, so the browser and server cannot disagree. Wire board is 238 characters: 196 cells and two 21-bit used-piece masks.
 
+**Crazy 8**
+- One deck of 54 (two jokers), 8 cards each every round. 2 = pick up 2, joker = pick up 5, both chain; an Ace blocks a pick-up and frees the next player to play any card; J skips; 7 reverses (with two players left, J and 7 mean you play again); an 8 goes on its own suit or another 8 and names the suit, but can't dodge a pick-up. A "Last card!" button must be pressed before you play your second-to-last card (miss it: pick up 2). You may pick up one card on purpose. Normal mode (first out wins, Rematch and a win tally) or Tournament (the last player holding cards is out each round, down to one).
+- **Online rooms hold 2 to 4 seats.** The host sets the mode and 0 to 3 computer players (one difficulty); the game starts when the host taps Start, or by itself when all 4 seats fill; nobody can join after that. The deck and hands live only in the Durable Object (`worker/card-room.mjs`); each person is sent their own hand and everyone else's card count. A person offline for 90 seconds is replaced by a computer (everyone is told), and an online person who doesn't move for 90 seconds has one turn played for them.
+- The rules and the computer players are one file, `crazy-8/engine.js`, loaded by the page and imported by the Worker (like Blokus Duo), so the browser and the server cannot disagree. Tapping a card shows what it does and why it can or can't be played.
+
 **Mancala (Kalah)**
 - Standard Kalah: sow counter-clockwise skipping the opponent's store, land in your own store for another turn, capture an opposite pit by landing your last seed in your own empty one.
 - An empty row ends the game — the other player sweeps their remaining seeds into their store first.
@@ -232,10 +239,11 @@ With `VAPID_PUBLIC_KEY` empty the site simply hides every notification control. 
 | `node taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
 | `node worker/live-protocol.test.mjs` | the live-room rules, including taunt validation |
 | `node worker/rules/wave1.test.mjs` | thousands of random games per live game, Dots and Boxes at every size |
+| `node worker/rules/crazy-8.test.mjs`, `node worker/card-protocol.test.mjs` | the Crazy 8 engine (every rule, 720 computer games, cards never lost or duplicated) and the room rules with a fake clock |
 | `node worker/rules/gomoku.test.mjs`, `ultimate-tic-tac-toe.test.mjs`, `hex.test.mjs`, `blokus-duo.test.mjs` | each game's rules through the real room protocol (thousands of random games) |
 | `node worker/webpush.test.mjs` | push encryption against the RFC 8291 worked example, VAPID signature, allowed endpoints |
 | `node worker/users.test.mjs` | username and poke rules |
-| `node worker/live.integration.mjs`, `node worker/users.integration.mjs` | against a running `wrangler dev` (the second uses a fake push service and decrypts what it receives) |
+| `node worker/live.integration.mjs`, `node worker/users.integration.mjs`, `node worker/card.integration.mjs` | against a running `wrangler dev` (the second uses a fake push service and decrypts what it receives) |
 
 For the integration tests start `npx wrangler dev --persist-to ../.wrangler-state --port 8788 --var VAPID_PUBLIC_KEY:<pub> --var VAPID_PRIVATE_KEY:<priv> --var PUSH_ALLOW_LOCAL:1 --var LIVE_ALLOW_NO_ORIGIN:1` and run them with `BASE=http://localhost:8788`.
 
@@ -344,6 +352,7 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── battleship/         │
 ├── mastermind/         ┘
 ├── gomoku/ pig/ ultimate-tic-tac-toe/ hex/ blokus-duo/   ← WhatsApp + computer + local (all but Pig also live)
+├── crazy-8/                                              ← engine.js (shared rules and computer players), page, rooms
 ├── sudoku/ nonogram/ word-guess/ word-ladder/            ← solo puzzles (word lists come from MIT / Unlicense sources)
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```

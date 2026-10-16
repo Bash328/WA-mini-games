@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>crazy 8 · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Crazy 8 — the card game where 2s and jokers make you pick up, 7 reverses, Aces block and 8s change the suit. Play online with up to 4 friends, or against the computer.">
+<meta property="og:title" content="Crazy 8 · play cards with up to 4 friends">
+<meta property="og:description" content="Join my room and play Crazy 8 in real time. No sign-up.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  /* ---------- cards ---------- */
+  #c8 .c8-card {
+    --ink: #1d1a16;
+    position: relative; flex: 0 0 auto; width: 52px; height: 74px; padding: 0; min-height: 0; min-width: 0;
+    border-radius: 8px; background: #fbf7ee; border: 1px solid #cdbfa3; color: var(--ink); font-family: inherit;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25); cursor: pointer; user-select: none; transition: transform .12s, box-shadow .12s, opacity .12s;
+  }
+  #c8 .c8-card.red { --ink: #c0392b; }
+  #c8 .c8-card .r { position: absolute; top: 4px; left: 6px; font-size: 17px; font-weight: 700; line-height: 1; }
+  #c8 .c8-card .s { position: absolute; bottom: 4px; right: 6px; font-size: 22px; line-height: 1; }
+  #c8 .c8-card .m { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; opacity: .22; }
+  #c8 .c8-card.joker { --ink: #6b3fb5; }
+  #c8 .c8-card.joker .r { font-size: 10px; letter-spacing: .5px; writing-mode: vertical-rl; top: 6px; }
+  #c8 .c8-card.joker .s { font-size: 24px; }
+  #c8 .c8-card.back { background: repeating-linear-gradient(45deg, #2d4f8f 0 6px, #3a63ab 6px 12px); border-color: #1d3566; cursor: default; }
+  #c8 .c8-card.sm { width: 22px; height: 31px; border-radius: 4px; margin-left: -14px; }
+  #c8 .c8-card.sm:first-child { margin-left: 0; }
+  #c8 .c8-card.lg { width: 64px; height: 90px; }
+  #c8 .c8-card.lg .r { font-size: 20px; } .c8-card.lg .s { font-size: 28px; } .c8-card.lg .m { font-size: 34px; }
+  #c8-hand .c8-card.ok { box-shadow: 0 0 0 2px #3f9d63, 0 2px 6px rgba(0,0,0,.3); }
+  #c8-hand .c8-card.no { opacity: .5; }
+  #c8-hand .c8-card.sel { transform: translateY(-16px); box-shadow: 0 0 0 3px var(--accent), 0 8px 14px rgba(0,0,0,.35); opacity: 1; z-index: 2; }
+
+  /* ---------- the table ---------- */
+  #c8 { display: none; }
+  #c8.on { display: block; }
+  .c8-opps { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 4px 0 10px; }
+  .c8-opp { padding: 8px 8px 10px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-2); min-height: 82px; }
+  .c8-opp.turn { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg-2)); }
+  .c8-opp.gone { opacity: .45; }
+  .c8-opp .nm { font-size: var(--fs-sm); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c8-opp .st { font-size: 11px; color: var(--muted); min-height: 1.3em; }
+  .c8-opp .st.warn { color: var(--coral); }
+  .c8-opp .fan { display: flex; align-items: center; margin-top: 4px; min-height: 31px; }
+  .c8-opp .n { margin-left: 8px; font-size: var(--fs-md); font-weight: 700; }
+
+  .c8-mid { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 6px; }
+  .c8-pile { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  #c8 .c8-pile .c8-card { cursor: default; }
+  #c8 .c8-pile.draw .c8-card { cursor: pointer; }
+  .c8-info { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 92px; }
+  .c8-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-hi); background: var(--bg-2); font-size: 12px; font-weight: 600; }
+  .c8-chip.hot { border-color: var(--coral); color: var(--coral); }
+  .c8-chip .red { color: #e0524a; }
+  .c8-banner { text-align: center; margin: 8px 0; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border-hi); background: var(--bg-2); font-size: var(--fs-md); font-weight: 600; min-height: 42px; display: flex; align-items: center; justify-content: center; }
+  .c8-banner.you { border-color: var(--accent); color: var(--accent); }
+  .c8-banner.alert { border-color: var(--coral); color: var(--coral); }
+  .c8-log { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; margin: 2px 0 6px; }
+
+  /* the hint that appears when you tap a card */
+  .c8-hint { min-height: 76px; margin: 6px 0 10px; padding: 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--bg-2)); border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border)); font-size: 13px; line-height: 1.4; }
+  .c8-hint b { display: block; font-size: 14px; margin-bottom: 2px; }
+  .c8-hint .why { display: block; margin-top: 3px; color: var(--muted); }
+  .c8-hint.idle { background: var(--bg-2); border-color: var(--border); color: var(--muted); }
+  .c8-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 18px 2px 6px; min-height: 108px; }
+  .c8-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0; }
+  .c8-actions .btn { min-height: 46px; font-weight: 600; }
+  .c8-actions .btn.primary { background: var(--accent); color: #1a1210; border-color: var(--accent); }
+  .c8-actions .btn.on { background: var(--coral); color: #fff; border-color: var(--coral); }
+  .c8-actions .btn:disabled { opacity: .4; }
+
+  .c8-suitpick { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.55); }
+  .c8-suitpick.on { display: flex; }
+  .c8-suitpick .box { background: var(--panel); border: 1px solid var(--border-hi); border-radius: 16px; padding: 18px; width: min(340px, 92vw); text-align: center; }
+  .c8-suitpick p { margin: 0 0 12px; font-weight: 600; }
+  .c8-suitpick .row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .c8-suitpick button { min-height: 64px; font-size: 30px; border-radius: 12px; }
+  .c8-suitpick button.red { color: #e0524a; }
+
+  /* ---------- the room ---------- */
+  .c8-room { margin: 8px 0; }
+  .c8-room h3 { margin: 0 0 8px; font-size: var(--fs-lg); }
+  .c8-room .note { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 10px; }
+  .c8-code { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 12px; flex-wrap: wrap; }
+  .c8-code .big { font-size: 22px; font-weight: 700; letter-spacing: .14em; padding: 8px 14px; border: 1px dashed var(--border-hi); border-radius: 10px; background: var(--panel-2); -webkit-user-select: all; user-select: all; }
+  .c8-seats { display: grid; gap: 6px; margin: 8px 0 12px; }
+  .c8-seat { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); font-size: var(--fs-md); }
+  .c8-seat .tag { margin-left: auto; font-size: 11px; color: var(--muted); }
+  .c8-seat.empty { border-style: dashed; color: var(--dim); }
+  .c8-seat .win { font-weight: 700; color: var(--accent); }
+  .c8-cfg { display: grid; gap: 10px; margin: 10px 0; }
+  .c8-cfg .lbl { font-size: var(--fs-sm); color: var(--muted); margin-bottom: 4px; }
+  .c8-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  #c8-room .c8-seg button { min-height: 40px; padding: 0 14px; border-radius: 10px; font-size: 13px; }
+  #c8-room .c8-seg button.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .c8-join { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .c8-join input { background: var(--panel-2); color: var(--fg); border: 1px solid var(--border-hi); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 16px; min-height: 44px; width: 9em; text-transform: uppercase; letter-spacing: .15em; text-align: center; }
+  .c8-taunts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+  #c8 .c8-taunts .btn { min-height: 44px; white-space: normal; text-align: left; font-size: 12px; line-height: 1.3; }
+  .c8-toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 70; max-width: min(420px, 92vw); padding: 10px 14px; border-radius: 12px; background: var(--fg); color: var(--bg); font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .c8-toast[hidden] { display: none; }
+
+  /* the always-there card guide */
+  .c8-guide { margin: 12px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); }
+  .c8-guide summary { padding: 11px 14px; cursor: pointer; font-weight: 600; font-size: var(--fs-md); }
+  .c8-guide dl { margin: 0; padding: 0 14px 12px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; line-height: 1.4; }
+  .c8-guide dt { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .c8-guide dd { margin: 0; }
+  @media (max-width: 520px) { .c8-guide dl { grid-template-columns: 1fr; gap: 0; } .c8-guide dt { white-space: normal; margin-top: 8px; } }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-crazy-8">
+<main class="wrap">
+  <div class="topbar">
+    <h1>crazy 8</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Tap a card to see what it does.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="crazy-8" data-man-title="CRAZY-8(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="bots" aria-label="Computer players">
+        <option data-short="1 computer" value="1">1 computer player</option>
+        <option data-short="2 computers" value="2" selected>2 computer players</option>
+        <option data-short="3 computers" value="3">3 computer players</option>
+      </select>
+      <select id="gmode" aria-label="Game type">
+        <option data-short="Normal" value="normal" selected>Normal: first out wins</option>
+        <option data-short="Tournament" value="tournament">Tournament: last one holding cards is out</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div id="c8-room" class="c8-room"></div>
+    <div id="c8">
+      <div class="c8-opps" id="c8-opps"></div>
+      <div class="c8-mid">
+        <div class="c8-pile draw"><div id="c8-draw"></div><span id="c8-drawn">0 left</span></div>
+        <div class="c8-pile"><div id="c8-top"></div><span>discard</span></div>
+        <div class="c8-info" id="c8-info"></div>
+      </div>
+      <div class="c8-banner" id="c8-banner"></div>
+      <div class="c8-log" id="c8-log"></div>
+      <div class="c8-hint idle" id="c8-hint">Tap one of your cards to see what it does. Tap it again to play it.</div>
+      <div class="c8-hand" id="c8-hand" aria-label="Your hand"></div>
+      <div class="c8-actions" id="c8-actions">
+        <button class="btn primary" id="play-btn" type="button" disabled>Play</button>
+        <button class="btn" id="draw-btn" type="button" disabled>Pick up a card</button>
+        <button class="btn" id="pass-btn" type="button" hidden>Keep it and pass</button>
+        <button class="btn" id="last-btn" type="button" hidden>Last card!</button>
+      </div>
+      <div class="c8-taunts" id="c8-taunts" hidden></div>
+    </div>
+    <details class="c8-guide" id="c8-guide">
+      <summary>Card guide: what every card does</summary>
+      <dl>
+        <dt>2</dt><dd>Next player picks up <b>2</b>. They can chain another 2 or a joker, or block with an Ace.</dd>
+        <dt>Joker</dt><dd>Next player picks up <b>5</b>. Chains with 2s and jokers; an Ace blocks it. Goes on any card.</dd>
+        <dt>Ace</dt><dd><b>Blocks</b> a pick-up of any size. After an Ace, the next player can play any card.</dd>
+        <dt>J</dt><dd><b>Jump</b>: the next player is skipped.</dd>
+        <dt>7</dt><dd><b>Reverses</b> the direction of play.</dd>
+        <dt>8</dt><dd>You <b>name any suit</b>. It goes on the same suit (or another 8), and can't dodge a pick-up.</dd>
+        <dt>Q, K, 3 to 6, 9, 10</dt><dd>No special effect: match the suit or the number.</dd>
+        <dt>Two players</dt><dd>With two players left, a 7 or a J means you play again.</dd>
+        <dt>Last card</dt><dd>Press <b>Last card!</b> before you play your second-to-last card, or you pick up 2.</dd>
+      </dl>
+    </details>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+<div class="c8-suitpick" id="c8-suitpick" role="dialog" aria-modal="true" aria-label="Choose a suit">
+  <div class="box"><p>Name the suit for the next player</p><div class="row4" id="c8-suits"></div></div>
+</div>
+<div class="c8-toast" id="c8-toast" role="status" hidden></div>
+
+<template id="man-crazy-8">
+  <h2>Name</h2>
+  <p>crazy 8 — be the first to get rid of all your cards. Every round is dealt <strong>8 cards each</strong> from one deck of 54 (52 cards and 2 jokers). Also known as "7 cards" in some places.</p>
+
+  <h2>Your turn: play a card, or pick up</h2>
+  <ul>
+    <li>Play a card that matches the <strong>top card by suit or by number</strong> (a 5 of hearts goes on any heart, or on any 5). The chip beside the discard pile shows what you must match.</li>
+    <li>No card you can play, or you'd rather not? <strong>Pick up one card</strong> from the pile. If the card you picked up can be played you may play it straight away, or keep it and pass. You may pick up a card even when you do have something to play.</li>
+    <li>The draw pile runs out? The played cards (except the top one) are shuffled back in.</li>
+  </ul>
+
+  <h2>The special cards</h2>
+  <ul>
+    <li><strong>2</strong>: the next player must <strong>pick up 2</strong>.</li>
+    <li><strong>Joker</strong>: the next player must <strong>pick up 5</strong>. A joker can be played on any card.</li>
+    <li><strong>Ace</strong>: <strong>blocks a pick-up</strong>. It cancels the whole pile. After any Ace (or joker) the next player may play <em>any</em> card.</li>
+    <li><strong>J (jump)</strong>: the next player misses their turn.</li>
+    <li><strong>7</strong>: the direction of play <strong>reverses</strong>.</li>
+    <li><strong>8</strong>: you <strong>name any suit</strong> and the next player must follow it. An 8 can only be played on a card of its own suit (or on another 8), and it <strong>cannot</strong> be used to dodge a pick-up.</li>
+    <li><strong>Q and K</strong> (and 3 to 6, 9, 10): nothing special.</li>
+    <li>With <strong>only two players left</strong>, a 7 or a J means you play again.</li>
+  </ul>
+
+  <h2>Pick-ups and chains</h2>
+  <ul>
+    <li>When a pick-up is waiting for you, you can <strong>chain</strong>: play another 2 or a joker (any suit) and the pile gets bigger (2 + 2 = 4, 2 + joker = 7), and it's the next player's problem.</li>
+    <li>Or <strong>block it with an Ace</strong>. Or pick up the whole pile. Picking up ends your turn.</li>
+    <li>While a pick-up is waiting, 8s, jacks and sevens can't be played.</li>
+  </ul>
+
+  <h2>Last card</h2>
+  <ul>
+    <li>Tap <strong>Last card!</strong> before you play your second-to-last card. Go down to one card without it and you <strong>pick up 2</strong>. The computer never forgets.</li>
+    <li>You can win with any card, including a special one.</li>
+  </ul>
+
+  <h2>The first card</h2>
+  <ul>
+    <li>If the card turned over to start is special, it hits the first player: a <strong>2 or joker</strong> means they face the pick-up (and can chain or block it), a <strong>J</strong> skips them, a <strong>7</strong> reverses direction and the player on the other side starts, an <strong>Ace or 8</strong> lets them play anything.</li>
+  </ul>
+
+  <h2>Two ways to play</h2>
+  <ul>
+    <li><strong>Normal</strong>: the first player to run out of cards wins the whole game. Then tap <strong>Rematch</strong>; the winner of the last game starts, and the room keeps a tally of wins.</li>
+    <li><strong>Tournament</strong>: when a player gets rid of their cards they are safe for that round. The round ends when only one player still holds cards; that player is <strong>out</strong>. The others play a fresh round, and so on until one player is left: the champion. With two left, first out wins.</li>
+  </ul>
+
+  <h2>Playing online with friends</h2>
+  <ul>
+    <li>Choose <code>Online</code>, create a room and send the invite link (or the 6-letter code). Up to <strong>4 players</strong>. The host picks Normal or Tournament and can add <strong>computer players</strong> (1 to 3, any difficulty) to fill seats. The host taps <strong>Start</strong>; if all 4 seats fill up it starts by itself.</li>
+    <li>Once the game has started, or the room is full, nobody else can join. Someone who dropped out can rejoin with the same link.</li>
+    <li>Your cards stay secret: you only ever see your own hand and how many cards everyone else holds.</li>
+    <li>If someone goes offline for <strong>90 seconds</strong>, a computer plays for them (everyone sees this) and they can take their seat back when they return. If someone is online but doesn't move for <strong>90 seconds</strong>, a computer plays that one turn.</li>
+  </ul>
+
+  <h2>Playing the computer</h2>
+  <ul>
+    <li>You play against 1 to 3 computer players (Easy, Medium or Hard) in Normal or Tournament style. Everything is the same, it just runs on your phone.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a card</strong> to lift it and read what it does, and whether you can play it now. <strong>Tap it again</strong> (or press <code>Play</code>) to play. You can read any card's hint at any time, even when it's not your turn. Cards with a green outline are playable.</li>
+    <li>Tap the <strong>draw pile</strong> or the <code>Pick up</code> button to pick up. If you play an 8, you'll be asked to name a suit.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Keep an Ace in your hand as long as you can: it is your shield against a big pick-up. Hold 8s for when you're stuck. When the next player is down to one or two cards, that's the time for a 2, a joker or a jump.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../account.js"></script>
+<script defer src="../live-share.js"></script>
+<script defer src="engine.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

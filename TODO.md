@@ -73,7 +73,7 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 - [x] **Pig:** WhatsApp / vs computer (3 levels) / same device.
 - [x] **Ultimate Tic-Tac-Toe, Hex, Blokus Duo:** WhatsApp / online / vs computer (3 levels) / same device.
 - [x] **Solo puzzles:** Sudoku 9×9, Nonogram, Word Guess, Word Ladder.
-- [ ] **Crazy Eights ("7 cards")**: waiting for the house rules (which cards do what). Hidden hands mean a server-held deck for online play, and 3+ players need a multi-seat room.
+- [x] **Crazy 8 ("7 cards")**: built to your house rules (online rooms of 2 to 4 with computer seats, vs computer, Normal and Tournament). Next: how it looks for the player.
 - Still on the list for later: Shiritori, Boggle duel, Lost Cities, Liar's Dice.
 
 ---
@@ -81,4 +81,4 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 ## What is left
 1. Deploy and switch on pokes (section 7).
 2. Bring the remaining games online (section 6), and the Hangman stickman (section 3).
-3. Crazy Eights, and the other new games (section 8).
+3. Crazy 8's look and feel, then the other new games (section 8).
