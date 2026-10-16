@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>ultimate tic-tac-toe · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Ultimate Tic-Tac-Toe — nine boards in one. Where you play decides where your opponent must play next. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Ultimate Tic-Tac-Toe · two players over WhatsApp">
+<meta property="og:description" content="Nine boards, one game. Make your move and send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .ut-wrap { width: min(520px, 100%); margin: 8px auto 0; }
+  .ut-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px; aspect-ratio: 1; }
+  .ut-small {
+    position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); min-height: 0;
+    gap: 2px; padding: 3px; border-radius: 8px; background: var(--bg-2); border: 2px solid var(--border);
+    transition: border-color .15s, background .15s;
+  }
+  /* the board(s) you may play in right now */
+  .ut-small.target { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg-2)); }
+  .ut-small.x, .ut-small.o, .ut-small.tie { opacity: 0.9; }
+  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button" rule (background, radius, min-height) */
+  #board .ut-cell {
+    min-width: 0; min-height: 0; padding: 0; border-radius: 4px; border: 0; background: var(--panel-2);
+    font-family: inherit; font-weight: 700; color: var(--fg); font-size: clamp(0.8rem, 3.6vw, 1.3rem); cursor: pointer;
+  }
+  #board .ut-cell:disabled { cursor: default; opacity: 1; }
+  #board .ut-cell:not(:disabled):hover { background: var(--panel); }
+  #board .ut-cell.x { color: var(--accent); }
+  #board .ut-cell.o { color: var(--accent-2); }
+  #board .ut-cell.last { outline: 2px dashed var(--muted); outline-offset: -3px; }
+  /* a won small board is covered by one big mark */
+  .ut-mark {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center; pointer-events: none;
+    font-size: clamp(2.6rem, 13vw, 5rem); font-weight: 700; border-radius: 6px; background: color-mix(in srgb, var(--bg) 78%, transparent);
+  }
+  .ut-small.x .ut-mark, .ut-small.o .ut-mark { display: flex; }
+  .ut-small.x .ut-mark { color: var(--accent); }
+  .ut-small.o .ut-mark { color: var(--accent-2); }
+  .ut-small.tie .ut-mark { display: flex; font-size: 1.4rem; color: var(--dim); }
+  .ut-small.tie .ut-mark::after { content: "tie"; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-ultimate-tic-tac-toe">
+<main class="wrap">
+  <div class="topbar">
+    <h1>ultimate tic-tac-toe</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="ultimate-tic-tac-toe" data-man-title="ULTIMATE-TIC-TAC-TOE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your mark" hidden>
+        <option data-short="Play X" value="1" selected>Play X (first)</option>
+        <option data-short="Play O" value="2">Play O</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="ut-wrap"><div class="ut-board" id="board" role="grid" aria-label="Ultimate tic-tac-toe: nine boards of nine cells"></div></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-ultimate-tic-tac-toe">
+  <h2>Name</h2>
+  <p>ultimate tic-tac-toe — nine tic-tac-toe boards in one big board.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The big board is a 3×3 grid of small boards. <strong>X</strong> opens and may play in any cell of any small board.</li>
+    <li><strong>Where you play decides where your opponent must play.</strong> Take the top-right cell of a small board and your opponent has to play in the <em>top-right small board</em>. The board you must play in is highlighted.</li>
+    <li>Win a small board with three in a row and it becomes yours (it gets a big X or O). Won or full boards take no more moves.</li>
+    <li>If you are sent to a board that is already won or full, you may play in <strong>any</strong> open board.</li>
+    <li>Win <strong>three small boards in a row</strong> on the big board to win the game. If every board is decided and nobody has a line, it's a draw.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>X</strong>. After each move, tap <code>Send on WhatsApp</code>; your friend sees your last mark outlined and which board they must play in.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap a cell in a highlighted board. Use the mode menu to play the computer (Easy / Medium / Hard) or share one device; <code>↶ undo</code> is there in those modes.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Don't just win small boards: look at which board your move sends your opponent to. Sending them to a board where they can win, or to a full board (which frees them to play anywhere), is the usual way to lose.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="../account.js"></script>
+<script defer src="../live-share.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

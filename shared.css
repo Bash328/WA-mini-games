@@ -1725,3 +1725,6 @@ html[data-theme="light"] body.g-lights-out .panel .lo-cell:not(.on) { background
 /* New games: turn-badge colours */
 body.g-gomoku { --p1: #8fa3bf; --p2: #f4efe6; }
 .gk-hide-sm { margin-left: 6px; }
+body.g-hex { --p1: #ff6b6b; --p2: #5c9cff; }
+body.g-ultimate-tic-tac-toe { --p1: #f5b800; --p2: #4dd9ac; }
+body.g-blokus-duo { --p1: #ff9f43; --p2: #8f74f5; }

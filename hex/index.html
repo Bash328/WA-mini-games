@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>hex · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Hex — connect your two sides of the board before your opponent connects theirs. It can never end in a draw. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Hex · two players over WhatsApp">
+<meta property="og:description" content="Connect your sides first. Place a stone and send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .hx-wrap { width: min(560px, 100%); margin: 8px auto 0; }
+  .hx-wrap svg { width: 100%; height: auto; display: block; }
+  .hx { fill: var(--panel-2); stroke: var(--border-hi); stroke-width: 0.8; cursor: default; transition: fill .12s; }
+  .hx.open { cursor: pointer; }
+  .hx.open:hover { fill: var(--panel); }
+  #board[data-turn="r"] .hx.open:hover { fill: color-mix(in srgb, #ff6b6b 35%, var(--panel-2)); }
+  #board[data-turn="b"] .hx.open:hover { fill: color-mix(in srgb, #5c9cff 35%, var(--panel-2)); }
+  .hx.r { fill: #ff6b6b; stroke: #c94a4a; }
+  .hx.b { fill: #5c9cff; stroke: #3b74cc; }
+  .hx.last { stroke: var(--fg); stroke-width: 2.2; }
+  .hx.win { stroke: #fff; stroke-width: 2.4; filter: drop-shadow(0 0 3px rgba(255,255,255,.8)); }
+  .hx:focus-visible { outline: none; stroke: var(--fg); stroke-width: 2.4; }
+  .hx-side { stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  .hx-side.red { stroke: #ff6b6b; }
+  .hx-side.blue { stroke: #5c9cff; }
+  .hx-key { display: flex; justify-content: center; gap: 18px; margin: 8px 0 0; font-size: var(--fs-sm); color: var(--muted); }
+  .hx-key i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-hex">
+<main class="wrap">
+  <div class="topbar">
+    <h1>hex</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="hex" data-man-title="HEX(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Blue" value="2">Play Blue</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="hx-wrap"><div id="board" aria-label="Hex board, 11 by 11"></div></div>
+    <p class="hx-key"><span><i style="background:#ff6b6b"></i>Red: top to bottom</span><span><i style="background:#5c9cff"></i>Blue: left to right</span></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-hex">
+  <h2>Name</h2>
+  <p>hex — build an unbroken chain of stones between your two sides.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>An 11×11 board of hexagons. <strong>Red</strong> must connect the <strong>top and bottom</strong> edges; <strong>Blue</strong> must connect the <strong>left and right</strong> edges. Your two sides are drawn in your colour.</li>
+    <li>Players take turns placing one stone on any empty hexagon. Stones never move or get captured. Red goes first.</li>
+    <li>Each hexagon touches six neighbours, so a chain can bend. The first player whose stones form a complete chain wins.</li>
+    <li><strong>There are no draws</strong>: when the board is full, exactly one of you has a chain, and blocking your opponent is the same as connecting yourself.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Red</strong>. After each stone, tap <code>Send on WhatsApp</code>; your friend opens the link, sees your last stone outlined, and replies.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap or click a hexagon to place your stone. Use the mode menu to play the computer or share one device; <code>↶ undo</code> is there in those modes.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">The first player has a real edge, so the centre matters. Two stones with two empty hexagons between them are an unbreakable "bridge": if your opponent takes one gap, you take the other. Build with bridges and you can connect faster than they can block.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="../account.js"></script>
+<script defer src="../live-share.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

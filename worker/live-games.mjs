@@ -18,6 +18,9 @@ import * as dotsAndBoxes from "./rules/dots-and-boxes.mjs";
 import * as lightsOut from "./rules/lights-out.mjs";
 import * as rockPaperScissors from "./rules/rock-paper-scissors.mjs";
 import * as gomoku from "./rules/gomoku.mjs";
+import * as ultimate from "./rules/ultimate-tic-tac-toe.mjs";
+import * as hex from "./rules/hex.mjs";
+import * as blokusDuo from "./rules/blokus-duo.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
@@ -31,6 +34,9 @@ export const LIVE_GAMES = {
   "dots-and-boxes": { version: 2, players: [1, 2], first: 1, rules: dotsAndBoxes },
   "lights-out":     { version: 1, players: [1, 2], first: 1, rules: lightsOut },
   "gomoku":         { version: 1, players: [1, 2], first: 1, rules: gomoku },
+  "blokus-duo":     { version: 1, players: [1, 2], first: 1, rules: blokusDuo },
+  "hex":            { version: 1, players: [1, 2], first: 1, rules: hex },
+  "ultimate-tic-tac-toe": { version: 1, players: [1, 2], first: 1, rules: ultimate },
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.
   "rock-paper-scissors": { version: 1, players: [1, 2], first: 1, hidden: true, rules: rockPaperScissors },
