@@ -1,6 +1,6 @@
 # TODO
 
-Everything asked for so far that is not done yet, grouped by area. Nothing here is started.
+Everything asked for so far, grouped by area. Sections 1–5, 7 and 8 are built; what is left is at the bottom.
 `(?)` marks a point where the request could be read two ways; settle it before building.
 
 ## How to work through this
@@ -31,66 +31,51 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 - [x] **Online screen shifting every move:** Admit defeat moved to one fixed slot **below the board** (shared by link and online play), always reserved during a game, and the turn badge is one fixed height.
   - Still shifts a little in **link** mode: the "Move made, now send the link" panel above the board is taller than the "make your move" note. That is the share panel, not a bug, but it could be moved below the board too.
 
-## 2. Wording and naming
-- [ ] Rename **"vs AI" to "vs computer"** everywhere (menus, how-to text, taunts, hub copy).
-- [ ] **vs-computer taunts:** current lines assume a human opponent ("they built a 4"). Write computer-specific ones ("Boom! Computer power", ...). Keep the lines in `taunts.js` and make the right pool fire per mode.
+## 2. Wording and naming — DONE
+- [x] **"vs AI" is now "vs computer"** in menus, status text, how-to text, taunts and hub copy.
+- [x] **Computer-only taunts.** `taunts.js` has a `_computer` pool ("Boom! Computer power." ...) used instead of the generic pool when the mode menu is set to the computer. In every other mode a line that mentions "the computer" is skipped, so no line can claim something the mode makes untrue (checked by drawing thousands of lines in each mode).
 
-## 3. Taunts
-- [ ] **Make in-game taunts more visible**, right above the board, not in small text in a corner.
-- [ ] **New lines for Admit Defeat and losing** (`(?)` my reading of the request):
-  - When you are doing badly: *"It's not looking so good for you. We have an Admit Defeat button, you know... coward."*
-  - When someone presses Admit Defeat: *"We made that button small, but you found it, huh?"*
-  - When they have lost or given up: *"You are going places. Just not first place."* and *"*cough* *cough* ...loser... *cough*"*
-  - **Very, very rarely**, when someone is really losing, **highlight the Admit Defeat button** (pulse or colour) as a joke.
-- [ ] **Game-over clarity:** for games like 2048 the result is small text in the top-left. Make it a clear banner or overlay.
-- [ ] **Angel and devil taunts (online):** suggest a "good" (angel) and a "bad" (devil) taunt; tapping one sends it to the opponent.
-  - Server: a `taunt` message that carries only an id from a fixed list (never free text), validated, rate limited, relayed to the other seat.
-  - Client: show the two suggestions, show the received taunt briefly, and a mute option.
-- [ ] **Hangman:** a real hangman drawing that builds up as guesses fail, with a **speech bubble** that speaks the taunts.
+## 3. Taunts — DONE (except the Hangman drawing, skipped on request)
+- [x] **Visible taunts.** One strip right above the board (reserved up front, so the board never jumps) shows taunts and the result big. The small status line is hidden while the strip says the same thing.
+- [x] **Admit Defeat lines.** The "not looking so good ... coward" nudge when you are behind, "We made that button small, but you found it, huh?" on the loser's screen after resigning, and the "going places" / "*cough*" lines for a loss. Very rarely, when you are really losing, the Admit defeat button winks (pulses).
+- [x] **Game-over clarity.** Results ("Red wins.", "Draw.", "Boom.", "Game over." in 2048 ...) appear in the strip as a clear banner.
+- [x] **Angel and devil taunts (online).** Two suggested lines, one tap sends one. The server relays only a position in a fixed list (never free text), limited to one every 3 seconds; the receiver sees it in the strip and can mute. Tested against a real room.
+- [ ] **Hangman:** the stickman drawing and speech bubble. Skipped as asked; Hangman is unchanged apart from the shared strip.
 
-## 4. Controls and layout (consistency)
-- [ ] **One standard control area** in every game: difficulty or style, new game or reset, undo, timer, moves, best. Same place, same order, where the game allows.
-- [ ] **Mode menu** (2 players / vs computer / online): the same size and shape as the "New game" and "Online" buttons, all on one line.
-- [ ] **Online button:** in games where it lands at the bottom under "New game", move it beside the mode menu. Check each game's markup.
-- [ ] **Online colour** is too bright; tone it down (hub badge too if needed).
-- [ ] **Lightning emoji** back inside the games, next to "Online" `(?)` (it was removed everywhere on request; confirm it is wanted only inside the game pages).
-- [ ] **Custom selectors:** replace every native `<select>` (mode, difficulty, best-of, ...) with one shared, styled, keyboard-accessible component.
-- [ ] **"how to ?" top right** on every game, same position.
-- [ ] **Reduce on-screen clutter once a game starts** so the board and taunts get the space.
-- [ ] **Room code panel:** make the code smaller, and put **Copy code** right next to it (currently a large block with the buttons on a row below).
+## 4. Controls and layout — DONE
+- [x] **One standard layout**, built by `gamekit.js` on every game page: `how to ?` and a theme button top right; a status row; **[ Mode ▾ ][ Online ][ New game ]** on one line, all one size and shape; then difficulty / size / options; then the share panel, the taunt strip and the board; undo / hint / flip / reset below the board.
+- [x] **Online button** sits beside the mode menu everywhere, in a calmer outline colour. **No lightning emoji anywhere** (decided: none, not even in the games).
+- [x] **Custom selectors:** every native select is now one shared, keyboard-accessible menu (arrows, Home/End, Enter, Escape).
+- [x] **Room code panel:** a small code with **Copy code** right beside it.
+- [x] **Clutter:** tighter controls and spacing. Deliberately NOT hiding controls once play starts: that would move the board under a finger mid-game (it would make a Memory or Minesweeper second tap land on the wrong cell).
 
-## 5. Game-specific
-- [ ] **Rock Paper Scissors:**
-  - Better presentation of the **last round** and the **current score** (clear, large, easy to read at a glance).
-  - Replace the in-game emojis with proper art (reuse the hub card's hand illustrations).
-- [ ] **Dots and Boxes:** a **board size choice** (for example 3×3, 4×4 (current), 5×5, 6×6 boxes). This changes the wire format and the server rules, so version it.
-- [ ] **In-game light mode.** Game pages are dark-only today; the hub already has light, dark and system.
+## 5. Game-specific — DONE
+- [x] **Rock Paper Scissors:** a big scoreboard, a face-off panel for the last round (both hands, who took it) and the hub's hand drawings instead of emoji.
+- [x] **Dots and Boxes:** board sizes 3×3, 4×4 (default), 5×5, 6×6, chosen by whoever makes the first move and stored in the game state. Wire format version 2 (old links say "older version"); server rules and tests cover every size.
+- [x] **In-game light mode:** game pages follow the system, with a theme button in the top bar that shares the hub's saved choice. Checked on all pages at 320, 390 and 1000 px in both themes.
 
-## 6. Online play
+## 6. Online play — NOT STARTED (skipped on request)
 - [ ] **Bring the remaining games online** (each needs a rules module in `worker/rules/`, a registry entry in `worker/live-games.mjs`, and a `LiveShare` next to its `AsyncShare`; see the README):
   - [ ] Wave 2: Checkers, Mancala, Pentago, Memory, Minesweeper
   - [ ] Chess (extract the move generator so browser and server share it)
   - [ ] Hidden-information games: Battleship, Hangman, Mastermind. The server must hold the secrets and reveal only results, as Rock Paper Scissors does now.
+  - Gomoku went online with its own rules module; Pig stays link/computer/local only (a server can't verify a dice roll).
 
-## 7. Accounts-lite, friends and notifications (largest piece, wants its own plan)
-- [ ] **Usernames.** The player picks one; if it is taken they pick another. All names live in a database (Durable Object registry or D1) so uniqueness is enforced on the server. No passwords or email.
-  - Open: how a name stays "yours" (a secret token kept in the browser, like the room seat tokens) and what happens if it is lost.
-  - Open: reserved and offensive names, length and characters, rate limits.
-- [ ] **Installable web app** (add to home screen): service worker and an install prompt on the homepage; the manifest already exists.
-- [ ] **Poke a friend:** a push notification that asks a friend to play a game with you, opening straight into a live room.
-  - Web Push (VAPID). iOS needs the installed app (16.4+); Android and desktop work from the browser.
-  - Needs a way to find a friend by username, a permission flow, a block or mute option, and an abuse limit on pokes.
-  - Update the privacy page (what is stored: username, push subscription; retention; how to delete it).
+## 7. Accounts-lite, friends and notifications — BUILT, needs your deploy step
+- [x] **Usernames** in one Durable Object (unique by construction), secret token kept in the browser, no recovery, 3–16 letters/digits/`_`, blocklist, 90-day expiry, rate limits.
+- [x] **Installable app:** PNG icons, fuller manifest, an install button on the home page, the iPhone Add to Home Screen hint, a service worker for push only.
+- [x] **Poke a friend:** by username from a live room's waiting screen; Web Push written from scratch and checked against the RFC 8291 worked example; block, mute and abuse limits; blocked/muted pokes silent.
+- [x] **Privacy page** updated (what is stored, retention, how to delete).
+- [ ] **You:** deploy and switch pokes on. Names work after `npx wrangler deploy`; pokes need `node worker/vapid-keys.mjs`, the public key in `wrangler.toml`, `npx wrangler secret put VAPID_PRIVATE_KEY`, and a real `VAPID_SUBJECT` (README, "Switching pokes on"). Not verified on real phones or against Google/Apple/Mozilla's push services: only against a fake push service that decrypts exactly as a browser does.
 
-## 8. New games
-- [ ] **Add more games.** Candidates already discussed: Gomoku, Pig, Shiritori (word chain), Boggle duel, Blokus Duo, Lost Cities, Liar's Dice. Pick which, then build each with a WhatsApp mode first and online after.
+## 8. New games — DONE
+- [x] **Gomoku:** 15×15, WhatsApp / online / vs computer (3 levels) / same device.
+- [x] **Pig:** WhatsApp / vs computer (3 levels) / same device.
+- Still on the list for later: Shiritori, Boggle duel, Blokus Duo, Lost Cities, Liar's Dice.
 
 ---
 
-## Suggested order
-1. **Bugs first** (section 1): Zip, Queens, undo, duplicate status text, Mastermind wording, refresh recovery, badge sizes.
-2. **Wording** (section 2), because the new taunts depend on it.
-3. **Layout and controls** (section 4), because it touches the same markup as the clutter and light-mode work.
-4. **Taunts** (section 3), then **game-specific** items (section 5).
-5. **More games online** (section 6) and **new games** (section 8), in waves.
-6. **Usernames, installable app, poke notifications** (section 7) last: they add a database and push notifications.
+## What is left
+1. Deploy and switch on pokes (section 7).
+2. Bring the remaining games online (section 6), and the Hangman stickman (section 3).
+3. More new games (section 8).

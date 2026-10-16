@@ -176,7 +176,8 @@
     }
     const mine = all[game || GAME_ID] || {};
     const ok = (l) => computer === /\bcomputer\b/i.test(l);
-    const gen = (c) => ((computer ? all._computer : all._) || {})[c] || [];
+    // the generic pool has a few lines that mention the computer: only the computer mode may use them
+    const gen = (c) => (((computer ? all._computer : all._) || {})[c] || []).filter((l) => computer || !/\bcomputer\b/i.test(l));
     // a category only the game defines (2048's "over-hard") has no generic pool and no mode filter
     const own = (c) => (mine[c] || []).filter((l) => ok(l) || !(all._ || {})[c]);
     const cat = gen(category).length || own(category).length ? category : "loss";
