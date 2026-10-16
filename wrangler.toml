@@ -62,6 +62,15 @@ class_name = "UserRegistry"
 tag = "v2"
 new_sqlite_classes = ["UserRegistry"]
 
+# ---- Crazy 8 rooms (worker/card-room.mjs): 2-4 seats, hidden hands, computer players ----
+[[durable_objects.bindings]]
+name = "CARDS"
+class_name = "CardRoom"
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["CardRoom"]
+
 [vars]
 # Kill switch: set to "0" and redeploy. The API answers 503, open rooms are
 # closed, and the games hide the "live online" option on their next probe.

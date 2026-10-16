@@ -18,10 +18,11 @@ import { ogFor, ogForLive } from "./og-text.mjs";
 import { liveGame, LIVE_SLUGS } from "./live-games.mjs";
 import { LiveRoom } from "./live-room.mjs";
 import { UserRegistry } from "./user-registry.mjs";
+import { CardRoom } from "./card-room.mjs";
 import { pushConfigured } from "./webpush.mjs";
 
 // Cloudflare finds the Durable Object class by its export from the main module.
-export { LiveRoom, UserRegistry };
+export { LiveRoom, UserRegistry, CardRoom };
 
 /* ---------- live rooms (/api/live/*) ----------
    status  GET  -> { enabled, games }
@@ -84,7 +85,7 @@ async function handleLive(request, env, url) {
   const sub = url.pathname.slice("/api/live/".length);
 
   if (sub === "status" && request.method === "GET") {
-    return json({ enabled: enabled, games: enabled ? LIVE_SLUGS : [] });
+    return json({ enabled: enabled, games: enabled ? LIVE_SLUGS.concat("crazy-8") : [] });
   }
   if (!enabled) return json({ error: "disabled" }, 503);
 
@@ -144,6 +145,50 @@ async function handleLive(request, env, url) {
   return json({ error: "not-found" }, 404);
 }
 
+/* ---------- Crazy 8 rooms (/api/card/*) ----------
+   A different kind of room (2-4 seats, hidden hands, computer players), so a
+   different Durable Object (card-room.mjs); the same rules for the Origin
+   check, the kill switch and the new-room rate limit as live rooms.
+   new   GET  WebSocket upgrade: makes a room AND connects, like /api/live/new
+   ws    GET  ?room=CODE, WebSocket upgrade
+   exists GET ?room=CODE */
+async function createCardRoom(env) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = newCode();
+    const stub = env.CARDS.get(env.CARDS.idFromName(code));
+    const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code: code }) });
+    if (res.status === 200) return { code: code, stub: stub };
+    if (res.status !== 409) break;
+  }
+  return null;
+}
+
+async function handleCard(request, env, url) {
+  if (env.LIVE_ENABLED === "0") return json({ error: "disabled" }, 503);
+  const sub = url.pathname.slice("/api/card/".length);
+  if (sub === "exists" && request.method === "GET") {
+    const code = url.searchParams.get("room") || "";
+    if (!CODE_RE.test(code)) return json({ exists: false });
+    const res = await env.CARDS.get(env.CARDS.idFromName(code)).fetch("https://room/exists");
+    return json({ exists: res.status === 200 });
+  }
+  const origin = request.headers.get("Origin");
+  if (origin !== url.origin && !(origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1")) return json({ error: "forbidden" }, 403);
+  if (sub === "new" && request.method === "GET") {
+    if (request.headers.get("Upgrade") !== "websocket") return json({ error: "upgrade-required" }, 426);
+    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
+    const made = await createCardRoom(env);
+    if (!made) return json({ error: "unavailable" }, 503);
+    return made.stub.fetch(new Request("https://room/ws", request));
+  }
+  if (sub === "ws" && request.method === "GET") {
+    const code = url.searchParams.get("room") || "";
+    if (!CODE_RE.test(code)) return json({ error: "bad-room" }, 400);
+    return env.CARDS.get(env.CARDS.idFromName(code)).fetch(new Request("https://room/ws", request));
+  }
+  return json({ error: "not-found" }, 404);
+}
+
 /* ---------- usernames and pokes (/api/user/*) ----------
    status   GET   -> { push, vapid }       is Web Push set up, and its public key
    check    POST  { name }                  is a name free?
@@ -186,8 +231,9 @@ async function handleUser(request, env, url) {
   if (sub === "poke") {
     // The room has to be a real, open one for a game that can be played live,
     // so a poke can't be used to push an arbitrary link at someone.
-    if (!liveGame(body.game) || !CODE_RE.test(String(body.room || ""))) return json({ error: "bad-room" }, 400);
-    const room = env.ROOMS.get(env.ROOMS.idFromName(body.room));
+    const cards = body.game === "crazy-8";
+    if ((!cards && !liveGame(body.game)) || !CODE_RE.test(String(body.room || ""))) return json({ error: "bad-room" }, 400);
+    const room = cards ? env.CARDS.get(env.CARDS.idFromName(body.room)) : env.ROOMS.get(env.ROOMS.idFromName(body.room));
     if ((await room.fetch("https://room/exists")).status !== 200) return json({ error: "bad-room" }, 400);
   }
 
@@ -231,6 +277,7 @@ export default {
     }
 
     if (u.pathname.startsWith("/api/live/")) return handleLive(request, env, u);
+    if (u.pathname.startsWith("/api/card/")) return handleCard(request, env, u);
     if (u.pathname.startsWith("/api/user/")) return handleUser(request, env, u);
 
     // The service worker has to be revalidated every time (so an update reaches
