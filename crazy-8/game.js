@@ -70,8 +70,6 @@
     J: "Jack: jump. The next player misses their turn (with only two players left, you play again).",
     "7": "7: reverses the direction of play (with only two players left, you play again).",
     "8": "8: you name any suit for the next player to follow. An 8 goes on a card of its own suit, or on another 8, and it can't dodge a pick-up.",
-    Q: "Queen: no special effect. Match the suit or the number.",
-    K: "King: no special effect. Match the suit or the number.",
   };
   function consText(cons) {
     if (!cons || cons.any) return "any card";
@@ -92,18 +90,17 @@
     return "It doesn't match. Play " + consText(t.cons) + ".";
   }
   function showHint(card, tried) {
+    const r = C.isJoker(card) ? "X" : C.rankOf(card);
+    const why = tried && whyNot(card);
+    if (!SPECIAL[r] && !why) return idleHint();
     hintEl.classList.remove("idle");
     hintEl.innerHTML = "";
-    const r = C.isJoker(card) ? "X" : C.rankOf(card);
-    const title = el("b", "", cardName(card));
-    const body = el("span", "", SPECIAL[r] || "No special effect. Match the suit or the number.");
-    hintEl.append(title, body);
-    const why = tried && whyNot(card);
+    if (SPECIAL[r]) hintEl.append(el("b", "", cardName(card)), el("span", "", SPECIAL[r]));
     if (why) hintEl.append(el("span", "why", why));
   }
   function idleHint() {
     hintEl.classList.add("idle");
-    hintEl.textContent = "Tap one of your cards to see what it does. Tap it again to play it.";
+    hintEl.textContent = "Tap a card to lift it. Special cards tell you what they do. Tap it again to play it.";
   }
 
   /* ---------- the table ---------- */
