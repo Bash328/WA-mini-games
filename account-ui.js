@@ -44,17 +44,14 @@
       note.className = "acct-msg bad";
     } }, input, btn);
     return [
-      h("p", { class: "acct-head" }, "\u{1F44B} Pick a username"),
+      h("p", { class: "acct-head" }, "Pick a username"),
       h("p", { class: "acct-note" }, "Friends can poke you into a live game by name. No password, no email: the name lives in this browser."),
       form, note,
     ];
   }
 
   function signedIn() {
-    // a colour for the avatar, always the same for the same name
-    let hue = 0; for (const ch of profile.name) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
-    const avatar = h("span", { class: "acct-avatar", "aria-hidden": "true", style: "background:linear-gradient(135deg,hsl(" + hue + " 80% 58%),hsl(" + ((hue + 50) % 360) + " 75% 45%))" }, profile.name[0].toUpperCase());
-    const out = [h("p", { class: "acct-who" }, avatar, h("span", {}, "Playing as", h("b", {}, profile.name)))];
+    const out = [h("p", { class: "acct-who" }, "Playing as", h("b", {}, profile.name))];
 
     if (pushAvailable && Account.pushSupported()) {
       const on = profile.push;
@@ -68,7 +65,7 @@
               : r.reason === "unsupported" ? "This browser can't do notifications." : "Couldn't turn notifications on. Try again.";
           }
           await load();
-        } }, on ? "\u{1F515} Turn off notifications" : "\u{1F514} Turn on notifications"),
+        } }, on ? "Turn off notifications" : "Turn on notifications"),
         h("span", { class: "acct-hint" }, on ? "A friend's poke shows up as a notification." : "So friends can poke you into a game."),
       ));
       out.push(h("label", { class: "acct-check" },
@@ -88,7 +85,7 @@
       if (!blockInput.value.trim()) return;
       await Account.settings({ block: blockInput.value });
       await load();
-    } }, blockInput, h("button", { type: "submit", class: "acct-coral" }, "\u{1F6AB} Block")));
+    } }, blockInput, h("button", { type: "submit", class: "acct-coral" }, "Block")));
     if (profile.blocked.length) {
       out.push(h("p", { class: "acct-blocked" }, "Blocked: ", profile.blocked.map((n) =>
         h("button", { type: "button", class: "acct-chip", title: "Unblock " + n, onclick: async () => { await Account.settings({ unblock: n }); await load(); } }, n + " ✕"))));
@@ -109,15 +106,15 @@
   function shareRow() {
     const url = location.origin + "/";
     const canShare = typeof navigator.share === "function";
-    const label = Account.needsIOSHint() ? "\u{1F4F2} Share · Add to Home Screen" : "\u{1F4F2} Share";
-    const b = h("button", { type: "button", class: "acct-green", onclick: async () => {
+    const label = Account.needsIOSHint() ? "Share · Add to Home Screen" : "Share";
+    const b = h("button", { type: "button", class: "acct-primary", onclick: async () => {
       try {
         if (canShare) await navigator.share({ title: "WA mini-games", text: "Two-player games over WhatsApp. No logins.", url: url });
-        else { await navigator.clipboard.writeText(url); b.textContent = "\u2705 Link copied"; setTimeout(() => { b.textContent = label; }, 1800); }
+        else { await navigator.clipboard.writeText(url); b.textContent = "Link copied"; setTimeout(() => { b.textContent = label; }, 1800); }
       } catch (e) { /* the person closed the share sheet */ }
     } }, label);
     const hint = canShare
-      ? (Account.needsIOSHint() ? "Opens the share sheet. Choose “Add to Home Screen”." : "Send the site to a friend, or pick “Add to Home Screen”.")
+      ? "Install it: tap the Share button, then “Add to Home Screen”."
       : "Copies the link so you can send it or bookmark it.";
     return h("div", { class: "acct-install acct-share" }, b, h("span", { class: "acct-hint" }, hint));
   }
@@ -126,11 +123,8 @@
     if (Account.standalone()) return null;
     if (Account.canInstall()) {
       return h("div", { class: "acct-install" },
-        h("button", { type: "button", class: "acct-amber", onclick: () => Account.install() }, "\u{1F4E5} Install the app"),
+        h("button", { type: "button", class: "acct-amber", onclick: () => Account.install() }, "Install the app"),
         h("span", { class: "acct-hint" }, "Add it to your home screen. It opens full screen, like an app."));
-    }
-    if (Account.needsIOSHint()) {
-      return h("p", { class: "acct-hint acct-install" }, "Install it: tap the Share button, then “Add to Home Screen”.");
     }
     return null;
   }

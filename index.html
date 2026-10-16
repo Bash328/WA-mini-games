@@ -56,13 +56,11 @@
       radial-gradient(120% 80% at 50% 110%, color-mix(in srgb, var(--a3) 14%, transparent), transparent 60%),
       var(--panel);
   }
-  .acct-box::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(90deg, var(--a1), var(--a2), var(--a3), var(--a4)); }
   .acct-box p { margin: 0; }
   .acct-head { font-size: 20px; font-weight: 700; letter-spacing: -.2px; }
   .acct-note, .acct-hint { color: var(--muted); font-size: 13px; line-height: 1.45; }
-  .acct-who { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
-  .acct-who b { display: block; font-size: 22px; color: var(--fg); line-height: 1.15; }
-  .acct-avatar { flex: none; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); box-shadow: 0 0 0 3px color-mix(in srgb, var(--panel) 70%, transparent), 0 6px 16px rgba(0,0,0,.25); }
+  .acct-who { font-size: 13px; color: var(--muted); }
+  .acct-who b { display: block; font-size: 22px; color: var(--fg); line-height: 1.2; }
   .acct-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
   .acct-box input[type="text"] { flex: 1 1 160px; min-width: 0; background: color-mix(in srgb, var(--bg-2) 70%, #fff 8%); color: var(--fg); border: 2px solid var(--border-hi); border-radius: 12px; padding: 0 14px; min-height: 46px; font: inherit; font-size: 16px; outline: none; transition: border-color .15s, box-shadow .15s; }
   .acct-box input[type="text"]:focus { border-color: var(--a2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a2) 25%, transparent); }
@@ -71,7 +69,8 @@
   .acct-box button:active { transform: translateY(1px) scale(.98); }
   .acct-box button:disabled { opacity: .5; cursor: default; }
   /* the main actions each get their own colour */
-  .acct-box .acct-primary { background: linear-gradient(135deg, var(--a2), var(--a1)); color: #2a1406; border-color: transparent; box-shadow: 0 4px 14px color-mix(in srgb, var(--a1) 35%, transparent); }
+  .acct-box .acct-primary { background: transparent; border: 1px solid var(--accent); color: var(--accent); box-shadow: none; }
+  .acct-box .acct-primary:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent); }
   .acct-box .acct-teal { background: linear-gradient(135deg, #2fc7a0, #1fa3c9); color: #04231c; border-color: transparent; box-shadow: 0 4px 14px rgba(47,199,160,.3); }
   .acct-box .acct-green { background: #25d366; color: #06280f; border-color: transparent; box-shadow: 0 4px 14px rgba(37,211,102,.3); }
   .acct-box .acct-amber { background: linear-gradient(135deg, #f5b800, #ff9f43); color: #2a1406; border-color: transparent; box-shadow: 0 4px 14px rgba(245,184,0,.3); }
@@ -84,7 +83,7 @@
   .acct-msg.ok { color: var(--forest); font-weight: 600; }
   .acct-msg.bad { color: var(--coral); font-weight: 600; }
   .acct-install { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--a3) 10%, transparent); border: 1px dashed color-mix(in srgb, var(--a3) 45%, var(--border)); }
-  .acct-share { background: color-mix(in srgb, #25d366 10%, transparent); border-color: color-mix(in srgb, #25d366 50%, var(--border)); }
+  .acct-share { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   /* Phones: two columns so more games fit on screen */
   @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
