@@ -72,8 +72,8 @@ LIVE_ENABLED = "1"
 # key pair, put the public half here and the private half in a secret:
 #   node worker/vapid-keys.mjs
 #   npx wrangler secret put VAPID_PRIVATE_KEY
-VAPID_PUBLIC_KEY = ""
-VAPID_SUBJECT = "mailto:CHANGE-ME@example.com"
+VAPID_PUBLIC_KEY = "BBePVwqqxoS7r0xnMd0oPfso9Aer8vyWKL1Z0nKRvHdd3n0jDqJ4sWkqy0XL3eyMun5U6lKx2pAXHwpDyjDiGIU"
+VAPID_SUBJECT = "https://wa-minigames.online"
 
 # At most 20 new rooms per minute per IP.
 [[ratelimits]]
