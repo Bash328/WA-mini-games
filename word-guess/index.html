@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>word guess · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Word Guess — find the hidden five-letter word in six tries. A new word every day, or play random words as often as you like.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .wg-grid { display: flex; flex-direction: column; gap: 6px; width: min(310px, 86%); margin: 10px auto; }
+  .wg-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .wg-tile { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-hi); border-radius: 6px; font-size: clamp(1.5rem, 8vw, 2.1rem); font-weight: 700; color: var(--fg); background: transparent; text-transform: uppercase; user-select: none; }
+  .wg-tile.filled { border-color: var(--muted); }
+  .wg-tile.c { background: #3f9d63; border-color: #3f9d63; color: #fff; }
+  .wg-tile.p { background: #d1a21a; border-color: #d1a21a; color: #fff; }
+  .wg-tile.a { background: #5b5750; border-color: #5b5750; color: #fff; }
+  .wg-row.reveal .wg-tile { animation: wg-flip .45s ease both; }
+  .wg-row.reveal .wg-tile:nth-child(2) { animation-delay: .05s; } .wg-row.reveal .wg-tile:nth-child(3) { animation-delay: .1s; }
+  .wg-row.reveal .wg-tile:nth-child(4) { animation-delay: .15s; } .wg-row.reveal .wg-tile:nth-child(5) { animation-delay: .2s; }
+  .wg-row.shake { animation: wg-shake .35s; }
+  @keyframes wg-flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+  @keyframes wg-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+  @media (prefers-reduced-motion: reduce) { .wg-row.reveal .wg-tile, .wg-row.shake { animation: none; } }
+
+  .wg-kb { display: flex; flex-direction: column; gap: 6px; width: min(480px, 100%); margin: 12px auto 0; }
+  .wg-kbrow { display: flex; justify-content: center; gap: 5px; }
+  /* #kb-prefixed to beat the shared "body[class*='g-'] .panel button" rule */
+  #kb .wg-key { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 0; border-radius: 6px; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; background: var(--bg-2); border: 1px solid var(--border-hi); color: var(--fg); }
+  #kb .wg-key.wide { flex: 1.6 1 0; font-size: 0.75rem; }
+  #kb .wg-key.c { background: #3f9d63; border-color: #3f9d63; color: #fff; }
+  #kb .wg-key.p { background: #d1a21a; border-color: #d1a21a; color: #fff; }
+  #kb .wg-key.a { background: #5b5750; border-color: #5b5750; color: #fff; opacity: .75; }
+  .wg-share { display: block; margin: 12px auto 0; min-width: 180px; font-weight: 600; }
+  .wg-share[hidden] { display: none; }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-word-guess">
+<main class="wrap">
+  <div class="topbar">
+    <h1>word guess</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Six guesses.</p>
+      <p class="status" id="stats"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="word-guess" data-man-title="WORD-GUESS(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Word of the day or random">
+        <button class="chip" data-diff="daily" role="tab" type="button">Daily</button>
+        <button class="chip" data-diff="random" role="tab" type="button">Random</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new word</button>
+    </div>
+    <div class="wg-grid" id="grid" aria-label="Guesses"></div>
+    <button class="btn primary wg-share" id="share-btn" type="button" hidden>Share result</button>
+    <div class="wg-kb" id="kb"></div>
+  </div>
+</main>
+
+<template id="man-word-guess">
+  <h2>Name</h2>
+  <p>word guess — find the hidden five-letter word in six tries.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Type any real five-letter word and press <code>Enter</code>. After each guess every tile changes colour:</li>
+    <li><strong style="color:#3f9d63">Green</strong>: the letter is in the word and in the right place.</li>
+    <li><strong style="color:#d1a21a">Yellow</strong>: the letter is in the word, but somewhere else.</li>
+    <li><strong>Grey</strong>: the letter isn't in the word (or you've used it more times than it appears).</li>
+    <li>Use the colours to narrow it down. You have <strong>six guesses</strong>.</li>
+  </ul>
+
+  <h2>Daily and random</h2>
+  <ul>
+    <li><strong>Daily</strong> is the same word for everyone today, one go, with your streak kept on this device. <strong>Random</strong> (or <code>↻ new word</code>) gives an endless supply.</li>
+    <li>When you finish, <code>Share result</code> copies a coloured grid with no spoilers.</li>
+    <li>Keyboard: type letters, <span class="k">Enter</span> to submit, <span class="k">Backspace</span> to delete.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Open with a word rich in common letters (like <em>stare</em> or <em>crane</em>), then use the greens and yellows to eliminate. Try a word that tests several new letters rather than repeating ones you know are wrong.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="words.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

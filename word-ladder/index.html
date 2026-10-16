@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>word ladder · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Word Ladder — turn one word into another by changing a single letter at a time. Three difficulties and a daily puzzle.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .wl-list { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 10px auto; }
+  .wl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: min(260px, 74%); }
+  .wl-tile { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-hi); border-radius: 6px; font-size: clamp(1.4rem, 7vw, 1.9rem); font-weight: 700; color: var(--fg); user-select: none; }
+  .wl-row.start .wl-tile, .wl-row.target .wl-tile { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .wl-row.target .wl-tile { background: transparent; color: var(--fg); border-style: dashed; }
+  .wl-row.step .wl-tile.chg, .wl-row.win .wl-tile.chg { background: color-mix(in srgb, var(--accent) 30%, transparent); border-color: var(--accent); }
+  .wl-row.win .wl-tile { background: #3f9d63; border-color: #3f9d63; color: #fff; }
+  .wl-row.input .wl-tile { border-color: var(--muted); }
+  .wl-row.shake { animation: wl-shake .35s; }
+  @keyframes wl-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+  @media (prefers-reduced-motion: reduce) { .wl-row.shake { animation: none; } }
+  .wl-gap { color: var(--dim); line-height: 1; }
+  .wl-kb { display: flex; flex-direction: column; gap: 6px; width: min(480px, 100%); margin: 12px auto 0; }
+  .wl-kb[hidden] { display: none; }
+  .wl-kbrow { display: flex; justify-content: center; gap: 5px; }
+  /* #kb-prefixed to beat the shared "body[class*='g-'] .panel button" rule */
+  #kb .wl-key { flex: 1 1 0; min-width: 0; min-height: 50px; padding: 0; border-radius: 6px; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; background: var(--bg-2); border: 1px solid var(--border-hi); color: var(--fg); }
+  #kb .wl-key.wide { flex: 1.6 1 0; font-size: 0.75rem; }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-word-ladder">
+<main class="wrap">
+  <div class="topbar">
+    <h1>word ladder</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <p class="status" id="steps"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="word-ladder" data-man-title="WORD-LADDER(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="wl-list" id="ladder" aria-label="Your ladder"></div>
+    <div class="wl-kb" id="kb"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="hint-btn" type="button"><span class="glyph">💡</span> hint</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-word-ladder">
+  <h2>Name</h2>
+  <p>word ladder — climb from one word to another, one letter at a time.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>You start with the word at the top and must reach the dashed word at the bottom.</li>
+    <li>Each step changes <strong>exactly one letter</strong> and must make a <strong>real word</strong>: <em>COLD → CORD → CARD → WARD → WARM</em>. You can't use a word twice.</li>
+    <li>You get a "best possible" number: the fewest steps there is. Reach the target in that many for a <strong>Perfect</strong>.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Type with the keyboard or the on-screen keys and press <code>Enter</code>. The letter that changed is highlighted in each step.</li>
+    <li><code>Undo</code> removes your last step. <code>💡 hint</code> fills in the next word of a shortest route (and doesn't count for your best). <code>↻ reset</code> starts the ladder again; <code>↻ new</code> makes a new puzzle.</li>
+  </ul>
+
+  <h2>Difficulty</h2>
+  <ul>
+    <li><strong>Easy</strong>: 3 or 4 steps. <strong>Medium</strong>: 5 or 6. <strong>Hard</strong>: 7 or more. Every puzzle can be solved.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Work from both ends: look at the target and think of words next to it, then try to meet in the middle. Changing a vowel is often the way to reach a new neighbourhood of words.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="words.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

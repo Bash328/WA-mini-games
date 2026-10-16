@@ -27,10 +27,15 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [gomoku](gomoku/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [pig](pig/) | **2 players · WhatsApp** (default), vs computer at 3 levels, same device |
+| [ultimate-tic-tac-toe](ultimate-tic-tac-toe/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [hex](hex/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [blokus-duo](blokus-duo/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+
+**Solo puzzles added:** [sudoku](sudoku/) (9×9), [nonogram](nonogram/) (5×5, 8×8, 10×10, every puzzle solvable by line logic), [word-guess](word-guess/) (five-letter words, daily or random, shareable result) and [word-ladder](word-ladder/) (change one letter at a time).
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
-## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku)
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo)
 
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 
@@ -169,6 +174,15 @@ These play by the same standard rules as the real games — no reinterpretation 
 **Pig**
 - Roll as often as you like adding to a turn total; a 1 loses the turn, "hold" banks it. First to 100. A whole turn is one link. The roller's browser makes the dice, so over WhatsApp it runs on trust (like Minesweeper's mines); for the same reason Pig has no live mode.
 
+**Ultimate Tic-Tac-Toe**
+- Nine small boards in a 3×3. The cell you take picks the small board your opponent must play in (anywhere open if that board is already decided). Win three small boards in a line to win. Wire board is 91 characters: 81 cells, 9 board results, the forced board.
+
+**Hex**
+- 11×11 hexagons. Red connects top to bottom, Blue left to right; there are no draws. The computer scores positions by each side's shortest-path distance (a 0-1 breadth-first search), and hard also weighs the opponent's best reply.
+
+**Blokus Duo**
+- 14×14, 21 pieces each, start on the ringed squares, later pieces touch your own only at corners. A player with no move is skipped (the link says so); fewest squares left wins (−15 for placing all, −20 if the last was the single square). **The rules are one file, `blokus-duo/rules.js`**, loaded by the page and imported by the Worker, so the browser and server cannot disagree. Wire board is 238 characters: 196 cells and two 21-bit used-piece masks.
+
 **Mancala (Kalah)**
 - Standard Kalah: sow counter-clockwise skipping the opponent's store, land in your own store for another turn, capture an opposite pit by landing your last seed in your own empty one.
 - An empty row ends the game — the other player sweeps their remaining seeds into their store first.
@@ -218,7 +232,7 @@ With `VAPID_PUBLIC_KEY` empty the site simply hides every notification control. 
 | `node taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
 | `node worker/live-protocol.test.mjs` | the live-room rules, including taunt validation |
 | `node worker/rules/wave1.test.mjs` | thousands of random games per live game, Dots and Boxes at every size |
-| `node worker/rules/gomoku.test.mjs` | Gomoku rules through the real room protocol |
+| `node worker/rules/gomoku.test.mjs`, `ultimate-tic-tac-toe.test.mjs`, `hex.test.mjs`, `blokus-duo.test.mjs` | each game's rules through the real room protocol (thousands of random games) |
 | `node worker/webpush.test.mjs` | push encryption against the RFC 8291 worked example, VAPID signature, allowed endpoints |
 | `node worker/users.test.mjs` | username and poke rules |
 | `node worker/live.integration.mjs`, `node worker/users.integration.mjs` | against a running `wrangler dev` (the second uses a fake push service and decrypts what it receives) |
@@ -329,7 +343,8 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── hangman/            │
 ├── battleship/         │
 ├── mastermind/         ┘
-├── gomoku/ pig/        ← WhatsApp + computer + local (Gomoku also live)
+├── gomoku/ pig/ ultimate-tic-tac-toe/ hex/ blokus-duo/   ← WhatsApp + computer + local (all but Pig also live)
+├── sudoku/ nonogram/ word-guess/ word-ladder/            ← solo puzzles (word lists come from MIT / Unlicense sources)
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 

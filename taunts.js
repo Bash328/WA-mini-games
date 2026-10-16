@@ -1348,6 +1348,60 @@ window.TAUNT_LINES = {
     ],
   },
 
+  hex: {
+    loss: [
+      "You were one hexagon short. Always one.",
+      "They built a bridge. You built a fence.",
+      "Hex has no draws. You got the other option.",
+      "Blue found a path you didn't think existed.",
+      "Red found a path you didn't think existed.",
+      "Connected, just not by you.",
+    ],
+    win: [
+      "A chain across the whole board. Smooth.",
+      "Two bridges and they couldn't stop both.",
+      "You read the board like a map.",
+      "Edge to edge. Nobody saw it coming.",
+      "That's a very long way to go in a straight line.",
+    ],
+  },
+
+  "ultimate-tic-tac-toe": {
+    loss: [
+      "You sent them exactly where they wanted to go.",
+      "Nine boards, and you lost the one that mattered.",
+      "That's the problem with winning small boards.",
+      "You won the battles. They won the board.",
+      "Tic-tac-toe, but with more ways to be wrong.",
+      "You gave them a free move. They noticed.",
+    ],
+    win: [
+      "You played the board you sent them to. Clever.",
+      "Three boards in a line. Beautiful.",
+      "You thought three moves ahead, on nine boards.",
+      "The big board is yours.",
+      "Nobody has ever sent someone to a better square.",
+    ],
+  },
+
+  "blokus-duo": {
+    loss: [
+      "You ran out of corners. They didn't.",
+      "Too many squares left over. That's the problem.",
+      "You boxed yourself in. Impressive, really.",
+      "The big pieces were meant to go first.",
+      "You were left with the awkward ones.",
+      "They took your last corner. Rude, but fair.",
+    ],
+    win: [
+      "Every piece found a home.",
+      "You cut off their corners and kept yours.",
+      "Fewer squares left. Fewer problems.",
+      "You fit it all in. Tidy.",
+      "A well-packed board.",
+    ],
+  },
+
   // ---- vs the computer ---------------------------------------------
   // Used INSTEAD of the generic pool when the page's mode menu is set to a
   // computer opponent, so every line may speak about "the computer".

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>nonogram · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Nonogram — fill in the grid using the number clues to reveal a hidden picture. Three sizes, a daily puzzle, every puzzle solvable by logic.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .ng { display: grid; width: min(460px, 100%); margin: 8px auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .ng-corner { min-width: 28px; }
+  .ng-clue { display: flex; font-size: clamp(0.65rem, 3vw, 0.85rem); font-weight: 600; color: var(--fg); }
+  .ng-clue span { padding: 1px 2px; line-height: 1.1; }
+  .ng-col { flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 3px; }
+  .ng-row { flex-direction: row; align-items: center; justify-content: flex-end; padding-right: 6px; gap: 1px; }
+  .ng-clue.done { color: var(--dim); opacity: .5; }
+  /* a heavier line every five cells, to count by */
+  .ng-col.sep, .ng-cell.vsep { border-right: 2px solid var(--border-hi); }
+  .ng-row.sep, .ng-cell.hsep { border-bottom: 2px solid var(--border-hi); }
+  .ng-cell { aspect-ratio: 1; background: var(--panel-2); border: 1px solid var(--border); cursor: pointer; position: relative; min-width: 0; }
+  .ng-cell.vsep { border-right: 2px solid var(--border-hi); }
+  .ng-cell.hsep { border-bottom: 2px solid var(--border-hi); }
+  .ng-cell.on { background: var(--fg); border-color: var(--fg); }
+  .ng-cell.mk::before, .ng-cell.mk::after { content: ""; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; background: var(--dim); }
+  .ng-cell.mk::before { transform: rotate(45deg); }
+  .ng-cell.mk::after { transform: rotate(-45deg); }
+  .ng-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(460px, 100%); margin: 10px auto 0; }
+  .ng-tools .btn { min-height: 48px; font-weight: 600; }
+  .ng-tools .btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-nonogram">
+<main class="wrap">
+  <div class="topbar">
+    <h1>nonogram</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Fill the cells to match the numbers.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="nonogram" data-man-title="NONOGRAM(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 5×5</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 8×8</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 10×10</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="ng" id="board" aria-label="Nonogram grid"></div>
+    <div class="ng-tools">
+      <button class="btn active" id="fill-btn" type="button" aria-pressed="true">■ Fill</button>
+      <button class="btn" id="mark-btn" type="button" aria-pressed="false">✕ Mark empty</button>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-nonogram">
+  <h2>Name</h2>
+  <p>nonogram — colour in cells using number clues to reveal a hidden picture.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The numbers beside each <strong>row</strong> and above each <strong>column</strong> say how many filled cells in a row there are, in order. <strong>3 1</strong> means a run of three filled cells, a gap of at least one, then a single filled cell.</li>
+    <li>Fill cells so every row and column matches its clues. A clue turns grey and crossed out once its line matches.</li>
+    <li>Every puzzle can be solved by logic alone, with no guessing, and has exactly one answer.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap</strong> a cell to fill it, tap again to clear it. <strong>Drag</strong> across cells to fill a whole run.</li>
+    <li>Switch to <code>✕ Mark empty</code> to note cells you know are blank. Marks don't count toward the answer. Keyboard: <span class="k">X</span> swaps the tool.</li>
+    <li><code>Undo</code> takes back your last stroke (<span class="k">Ctrl</span>/<span class="k">⌘</span>+<span class="k">Z</span>). <code>↻ reset</code> clears the grid; <code>↻ new</code> makes a fresh puzzle.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with the biggest clues: a clue of 8 in a 10-cell line must fill the middle six cells whatever happens. Then work out from the edges, marking cells you know are empty.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>
