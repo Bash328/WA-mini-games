@@ -91,21 +91,15 @@
     if (C.rankOf(card) === "8") return "An 8 only goes on " + SYM[t.cons.suit] + " " + SUIT_NAME[t.cons.suit] + " or on another 8 right now.";
     return "It doesn't match. Play " + consText(t.cons) + ".";
   }
-  function showHint(card) {
+  function showHint(card, tried) {
     hintEl.classList.remove("idle");
     hintEl.innerHTML = "";
     const r = C.isJoker(card) ? "X" : C.rankOf(card);
     const title = el("b", "", cardName(card));
     const body = el("span", "", SPECIAL[r] || "No special effect. Match the suit or the number.");
     hintEl.append(title, body);
-    const why = whyNot(card);
-    const t = M.table;
+    const why = tried && whyNot(card);
     if (why) hintEl.append(el("span", "why", why));
-    else if (M.phase === "playing" && t.turn === t.you) {
-      hintEl.append(el("span", "why", t.seats[t.you].hand.length === 2 && !lastArmed
-        ? "You can play this. You have 2 cards, so tap Last card! first or you'll pick up 2. Tap the card again to play."
-        : "You can play this. Tap the card again, or press Play."));
-    }
   }
   function idleHint() {
     hintEl.classList.add("idle");
@@ -227,10 +221,9 @@
     const youOut = t.you === null || t.seats[t.you].status === "out";
     if (youOut) { handEl.append(el("span", "note", "")); return; }
     const hand = sortHand(t.seats[t.you].hand || []);
-    const mine = t.turn === t.you && M.phase === "playing";
     if (selected && !hand.includes(selected)) selected = null;
     hand.forEach((c) => {
-      const b = cardEl(c, { button: true, cls: (mine ? (t.options.plays.includes(c) ? "ok" : "no") : "") + (c === selected ? " sel" : "") });
+      const b = cardEl(c, { button: true, cls: c === selected ? "sel" : "" });
       b.addEventListener("click", () => onCard(c));
       handEl.append(b);
     });
@@ -243,7 +236,7 @@
     drawBtn.disabled = !(mine && o.draw);
     drawBtn.textContent = t.pending > 0 ? "Pick up " + t.pending + " cards" : "Pick up a card";
     passBtn.hidden = !(mine && o.pass);
-    playBtn.disabled = !(mine && selected && o.plays.includes(selected));
+    playBtn.disabled = !(mine && selected);
     const two = t.you !== null && t.seats[t.you].hand && t.seats[t.you].hand.length === 2;
     lastBtn.hidden = !(two && mine);
     lastBtn.classList.toggle("on", lastArmed);
@@ -273,7 +266,7 @@
   function playSelected() {
     const t = M && M.table;
     if (!t || !selected) return;
-    if (whyNot(selected)) { showHint(selected); return; }
+    if (whyNot(selected)) { showHint(selected, true); return; }
     if (C.rankOf(selected) === "8") return askSuit(selected);
     send({ t: "play", card: selected, last: lastArmed });
   }
