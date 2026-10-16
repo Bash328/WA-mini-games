@@ -17,9 +17,11 @@
 import { ogFor, ogForLive } from "./og-text.mjs";
 import { liveGame, LIVE_SLUGS } from "./live-games.mjs";
 import { LiveRoom } from "./live-room.mjs";
+import { UserRegistry } from "./user-registry.mjs";
+import { pushConfigured } from "./webpush.mjs";
 
 // Cloudflare finds the Durable Object class by its export from the main module.
-export { LiveRoom };
+export { LiveRoom, UserRegistry };
 
 /* ---------- live rooms (/api/live/*) ----------
    status  GET  -> { enabled, games }
@@ -142,6 +144,58 @@ async function handleLive(request, env, url) {
   return json({ error: "not-found" }, 404);
 }
 
+/* ---------- usernames and pokes (/api/user/*) ----------
+   status   GET   -> { push, vapid }       is Web Push set up, and its public key
+   check    POST  { name }                  is a name free?
+   claim    POST  { name }                  -> { name, token }; the token IS the name
+   ping     POST  { name, token }           -> the player's own settings
+   push     POST  { name, token, subscription | null }
+   settings POST  { name, token, muted?, block?, unblock? }
+   release  POST  { name, token }           give the name back
+   poke     POST  { name, token, to, game, room }   ask a friend into a live room
+
+   Everything is same-origin only (the same rule as live rooms) and the
+   registry (user-registry.mjs) checks the token on anything that acts for a
+   player. Bodies are tiny, so anything bigger is refused unread. */
+const USER_ACTIONS = new Set(["check", "claim", "ping", "push", "settings", "release", "poke"]);
+
+async function handleUser(request, env, url) {
+  const sub = url.pathname.slice("/api/user/".length);
+  if (sub === "status" && request.method === "GET") {
+    return json({ push: pushConfigured(env), vapid: pushConfigured(env) ? env.VAPID_PUBLIC_KEY : null });
+  }
+  if (!USER_ACTIONS.has(sub)) return json({ error: "not-found" }, 404);
+  if (request.method !== "POST") return json({ error: "method" }, 405);
+
+  const origin = request.headers.get("Origin");
+  if (origin !== url.origin && !(origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1")) {
+    return json({ error: "forbidden" }, 403);
+  }
+  const text = await request.text();
+  if (text.length > 2048) return json({ error: "too-big" }, 413);
+  let body;
+  try { body = JSON.parse(text); } catch (e) { return json({ error: "bad-request" }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "bad-request" }, 400);
+
+  if ((sub === "claim" || sub === "check") && env.CLAIM_LIMITER) {
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    const { success } = await env.CLAIM_LIMITER.limit({ key: ip });
+    if (!success) return json({ error: "rate-limit" }, 429);
+  }
+
+  if (sub === "poke") {
+    // The room has to be a real, open one for a game that can be played live,
+    // so a poke can't be used to push an arbitrary link at someone.
+    if (!liveGame(body.game) || !CODE_RE.test(String(body.room || ""))) return json({ error: "bad-room" }, 400);
+    const room = env.ROOMS.get(env.ROOMS.idFromName(body.room));
+    if ((await room.fetch("https://room/exists")).status !== 200) return json({ error: "bad-room" }, 400);
+  }
+
+  const reg = env.USERS.get(env.USERS.idFromName("registry"));
+  const res = await reg.fetch("https://users/" + sub, { method: "POST", body: JSON.stringify(body) });
+  return new Response(res.body, { status: res.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+}
+
 class MetaRewriter {
   constructor(og) { this.og = og; }
   element(el) {
@@ -177,6 +231,7 @@ export default {
     }
 
     if (u.pathname.startsWith("/api/live/")) return handleLive(request, env, u);
+    if (u.pathname.startsWith("/api/user/")) return handleUser(request, env, u);
 
     const res = await env.ASSETS.fetch(request);
 
