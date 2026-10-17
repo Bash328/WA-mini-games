@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>onitama · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Onitama — a martial-arts duel on a 5×5 board where the moves come from cards you pass back and forth. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Onitama · two players over WhatsApp">
+<meta property="og:description" content="Play a move card, capture the master or reach the temple. Send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .on-wrap { width: min(440px, 100%); margin: 8px auto 0; }
+  .on-hand { display: flex; justify-content: center; align-items: stretch; gap: 8px; min-height: 104px; margin: 0 0 8px; }
+  .on-hand.bot { margin: 8px 0 0; }
+  .on-sidebox { width: 21%; min-width: 66px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; color: var(--muted); font-size: var(--fs-sm); }
+  /* the five cards: name over a 5x5 picture of where the piece can go */
+  body.g-onitama .panel .on-card {
+    flex: 1 1 0; max-width: 128px; min-height: 0; padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: var(--panel-2); border: 1px solid var(--border-hi); border-radius: var(--r-md); color: var(--fg); cursor: default;
+  }
+  body.g-onitama .panel .on-card.mine { cursor: pointer; }
+  body.g-onitama .panel .on-card.mine:hover { background: var(--panel); }
+  body.g-onitama .panel .on-card.sel { outline: 2px solid var(--pc, #ff6b6b); outline-offset: 1px; }
+  body.g-onitama .panel .on-card.cand { outline: 2px dashed var(--pc, #ff6b6b); outline-offset: 1px; }
+  body.g-onitama .panel .on-card.side { flex: 0 0 auto; width: 100%; opacity: .92; }
+  .on-card .nm { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .on-mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; width: 70px; aspect-ratio: 1; }
+  .on-mini i { background: color-mix(in srgb, var(--fg) 9%, transparent); border-radius: 1px; }
+  .on-mini i.c { background: var(--fg); opacity: .7; }
+  .on-mini i.m { background: var(--pc, #ff6b6b); }
+  .on-board { display: grid; grid-template-columns: repeat(5, 1fr); aspect-ratio: 1; gap: 2px; padding: 3px; background: #5a4a34; border-radius: var(--r-md); }
+  #board .on-cell { position: relative; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 4px; background: #e6d3a8; cursor: default; }
+  #board .on-cell:nth-child(even) { background: #d9c394; }
+  #board .on-cell.mine, #board .on-cell.dest { cursor: pointer; }
+  #board .on-cell.temple1::before, #board .on-cell.temple2::before { content: ""; position: absolute; inset: 14%; border: 2px dashed; border-radius: 50%; opacity: .55; }
+  #board .on-cell.temple1::before { border-color: #d9534f; }
+  #board .on-cell.temple2::before { border-color: #3f7fd6; }
+  #board .on-cell.last { box-shadow: inset 0 0 0 3px rgba(40,30,10,.4); }
+  #board .on-cell.from { background: #c9b072; }
+  #board .on-cell.sel { box-shadow: inset 0 0 0 3px #1d1a16; }
+  #board .on-cell.dest::after { content: ""; position: absolute; inset: 38%; border-radius: 50%; background: rgba(29,26,22,.55); }
+  #board .on-cell.dest.cap::after { inset: 12%; background: transparent; border: 3px solid rgba(29,26,22,.7); }
+  #board .on-cell:disabled { opacity: 1; }
+  .on-pc { position: absolute; inset: 15%; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.45); pointer-events: none; z-index: 1; }
+  .on-pc.p1 { background: radial-gradient(circle at 35% 30%, #ff8a85, #c0392b 75%); }
+  .on-pc.p2 { background: radial-gradient(circle at 35% 30%, #86b4f2, #2f63b5 75%); }
+  .on-pc.master { inset: 8%; border: 3px solid rgba(255,255,255,.85); }
+  .on-pc svg { width: 56%; fill: #fff; }
+  .on-hint { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-onitama">
+<main class="wrap">
+  <div class="topbar">
+    <h1>onitama</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="onitama" data-man-title="ONITAMA(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Blue" value="2">Play Blue</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="on-wrap">
+      <div class="on-hand top" id="hand-top"></div>
+      <div class="on-board" id="board" role="grid" aria-label="Onitama board, 5 by 5"></div>
+      <div class="on-hand bot" id="hand-bot"></div>
+    </div>
+    <p class="on-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-onitama">
+  <h2>Name</h2>
+  <p>onitama — a duel where the cards decide how your pieces move.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each side has <strong>four pawns and one master</strong> (the piece with the crown). Red starts at the bottom and goes first.</li>
+    <li>Five move cards are in play: <strong>two in each hand</strong> and one beside the board. A card is a picture of where a piece may step; it is always shown from the point of view of whoever holds it.</li>
+    <li>On your turn, play one of your two cards: move any piece by one of that card's steps, onto an empty square or onto an enemy piece to capture it. You may not land on your own piece.</li>
+    <li>The card you used goes beside the board, and you take the card that was waiting there. Your opponent can use the card you just played on their next move after that, so every move also hands them something.</li>
+    <li><strong>Win</strong> by capturing the enemy master, or by moving your own master onto the enemy temple (the dashed circle in the middle of their back row).</li>
+    <li>If you have no legal move at all, you still have to give up one card: tap the card you want to pass.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap a piece, then tap a dotted square (a ring means it captures). To pick the card first, tap a card, then a piece.</li>
+    <li>If two of your cards both reach the square you tapped, tap the card you want to spend.</li>
+    <li>Use the mode menu to play the computer or share one device. <code>↶ undo</code> is there in those modes.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Red</strong>, goes first and deals the five cards; your friend is <strong>Blue</strong>.</li>
+    <li>After each move, tap <code>Send on WhatsApp</code>. Your friend opens the link, sees your last move marked, moves and sends one back. <code>Copy link</code> works for any other messenger.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Look at what you are handing over, not just what you are taking: the card you play goes beside the board and your opponent will pick it up. Keep your master protected by pawns that can answer a capture, and watch for a card that lets the enemy master jump to your temple.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You play in real time, with no link-passing. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="../account.js"></script>
+<script defer src="../live-share.js"></script>
+<script defer src="rules.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

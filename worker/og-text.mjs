@@ -36,6 +36,7 @@ const GAMES = {
   "ultimate-tic-tac-toe": { title: "ultimate tic-tac-toe", labels: { 1: "X", 2: "O" } },
   "blokus-duo":         { title: "blokus duo",         labels: { 1: "Orange", 2: "Violet" } },
   "hex":                { title: "hex",                labels: { 1: "Red", 2: "Blue" } },
+  "onitama":            { title: "onitama",            labels: { 1: "Red", 2: "Blue" } },
   "crazy-8":            { title: "crazy 8",            labels: { 1: "Player 1", 2: "Player 2" } },
   "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
   "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },

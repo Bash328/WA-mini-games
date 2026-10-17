@@ -390,7 +390,7 @@
     function paint() {
       const v = view;
       const s = v.state;
-      opts.onState(s, canMove());
+      opts.onState(s, canMove(), { me: v.viewer });
       ui.hidden = false;
       ui.replaceChildren();
       resignOff();
