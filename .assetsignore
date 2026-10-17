@@ -10,6 +10,7 @@
 .git/
 .wrangler/
 node_modules/
+.archify/
 
 wrangler.toml
 .assetsignore
