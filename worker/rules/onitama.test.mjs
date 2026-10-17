@@ -67,9 +67,9 @@ check("both sides win some random games", p1 > 3 && p2 > 3, p1 + "/" + p2);
   const room = newRoom("onitama", "ABC234", 1000);
   join(room, null, mint, 1000); join(room, null, mint, 1000);
   const S = R.parse(R.deal(Math.random)), m = R.gen(S, 1)[0], A = R.play(S, 1, m);
-  const bad = { ...A, s: (A.s + 1) % 16 };
+  const bad = { ...A, b: A.b.slice() }; bad.b[0] = 0; bad.b[11] = 3;        // Red's move that also teleports a Blue pawn
   const res = applyMove(room, 1, { t: "move", n: 0, s: { game: "onitama", version: 1, id: room.id, turn: 2, board: R.str(bad), status: "in_progress", winner: null, moveCount: 1, last: m.to } }, 2000);
-  check("a tampered card order is refused", res && res.ok === false, JSON.stringify(res));
+  check("a move that also changes the enemy pieces is refused", res && res.ok === false, JSON.stringify(res));
 }
 
 // the computer: always a legal move, hard beats easy
