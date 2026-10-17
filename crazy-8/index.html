@@ -90,7 +90,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-log { text-align: center; margin: 8px 0; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border-hi); background: var(--bg-2); font-size: var(--fs-md); font-weight: 600; min-height: 42px; display: flex; align-items: center; justify-content: center; }
 
   /* the hint that appears when you tap a card */
-  .c8-hint { min-height: 5.6em; margin: 4px 0 8px; padding: 0 4px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
+  .c8-hint { min-height: 5.6em; margin: 8px 0 4px; padding: 0 4px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
   .c8-hint b { display: inline; color: var(--fg); margin-right: 4px; }
   .c8-hint .why { display: block; margin-top: 3px; }
   .c8-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 18px 2px 6px; min-height: 108px; }
@@ -212,17 +212,16 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
         <div class="c8-pile draw"><div id="c8-draw"></div><span id="c8-drawn">0 left</span></div>
         <div class="c8-pile"><div id="c8-top"></div><span>discard</span></div>
       </div>
+      <div class="c8-pips" id="c8-info"></div>
       <div class="c8-banner" id="c8-banner"></div>
       <div class="c8-log" id="c8-log"></div>
-      <div class="c8-hint idle" id="c8-hint">Tap a card to lift it. Special cards tell you what they do. Tap it again to play it.</div>
-      
       <div class="c8-hand" id="c8-hand" aria-label="Your hand"></div>
       <div class="c8-actions" id="c8-actions">
         <button class="btn primary" id="play-btn" type="button" disabled>Play</button>
         <button class="btn" id="draw-btn" type="button" disabled>Pick up a card</button>
         <button class="btn" id="pass-btn" type="button" hidden>Keep it and pass</button>
       </div>
-      <div class="c8-pips" id="c8-info"></div>
+      <div class="c8-hint idle" id="c8-hint">Tap a card to lift it. Special cards tell you what they do. Tap it again to play it.</div>
       <div class="c8-taunts" id="c8-taunts" hidden></div>
     </div>
     <details class="c8-guide" id="c8-guide">
@@ -254,7 +253,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
   <h2>Your turn: play a card, or pick up</h2>
   <ul>
-    <li>Play a card that matches the <strong>top card by suit or by number</strong> (a 5 of hearts goes on any heart, or on any 5). The chips under the buttons show what you must match.</li>
+    <li>Play a card that matches the <strong>top card by suit or by number</strong> (a 5 of hearts goes on any heart, or on any 5). The chips under the cards show what you must match.</li>
     <li>No card you can play, or you'd rather not? <strong>Pick up one card</strong> from the pile. If the card you picked up can be played you may play it straight away, or keep it and pass. You may pick up a card even when you do have something to play.</li>
     <li>The draw pile runs out? The played cards (except the top one) are shuffled back in.</li>
   </ul>
