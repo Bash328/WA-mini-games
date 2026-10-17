@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>yatzy · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Yatzy (Yahtzee) — roll five dice up to three times, keep the good ones and fill the scorecard. A daily game everyone plays with the same dice, or a random one.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .yz-dice { display: flex; justify-content: center; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
+  body.g-yatzy .panel .yz-die { position: relative; width: 56px; height: 56px; min-height: 0; min-width: 0; padding: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; border-radius: 12px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer; transition: transform .1s; }
+  body.g-yatzy .panel .yz-die:disabled { opacity: 1; cursor: default; }
+  body.g-yatzy .panel .yz-die.blank { background: color-mix(in srgb, var(--fg) 8%, transparent); border-style: dashed; box-shadow: none; }
+  body.g-yatzy .panel .yz-die.held { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-6px); }
+  .yz-die i { border-radius: 50%; margin: 8%; }
+  .yz-die i.on { background: #1d1a16; }
+  .yz-die .tag { position: absolute; left: 0; right: 0; bottom: -17px; text-align: center; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .yz-roll { display: flex; justify-content: center; margin: 22px 0 8px; }
+  .yz-roll .btn { min-width: 220px; min-height: 48px; }
+  .yz-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.6em; }
+  .yz-card { display: grid; gap: 4px; margin: 10px 0; }
+  .yz-sec { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 8px 0 2px; }
+  body.g-yatzy .panel .yz-row { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 38px; padding: 6px 12px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--border); color: var(--fg); font-size: var(--fs-md); cursor: default; text-align: left; }
+  body.g-yatzy .panel .yz-row.can { cursor: pointer; border-color: var(--border-hi); }
+  body.g-yatzy .panel .yz-row.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg-2)); }
+  body.g-yatzy .panel .yz-row.done { background: transparent; }
+  .yz-row .v { font-weight: 700; min-width: 2.5em; text-align: right; }
+  .yz-row .v.pot { font-weight: 400; color: var(--muted); }
+  .yz-row.can .v.pot { color: var(--accent); font-weight: 700; }
+  .yz-line { display: flex; justify-content: space-between; padding: 4px 12px; font-size: var(--fs-sm); color: var(--muted); }
+  .yz-line b { color: var(--fg); }
+  .yz-total { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--border-hi); font-size: var(--fs-lg); font-weight: 700; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-yatzy">
+<main class="wrap">
+  <div class="topbar">
+    <h1>yatzy</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Roll the dice.</p>
+      <p class="status">Score: <span id="score">0</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="yatzy" data-man-title="YATZY(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <button class="btn ghost tool-btn" id="daily-btn" type="button"><span class="glyph">☀</span> today's game</button>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new random game</button>
+    </div>
+    <div class="yz-dice" id="dice"></div>
+    <div class="yz-roll"><button class="btn primary" id="roll-btn" type="button">Roll the dice</button></div>
+    <div class="yz-hint" id="hint"></div>
+    <div class="yz-card" id="card"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> replay this game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-yatzy">
+  <h2>Name</h2>
+  <p>yatzy — the dice game, scored the Yahtzee way. 13 turns, 13 boxes.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each turn, roll five dice, then roll again up to <strong>twice</strong> more, keeping any dice you like and re-rolling the rest. Then write the result in <strong>one box</strong> you haven't used. If nothing fits, you have to cross a box out for 0.</li>
+    <li><strong>Ones to Sixes:</strong> the sum of the dice showing that number. Score <strong>63 or more</strong> in these six and you get a <strong>35 bonus</strong>.</li>
+    <li><strong>Three / four of a kind:</strong> that many alike, and you score the total of all five dice. <strong>Full house</strong> (three of one, two of another): 25. <strong>Small straight</strong> (four in a row): 30. <strong>Large straight</strong> (five in a row): 40. <strong>Yatzy</strong> (all five alike): 50. <strong>Chance:</strong> the total, any dice.</li>
+    <li>A second Yatzy when the Yatzy box already holds 50 earns <strong>+100</strong>, and it's a <strong>joker</strong>: it goes in its own number's box if that's free; otherwise any free lower box (a full house or straight scores in full); otherwise any free upper box.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap <code>Roll the dice</code>. Tap a die to <strong>keep</strong> it (it lifts up); tap it again to let it go. Then tap a box to pick it, and tap it again to score.</li>
+    <li>Boxes show what your dice would score there. The game is <strong>13 turns</strong>; your final total is shown at the end.</li>
+  </ul>
+
+  <h2>Daily game</h2>
+  <p class="muted"><code>today's game</code> deals the same dice to everyone for the day: the face of each die at each roll is fixed in advance, so rolling the same die in the same place always shows the same number. <code>new random game</code> is a fresh one. <code>replay this game</code> starts the same dice again.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="rules.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>
