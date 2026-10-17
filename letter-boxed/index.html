@@ -12,29 +12,35 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
 <style>
-  .lb-box { position: relative; width: min(380px, 100%); aspect-ratio: 1; margin: 8px auto; user-select: none; touch-action: manipulation; }
-  .lb-box svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .lb-sq { fill: none; stroke: var(--fg); stroke-width: .8; }
-  .lb-dot { fill: var(--fg); }
-  .lb-old { stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 1.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .lb-now { stroke: var(--accent); stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  /* the box: a square with dots on its edges, a letter outside each dot; a swipe draws a line from dot to dot */
+  /* the status line changes length as you play and can wrap on a narrow phone: hold two lines so the box never moves */
+  body.g-letter-boxed .panel > .row { min-height: 2.8em; align-items: flex-start; }
+  .lb-box { position: relative; width: min(340px, 100%); aspect-ratio: 1; margin: 4px auto 6px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .lb-box svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .lb-sq { fill: color-mix(in srgb, var(--fg) 4%, transparent); stroke: color-mix(in srgb, var(--fg) 70%, transparent); stroke-width: .7; }
+  .lb-dot { fill: color-mix(in srgb, var(--fg) 70%, transparent); }
+  .lb-dot.on { fill: var(--accent); }
+  .lb-now { stroke: var(--accent); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
   body.g-letter-boxed .panel .lb-l {
-    position: absolute; width: 14%; height: 14%; min-height: 0; min-width: 0; padding: 0; transform: translate(-50%, -50%);
-    border-radius: 50%; font-size: clamp(16px, 5.4vw, 24px); font-weight: 700; text-transform: uppercase; letter-spacing: 0;
+    position: absolute; width: 15%; height: 15%; min-height: 0; min-width: 0; padding: 0; margin: -7.5% 0 0 -7.5%;   /* centred with margins, not a transform: the shared pressed-button style replaces transforms and would make the letter jump */
+    border-radius: 50%; font-size: clamp(18px, 6.2vw, 26px); font-weight: 700; text-transform: uppercase; letter-spacing: 0; touch-action: none;
     background: var(--panel-2); border: 2px solid var(--border-hi); color: var(--fg); display: flex; align-items: center; justify-content: center;
+    transition: background .1s, border-color .1s;
   }
-  body.g-letter-boxed .panel .lb-l.used { background: color-mix(in srgb, var(--accent) 22%, var(--panel-2)); border-color: var(--accent); }
+  body.g-letter-boxed .panel .lb-l.used { background: color-mix(in srgb, var(--accent) 24%, var(--panel-2)); border-color: color-mix(in srgb, var(--accent) 70%, transparent); }
+  body.g-letter-boxed .panel .lb-l.start { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
   body.g-letter-boxed .panel .lb-l.cur { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  body.g-letter-boxed .panel .lb-l:disabled { opacity: .3; }
-  .lb-word { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; min-height: 1.5em; margin: 6px 0 2px; }
-  .lb-word .lock { opacity: .45; }
-  .lb-msg { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.6em; }
+  body.g-letter-boxed .panel .lb-l:disabled { opacity: .28; }
+  .lb-word { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; min-height: 1.4em; margin: 2px 0 0; }
+  .lb-word .lock { color: var(--accent); }
+  .lb-word .ph { color: var(--dim); font-weight: 400; font-size: var(--fs-md); letter-spacing: 0; text-transform: none; }
+  .lb-msg { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.5em; }
   .lb-msg.bad { color: var(--coral); }
-  .lb-chain { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-height: 36px; margin: 6px 0; }
+  .lb-chain { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-height: 32px; margin: 4px 0; }
   .lb-chain span { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-hi); background: var(--panel-2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 13px; }
-  .lb-keys { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+  .lb-keys { display: flex; gap: 8px; justify-content: center; margin: 6px 0; }
   .lb-keys .btn { min-height: 46px; flex: 1; max-width: 140px; }
-  .lb-hint { text-align: center; font-size: var(--fs-sm); min-height: 1.6em; color: var(--muted); }
+  .lb-hint { text-align: center; font-size: var(--fs-sm); min-height: 1.4em; color: var(--muted); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -60,7 +66,7 @@
       </div>
       <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
     </div>
-    <div class="lb-box" id="box" data-board></div>
+    <div class="lb-box" id="box"></div>
     <div class="lb-word" id="word" aria-live="polite"></div>
     <div class="lb-msg" id="msg"></div>
     <div class="lb-chain" id="chain"></div>
@@ -85,13 +91,13 @@
   <ul>
     <li>Twelve letters sit on the four sides of the box, three to a side.</li>
     <li>Spell a word by tapping its letters one after another. <strong>Two letters in a row can never come from the same side</strong>, and the same letter may be used more than once.</li>
-    <li>Words are at least 3 letters. Each new word has to <strong>start with the last letter of the word before</strong>, and you can't use a word twice.</li>
+    <li>Words are at least 3 letters. Each new word has to <strong>start with the last letter of the word before</strong> (that letter is already in place and ringed for you), and you can't use a word twice.</li>
     <li><strong>Win</strong> by using every one of the twelve letters. Fewer words is better: there is always a way in two.</li>
   </ul>
 
   <h2>Controls</h2>
   <ul>
-    <li>Tap letters (or type them on a keyboard), then <code>Enter</code>. <code>Delete</code> (or Backspace) removes the last letter. Letters you can't use next are dimmed.</li>
+    <li>Tap letters, or <strong>swipe</strong> from letter to letter without lifting your finger, or type on a keyboard. Then <code>Enter</code>. <code>Delete</code> (or Backspace) removes the last letter. Letters you can't use next are dimmed.</li>
     <li><code>↶ undo word</code> takes back your last word. <code>hint</code> shows a word that solves it, one word at a time. <code>↻ reset</code> clears your words.</li>
     <li>The puzzle is the same for everyone each day, at each level. <code>↻ new</code> gives a random one. <strong>Easy</strong> boxes accept lots of common words; <strong>Hard</strong> ones need a rarer word.</li>
   </ul>

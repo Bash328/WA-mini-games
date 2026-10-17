@@ -317,7 +317,7 @@
     slotEl = document.createElement("div");
     slotEl.id = "gk-slot";
     slotEl.className = "gk-slot";
-    if (document.getElementById("wa-ui") || GAME_ID === "2048" || document.querySelector("[data-board]")) slotEl.dataset.reserve = "1";
+    if (document.getElementById("wa-ui") || GAME_ID === "2048" || document.querySelector("[data-reserve]")) slotEl.dataset.reserve = "1";
     const say = document.createElement("p");
     say.className = "gk-say";
     say.hidden = true;

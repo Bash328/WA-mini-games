@@ -16,7 +16,7 @@
   body.g-yatzy .panel .yz-die { position: relative; width: 56px; height: 56px; min-height: 0; min-width: 0; padding: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; border-radius: 12px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer; transition: transform .1s; }
   body.g-yatzy .panel .yz-die:disabled { opacity: 1; cursor: default; }
   body.g-yatzy .panel .yz-die.blank { background: color-mix(in srgb, var(--fg) 8%, transparent); border-style: dashed; box-shadow: none; }
-  body.g-yatzy .panel .yz-die.held { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-6px); }
+  body.g-yatzy .panel .yz-die.held, body.g-yatzy .panel .yz-die.held:active { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-6px); }
   .yz-die i { border-radius: 50%; margin: 8%; }
   .yz-die i.on { background: #1d1a16; }
   .yz-die .tag { position: absolute; left: 0; right: 0; bottom: -17px; text-align: center; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
