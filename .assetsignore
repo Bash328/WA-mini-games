@@ -14,7 +14,7 @@ node_modules/
 wrangler.toml
 .assetsignore
 worker/
-taunts.test.mjs
+*.test.mjs
 README.md
 TODO.md
 LICENSE

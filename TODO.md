@@ -6,7 +6,7 @@ Everything asked for so far, grouped by area. Sections 1–5, 7 and 8 are built;
 ## How to work through this
 Every bug fixed in one game must be checked in **all** the others, so the same mistake is not repeated. For each fix, grep or test every game page for the same pattern, and add it to the list below if it keeps coming back.
 
-**Cross-game checklist** (run it on all 23 games after any UI or logic change; last run in full on 2026-10-16: pages at 320 / 390 / 1000 px in both themes, taunts in every mode, board stability, refresh, undo):
+**Cross-game checklist** (run it on all games after any UI or logic change; last run in full on 2026-10-16: pages at 320 / 390 / 1000 px in both themes, taunts in every mode, board stability, refresh, undo):
 - [x] Undo and reset leave the right player to move
 - [x] No duplicate "your move / you're Player N" text (one status, one badge)
 - [x] Controls (difficulty, new game, undo, timer, moves, best) are in the standard place
@@ -74,7 +74,25 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
 - [x] **Ultimate Tic-Tac-Toe, Hex, Blokus Duo:** WhatsApp / online / vs computer (3 levels) / same device.
 - [x] **Solo puzzles:** Sudoku 9×9, Nonogram, Word Guess, Word Ladder.
 - [x] **Crazy 8 ("7 cards")**: built to your house rules (online rooms of 2 to 4 with computer seats, vs computer, Normal and Tournament). Next: how it looks for the player.
-- Still on the list for later: Shiritori, Boggle duel, Lost Cities, Liar's Dice.
+- Still on the list for later: Shiritori, Boggle duel, Lost Cities.
+
+
+## 9. New games, round 2 — BUILT, needs your deploy check
+Eleven more games, built in the order you gave, one commit each on `claude/live-play`. Each has a hub card with inline SVG art, a how-to, README notes, taunts through `Gamekit`, a runnable check, and a layout scan at 320 / 390 / 1000 px in both themes (no sideways scroll, no JS errors; `worker/` tests all pass).
+- [x] **Onitama:** WhatsApp, online, vs computer (3 levels), same device. Rules + computer are one file (`onitama/rules.js`) shared with the Worker.
+- [x] **Quoridor:** WhatsApp, online, vs computer, same device. Wall placing is tap-the-crossing, tap again or Rotate to turn it, Place to confirm; the "no pawn may be shut in" rule is a BFS.
+- [x] **Liar's Dice:** online rooms of 2 to 4 with computer seats, and vs computer; no link or same-device play (dice can't be hidden there). `card-protocol.mjs` now takes a game and its engine; the room screens are the shared `multiseat.js`.
+- [x] **Letter Boxed:** 55,000-word list (296 KB, about 115 KB gzipped, lazy-loaded, cached for a day), daily and random, three levels, hints, best, resume.
+- [x] **Backgammon:** WhatsApp (your browser rolls, runs on trust like Pig), **online with the server rolling** (a new `stamp` hook in `live-protocol.mjs`; it also passes the turn if a player can't move), vs computer, same device. Single games, no cube.
+- [x] **Dominoes:** online rooms of 2 to 4 with computer seats, and vs computer; no link or same-device play (hidden hands).
+- [x] **Yatzy:** Yahtzee scoring with the joker rule, a daily dice table (same dice for everyone, re-rolling the same die in the same spot always gives the same face) and random games; solo only.
+- [x] **Cross Sums (Kakuro):** every puzzle has exactly one solution (givens are added until a bounded solver finds no other), three levels, daily and random, notes, check, timer.
+- [x] **Sliding Puzzle**, **Water Sort** (solver-checked, with hints), and **Chess Puzzles** (200 Lichess CC0 puzzles as a mode of the Chess page, all verified against the page's own move generator; credited in the how-to).
+- [x] Hub: a small **Create username** button next to the title on mobile (shows your name once you have one).
+- [ ] **You:** deploy and try online rooms for real. `wrangler dev` could not run Durable Objects on this machine (even the existing games' rooms fail there on unmodified code), so the Worker side was tested through the real protocol modules behind a stand-in WebSocket server, not through Cloudflare. Worth a 5-minute check of: Liar's Dice, Dominoes, Backgammon online, Onitama and Quoridor online.
+- [ ] Not tried on real phones (checked in headless Edge at phone widths only).
+- [ ] The "you should know" review plugin never loaded in this session (the `/plugin` command was unavailable here), so review was my own checks plus `/code-review` at the end.
+- [ ] `crazy-8/game.js` still has its own copy of the online room screens that `multiseat.js` now provides for the new games; moving Crazy 8 onto it is a clean-up, not a bug.
 
 ---
 
