@@ -19,6 +19,7 @@ import { liveGame, LIVE_SLUGS } from "./live-games.mjs";
 import { LiveRoom } from "./live-room.mjs";
 import { UserRegistry } from "./user-registry.mjs";
 import { CardRoom } from "./card-room.mjs";
+import { CARD_GAMES } from "./card-protocol.mjs";
 import { pushConfigured } from "./webpush.mjs";
 
 // Cloudflare finds the Durable Object class by its export from the main module.
@@ -85,7 +86,7 @@ async function handleLive(request, env, url) {
   const sub = url.pathname.slice("/api/live/".length);
 
   if (sub === "status" && request.method === "GET") {
-    return json({ enabled: enabled, games: enabled ? LIVE_SLUGS.concat("crazy-8") : [] });
+    return json({ enabled: enabled, games: enabled ? LIVE_SLUGS.concat(CARD_GAMES) : [] });
   }
   if (!enabled) return json({ error: "disabled" }, 503);
 
@@ -145,18 +146,18 @@ async function handleLive(request, env, url) {
   return json({ error: "not-found" }, 404);
 }
 
-/* ---------- Crazy 8 rooms (/api/card/*) ----------
+/* ---------- Crazy 8, Liar's Dice and Dominoes rooms (/api/card/*) ----------
    A different kind of room (2-4 seats, hidden hands, computer players), so a
    different Durable Object (card-room.mjs); the same rules for the Origin
    check, the kill switch and the new-room rate limit as live rooms.
-   new   GET  WebSocket upgrade: makes a room AND connects, like /api/live/new
+   new   GET  ?game=SLUG (default crazy-8), WebSocket upgrade: makes a room AND connects, like /api/live/new
    ws    GET  ?room=CODE, WebSocket upgrade
    exists GET ?room=CODE */
-async function createCardRoom(env) {
+async function createCardRoom(env, game) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newCode();
     const stub = env.CARDS.get(env.CARDS.idFromName(code));
-    const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code: code }) });
+    const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code: code, game: game }) });
     if (res.status === 200) return { code: code, stub: stub };
     if (res.status !== 409) break;
   }
@@ -177,7 +178,9 @@ async function handleCard(request, env, url) {
   if (sub === "new" && request.method === "GET") {
     if (request.headers.get("Upgrade") !== "websocket") return json({ error: "upgrade-required" }, 426);
     if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
-    const made = await createCardRoom(env);
+    const game = url.searchParams.get("game") || "crazy-8";
+    if (!CARD_GAMES.includes(game)) return json({ error: "bad-game" }, 400);
+    const made = await createCardRoom(env, game);
     if (!made) return json({ error: "unavailable" }, 503);
     return made.stub.fetch(new Request("https://room/ws", request));
   }
@@ -231,7 +234,7 @@ async function handleUser(request, env, url) {
   if (sub === "poke") {
     // The room has to be a real, open one for a game that can be played live,
     // so a poke can't be used to push an arbitrary link at someone.
-    const cards = body.game === "crazy-8";
+    const cards = CARD_GAMES.includes(body.game);
     if ((!cards && !liveGame(body.game)) || !CODE_RE.test(String(body.room || ""))) return json({ error: "bad-room" }, 400);
     const room = cards ? env.CARDS.get(env.CARDS.idFromName(body.room)) : env.ROOMS.get(env.ROOMS.idFromName(body.room));
     if ((await room.fetch("https://room/exists")).status !== 200) return json({ error: "bad-room" }, 400);

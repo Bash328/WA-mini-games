@@ -13,7 +13,7 @@
    hands live: a player is only ever sent their own cards.
 
    room = {
-     code, game: "crazy-8", createdAt, lastActive, finishedAt,
+     code, game: "crazy-8" | "liars-dice" | ..., createdAt, lastActive, finishedAt,
      phase: "lobby" | "playing" | "round_over" | "game_over",
      config: { mode: "normal"|"tournament", bots: 0-3, level: "easy"|"medium"|"hard" },
      players: [ { pid, token, name, online, offlineSince, autoBot, left } ],   people, in join order
@@ -25,8 +25,16 @@
    ============================================================ */
 
 import "../crazy-8/engine.js";
+import "../liars-dice/engine.js";
 
-const C = globalThis.Crazy8;
+/* One engine per game, all with the same shape (see crazy-8/engine.js):
+   create, act, botAct, view, nextRound, and optionally fallback(state, seat)
+   (an action that is always legal) and PAUSE (ms between rounds). */
+const ENGINES = { "crazy-8": globalThis.Crazy8, "liars-dice": globalThis.LiarsDice };
+const GAME_MODES = { "crazy-8": ["normal", "tournament"] };
+export const CARD_GAMES = Object.keys(ENGINES);
+const engineOf = (room) => ENGINES[room.game];
+const modesOf = (room) => GAME_MODES[room.game] || ["normal"];
 
 export const MAX_MESSAGE_CHARS = 2048;
 export const OFFLINE_TAKEOVER_MS = 90 * 1000;       // offline this long: a computer plays for them
@@ -38,16 +46,16 @@ export const IDLE_MS = 24 * 60 * 60 * 1000;         // an unfinished game
 export const FINISHED_MS = 60 * 60 * 1000;          // after the game is over
 export const MAX_SEATS = 4;
 const LEVELS = ["easy", "medium", "hard"];
-const MODES = ["normal", "tournament"];
 
 export function cleanName(raw) {
   const s = typeof raw === "string" ? raw.trim() : "";
   return /^[A-Za-z0-9_]{3,16}$/.test(s) ? s : "";
 }
 
-export function newRoom(code, now) {
+export function newRoom(code, now, game = "crazy-8") {
+  if (!ENGINES[game]) return null;
   return {
-    code, game: "crazy-8", createdAt: now, lastActive: now, finishedAt: null,
+    code, game, createdAt: now, lastActive: now, finishedAt: null,
     phase: "lobby", config: { mode: "normal", bots: 0, level: "medium" },
     players: [], host: null, nextPid: 1, state: null, table: [], tally: {}, votes: [],
     lastEvents: [], turnSince: 0, nextAt: null,
@@ -149,7 +157,7 @@ export function setConfig(room, pid, cfg, now, rng) {
   if (pid !== room.host) return { ok: false, reason: "not-host" };
   if (room.phase !== "lobby" && room.phase !== "game_over") return { ok: false, reason: "in-game" };
   const next = { ...room.config };
-  if (cfg.mode !== undefined) { if (!MODES.includes(cfg.mode)) return { ok: false, reason: "bad-config" }; next.mode = cfg.mode; }
+  if (cfg.mode !== undefined) { if (!modesOf(room).includes(cfg.mode)) return { ok: false, reason: "bad-config" }; next.mode = cfg.mode; }
   if (cfg.level !== undefined) { if (!LEVELS.includes(cfg.level)) return { ok: false, reason: "bad-config" }; next.level = cfg.level; }
   if (cfg.bots !== undefined) {
     if (!Number.isInteger(cfg.bots) || cfg.bots < 0 || cfg.bots > MAX_SEATS - 1) return { ok: false, reason: "bad-config" };
@@ -181,7 +189,7 @@ function startGame(room, hostPid, now, rng, auto) {
     if (idx >= 0) starter = idx;
   }
   room.table = seats;
-  room.state = C.create({ names, bots, mode: room.config.mode, starter }, rng);
+  room.state = engineOf(room).create({ names, bots, mode: room.config.mode, starter }, rng);
   room.phase = "playing";
   room.votes = []; room.finishedAt = null; room.lastEvents = [];
   room.players = room.players.filter((p) => !p.left);       // those who left do not come to the next game
@@ -231,7 +239,7 @@ function afterEvents(room, events, now, rng) {
     const t = room.table[st.winner];
     if (t && t.kind === "human") room.tally[t.pid] = (room.tally[t.pid] || 0) + 1;
   } else if (st.phase === "round_over") {
-    room.phase = "round_over"; room.nextAt = now + ROUND_PAUSE_MS;
+    room.phase = "round_over"; room.nextAt = now + (engineOf(room).PAUSE || ROUND_PAUSE_MS);
   } else {
     scheduleBot(room, now, rng);
   }
@@ -246,7 +254,7 @@ export function act(room, pid, action, now, rng) {
   if (room.phase !== "playing") return { ok: false, reason: "not-playing" };
   const seat = seatOf(room, pid);
   if (seat < 0) return { ok: false, reason: "not-seated" };
-  const res = C.act(room.state, seat, action, rng);
+  const res = engineOf(room).act(room.state, seat, action, rng);
   if (!res.ok) return { ok: false, reason: res.error };
   afterEvents(room, res.events, now, rng);
   return { ok: true };
@@ -266,7 +274,7 @@ export function tick(room, now, rng) {
   }
   for (let guard = 0; guard < 12; guard++) {
     if (room.phase === "round_over" && room.nextAt !== null && now >= room.nextAt) {
-      C.nextRound(room.state, rng);
+      engineOf(room).nextRound(room.state, rng);
       room.phase = "playing"; room.turnSince = now; room.lastEvents = [{ e: "new-round", round: room.state.round }];
       scheduleBot(room, now, rng);
       continue;
@@ -277,17 +285,18 @@ export function tick(room, now, rng) {
       if (room.nextAt === null) room.nextAt = now + delay(rng);
       if (now < room.nextAt) break;
       const p = room.table[seat].kind === "human" ? player(room, room.table[seat].pid) : null;
-      const a = C.botAct(room.state, seat, botLevel(room, seat), rng);
-      const res = C.act(room.state, seat, a, rng);
-      if (!res.ok) { const d = C.act(room.state, seat, { t: "draw" }, rng); if (!d.ok) break; afterEvents(room, d.events, now, rng); continue; }
+      const E = engineOf(room);
+      const a = E.botAct(room.state, seat, botLevel(room, seat), rng);
+      const res = E.act(room.state, seat, a, rng);
+      if (!res.ok) { const d = E.act(room.state, seat, E.fallback ? E.fallback(room.state, seat) : { t: "draw" }, rng); if (!d.ok) break; afterEvents(room, d.events, now, rng); continue; }
       afterEvents(room, res.events, now, rng);
       continue;
     }
     // a person's turn: if they sit on it too long, a computer plays this one turn
     if (now - room.turnSince >= IDLE_TURN_MS) {
       const p = player(room, room.table[seat].pid);
-      const a = C.botAct(room.state, seat, "medium", rng);
-      const res = C.act(room.state, seat, a, rng);
+      const a = engineOf(room).botAct(room.state, seat, "medium", rng);
+      const res = engineOf(room).act(room.state, seat, a, rng);
       if (!res.ok) break;
       notices.push(displayName(room, p) + " took too long, so a computer played their turn.");
       afterEvents(room, res.events, now, rng);
@@ -323,11 +332,11 @@ export function viewFor(room, pid, now) {
   let tableView = null;
   if (room.state) {
     const out = seat >= 0 && room.state.seats[seat].status === "out";
-    tableView = C.view(room.state, seat >= 0 && !out ? seat : null);
+    tableView = engineOf(room).view(room.state, seat >= 0 && !out ? seat : null);
     tableView.you = seat >= 0 ? seat : null;
   }
   return {
-    code: room.code, phase: room.phase, config: room.config, host: room.host, now: now,
+    code: room.code, game: room.game, phase: room.phase, config: room.config, host: room.host, now: now,
     you: { pid, seat: seat >= 0 ? seat : null, host: pid === room.host, name: me ? displayName(room, me) : "" },
     players: humans(room).map((p) => ({
       pid: p.pid, name: displayName(room, p), host: p.pid === room.host, online: p.online, offlineSince: p.offlineSince,

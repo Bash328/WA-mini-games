@@ -1,5 +1,5 @@
 /* ============================================================
-   card-room.mjs — the Durable Object behind one Crazy 8 room.
+   card-room.mjs — the Durable Object behind one multi-seat room (Crazy 8, Liar's Dice, Dominoes).
 
    Deliberately thin, like live-room.mjs: every decision is made by
    card-protocol.mjs (pure, unit-tested with a fake clock). This file only does
@@ -36,7 +36,8 @@ export class CardRoom extends DurableObject {
       if (await this.ctx.storage.get(ROOM)) return new Response("exists", { status: 409 });
       let body;
       try { body = await request.json(); } catch (e) { return new Response("bad", { status: 400 }); }
-      const room = P.newRoom(String(body.code), Date.now());
+      const room = P.newRoom(String(body.code), Date.now(), body.game === undefined ? "crazy-8" : String(body.game));
+      if (!room) return new Response("bad", { status: 400 });
       await this.save(room);
       return new Response("ok");
     }
@@ -167,7 +168,7 @@ export class CardRoom extends DurableObject {
     }
     att.pid = j.pid; ws.serializeAttachment(att);
     P.setOnline(room, j.pid, true, now);
-    this.send(ws, { t: "welcome", pid: j.pid, token: j.token, code: room.code });
+    this.send(ws, { t: "welcome", pid: j.pid, token: j.token, code: room.code, game: room.game });
     await this.commit(room, now, notices);
   }
 
