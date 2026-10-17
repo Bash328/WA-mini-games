@@ -24,7 +24,7 @@ const GAMES = {
   "connect-four":       { title: "connect-four",       labels: { 1: "Red", 2: "Yellow" } },
   "chess":              { title: "chess",              labels: { w: "White", b: "Black" } },
   "reversi":            { title: "reversi",            labels: { 1: "Black", 2: "White" } },
-  "checkers":           { title: "checkers",           labels: { 1: "Player 1", 2: "Player 2" } },
+  "checkers":           { title: "checkers",           labels: { 1: "Red", 2: "White" } },
   "dots-and-boxes":     { title: "dots and boxes",     labels: { 1: "Player 1", 2: "Player 2" } },
   "mancala":            { title: "mancala",            labels: { 1: "Player 1", 2: "Player 2" } },
   "pentago":            { title: "pentago",            labels: { 1: "Player 1", 2: "Player 2" } },

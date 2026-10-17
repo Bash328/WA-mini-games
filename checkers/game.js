@@ -5,7 +5,7 @@
   const P1 = 1, P2 = 2;                 // colors
   const MAN = { [P1]: 1, [P2]: 2 };     // piece values
   const KING = { [P1]: 3, [P2]: 4 };
-  const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
+  const NAMES = { [P1]: "Red", [P2]: "White" };
   const ALL4 = [[-1,-1],[-1,1],[1,-1],[1,1]];
   const FORWARD = { [P1]: [[1,-1],[1,1]], [P2]: [[-1,-1],[-1,1]] };
 
@@ -13,6 +13,10 @@
   const statusEl = document.getElementById("status");
   const modeSel = document.getElementById("mode");
   const resetBtn = document.getElementById("reset-btn");
+  const sideSel = document.getElementById("side");
+  // Whose pieces sit at the bottom of the screen. Red (Player 1) starts on the top three rows of the board data, so the
+  // board is drawn turned half a circle whenever Red is the one looking at it.
+  let viewer = P1;
 
   const idx = (r, c) => r * N + c;
   const inB = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
@@ -185,7 +189,8 @@
   function renderBoard(board, selectable, selected, targets, canClick, onClick, lastIdx) {
     boardEl.innerHTML = "";
     const targetSet = new Map(targets.map(m => [m.to, m]));
-    for (let i = 0; i < N * N; i++) {
+    for (let d = 0; d < N * N; d++) {
+      const i = viewer === P1 ? N * N - 1 - d : d;
       const r = Math.floor(i / N), c = i % N;
       const dark = (r + c) % 2 === 1;
       const cell = document.createElement("button");
@@ -240,7 +245,8 @@
   let waLast = null;
   let waCanMove = false;
 
-  function loadLink(s, canMove) {
+  function loadLink(s, canMove, info) {
+    viewer = info && info.me ? info.me : P1;
     waBoard = s ? s.board.split("").map(Number) : initialBoard();
     waCurrent = s ? s.turn : P1;
     waLast = s ? s.last : null;
@@ -281,8 +287,7 @@
 
   // ---------- 2 players same device, or 1 vs computer ----------
   // Shared state for both sub-modes; aiColor is null for local pass-and-play,
-  // or the color the AI plays (always P2 - the human is always P1) when
-  // modeSel is "ai".
+  // or the color the AI plays (the one the person did not pick) when modeSel is "ai".
   let localBoard, localCurrent, localSelected, localChain, localLast, localOver;
   let aiColor = null;
   let aiThinking = false;
@@ -323,6 +328,7 @@
     aiThinking = false;
   }
 
+  const humanColor = () => (sideSel.value === "2" ? P2 : P1);
   function resetLocal() {
     cancelAI();
     localBoard = initialBoard();
@@ -357,7 +363,7 @@
       const base = aiColor !== null ? (localCurrent === aiColor ? "Computer thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
       const aiTurn = aiColor !== null && localCurrent === aiColor;
-      Gamekit.turn(localCurrent, aiTurn ? "Computer thinking…" : aiColor !== null ? "Your move" : `${NAMES[localCurrent]}'s move`, aiTurn);
+      Gamekit.turn(localCurrent, aiTurn ? "Computer thinking…" : aiColor !== null ? "Your move · you're " + NAMES[localCurrent] : `${NAMES[localCurrent]}'s move`, aiTurn);
     }
   }
 
@@ -425,26 +431,31 @@
     const wa = val === "whatsapp";
     resetBtn.hidden = wa;
     chipsEl.hidden = val !== "ai";
+    sideSel.hidden = val !== "ai";
     cancelAI();
     if (wa) { link.show(); return; }
     link.hide();
-    aiColor = val === "ai" ? P2 : null;
+    aiColor = val === "ai" ? other(humanColor()) : null;
+    viewer = val === "ai" ? humanColor() : P1;                 // pass-and-play: Red at the bottom
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  sideSel.value = aiStore.get("side", "1") === "2" ? "2" : "1";
+  sideSel.addEventListener("change", () => { aiStore.set("side", sideSel.value); applyMode(); });
   applyMode();
 
   // A refresh keeps a game against the computer or on one device. Link games live in the URL.
   const resumer = Gamekit.resume("checkers", () => (modeSel.value === "whatsapp" || localOver || localLast === null) ? null : {
-    mode: modeSel.value, diff: aiDiff, board: localBoard, current: localCurrent, chain: localChain, last: localLast,
+    mode: modeSel.value, diff: aiDiff, human: humanColor(), board: localBoard, current: localCurrent, chain: localChain, last: localLast,
   }, (s) => {
     if (!["ai", "local"].includes(s.mode) || !AI_DEPTHS[s.diff]) return false;
     if (!Array.isArray(s.board) || s.board.length !== N * N || !s.board.every(v => Number.isInteger(v) && v >= 0 && v <= 4)) return false;
     if (s.current !== P1 && s.current !== P2) return false;
     if (s.chain !== null && !(Number.isInteger(s.chain) && s.chain >= 0 && s.chain < N * N)) return false;
     modeSel.value = s.mode;
+    if (s.human === P1 || s.human === P2) sideSel.value = String(s.human);
     aiDiff = s.diff; chips.show(aiDiff);
     applyMode();                       // computer / same-device setup, fresh board
     cancelAI();

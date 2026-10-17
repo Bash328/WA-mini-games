@@ -103,6 +103,10 @@
         <option data-short="Computer" value="ai">vs computer</option>
         <option data-short="Local" value="local">2 players · same device</option>
       </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play White" value="2">Play White</option>
+      </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
     <div class="ck-board" id="board" aria-label="Checkers board"></div>
@@ -118,7 +122,7 @@
 
   <h2>Rules</h2>
   <ul>
-    <li>Board is 8×8; only the dark squares are used. Player 1's pieces start on the top 3 rows, Player 2's on the bottom 3.</li>
+    <li>Board is 8×8; only the dark squares are used. <strong>Red</strong> moves first, <strong>White</strong> second. The board is always turned so your own pieces start at the bottom.</li>
     <li>Pieces move one square diagonally forward. <strong>Capturing is mandatory</strong>: if any of your pieces can jump an opponent piece into an empty square beyond it, you must make a capturing move (with any piece that has one).</li>
     <li>After a capture, if that <em>same</em> piece can capture again from its new square, you must keep jumping with it — a chain of jumps all counts as one turn.</li>
     <li>Reaching the far row promotes a piece to a <strong>king</strong> (crowned), which can then move and capture in all four diagonal directions. Promotion always ends the turn, even mid-chain.</li>
@@ -127,7 +131,7 @@
 
   <h2>Two players over WhatsApp</h2>
   <ul>
-    <li>Whoever starts plays <strong>Player 1</strong> and moves first.</li>
+    <li>Whoever starts plays <strong>Red</strong> and moves first; your friend is <strong>White</strong> and sees the board turned so their pieces are at the bottom.</li>
     <li>Tap your piece, then a highlighted square. A full jump chain is resolved before anything is sent — keep jumping with the same piece until it stops.</li>
     <li>If your move leaves your friend with no legal move at all, the game ends right there instead of sending them an unplayable link.</li>
   </ul>
@@ -137,6 +141,7 @@
 
   <h2>Controls</h2>
   <ul>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and whether you play <strong>Red</strong> (first) or <strong>White</strong>.</li>
     <li><strong>Tap</strong> a highlighted piece to select it, then a highlighted destination — a plain dot for a move, a ringed square for a capture.</li>
   </ul>
 </template>
