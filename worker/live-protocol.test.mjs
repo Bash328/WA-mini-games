@@ -101,6 +101,21 @@ console.log("\nresigning:");
   check("cannot resign into a win for yourself", applyMove(r2, 2, cheat, T0).reason, "illegal");
   const tamper = { ...resign, s: { ...resign.s, id: r2.id, board: "XX......." } };
   check("cannot change the board while resigning", applyMove(r2, 2, tamper, T0).reason, "illegal");
+  // resigning keeps only the envelope: extra keys the client adds are not stored or relayed
+  const { room: r3 } = fresh();
+  move(r3, 1, "X........", 0);
+  const junk = { ...resign, s: { ...resign.s, id: r3.id, junk: "x".repeat(500), extra: { a: 1 } } };
+  const rj = applyMove(r3, 2, junk, T0);
+  check("a resign with extra keys is accepted but they are dropped", [rj.ok, "junk" in rj.state, "extra" in rj.state, Object.keys(rj.state).sort().join()], [true, false, false, "board,game,id,last,moveCount,resigned,status,turn,version,winner"]);
+}
+// a board that is an object (Lights Out) can be resigned: boards are compared by value, not by reference
+{
+  const room = newRoom("lights-out", "ABC234", T0);
+  join(room, null, mint, T0); join(room, null, mint, T0);
+  room.state = { game: "lights-out", version: 1, id: room.id, turn: 1, board: { bits: 5 }, status: "in_progress", winner: null, moveCount: 1, last: 0 };
+  const resign = { t: "move", n: 1, s: { game: "lights-out", version: 1, id: room.id, turn: 1, board: { bits: 5 }, status: "won", winner: 2, moveCount: 2, last: 0, resigned: true } };
+  const r = applyMove(room, 1, resign, T0);                                    // player 1 is on turn and resigns: player 2 wins
+  check("resigning a game whose board is an object works", [r.ok, r.state && r.state.winner], [true, 2]);
 }
 
 console.log("\nrematch:");

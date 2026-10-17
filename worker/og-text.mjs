@@ -13,6 +13,7 @@
 
 import LZString from "../vendor/lz-string.min.js";
 import { liveGame } from "./live-games.mjs";
+import { CARD_GAMES } from "./card-protocol.mjs";
 
 /* Mirrors each game's AsyncShare.start({ title, players, label }). Kept
    here rather than imported because game.js files are browser scripts,
@@ -40,6 +41,8 @@ const GAMES = {
   "quoridor":           { title: "quoridor",           labels: { 1: "Red", 2: "Blue" } },
   "backgammon":         { title: "backgammon",         labels: { 1: "Red", 2: "White" } },
   "crazy-8":            { title: "crazy 8",            labels: { 1: "Player 1", 2: "Player 2" } },
+  "liars-dice":         { title: "liar's dice",        labels: { 1: "Player 1", 2: "Player 2" } },
+  "dominoes":           { title: "dominoes",           labels: { 1: "Player 1", 2: "Player 2" } },
   "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
   "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
   "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },
@@ -128,7 +131,7 @@ export const SUPPORTED_GAMES = Object.keys(GAMES);
 export const LIVE_CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 export function ogForLive(pathname, code) {
   const slug = slugFor(pathname);
-  if ((!liveGame(slug) && slug !== "crazy-8") || typeof code !== "string" || !LIVE_CODE.test(code)) return null;
+  if ((!liveGame(slug) && !CARD_GAMES.includes(slug)) || typeof code !== "string" || !LIVE_CODE.test(code)) return null;
   const meta = Object.prototype.hasOwnProperty.call(GAMES, slug) ? GAMES[slug] : null;
   if (!meta) return null;
   return {

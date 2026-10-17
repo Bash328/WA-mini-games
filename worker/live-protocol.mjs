@@ -127,8 +127,13 @@ export function applyMove(room, seat, msg, now, rand = Math.random) {
     // side. Only meaningful once a game has started.
     if (!prev) return { ok: false, reason: "illegal" };
     if (s.status !== "won" || s.winner !== otherPlayer(room, mover)) return { ok: false, reason: "illegal" };
-    if (s.board !== prev.board) return { ok: false, reason: "illegal" };
-    next = { ...s, turn: otherPlayer(room, mover), last: prev.last, resigned: true };
+    if (JSON.stringify(s.board) !== JSON.stringify(prev.board)) return { ok: false, reason: "illegal" };
+    // built field by field: nothing else the client sent is kept
+    next = {
+      game: room.game, version: G.version, id: room.id,
+      turn: otherPlayer(room, mover), board: prev.board, status: "won", winner: s.winner,
+      moveCount: prevCount + 1, last: prev.last, resigned: true,
+    };
   } else {
     const r = G.rules.validateTransition(prev, s, mover);
     if (!r.ok) return { ok: false, reason: r.reason || "illegal" };

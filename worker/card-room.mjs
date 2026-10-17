@@ -84,22 +84,22 @@ export class CardRoom extends DurableObject {
     const due = P.tick(room, now, Math.random);
 
     if (msg.t === "hello") return this.onHello(ws, att, room, msg, now, due.notices);
-    if (att.pid === null) return this.reject(ws, "no-hello");
+    if (att.pid === null) return this.refuse(ws, "no-hello", room, now, due.notices);
     const pid = att.pid;
     let notices = due.notices.slice();
 
     if (msg.t === "config") {
       const res = P.setConfig(room, pid, { mode: msg.mode, bots: msg.bots, level: msg.level }, now, Math.random);
-      if (!res.ok) return this.reject(ws, res.reason);
+      if (!res.ok) return this.refuse(ws, res.reason, room, now, notices);
     } else if (msg.t === "start") {
       const res = P.start(room, pid, now, Math.random);
-      if (!res.ok) return this.reject(ws, res.reason);
+      if (!res.ok) return this.refuse(ws, res.reason, room, now, notices);
     } else if (msg.t === "act") {
       const res = P.act(room, pid, msg.a, now, Math.random);
       if (!res.ok) { this.reject(ws, res.reason); return this.commit(room, now, notices); }   // refresh their view too
     } else if (msg.t === "vote") {
       const res = P.vote(room, pid, now, Math.random);
-      if (!res.ok) return this.reject(ws, res.reason);
+      if (!res.ok) return this.refuse(ws, res.reason, room, now, notices);
     } else if (msg.t === "leave") {
       notices = notices.concat(P.leave(room, pid, now, Math.random));
       att.pid = null; ws.serializeAttachment(att);
@@ -107,15 +107,15 @@ export class CardRoom extends DurableObject {
       try { ws.close(1000, "left"); } catch (e) { /* already closed */ }
     } else if (msg.t === "taunt") {
       const res = checkTaunt(msg, att.tauntAt, now);
-      if (!res.ok) return this.reject(ws, res.reason);
+      if (!res.ok) return this.refuse(ws, res.reason, room, now, notices);
       att.tauntAt = now; ws.serializeAttachment(att);
       for (const other of this.ctx.getWebSockets()) {
         if (other === ws) continue;
         const a = other.deserializeAttachment();
         if (a && a.pid !== null) this.send(other, { t: "taunt", k: res.k, i: res.i, from: pid });
       }
-      return;
-    } else return this.reject(ws, "unknown-type");
+      return this.commit(room, now, notices);
+    } else return this.refuse(ws, "unknown-type", room, now, notices);
 
     await this.commit(room, now, notices);
   }
@@ -204,4 +204,7 @@ export class CardRoom extends DurableObject {
     try { ws.send(JSON.stringify(msg)); } catch (e) { /* socket already gone */ }
   }
   reject(ws, reason) { this.send(ws, { t: "reject", reason }); }
+  // Refuse a message, but still save and send whatever P.tick() just changed (a computer's move, a takeover):
+  // it ran before the message was handled, so dropping it here would lose it and its notices.
+  async refuse(ws, reason, room, now, notices) { this.reject(ws, reason); await this.commit(room, now, notices); }
 }

@@ -69,6 +69,8 @@ check("valid tic-tac-toe invite",
   ogForLive("/tic-tac-toe/", "K7P2QX"),
   { title: "Join a live game · tic-tac-toe",
     description: "You've been invited to play tic-tac-toe in real time. Tap to join, no sign-up." });
+check("every multi-seat card game gets an invite preview",
+  ["/crazy-8/", "/liars-dice/", "/dominoes/"].map((p) => ogForLive(p, "K7P2QX") !== null), [true, true, true]);
 check("game without live mode is left alone", ogForLive("/chess/", "K7P2QX"), null);
 check("bad code is left alone", ogForLive("/tic-tac-toe/", "k7p2qx"), null);
 check("ambiguous characters are not valid", ogForLive("/tic-tac-toe/", "K7P2QO"), null);
