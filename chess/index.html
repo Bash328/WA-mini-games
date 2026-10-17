@@ -97,6 +97,7 @@
       <select id="mode" aria-label="Mode">
         <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
         <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Puzzles" value="puzzle">chess puzzles</option>
       </select>
       <button id="undo" hidden>Undo</button>
       <button id="flip">Flip board</button>
@@ -110,6 +111,13 @@
         <option value="b">Play Black</option>
       </select>
     </div>
+    <div class="controls" style="justify-content:center">
+      <button id="puz-daily" hidden>Today's puzzle</button>
+      <button id="puz-next" hidden>Another puzzle</button>
+      <button id="puz-hint" hidden>Hint</button>
+      <button id="puz-solve" hidden>Show solution</button>
+    </div>
+    <p class="footer-note" id="puz-info" hidden></p>
     <p class="footer-note">Tap a piece, then tap a destination. Pawns auto-promote to queen.</p>
   </div>
 </main>
@@ -132,6 +140,14 @@
     <li><code>Flip board</code> is a per-device preference and isn't remembered from link to link, so Black may want to tap it after opening a link.</li>
   </ul>
 
+  <h2>Chess puzzles</h2>
+  <ul>
+    <li>Switch the mode to <code>chess puzzles</code>. The computer plays the opponent's last move, then it's your turn to find the best continuation: a mate in 1, 2 or 3, or a tactic that wins material (a fork, pin, skewer, hanging piece, discovered attack ...). The puzzle tells you what to look for and which side you play.</li>
+    <li>A wrong move is refused and you try again; the right one is answered by the opponent, and you keep going until it's solved. In a mating puzzle any move that checkmates counts.</li>
+    <li><code>Today's puzzle</code> is the same for everyone each day. <code>Another puzzle</code> picks a different one. <code>Hint</code> points at the piece to move (press it again for the square); <code>Show solution</code> plays it out for you.</li>
+    <li>The puzzles come from the <a href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener">Lichess puzzle database</a> (public domain, CC0): thanks to Lichess and everyone whose games they are built from.</li>
+  </ul>
+
   <h2>Controls</h2>
   <ul>
     <li><strong>Tap</strong> one of your pieces to select it. Legal destinations are highlighted with dots (moves) or rings (captures).</li>
@@ -147,6 +163,7 @@
 <script src="../gamekit.js"></script>
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
+<script src="puzzles.js"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("chess"));</script>
