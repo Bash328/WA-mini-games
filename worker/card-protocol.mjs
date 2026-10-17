@@ -40,7 +40,7 @@ const modesOf = (room) => GAME_MODES[room.game] || ["normal"];
 export const MAX_MESSAGE_CHARS = 2048;
 export const OFFLINE_TAKEOVER_MS = 90 * 1000;       // offline this long: a computer plays for them
 export const IDLE_TURN_MS = 90 * 1000;              // online but not moving: a computer plays that turn
-export const BOT_DELAY_MS = [2000, 2800];            // a computer "thinks" for a moment so people can follow
+export const BOT_DELAY_MS = [4200, 4800];            // a computer "thinks" for a moment so people can follow
 export const ROUND_PAUSE_MS = 5000;                 // between tournament rounds
 export const LOBBY_IDLE_MS = 2 * 60 * 60 * 1000;    // a room nobody has started
 export const IDLE_MS = 24 * 60 * 60 * 1000;         // an unfinished game

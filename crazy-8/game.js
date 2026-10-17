@@ -354,7 +354,7 @@
       if (!res.ok) res = C.act(st, seat, { t: "draw" }, Math.random);
       if (res.ok) L.events = res.events;
       localRender(); localSchedule();
-    }, 2000 + Math.random() * 800);
+    }, 4200 + Math.random() * 600);
   }
 
   /* ============================================================
