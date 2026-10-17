@@ -597,12 +597,15 @@
     if (!acts) acts = mk("div", "toolbar");
     acts.classList.add("gk-acts");
     const newBtns = [];
+    let sideSel = null;
     kids.forEach(({ k, tool }) => {
       if (k === mode) ctl.insertBefore(k, ctl.firstChild);
+      else if (k.id === "side" && k.tagName === "SELECT") sideSel = k;          // "play as": right beside the mode menu
       else if (k.id === "new-btn" || k.id === "reset" || (k.id === "reset-btn" && /new/i.test(k.textContent))) newBtns.push(k);
       else if (tool || k.id in ACT_ORDER) { k.style.order = ACT_ORDER[k.id] || 9; acts.appendChild(k); }
       else opts.appendChild(k);
     });
+    if (sideSel) ctl.insertBefore(sideSel, mode ? mode.nextSibling : ctl.firstChild);
     newBtns.forEach((b) => {
       b.classList.remove("primary");
       b.classList.add("btn", "ghost", "tool-btn", "gk-new");

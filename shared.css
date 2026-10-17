@@ -1640,6 +1640,11 @@ body[class*="g-"] .gk-top-r .man-trigger:hover { color: var(--fg); border-color:
 .gk-ctl > .gk-select { flex: 1.5 1 0; }
 .gk-ctl > .btn { flex: 1 1 0; }
 .gk-ctl > .gk-select:only-child, .gk-ctl > .gk-new:only-child { flex: 1 1 100%; }
+/* A "play as" menu sits right beside the mode menu: both menus on the first line, Online and New game on the second. */
+.gk-ctl > .gk-select { order: 1; }
+.gk-ctl > .btn { order: 2; }
+.gk-ctl:has(> .gk-select:not([hidden]) ~ .gk-select:not([hidden])) { flex-wrap: wrap; }
+.gk-ctl:has(> .gk-select:not([hidden]) ~ .gk-select:not([hidden])) > * { flex: 1 1 calc(50% - 4px); }
 
 /* Mode menu, Online and New game share one size and shape. */
 body[class*="g-"] .panel .gk-sel-btn,
