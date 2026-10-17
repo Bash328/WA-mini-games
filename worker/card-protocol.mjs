@@ -13,7 +13,7 @@
    hands live: a player is only ever sent their own cards.
 
    room = {
-     code, game: "crazy-8" | "liars-dice" | ..., createdAt, lastActive, finishedAt,
+     code, game: "crazy-8" | "liars-dice" | "dominoes", createdAt, lastActive, finishedAt,
      phase: "lobby" | "playing" | "round_over" | "game_over",
      config: { mode: "normal"|"tournament", bots: 0-3, level: "easy"|"medium"|"hard" },
      players: [ { pid, token, name, online, offlineSince, autoBot, left } ],   people, in join order
@@ -26,11 +26,12 @@
 
 import "../crazy-8/engine.js";
 import "../liars-dice/engine.js";
+import "../dominoes/engine.js";
 
 /* One engine per game, all with the same shape (see crazy-8/engine.js):
    create, act, botAct, view, nextRound, and optionally fallback(state, seat)
    (an action that is always legal) and PAUSE (ms between rounds). */
-const ENGINES = { "crazy-8": globalThis.Crazy8, "liars-dice": globalThis.LiarsDice };
+const ENGINES = { "crazy-8": globalThis.Crazy8, "liars-dice": globalThis.LiarsDice, "dominoes": globalThis.Dominoes };
 const GAME_MODES = { "crazy-8": ["normal", "tournament"] };
 export const CARD_GAMES = Object.keys(ENGINES);
 const engineOf = (room) => ENGINES[room.game];

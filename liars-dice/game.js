@@ -67,7 +67,7 @@
     const reveal = t.reveal && M.phase !== "playing";
     t.seats.forEach((s, i) => {
       if (i === t.you) return;
-      const box = el("div", "ld-opp" + (t.turn === i && M.phase === "playing" ? " turn" : "") + (s.status === "out" ? " gone" : ""));
+      const box = el("div", "ld-opp" + (t.turn === i && M.phase === "playing" ? " act" : "") + (s.status === "out" ? " gone" : ""));
       box.append(el("div", "nm", s.name));
       let st = s.bot ? "computer" : "";
       const p = M.players && M.players.find((x) => x.seat === i);
