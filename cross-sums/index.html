@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>cross sums · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Cross Sums (Kakuro) — fill the white squares with 1 to 9 so every run adds up to its clue, with no digit repeated in a run. A new daily puzzle, three levels.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .cs-grid { --n: 8; display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(480px, 100%); aspect-ratio: 1; margin: 8px auto; border: 2px solid var(--fg); background: #1d1a16; font-size: calc(min(100vw - 40px, 480px) / var(--n) * 0.5); user-select: none; }
+  .cs-b { background: #1d1a16; border: 1px solid #3a342a; position: relative; color: #e8e2d4; box-sizing: border-box; min-width: 0; min-height: 0; }
+  .cs-b .a, .cs-b .d { position: absolute; font-size: .66em; font-weight: 700; line-height: 1; }
+  .cs-b .a { right: 8%; top: 9%; }
+  .cs-b .d { left: 10%; bottom: 9%; }
+  .cs-b.clue::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top right, transparent calc(50% - .5px), #6b6354 calc(50% - .5px), #6b6354 calc(50% + .5px), transparent calc(50% + .5px)); pointer-events: none; }
+  body.g-cross-sums .panel .cs-w { position: relative; min-width: 0; min-height: 0; padding: 0; border-radius: 0; border: 1px solid #b9ad92; background: #fbf7ee; color: #1d1a16; font-weight: 700; font-size: 1em; display: flex; align-items: center; justify-content: center; box-sizing: border-box; cursor: pointer; }
+  body.g-cross-sums .panel .cs-w.given { background: #e6dcc4; color: #1d1a16; cursor: default; }
+  body.g-cross-sums .panel .cs-w.peer { background: #efe6cf; }
+  body.g-cross-sums .panel .cs-w.sel { background: #ffe9a8; outline: 2px solid #e0a21b; outline-offset: -2px; z-index: 1; }
+  body.g-cross-sums .panel .cs-w.bad { background: #f3b8b0; }
+  body.g-cross-sums .panel .cs-w.mine { color: #1f6f56; }
+  .cs-w .notes { position: absolute; inset: 2px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); font-size: .36em; font-weight: 600; color: #6b6354; line-height: 1; pointer-events: none; }
+  .cs-w .notes span { display: flex; align-items: center; justify-content: center; }
+  .cs-pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; width: min(480px, 100%); margin: 8px auto; }
+  body.g-cross-sums .panel .cs-pad button { min-height: 44px; min-width: 0; padding: 0; font-size: 18px; font-weight: 700; border-radius: 10px; }
+  .cs-pad2 { display: flex; gap: 8px; width: min(480px, 100%); margin: 0 auto 8px; }
+  .cs-pad2 .btn { flex: 1; min-height: 42px; }
+  .cs-pad2 .btn.on { background: var(--fg); color: var(--bg); }
+  .cs-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 3em; margin: 4px 0; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-cross-sums">
+<main class="wrap">
+  <div class="topbar">
+    <h1>cross sums</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Fill every white square.</p>
+      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="cross-sums" data-man-title="CROSS-SUMS(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 5×5</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 7×7</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 9×9</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="cs-grid" id="grid" role="grid" aria-label="Cross sums grid"></div>
+    <div class="cs-hint" id="hint"></div>
+    <div class="cs-pad" id="pad"></div>
+    <div class="cs-pad2">
+      <button class="btn ghost" id="notes-btn" type="button">Notes</button>
+      <button class="btn ghost" id="erase-btn" type="button">Erase</button>
+      <button class="btn ghost" id="check-btn" type="button">Check</button>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-cross-sums">
+  <h2>Name</h2>
+  <p>cross sums — also known as Kakuro. A crossword made of sums.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Fill every <strong>white square</strong> with a digit from 1 to 9.</li>
+    <li>The numbers in the black squares are clues. The one at the <strong>top right</strong> is the total for the run of white squares going <strong>across</strong>; the one at the <strong>bottom left</strong> is for the run going <strong>down</strong>.</li>
+    <li>The digits in a run must <strong>add up to its clue</strong>, and a digit can't <strong>repeat</strong> within a run (the same digit may appear in other runs).</li>
+    <li>Every puzzle has exactly one solution. A few squares are filled in for you (the shaded ones) so it can be solved by reasoning alone.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap a white square, then a digit. When a square is selected, the line under the grid lists the ways each of its runs can be made (for example 17 in 2 squares can only be 8 + 9).</li>
+    <li><code>Notes</code> turns the digit buttons into pencil marks: tap a digit to add or remove a small note. <code>Erase</code> clears a square. <code>Check</code> marks runs that already break a rule. <code>↶ undo</code> takes back your last entry.</li>
+    <li>On a keyboard: type 1 to 9, Backspace to erase, arrow keys to move.</li>
+    <li>The puzzle is the same for everyone each day, at each level. <code>↻ new</code> gives a random one.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with the runs that have only one or two ways to be made: 3 or 4 in two squares, 16 or 17 in two, 6 or 7 in three. Squares where an across run and a down run both allow only one digit are solved. Notes keep track of what's left.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="puzzle.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>
