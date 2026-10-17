@@ -1406,14 +1406,14 @@ window.TAUNT_LINES = {
     loss: [
       "You held onto that Ace for too long.",
       "A 2 and a joker in one hand, and still no win.",
-      "You forgot the last card call. Typical.",
+      "You forgot which suit they called. Typical.",
       "Eight cards, zero chances. Impressive.",
       "They changed the suit and you never saw it coming.",
       "You picked up more cards than you played.",
       "The pile was yours. You never put it down.",
     ],
     win: [
-      "Last card, called and played. Clean.",
+      "Last card played. Clean.",
       "You emptied the hand and the table.",
       "That Ace was worth waiting for.",
       "You changed the suit at exactly the right moment.",

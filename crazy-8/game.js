@@ -12,7 +12,7 @@
   const statusEl = $("status"), modeSel = $("mode"), botsSel = $("bots"), gmodeSel = $("gmode"), chipsEl = $("chips");
   const roomEl = $("c8-room"), tableEl = $("c8"), oppsEl = $("c8-opps"), drawEl = $("c8-draw"), topEl = $("c8-top"), drawnEl = $("c8-drawn");
   const infoEl = $("c8-info"), bannerEl = $("c8-banner"), logEl = $("c8-log"), hintEl = $("c8-hint"), handEl = $("c8-hand");
-  const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), lastBtn = $("last-btn"), resetBtn = $("reset-btn");
+  const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
   const suitPick = $("c8-suitpick"), suitsEl = $("c8-suits"), toastEl = $("c8-toast"), tauntsEl = $("c8-taunts");
   const store = Gamekit.storage("crazy-8:");
 
@@ -34,7 +34,7 @@
   // M = { kind, phase: "landing"|"lobby"|"playing"|"round_over"|"game_over"|"closed", table: engine view | null,
   //       players, you: { seat, host, pid }, code, config, closed: text }
   let M = null;
-  let selected = null, lastArmed = false, pendingPlay = null;
+  let selected = null, pendingPlay = null;
 
   /* ---------- cards on screen ---------- */
   function cardName(c) {
@@ -119,7 +119,6 @@
       case "blocked": return n(e.seat) + " " + verb(e.seat, "block", "blocks") + " the pick-up of " + e.total + " with an Ace";
       case "skip": return seatName(e.seat) + " is skipped";
       case "reverse": return "Direction reversed";
-      case "last-missed": return n(e.seat) + " " + verb(e.seat, "forgot", "forgot") + " to call last card and " + verb(e.seat, "pick up", "picks up") + " 2";
       case "out-of-cards": return n(e.seat) + " " + verb(e.seat, "are", "is") + " out of cards";
       case "eliminated": return n(e.seat) + " " + verb(e.seat, "are", "is") + " out of the tournament";
       case "reshuffle": return "The pile was shuffled back in";
@@ -244,11 +243,6 @@
     drawBtn.textContent = t.pending > 0 ? "Pick up " + t.pending + " cards" : "Pick up a card";
     passBtn.hidden = !(mine && o.pass);
     playBtn.disabled = !(mine && selected);
-    const two = t.you !== null && t.seats[t.you].hand && t.seats[t.you].hand.length === 2;
-    lastBtn.hidden = !(two && mine);
-    lastBtn.classList.toggle("on", lastArmed);
-    lastBtn.textContent = lastArmed ? "Last card! (called)" : "Last card!";
-    if (!two || !mine) lastArmed = false;
   }
 
   function renderLog() {
@@ -275,7 +269,7 @@
     if (!t || !selected) return;
     if (whyNot(selected)) { showHint(selected, true); return; }
     if (C.rankOf(selected) === "8") return askSuit(selected);
-    send({ t: "play", card: selected, last: lastArmed });
+    send({ t: "play", card: selected });
   }
   function askSuit(card) {
     pendingPlay = card;
@@ -283,7 +277,7 @@
     ["S", "H", "D", "C"].forEach((s) => {
       const b = el("button", s === "H" || s === "D" ? "red" : "", SYM[s]);
       b.type = "button"; b.setAttribute("aria-label", SUIT_NAME[s]);
-      b.addEventListener("click", () => { suitPick.classList.remove("on"); const c = pendingPlay; pendingPlay = null; send({ t: "play", card: c, suit: s, last: lastArmed }); });
+      b.addEventListener("click", () => { suitPick.classList.remove("on"); const c = pendingPlay; pendingPlay = null; send({ t: "play", card: c, suit: s }); });
       suitsEl.append(b);
     });
     suitPick.classList.add("on");
@@ -293,11 +287,10 @@
   playBtn.addEventListener("click", playSelected);
   drawBtn.addEventListener("click", doDraw);
   passBtn.addEventListener("click", () => send({ t: "pass" }));
-  lastBtn.addEventListener("click", () => { lastArmed = !lastArmed; renderActions(); if (selected) showHint(selected); });
 
   // an action goes to the local game or to the room
   function send(action) {
-    selected = null; lastArmed = false; hintEl.classList.add("idle");
+    selected = null; hintEl.classList.add("idle");
     if (!M) return;
     if (M.kind === "local") return localAct(action);
     onlineSend({ t: "act", a: action });
@@ -328,7 +321,7 @@
     const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Computer " + (i + 1)));
     const bots = [null].concat(Array(n).fill(diff));
     L = { st: C.create({ names, bots, mode: cfg.mode, starter: 0 }, Math.random), cfg, events: [], timer: null };
-    selected = null; lastArmed = false;
+    selected = null;
     localRender(); localSchedule();
   }
   function localRender() {
@@ -419,14 +412,12 @@
     } else if (m.t === "room") {
       const v = m.v;
       offset = Date.now() - v.now;
-      const prevPhase = M && M.phase, prevTurn = M && M.table ? M.table.turn : null;
       M = {
         kind: "online", phase: v.phase, table: v.table, players: v.players, you: v.you, code: v.code, config: v.config,
         lastEvents: v.lastEvents, turnSince: v.turnSince, idleMs: v.idleMs, takeoverMs: v.takeoverMs, now: v.now, seatsWanted: v.seatsWanted,
         host: v.host,
       };
       if (M.table) M.table.you = v.you.seat;
-      if (prevPhase !== M.phase || (M.table && prevTurn !== M.table.turn)) { lastArmed = false; }
       renderAll();
     } else if (m.t === "notice") toast(m.text);
     else if (m.t === "taunt") onTaunt(m);

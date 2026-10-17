@@ -95,16 +95,6 @@ console.log("crazy 8:");
   check("with two players a 7 means you play again", st4.turn === 0);
 }
 
-// --- last card
-{
-  const st = table(2, [["5H", "9H"], ["3C"]], "7H");
-  const r = C.act(st, 0, { t: "play", card: "5H" }, rng);
-  check("going down to one card without calling costs 2 cards", r.ok && st.seats[0].hand.length === 3 && r.events.some((e) => e.e === "last-missed"));
-  const st2 = table(2, [["5H", "9H"], ["3C"]], "7H");
-  C.act(st2, 0, { t: "play", card: "5H", last: true }, rng);
-  check("calling it first costs nothing", st2.seats[0].hand.length === 1);
-}
-
 // --- winning
 {
   const st = table(3, [["2H"], ["3C"], ["4C"]], "7H");

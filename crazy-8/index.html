@@ -212,7 +212,6 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
         <div class="c8-pile draw"><div id="c8-draw"></div><span id="c8-drawn">0 left</span></div>
         <div class="c8-pile"><div id="c8-top"></div><span>discard</span></div>
       </div>
-      <div class="c8-pips" id="c8-info"></div>
       <div class="c8-banner" id="c8-banner"></div>
       <div class="c8-log" id="c8-log"></div>
       <div class="c8-hint idle" id="c8-hint">Tap a card to lift it. Special cards tell you what they do. Tap it again to play it.</div>
@@ -222,8 +221,8 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
         <button class="btn primary" id="play-btn" type="button" disabled>Play</button>
         <button class="btn" id="draw-btn" type="button" disabled>Pick up a card</button>
         <button class="btn" id="pass-btn" type="button" hidden>Keep it and pass</button>
-        <button class="btn" id="last-btn" type="button" hidden>Last card!</button>
       </div>
+      <div class="c8-pips" id="c8-info"></div>
       <div class="c8-taunts" id="c8-taunts" hidden></div>
     </div>
     <details class="c8-guide" id="c8-guide">
@@ -237,7 +236,6 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
         <dt>8</dt><dd>You <b>name any suit</b>. It goes on the same suit (or another 8), and can't dodge a pick-up.</dd>
         <dt>Q, K, 3 to 6, 9, 10</dt><dd>No special effect: match the suit or the number.</dd>
         <dt>Two players</dt><dd>With two players left, a 7 or a J means you play again.</dd>
-        <dt>Last card</dt><dd>Press <b>Last card!</b> before you play your second-to-last card, or you pick up 2.</dd>
       </dl>
     </details>
     <div class="toolbar">
@@ -256,7 +254,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
   <h2>Your turn: play a card, or pick up</h2>
   <ul>
-    <li>Play a card that matches the <strong>top card by suit or by number</strong> (a 5 of hearts goes on any heart, or on any 5). The chip beside the discard pile shows what you must match.</li>
+    <li>Play a card that matches the <strong>top card by suit or by number</strong> (a 5 of hearts goes on any heart, or on any 5). The chips under the buttons show what you must match.</li>
     <li>No card you can play, or you'd rather not? <strong>Pick up one card</strong> from the pile. If the card you picked up can be played you may play it straight away, or keep it and pass. You may pick up a card even when you do have something to play.</li>
     <li>The draw pile runs out? The played cards (except the top one) are shuffled back in.</li>
   </ul>
@@ -278,12 +276,6 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
     <li>When a pick-up is waiting for you, you can <strong>chain</strong>: play another 2 or a joker (any suit) and the pile gets bigger (2 + 2 = 4, 2 + joker = 7), and it's the next player's problem.</li>
     <li>Or <strong>block it with an Ace</strong>. Or pick up the whole pile. Picking up ends your turn.</li>
     <li>While a pick-up is waiting, 8s, jacks and sevens can't be played.</li>
-  </ul>
-
-  <h2>Last card</h2>
-  <ul>
-    <li>Tap <strong>Last card!</strong> before you play your second-to-last card. Go down to one card without it and you <strong>pick up 2</strong>. The computer never forgets.</li>
-    <li>You can win with any card, including a special one.</li>
   </ul>
 
   <h2>The first card</h2>

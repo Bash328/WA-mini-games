@@ -23,7 +23,7 @@
      picking up. On your turn you may pick up one card instead of playing, even
      holding a legal card; if the card you drew can be played you may play it,
      otherwise (or if you pass) the turn moves on. Going down to one card
-     without having pressed "last card" costs 2 cards. You can win on any card.
+     You can win on any card.
      The flipped start card, if special, hits the first player: 2/joker = they
      face the pick-up, J = they are skipped, 7 = direction reverses and the
      player on the other side starts, Ace/8 = they play anything.
@@ -216,11 +216,6 @@
     else if (rank === "8") st.cons = { suit: action.suit, rank: "8" };
     else st.cons = { suit, rank };
 
-    // down to one card without calling "last card": pick up 2
-    if (me.hand.length === 1 && !action.last) {
-      const got = drawCards(st, seat, 2, events);
-      events.push({ e: "last-missed", seat, n: got });
-    }
     st.moves++;
 
     if (me.hand.length === 0) {
@@ -295,15 +290,14 @@
     return best;
   }
 
-  /* Choose an action for the seat to move. level: "easy" | "medium" | "hard".
-     The computer never forgets to call "last card". */
+  /* Choose an action for the seat to move. level: "easy" | "medium" | "hard". */
   function botAct(st, seat, level, rng) {
     const me = st.seats[seat];
     const plays = legalPlays(st, seat);
     const nextSeat = advance(st, seat, 1);
     const nextCount = st.seats[nextSeat].hand.length;
     const mk = (card) => {
-      const a = { t: "play", card, last: true };
+      const a = { t: "play", card };
       if (rankOf(card) === "8") a.suit = bestSuit(me.hand.filter((c) => c !== card));
       return a;
     };
