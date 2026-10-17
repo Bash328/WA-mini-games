@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>sliding puzzle · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Sliding Puzzle — slide the numbered tiles into order. A new daily puzzle in three sizes, or a random one.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<style>
+  .sp-board { --n: 4; position: relative; width: min(420px, 100%); aspect-ratio: 1; margin: 10px auto; background: #3a342a; border-radius: var(--r-md); padding: 6px; box-sizing: border-box; user-select: none; touch-action: manipulation; }
+  .sp-inner { position: relative; width: 100%; height: 100%; font-size: calc(min(100vw - 52px, 408px) / var(--n) * 0.42); }
+  body.g-sliding-puzzle .panel .sp-t { position: absolute; width: calc(100% / var(--n)); height: calc(100% / var(--n)); min-width: 0; min-height: 0; padding: 3px; border: 0; background: transparent; border-radius: 0; transition: left .12s ease, top .12s ease; font-size: inherit; font-weight: 700; cursor: pointer; box-sizing: border-box; }
+  .sp-t span { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 10%; background: #e6d3a8; color: #1d1a16; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.4); }
+  .sp-t.home span { background: #bfe0c8; }
+  .sp-t.done span { background: #7fe0a0; }
+  .sp-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.6em; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-sliding-puzzle">
+<main class="wrap">
+  <div class="topbar">
+    <h1>sliding puzzle</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Put the tiles in order.</p>
+      <p class="status">Moves: <span id="moves">0</span> · Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="sliding-puzzle" data-man-title="SLIDING-PUZZLE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 3×3</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 4×4</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 5×5</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="sp-board" id="board"><div class="sp-inner" id="inner"></div></div>
+    <div class="sp-hint" id="hint"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> restart</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-sliding-puzzle">
+  <h2>Name</h2>
+  <p>sliding puzzle — the classic 15-puzzle, in three sizes.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The tray holds the numbers from 1 up and <strong>one empty square</strong>.</li>
+    <li>Slide a tile next to the gap into it. Put the numbers in order, <strong>1, 2, 3 … left to right, top to bottom</strong>, with the empty square last.</li>
+    <li>Every puzzle can be solved. The fewer moves, the better.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap a tile to slide it into the gap. Tap a tile further along the same row or column and the whole line slides (each tile moved counts as a move).</li>
+    <li>On a keyboard, the arrow keys slide a tile in that direction.</li>
+    <li><code>↶ undo</code> takes back a move. <code>↻ restart</code> puts the same puzzle back as it started. <code>↻ new</code> gives a random one.</li>
+    <li>The puzzle is the same for everyone each day, at each size. The clock starts at your first move.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Solve the top row, then the next, working down: a finished row never has to move again. Leave the last two rows for the end and finish them column by column. Tiles tinted green are in the right place.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="puzzle.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>
