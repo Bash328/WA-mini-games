@@ -441,7 +441,7 @@
       const inRoom = phase === "room";
       opts.onState(inRoom ? state : null, inRoom && canMove(), {
         me: me, seat: seat, picked: picked, myPick: myPick, config: config,
-        seated: bothSeated(), phase: phase,
+        seated: bothSeated(), phase: phase, gameId: gameId,
       });
       ui.hidden = false;
       ui.replaceChildren();

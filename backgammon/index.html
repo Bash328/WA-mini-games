@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js"></script>
+<title>backgammon · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Backgammon — race your checkers home and bear them off first. Over WhatsApp, live online with server-rolled dice, against the computer, or on one device.">
+<meta property="og:title" content="Backgammon · two players over WhatsApp">
+<meta property="og:description" content="Roll, move, and send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../async-share.css">
+<style>
+  .bg-wrap { width: min(560px, 100%); margin: 8px auto 0; }
+  .bg-info { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; margin: 0 0 6px; }
+  .bg-board { display: grid; grid-template-columns: repeat(6, 1fr) .8fr repeat(6, 1fr) 1.1fr; grid-template-rows: 1fr 1fr; gap: 0; aspect-ratio: 1.1; padding: 6px; background: #5a3d22; border-radius: var(--r-md); box-sizing: border-box; }
+  /* a point: a triangle behind a stack of checkers. #board-prefixed to beat the shared panel-button rule. */
+  #board .bg-pt { position: relative; display: flex; flex-direction: column; align-items: center; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 0; background: #d9c394; cursor: default; overflow: hidden; }
+  #board .bg-pt::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; bottom: 0; background: var(--tri); z-index: 0; }
+  #board .bg-pt.top { justify-content: flex-start; }
+  #board .bg-pt.top::before { clip-path: polygon(0 0, 100% 0, 50% 92%); }
+  #board .bg-pt.bot { justify-content: flex-end; }
+  #board .bg-pt.bot::before { clip-path: polygon(0 100%, 100% 100%, 50% 8%); }
+  #board .bg-pt { --tri: #8a4b2d; }
+  #board .bg-pt.alt { --tri: #3c5a46; }
+  #board .bg-pt.can { cursor: pointer; }
+  #board .bg-pt.sel { box-shadow: inset 0 0 0 3px #f1d27a; }
+  #board .bg-pt.dest { cursor: pointer; box-shadow: inset 0 0 0 3px #7fe0a0; background: #e9dcb7; }
+  #board .bg-pt.last { box-shadow: inset 0 0 0 2px rgba(255,255,255,.6); }
+  #board .bg-pt:disabled { opacity: 1; }
+  .bg-ch { position: relative; z-index: 1; width: 78%; aspect-ratio: 1; border-radius: 50%; flex: none; box-shadow: 0 1px 2px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .bg-ch.p1 { background: radial-gradient(circle at 35% 30%, #ff8a85, #c0392b 75%); color: #fff; border: 1px solid #8e2a20; }
+  .bg-ch.p2 { background: radial-gradient(circle at 35% 30%, #ffffff, #d9d2c0 80%); color: #3a342a; border: 1px solid #a89f89; }
+  #board .bg-bar, #board .bg-tray { display: flex; flex-direction: column; align-items: center; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 0; background: #3b2713; cursor: default; overflow: hidden; }
+  #board .bg-bar { grid-row: 1 / 3; grid-column: 7; justify-content: space-between; }
+  .bg-bar .half { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; border: 0; background: transparent; padding: 0; min-height: 0; }
+  .bg-bar .half.top { justify-content: flex-start; }
+  .bg-bar .half.bot { justify-content: flex-end; }
+  body.g-backgammon .panel .bg-bar .half { background: transparent; border: 0; min-height: 0; padding: 0; border-radius: 0; }
+  body.g-backgammon .panel .bg-bar .half.can { cursor: pointer; }
+  body.g-backgammon .panel .bg-bar .half.sel { box-shadow: inset 0 0 0 3px #f1d27a; }
+  #board .bg-tray { grid-column: 14; background: #3b2713; justify-content: center; gap: 1px; border-left: 2px solid #5a3d22; }
+  #board .bg-tray.top { grid-row: 1; justify-content: flex-start; padding-top: 4px; }
+  #board .bg-tray.bot { grid-row: 2; justify-content: flex-end; padding-bottom: 4px; }
+  #board .bg-tray.dest { cursor: pointer; box-shadow: inset 0 0 0 3px #7fe0a0; }
+  .bg-tray .bg-ch { width: 80%; aspect-ratio: 3; border-radius: 3px; }
+  .bg-dice { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 0; min-height: 56px; }
+  .bg-die { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); width: 40px; height: 40px; padding: 6px; box-sizing: border-box; border-radius: 9px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .bg-die i { border-radius: 50%; margin: 6%; }
+  .bg-die i.on { background: #1d1a16; }
+  .bg-die.used { opacity: .3; }
+  .bg-dice .btn { min-height: 44px; padding: 0 18px; }
+  .bg-who { color: var(--muted); font-size: var(--fs-sm); }
+  .bg-hint { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-backgammon">
+<main class="wrap">
+  <div class="topbar">
+    <h1>backgammon</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Roll the dice.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="backgammon" data-man-title="BACKGAMMON(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play White" value="2">Play White</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="bg-wrap">
+      <div class="bg-info" id="info"></div>
+      <div class="bg-board" id="board" role="group" aria-label="Backgammon board"></div>
+      <div class="bg-dice" id="dice"></div>
+    </div>
+    <p class="bg-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo move</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-backgammon">
+  <h2>Name</h2>
+  <p>backgammon — race your checkers home, then bear them off.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Fifteen checkers each. <strong>Red</strong> moves from the top right round to the bottom right (its home); <strong>White</strong> goes the other way, to the top right. Red goes first.</li>
+    <li>Roll two dice. Each die moves one checker that many points (one checker may use both). <strong>Doubles</strong> give four moves.</li>
+    <li>A point with <strong>two or more enemy checkers is blocked</strong>. Land on a <strong>single</strong> enemy checker and you hit it: it goes to the <strong>bar</strong> (the middle) and its owner must bring it back in before doing anything else, onto an open point in your home board.</li>
+    <li>You must play <strong>as many dice as you can</strong>; if only one die can be played it has to be the larger one. If you can't move at all, you pass.</li>
+    <li>Once all 15 of your checkers are in your home board, you can <strong>bear off</strong>: a die removes a checker from that exact point, or from your furthest-back point if the die is bigger than any point you still hold.</li>
+    <li>First to bear off all 15 wins. This is a single game: no gammons and no doubling cube.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap <code>Roll</code> for your dice. Tap a checker (or the bar) to see where it can go, then tap a highlighted point, or the tray on the right to bear off.</li>
+    <li><code>↶ undo move</code> takes back moves within your turn. When all dice are played (or none can be), tap <code>Done</code>.</li>
+    <li>Use the mode menu to play the computer or share one device.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Red</strong>. Your whole turn, all its moves, goes in one link: tap <code>Done</code>, then <code>Send on WhatsApp</code>.</li>
+    <li>Over WhatsApp your own browser rolls your dice, so it runs on trust (like Pig). For dice nobody can touch, play <strong>Online</strong>: there the server rolls them.</li>
+  </ul>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. The server rolls the dice and checks every move. If you can't move, it passes the turn for you.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Make points (two checkers together): they're safe and they block. Leave as few single checkers (blots) within reach of the enemy as you can, and keep your own pieces together when you have to come around the board.</p>
+</template>
+
+<script defer src="../manpage.js"></script>
+<script defer src="../taunts.js"></script>
+<script defer src="../gamekit.js"></script>
+<script defer src="../vendor/lz-string.min.js"></script>
+<script defer src="../async-share.js"></script>
+<script defer src="../account.js"></script>
+<script defer src="../live-share.js"></script>
+<script defer src="rules.js"></script>
+<script defer src="game.js"></script>
+</body>
+</html>

@@ -97,7 +97,7 @@ function shapeOk(e) {
 /* msg: { t:"move", n, s }. Returns { ok: true, state } (room mutated) or
    { ok: false, reason }. Reasons: waiting, over, stale, not-your-turn,
    illegal. The server, not the client, decides turn / moveCount / id. */
-export function applyMove(room, seat, msg, now) {
+export function applyMove(room, seat, msg, now, rand = Math.random) {
   const G = liveGame(room.game);
   if (!G) return { ok: false, reason: "illegal" };
   if (!bothSeated(room)) return { ok: false, reason: "waiting" };
@@ -138,6 +138,12 @@ export function applyMove(room, seat, msg, now) {
       board: s.board, status: s.status, winner: s.status === "won" ? s.winner : null,
       moveCount: prevCount + 1, last: s.last,
     };
+    // A game with a stamp hook (Backgammon) has the SERVER roll for the next player: the hook rewrites the board's
+    // dice and may pass the turn on if that player cannot move.
+    if (G.rules.stamp && next.status === "in_progress") {
+      const st = G.rules.stamp(prev, next, mover, rand);
+      next.board = st.board; next.turn = st.turn;
+    }
   }
 
   room.state = next;

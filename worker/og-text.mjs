@@ -38,6 +38,7 @@ const GAMES = {
   "hex":                { title: "hex",                labels: { 1: "Red", 2: "Blue" } },
   "onitama":            { title: "onitama",            labels: { 1: "Red", 2: "Blue" } },
   "quoridor":           { title: "quoridor",           labels: { 1: "Red", 2: "Blue" } },
+  "backgammon":         { title: "backgammon",         labels: { 1: "Red", 2: "White" } },
   "crazy-8":            { title: "crazy 8",            labels: { 1: "Player 1", 2: "Player 2" } },
   "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
   "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
