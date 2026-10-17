@@ -276,7 +276,7 @@
   function view(st, seat) {
     return {
       v: 1, mode: st.mode, round: st.round, phase: st.phase, you: seat, dir: st.dir, turn: st.turn,
-      cons: st.cons, pending: st.pending, top: st.discard[st.discard.length - 1] || null,
+      cons: st.cons, pending: st.pending, top: st.discard[st.discard.length - 1] || null, prev: st.discard.slice(-3, -1),
       drawCount: st.draw.length, discardCount: st.discard.length,
       seats: st.seats.map((s, i) => ({ name: s.name, bot: s.bot, status: s.status, count: s.hand.length, hand: i === seat ? s.hand.slice() : undefined })),
       drawn: seat === st.turn ? st.drawn : null,

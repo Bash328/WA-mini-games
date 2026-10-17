@@ -133,7 +133,8 @@
     oppsEl.innerHTML = "";
     t.seats.forEach((s, i) => {
       if (i === t.you) return;
-      const box = el("div", "c8-opp" + (t.turn === i && M.phase === "playing" ? " turn" : "") + (s.status === "out" ? " gone" : ""));
+      const box = el("div", "c8-opp" + (t.turn === i && M.phase === "playing" ? " on-turn" : "") + (s.status === "out" ? " gone" : ""));
+      box.style.setProperty("--pc", seatCol(i));
       box.append(el("div", "nm", s.name));
       let st = s.bot ? "computer" : "";
       const p = M.players && M.players.find((x) => x.seat === i);
@@ -163,7 +164,8 @@
     if (t.options.draw && M.phase === "playing") { back.style.cursor = "pointer"; back.addEventListener("click", doDraw); back.title = "Pick up"; }
     drawEl.append(back);
     drawnEl.textContent = t.drawCount + " left";
-    if (t.top) topEl.append(cardEl(t.top, { cls: "lg" }));
+    (t.prev || []).forEach((c) => topEl.append(cardEl(c, { cls: "lg peek" })));
+    if (t.top) topEl.append(cardEl(t.top, { cls: "lg top" }));
     infoEl.innerHTML = "";
     const must = el("span", "c8-chip");
     if (t.cons.any) must.textContent = "Play any card";
@@ -177,9 +179,13 @@
     infoEl.append(el("span", "c8-chip", t.dir === 1 ? "↻ clockwise" : "↺ reversed"));
   }
 
+  const SEAT_COL = ["#4aa3ff", "#ff6b6b", "#46c46f", "#f5b83d"];
+  const seatCol = (i) => SEAT_COL[i % SEAT_COL.length];
   function renderBanner() {
     const t = M.table;
     bannerEl.className = "c8-banner";
+    const col = M.phase === "playing" && t.turn !== null && t.turn !== undefined ? seatCol(t.turn) : "";
+    if (col) bannerEl.style.setProperty("--pc", col); else bannerEl.style.removeProperty("--pc");
     let text = "";
     const mine = t.turn === t.you && M.phase === "playing";
     if (M.phase === "game_over") {
@@ -218,6 +224,7 @@
   function renderHand() {
     const t = M.table;
     handEl.innerHTML = "";
+    if (t.you !== null) handEl.style.setProperty("--pc", seatCol(t.you));
     const youOut = t.you === null || t.seats[t.you].status === "out";
     if (youOut) { handEl.append(el("span", "note", "")); return; }
     const hand = sortHand(t.seats[t.you].hand || []);

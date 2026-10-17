@@ -618,6 +618,17 @@
     if (!acts.isConnected) { const fn = $(".footer-note", panel); if (fn) fn.before(acts); else panel.appendChild(acts); }
     if (!acts.children.length) acts.hidden = true;
     if (!ctl.children.length) ctl.hidden = true;
+
+    // Once you start playing (first tap on the board) the menus fold away; "Options" brings them back.
+    if (ctl.children.length || opts.children.length) {
+      const ob = mk("button", "btn ghost gk-optbtn");
+      ob.type = "button"; ob.textContent = "⚙ Options";
+      ob.addEventListener("click", () => body.classList.remove("gk-play"));
+      ctl.before(ob);
+      panel.addEventListener("pointerdown", (e) => {
+        if (!e.target.closest(".gk-ctl, .gk-opts, .gk-acts, .gk-optbtn, .row, .wa-ui, [id$='-room'], select, input, a")) body.classList.add("gk-play");
+      });
+    }
   }
 
   function init() {
