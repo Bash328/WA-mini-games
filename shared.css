@@ -1740,7 +1740,7 @@ body.g-gomoku { --p1: #8fa3bf; --p2: #f4efe6; }
 body.g-hex { --p1: #ff6b6b; --p2: #5c9cff; }
 body.g-ultimate-tic-tac-toe { --p1: #f5b800; --p2: #4dd9ac; }
 body.g-blokus-duo { --p1: #ff9f43; --p2: #8f74f5; }
-body.g-onitama { --p1: #ff6b6b; --p2: #5c9cff; }
+body.g-onitama, body.g-quoridor { --p1: #ff6b6b; --p2: #5c9cff; }
 
 /* light theme: Sudoku colours, and primary buttons that turned white-on-white when hovered */
 html[data-theme="light"] :is(body.g-mini-sudoku, body.g-sudoku) { --sk-grid: #e6dcc9; --sk-line: #8a7a5e; --sk-cell: #fbf7ee; --sk-cell-b: #cfc4ad; --sk-digit: #1f8f6a; --sk-given: #e3d9c4; --sk-given-fg: #231f1a; --sk-peer: #f1eadb; --sk-given-peer: #d9ceb7; --sk-note: #6b6459; --sk-btn: #efe8da; --sk-btn-b: #c9bca5; --sk-btn-hover: #e6dcc9; --sk-btn-hover-b: #a39b8c; --sk-act: #efe8da; }

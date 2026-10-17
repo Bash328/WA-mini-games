@@ -22,6 +22,7 @@ import * as ultimate from "./rules/ultimate-tic-tac-toe.mjs";
 import * as hex from "./rules/hex.mjs";
 import * as blokusDuo from "./rules/blokus-duo.mjs";
 import * as onitama from "./rules/onitama.mjs";
+import * as quoridor from "./rules/quoridor.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
@@ -38,6 +39,7 @@ export const LIVE_GAMES = {
   "blokus-duo":     { version: 1, players: [1, 2], first: 1, rules: blokusDuo },
   "hex":            { version: 1, players: [1, 2], first: 1, rules: hex },
   "onitama":        { version: 1, players: [1, 2], first: 1, rules: onitama },
+  "quoridor":       { version: 1, players: [1, 2], first: 1, rules: quoridor },
   "ultimate-tic-tac-toe": { version: 1, players: [1, 2], first: 1, rules: ultimate },
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.
