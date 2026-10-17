@@ -162,11 +162,13 @@
   // claim something the mode makes untrue. In a link or live game that has an
   // Admit defeat button, a "you're behind" taunt is sometimes the Admit defeat
   // nudge instead, and very rarely the button itself winks (shared.css).
+  const ABOUT_OTHERS = /\b(opponents?|opponent's|rivals?|enem(y|ies)|friends?|they|them|their|theirs|humans?|mates?|everyone|group[- ]chat|your (side|team))\b/i;
   const recent = [];                 // the last few lines handed out, so the strip can find them
   function taunt(category, game) {
     const all = global.TAUNT_LINES || {};
     const kind = modeKind();
     const computer = kind === "computer";
+    const solo = kind === "solo";                 // nobody to play against: no line about an opponent, friends or the group chat
     if (category === "lastChance" && (kind === "link" || kind === "live") && $(".wa-resign-row")) {
       if (Math.random() < 0.5) category = "losingHint";
       if (Math.random() < 0.1) {
@@ -175,9 +177,9 @@
       }
     }
     const mine = all[game || GAME_ID] || {};
-    const ok = (l) => computer === /\bcomputer\b/i.test(l);
+    const ok = (l) => computer === /\bcomputer\b/i.test(l) && !(solo && ABOUT_OTHERS.test(l));
     // the generic pool has a few lines that mention the computer: only the computer mode may use them
-    const gen = (c) => (((computer ? all._computer : all._) || {})[c] || []).filter((l) => computer || !/\bcomputer\b/i.test(l));
+    const gen = (c) => (((computer ? all._computer : all._) || {})[c] || []).filter((l) => (computer || !/\bcomputer\b/i.test(l)) && !(solo && ABOUT_OTHERS.test(l)));
     // a category only the game defines (2048's "over-hard") has no generic pool and no mode filter
     const own = (c) => (mine[c] || []).filter((l) => ok(l) || !(all._ || {})[c]);
     const cat = gen(category).length || own(category).length ? category : "loss";
@@ -315,7 +317,7 @@
     slotEl = document.createElement("div");
     slotEl.id = "gk-slot";
     slotEl.className = "gk-slot";
-    if (document.getElementById("wa-ui") || GAME_ID === "2048") slotEl.dataset.reserve = "1";
+    if (document.getElementById("wa-ui") || GAME_ID === "2048" || document.querySelector("[data-board]")) slotEl.dataset.reserve = "1";
     const say = document.createElement("p");
     say.className = "gk-say";
     say.hidden = true;
@@ -328,7 +330,7 @@
     const ref = document.getElementById("wa-ui");
     if (ref) ref.after(slotEl);
     else {
-      let b = document.getElementById("board");
+      let b = document.getElementById("board") || document.querySelector("[data-board]");
       if (b) { while (b.parentNode !== panel) b = b.parentNode; b.before(slotEl); } else panel.appendChild(slotEl);
     }
     return slotEl;
@@ -469,7 +471,20 @@
       active = Math.max(0, items.findIndex((o) => o.value === sel.value));
       list.hidden = false;
       btn.setAttribute("aria-expanded", "true");
+      place();
       mark();
+    }
+    // keep the open list on screen: slide it left if it would run past the right edge (or right, past the left),
+    // so it can never push the page sideways
+    function place() {
+      list.style.left = "";
+      const vw = document.documentElement.clientWidth, pad = 8;
+      list.style.maxWidth = (vw - 2 * pad) + "px";
+      const r = list.getBoundingClientRect();
+      let shift = 0;
+      if (r.right > vw - pad) shift = (vw - pad) - r.right;
+      if (r.left + shift < pad) shift = pad - r.left;
+      if (shift) list.style.left = shift + "px";
     }
     function close(refocus) {
       list.hidden = true;

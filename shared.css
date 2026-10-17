@@ -1669,6 +1669,9 @@ body[class*="g-"] .panel .gk-sel-btn:hover { background: var(--border); border-c
 
 /* ── The strip above the board: taunts, the result, messages from your opponent ── */
 .gk-slot { margin: 0 0 12px; }
+.gk-slot:last-child { margin: 12px 0 0; }            /* a page with no board to sit above: never flush against the buttons */
+/* nothing may push a game page sideways (an open menu, a wide board) */
+body[class*="g-"] { overflow-x: clip; }
 .gk-slot[data-reserve] { min-height: 58px; }
 .gk-moved { display: none !important; }
 .gk-msg {

@@ -34,11 +34,11 @@
   body.g-onitama .panel .on-card.cand { outline: 2px dashed var(--pc, #ff6b6b); outline-offset: 1px; }
   body.g-onitama .panel .on-card.side { flex: 0 0 auto; width: 100%; opacity: .92; }
   .on-card .nm { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
-  .on-mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; width: 70px; aspect-ratio: 1; }
+  .on-mini { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 1px; width: 70px; aspect-ratio: 1; }
   .on-mini i { background: color-mix(in srgb, var(--fg) 9%, transparent); border-radius: 1px; }
   .on-mini i.c { background: var(--fg); opacity: .7; }
   .on-mini i.m { background: var(--pc, #ff6b6b); }
-  .on-board { display: grid; grid-template-columns: repeat(5, 1fr); aspect-ratio: 1; gap: 2px; padding: 3px; background: #5a4a34; border-radius: var(--r-md); }
+  .on-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); aspect-ratio: 1; gap: 2px; padding: 3px; background: #5a4a34; border-radius: var(--r-md); }
   #board .on-cell { position: relative; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 4px; background: #e6d3a8; cursor: default; }
   #board .on-cell:nth-child(even) { background: #d9c394; }
   #board .on-cell.mine, #board .on-cell.dest { cursor: pointer; }

@@ -24,7 +24,7 @@
      shared "body[class*='g-'] .panel button" rule (background, radius, 40px min-height). */
   .gm-board {
     display: grid;
-    grid-template-columns: repeat(15, 1fr);
+    grid-template-columns: repeat(15, minmax(0, 1fr)); grid-template-rows: repeat(15, minmax(0, 1fr));
     aspect-ratio: 1;
     padding: 2.2%;
     background: #d9b062;
