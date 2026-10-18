@@ -105,10 +105,10 @@
   #board .db-h { height: 13px; background: #fff; } #board .db-v { width: 13px; background: #fff; }
   #board .db-edge { border-radius: 6px; box-shadow: none; }
   .db-dot { width: 25px; height: 25px; background: #000; z-index: 2; position: relative; flex: none; }
-  /* every line is in the colour of the player who drew it */
-  #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: #444; }
-  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: var(--d-p1); }
-  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: var(--d-p2); }
+  /* drawn lines are dark; the colour shows in the boxes people win */
+  #board .db-edge.drawn, #board .db-edge.drawn:disabled,
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled,
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #2a2a33; }
   /* the latest line is ringed so it still stands out */
   #board .db-edge.drawn.last, #board .db-edge.drawn.last:disabled { box-shadow: 0 0 0 3px rgba(0,0,0,.45); position: relative; z-index: 1; }
   .db-boxcell.owned { font-size: 0; }
