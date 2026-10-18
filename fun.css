@@ -194,3 +194,11 @@ body.fun .game-notice {
 body.fun .game-notice::before { content: "BB"; color: var(--accent); margin-right: 10px; font-size: 20px; }
 body.fun .game-notice.fade { opacity: 0; transition: opacity .5s; }
 @keyframes fun-drop { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+/* the taunt / result strip pops in above the board: reserve room for its tallest form so the board never moves */
+body.fun[class*="g-"] .gk-slot[data-reserve] { min-height: 108px; }
+body.fun[class*="g-"] .gk-slot[data-reserve] .gk-msg { min-height: 108px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+body.fun[class*="g-"] .gk-slot[data-reserve] .gk-msg[hidden] { display: block; visibility: hidden; }
+
+/* the turn pill keeps its place when it is hidden (game over), so the board stays put */
+body.fun[class*="g-"] .turn[hidden] { display: flex !important; visibility: hidden; }

@@ -636,7 +636,8 @@
     // Once you start playing (first tap on the board) the menus fold away; "Options" brings them back.
     if (ctl.children.length || opts.children.length) {
       const ob = mk("button", "btn ghost gk-optbtn");
-      ob.type = "button"; ob.textContent = "⚙ Options";
+      ob.type = "button";
+      ob.innerHTML = '<svg class="gk-gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm8.2 4.4v-2l-2.1-.5a6.6 6.6 0 0 0-.7-1.7l1.1-1.9-1.4-1.4-1.9 1.1a6.6 6.6 0 0 0-1.7-.7L13 2h-2l-.5 2.1a6.6 6.6 0 0 0-1.7.7L6.9 3.7 5.5 5.1l1.1 1.9a6.6 6.6 0 0 0-.7 1.7L3.8 9.2v2l2.1.5c.1.6.4 1.2.7 1.7l-1.1 1.9 1.4 1.4 1.9-1.1c.5.3 1.1.6 1.7.7l.5 2.1h2l.5-2.1c.6-.1 1.2-.4 1.7-.7l1.9 1.1 1.4-1.4-1.1-1.9c.3-.5.6-1.1.7-1.7z" fill="currentColor"/></svg><span>Options</span>';
       ob.addEventListener("click", () => body.classList.remove("gk-play"));
       ctl.before(ob);
       panel.addEventListener("click", (e) => {
