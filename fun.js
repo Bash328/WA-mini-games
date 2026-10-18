@@ -22,13 +22,14 @@
     const sync = () => {
       const m = /:\s*(\d+)[^:]*:\s*(\d+)/.exec(score ? score.textContent : "");
       if (m) { nums[0].textContent = m[1]; nums[1].textContent = m[2]; }
+      if (score && score.dataset.l) { bar.querySelector(".l").firstChild.nodeValue = score.dataset.l; bar.querySelector(".r").firstChild.nodeValue = score.dataset.r; }
       if (mode) {
         const o = mode.options[mode.selectedIndex];
         tab.textContent = o ? o.dataset.short || o.textContent : "";
       }
       tab.hidden = !tab.textContent;
     };
-    if (score) new MutationObserver(sync).observe(score, { childList: true, subtree: true, characterData: true });
+    if (score) new MutationObserver(sync).observe(score, { childList: true, subtree: true, characterData: true, attributes: true });
     if (mode) mode.addEventListener("change", sync);
     sync();
   }

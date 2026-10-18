@@ -514,6 +514,15 @@ function renderBoard() {
     d.addEventListener('click', () => onSquare(r,c));
     el.appendChild(d);
   }
+  // the VS bar counts pieces: you (or White) on the left
+  const sc = document.getElementById('score');
+  if (sc) {
+    const n = { w: 0, b: 0 };
+    for (const row of state.board) for (const p of row) if (p) n[p.color]++;
+    const me = mode === 'ai' ? humanColor : 'w', ai = mode === 'ai';
+    sc.dataset.l = ai ? 'YOU' : 'WHITE'; sc.dataset.r = ai ? 'BOT' : 'BLACK';
+    sc.textContent = 'A: ' + n[me] + ' B: ' + n[me === 'w' ? 'b' : 'w'];
+  }
   const inChk = inCheck(state, state.turn);
   document.getElementById('info').textContent = inChk ? 'Check!' : '';
   if (mode === 'ai') {

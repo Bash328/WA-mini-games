@@ -39,6 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .board {
@@ -78,10 +79,25 @@
     outline: 2px dashed var(--muted);
     outline-offset: -6px;
   }
+
+  /* chunky look: a fat black # on the colour, red crosses and blue rings; the page turns blue while the bot thinks */
+  html body.fun.g-tic-tac-toe { --fun-bg: #f7977a; --fun-btn: #5a63b8; transition: background-color .35s; }
+  html body.fun.g-tic-tac-toe:has(.turn.wait) { --fun-bg: #62a8d0; }
+  html body.fun.g-tic-tac-toe .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-tic-tac-toe .turn .turn-dot { display: none; }
+  html body.fun.g-tic-tac-toe .turn.wait { background: #2f5560; opacity: 1; }
+  html body.fun.g-tic-tac-toe .panel .board { gap: 0; background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; width: min(380px, 92%); margin: 18px auto; }
+  html body.fun.g-tic-tac-toe .panel .cell { background: none; border: 0; border-radius: 0; box-shadow: none; opacity: 1; transform: none; padding: 0; min-height: 0; font-size: 0; position: relative; outline: 0; }
+  html body.fun.g-tic-tac-toe .panel .cell:not(:nth-child(3n)) { border-right: 13px solid #000; }
+  html body.fun.g-tic-tac-toe .panel .cell:nth-child(-n+6) { border-bottom: 13px solid #000; }
+  html body.fun.g-tic-tac-toe .panel .cell.win { background: rgba(255,255,255,.4); }
+  .cell.x::before, .cell.x::after { content: ""; position: absolute; left: 20%; right: 20%; top: calc(50% - 6px); height: 13px; border-radius: 7px; background: #ff4d46; transform: rotate(45deg); }
+  .cell.x::after { transform: rotate(-45deg); }
+  .cell.o::before { content: ""; width: 52%; aspect-ratio: 1; box-sizing: border-box; border: 12px solid #0aa5ea; border-radius: 50%; background: radial-gradient(circle, #0a3d91 0 26%, transparent 28%); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-tic-tac-toe">
+<body class="g-tic-tac-toe fun" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>tic-tac-toe</h1>
@@ -152,6 +168,7 @@
 <script defer src="../async-share.js"></script>
 <script defer src="../account.js"></script>
 <script defer src="../live-share.js"></script>
+<script defer src="../fun.js"></script>
 <script defer src="game.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("tic-tac-toe"));</script>
 </body>

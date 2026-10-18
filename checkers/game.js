@@ -5,7 +5,7 @@
   const P1 = 1, P2 = 2;                 // colors
   const MAN = { [P1]: 1, [P2]: 2 };     // piece values
   const KING = { [P1]: 3, [P2]: 4 };
-  const NAMES = { [P1]: "Red", [P2]: "White" };
+  const NAMES = { [P1]: "Black", [P2]: "White" };
   const ALL4 = [[-1,-1],[-1,1],[1,-1],[1,1]];
   const FORWARD = { [P1]: [[1,-1],[1,1]], [P2]: [[-1,-1],[-1,1]] };
 
@@ -14,8 +14,8 @@
   const modeSel = document.getElementById("mode");
   const resetBtn = document.getElementById("reset-btn");
   const sideSel = document.getElementById("side");
-  // Whose pieces sit at the bottom of the screen. Red (Player 1) starts on the top three rows of the board data, so the
-  // board is drawn turned half a circle whenever Red is the one looking at it.
+  // Whose pieces sit at the bottom of the screen. Black (Player 1) starts on the top three rows of the board data, so the
+  // board is drawn turned half a circle whenever Black is the one looking at it.
   let viewer = P1;
 
   const idx = (r, c) => r * N + c;
@@ -210,6 +210,15 @@
       cell.setAttribute("aria-label", "Row " + (r + 1) + " col " + (c + 1));
       cell.addEventListener("click", () => onClick(i));
       boardEl.appendChild(cell);
+    }
+    // the VS bar counts pieces: you (or Black) on the left
+    const n = { [P1]: 0, [P2]: 0 };
+    for (let i = 0; i < N * N; i++) if (board[i] && board[i] !== "0") n[colorOf(board[i])]++;
+    const sc = document.getElementById("score");
+    if (sc) {
+      const me = aiColor !== null ? humanColor() : P1;
+      sc.dataset.l = aiColor !== null ? "YOU" : "BLACK"; sc.dataset.r = aiColor !== null ? "BOT" : "WHITE";
+      sc.textContent = "A: " + n[me] + " B: " + n[other(me)];
     }
   }
 
@@ -436,7 +445,7 @@
     if (wa) { link.show(); return; }
     link.hide();
     aiColor = val === "ai" ? other(humanColor()) : null;
-    viewer = val === "ai" ? humanColor() : P1;                 // pass-and-play: Red at the bottom
+    viewer = val === "ai" ? humanColor() : P1;                 // pass-and-play: Black at the bottom
     resetLocal();
   }
 

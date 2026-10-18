@@ -39,6 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .c4-wrap {
@@ -122,10 +123,22 @@
 
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 14px; }
 
+
+  /* chunky look: the page turns blue while the bot thinks */
+  html body.fun.g-connect-four { --fun-bg: #f7977a; --fun-btn: #5a63b8; --vs-bg: #6e4646; --vs-l: #ff5f56; --vs-r: #00c2ee; transition: background-color .35s; }
+  html body.fun.g-connect-four:has(.turn.wait) { --fun-bg: #62a8d0; }
+  html body.fun.g-connect-four .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-connect-four .turn .turn-dot { display: none; }
+  html body.fun.g-connect-four .turn.wait { background: #2f5560; opacity: 1; }
+
+  html body.fun.g-connect-four .panel .c4-board { background: #2f45c4; border: 6px solid #000; border-radius: 18px; gap: 6px; padding: 8px; }
+  html body.fun.g-connect-four .c4-slot { background: #1d2a85; border: 0; }
+  html body.fun.g-connect-four .c4-slot.p1 { background: #ff4d46; } html body.fun.g-connect-four .c4-slot.p2 { background: #ffc933; }
+  html body.fun.g-connect-four .panel .c4-col-btn { background: none; box-shadow: none; color: #fff; min-height: 40px; padding: 0; opacity: .9; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-connect-four">
+<body class="g-connect-four fun" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>connect-four</h1>
@@ -214,6 +227,7 @@
 <script defer src="../async-share.js"></script>
 <script defer src="../account.js"></script>
 <script defer src="../live-share.js"></script>
+<script defer src="../fun.js"></script>
 <script defer src="game.js"></script>
 </body>
 </html>

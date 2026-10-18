@@ -84,7 +84,7 @@
       boardEl.appendChild(cell);
     }
     const cnt = counts(board);
-    scoreEl.textContent = `Black ${cnt[BLACK]} · White ${cnt[WHITE]}`;
+    scoreEl.textContent = `Black: ${cnt[BLACK]} · White: ${cnt[WHITE]}`;
   }
 
   // ---------- 2 players over WhatsApp ----------

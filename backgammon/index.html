@@ -39,6 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .bg-wrap { width: min(560px, 100%); margin: 8px auto 0; }
@@ -82,10 +83,19 @@
   .bg-dice .btn { min-height: 44px; padding: 0 18px; }
   .bg-who { color: var(--muted); font-size: var(--fs-sm); }
   .bg-hint { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; }
+
+  /* chunky look: the page turns blue while the bot thinks */
+  html body.fun.g-backgammon { --fun-bg: #f7977a; --fun-btn: #5a63b8; --vs-bg: #6e4646; --vs-l: #ff5f56; --vs-r: #00c2ee; transition: background-color .35s; }
+  html body.fun.g-backgammon:has(.turn.wait) { --fun-bg: #62a8d0; }
+  html body.fun.g-backgammon .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-backgammon .turn .turn-dot { display: none; }
+  html body.fun.g-backgammon .turn.wait { background: #2f5560; opacity: 1; }
+
+  html body.fun.g-backgammon .panel .bg-board { border: 6px solid #000; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-backgammon">
+<body class="g-backgammon fun" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>backgammon</h1>
@@ -173,6 +183,7 @@
 <script defer src="../account.js"></script>
 <script defer src="../live-share.js"></script>
 <script defer src="rules.js"></script>
+<script defer src="../fun.js"></script>
 <script defer src="game.js"></script>
 </body>
 </html>

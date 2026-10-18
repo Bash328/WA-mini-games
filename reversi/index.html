@@ -39,6 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .rv-board {
@@ -87,10 +88,24 @@
   .rv-disc.black { background: #111; }
   .rv-disc.white { background: #f4f4f4; }
 
+
+  /* chunky look: the page turns blue while the bot thinks */
+  html body.fun.g-reversi { --fun-bg: #f7977a; --fun-btn: #5a63b8; --vs-bg: #6e4646; --vs-l: #ff5f56; --vs-r: #00c2ee; transition: background-color .35s; }
+  html body.fun.g-reversi:has(.turn.wait) { --fun-bg: #62a8d0; }
+  html body.fun.g-reversi .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-reversi .turn .turn-dot { display: none; }
+  html body.fun.g-reversi .turn.wait { background: #2f5560; opacity: 1; }
+
+  html body.fun.g-reversi .panel .rv-board { width: calc(100% + 22px); margin: 8px -11px; gap: 0; padding: 0; border: 6px solid #000; border-radius: 0; box-sizing: border-box; max-width: none; background: #000; }
+  html body.fun.g-reversi .panel #board .rv-cell { background: #2fb34f; border: 0; border-radius: 0; box-shadow: 0 0 0 1px #000; min-height: 0; padding: 0; opacity: 1; transform: none; font-size: 0; }
+  html body.fun.g-reversi .panel #board .rv-cell:nth-child(odd) { background: #2fb34f; }
+  html body.fun.g-reversi .panel #board .rv-cell.last { box-shadow: inset 0 0 0 4px #ffbf2e, 0 0 0 1px #000; }
+  .rv-disc { box-shadow: none; border: 0.9vw solid #000; box-sizing: border-box; width: 78%; height: 78%; }
+  .rv-disc.black { background: #3b3b3b; } .rv-disc.white { background: #fff; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-reversi">
+<body class="g-reversi fun" data-fun-vs="BLACK,WHITE" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>reversi</h1>
@@ -159,6 +174,7 @@
 <script src="../account.js"></script>
 <script src="../live-share.js"></script>
 <script src="game.js"></script>
+<script src="../fun.js"></script>
 <script defer src="../manpage.js"></script>
 </body>
 </html>
