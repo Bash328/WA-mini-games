@@ -97,6 +97,7 @@ Eleven more games, built in the order you gave, one commit each on `claude/live-
 
 ## 10. Chunky "fun" look and games from the design screenshots
 The user's reference screenshots (flat, chunky, Lilita One, round buttons, per-game colour). Built as opt-in `fun.css` / `fun.js` (`class="fun"` on the body); hub keeps the terminal look.
+- **Before the redesign:** the last version with the old look is commit `bff01d7` (git tag `pre-redesign`). Compare with `git diff pre-redesign` or open it in a separate folder with `git worktree add ../WA-mini-games-before pre-redesign`. The old build was also live on Cloudflare until the 2026-10-18 deploy.
 - [x] Pilots in the new look: Word Guess, Mancala (now vertical), Dots and Boxes.
 - [ ] Roll the look out to every other game, matching the screenshots where one exists: Hangman, Memory, Yatzy, Water Sort; the rest in the same style.
 - [ ] Dots and Boxes: the latest line should show cyan, as in the screenshot.
