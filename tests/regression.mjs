@@ -346,6 +346,38 @@ check('backgammon-board-look', 'backgammon should match the reference: dice lie 
   return bad;
 }, ['backgammon']);
 
+check('water-sort-look-and-pour', 'water sort should have glass tubes with a shine and rounded bottoms, vivid colours, big round Undo/Hint buttons, and a pour animation (a stream falls while a tube tips over)', async () => {
+  const p = await open('water-sort');
+  const bad = [];
+  const look = await p.evaluate(() => { const t = document.querySelector('.ws-tube'); const cs = getComputedStyle(t); const af = getComputedStyle(t, '::after'), bf = getComputedStyle(t, '::before'); const u = getComputedStyle(document.getElementById('undo-btn'), '::before'); const h = document.getElementById('hint-btn').getBoundingClientRect(), un = document.getElementById('undo-btn').getBoundingClientRect(); return { radius: parseFloat(cs.borderBottomLeftRadius), shine: af.content !== 'none' && parseFloat(af.width) > 4, lip: bf.content !== 'none', ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], first: getComputedStyle(document.querySelector('.ws-l')).backgroundColor, sw: document.documentElement.scrollWidth }; });
+  if (look.radius < 20) bad.push('tube bottoms are not rounded');
+  if (!look.shine) bad.push('no glass shine on the tubes');
+  if (!look.lip) bad.push('no flared lip on the tubes');
+  if (!look.ucircle) bad.push('Undo is not a big round button');
+  if (look.hint[1] > 844 || look.undo[1] > 844) bad.push('Undo / Hint are below the fold');
+  if (look.hint[0] < look.undo[0] + 200) bad.push('Hint should sit at the right, Undo at the left');
+  if (look.sw > 390) bad.push('page got wider');
+  const sat = (c) => { const m = c.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); };
+  if (sat(look.first) < 120) bad.push('liquid colours are washed out');
+  // a pour: tap one tube, then another that accepts it, and look for the falling stream
+  const n = await p.locator('.ws-tube').count();
+  let saw = false;
+  for (let a = 0; a < n && !saw; a++) for (let c = 0; c < n && !saw; c++) {
+    if (a === c) continue;
+    await p.locator('.ws-tube').nth(a).click(); await p.waitForTimeout(60);
+    await p.locator('.ws-tube').nth(c).click(); await p.waitForTimeout(150);
+    if (await p.locator('.ws-stream').count()) saw = true;
+  }
+  if (!saw) bad.push('no pour animation: no stream appeared when a move was made');
+  else {
+    await p.waitForTimeout(1200);
+    if (await p.locator('.ws-stream').count()) bad.push('the stream never went away');
+    if ((await p.locator('#moves').textContent()).trim() !== '1') bad.push('the move was not counted after the pour');
+  }
+  await p.close();
+  return bad;
+}, ['water-sort']);
+
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
   const e = p.errs.slice(); await p.close();

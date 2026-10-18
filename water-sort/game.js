@@ -8,7 +8,7 @@
   const store = Gamekit.storage("water-sort:");
 
   // twelve colours that stay apart, and a letter for each (for anyone who can't tell colours apart)
-  const COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c", "#fd79a8", "#95a5a6", "#8d5524", "#1e3a8a", "#a3d95b"];
+  const COLORS = ["#f0143c", "#0a84e0", "#1ab51a", "#ffd400", "#f433d8", "#ff7a00", "#12c9b4", "#ff8fb3", "#9aa5b1", "#a0602a", "#3a4bd6", "#b6e32b"];
   const LETTERS = "ABCDEFGHIJKL";
 
   let diff = store.get("diff", "medium");
@@ -40,8 +40,41 @@
   }
 
   function clearHint() { hintMove = null; clearTimeout(hintTimer); hintEl.textContent = ""; }
+  // The pour: the source tube lifts, tips over the target and a coloured stream falls into it; the new state is drawn when it ends.
+  let animating = false;
+  const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function pourAnim(from, to, colour, done) {
+    const a = tubesEl.children[from], b = tubesEl.children[to];
+    if (!a || !b || !a.animate || calm()) return done();
+    animating = true;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const side = rb.left >= ra.left ? 1 : -1;
+    const pivotX = rb.left + rb.width / 2 - side * rb.width * 0.5;                 // the lip ends up just over the target's near rim
+    const dx = pivotX - (ra.left + ra.width / 2), pivotY = rb.top - 22, dy = pivotY - ra.top;
+    const layer = (rb.height - 10) / 4, surface = rb.bottom - 6 - b.children.length * layer;
+    const stream = document.createElement("div");
+    stream.className = "ws-stream";
+    stream.style.cssText = "left:" + (rb.left + rb.width / 2 - 4) + "px;top:" + pivotY + "px;background:" + colour + ";height:0";
+    document.body.append(stream);
+    const lifted = a.classList.contains("sel") ? -16 : 0;
+    a.style.zIndex = "5"; a.style.transformOrigin = "50% 0";
+    const hold = "translate(" + dx + "px," + dy + "px) rotate(" + side * 62 + "deg)";
+    const run = a.animate([
+      { transform: "translate(0," + lifted + "px) rotate(0deg)" },
+      { transform: hold, offset: 0.36 }, { transform: hold, offset: 0.8 },
+      { transform: "translate(0,0) rotate(0deg)" },
+    ], { duration: 760, easing: "ease-in-out" });
+    const h = Math.max(10, surface - pivotY);
+    const T = pivotY + "px", S = surface + "px";
+    stream.animate([                                                   // a stream that grows down to the liquid, holds, then drains away
+      { height: "0px", top: T }, { height: "0px", top: T, offset: 0.34 }, { height: h + "px", top: T, offset: 0.46 },
+      { height: h + "px", top: T, offset: 0.78 }, { height: "0px", top: S, offset: 0.9 }, { height: "0px", top: S },
+    ], { duration: 760 });
+    run.onfinish = run.oncancel = () => { stream.remove(); a.style.zIndex = ""; a.style.transformOrigin = ""; animating = false; done(); };
+  }
+
   function tap(i) {
-    if (won) return;
+    if (won || animating) return;
     clearHint();
     if (sel === null) { if (tubes[i].length) sel = i; return render(); }
     if (sel === i) { sel = null; return render(); }
@@ -51,11 +84,14 @@
       hintEl.textContent = "Can't pour there: the top colours differ or the tube is full.";
       return render();
     }
-    plan = plan && plan.length && plan[0].from === sel && plan[0].to === i ? plan.slice(1) : null;
-    tubes = WS.pour(tubes, m); log.push([sel, i]); lastTo = i; sel = null;
-    hintEl.textContent = "";
-    if (WS.solved(tubes)) return win();
-    render();
+    const from = sel, colour = COLORS[tubes[from][tubes[from].length - 1]];
+    pourAnim(from, i, colour, () => {
+      plan = plan && plan.length && plan[0].from === from && plan[0].to === i ? plan.slice(1) : null;
+      tubes = WS.pour(tubes, m); log.push([from, i]); lastTo = i; sel = null;
+      hintEl.textContent = "";
+      if (WS.solved(tubes)) return win();
+      render();
+    });
   }
   function win() {
     won = true; sel = null;
@@ -67,7 +103,7 @@
     render();
   }
   function undo() {
-    if (!log.length || won) return;
+    if (!log.length || won || animating) return;
     clearHint(); sel = null; lastTo = null;
     log.pop(); plan = null;
     replay();

@@ -60,6 +60,43 @@
   html body.fun.g-water-sort .ws-hint { min-height: 1.6em; font-size: 17px; color: #fff; }
   html body.fun.g-water-sort .panel #hint-btn { background: #ffbf2e; color: #5a3a00; box-shadow: 0 4px 0 #c98a00; }
   html body.fun.g-water-sort .panel .ws-opts .btn.on { background: #ffbf2e; color: #5a3a00; }
+
+  /* ---- glass tubes with a shine, vivid liquid, big round Undo / Hint at the bottom ---- */
+  html body.fun.g-water-sort { --fun-bg: #28203f; }
+  html body.fun.g-water-sort .panel { padding-bottom: 130px; }
+  html body.fun.g-water-sort .panel .ws-tubes { gap: 34px 12px; margin: 26px auto 0; }
+  html body.fun.g-water-sort .panel .ws-tube { max-width: 58px; padding: 4px 4px 5px; gap: 0; border: 3px solid rgba(255,255,255,.82); border-top-width: 0; border-radius: 0 0 30px 30px;
+    background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.03) 45%, rgba(255,255,255,.07)); filter: drop-shadow(0 10px 10px rgba(0,0,0,.28)); overflow: visible; }
+  /* the flared lip at the top of the test tube */
+  html body.fun.g-water-sort .panel .ws-tube::before { content: ""; position: absolute; z-index: 3; top: -3px; left: -8px; right: -8px; height: 14px; box-sizing: border-box;
+    border: 3px solid rgba(255,255,255,.88); border-radius: 9px 9px 7px 7px; background: rgba(255,255,255,.16); }
+  /* the glass shine: a bright strip down the left side */
+  html body.fun.g-water-sort .panel .ws-tube::after { content: ""; position: absolute; z-index: 3; left: 9px; top: 20px; bottom: 26px; width: 7px; border-radius: 6px; pointer-events: none;
+    background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.12)); }
+  html body.fun.g-water-sort .panel .ws-tube.sel { border-color: #ffd24a; transform: translateY(-16px); filter: drop-shadow(0 0 10px rgba(255,210,74,.55)); }
+  html body.fun.g-water-sort .panel .ws-tube.done { border-color: #8df0aa; }
+  html body.fun.g-water-sort .panel .ws-tube.hint { border-color: #8df0aa; }
+  html body.fun.g-water-sort .ws-l { position: relative; border-radius: 0; box-shadow: none; height: calc((100% - 4px) / 4); }
+  html body.fun.g-water-sort .ws-l:first-child { border-radius: 0 0 24px 24px; }
+  html body.fun.g-water-sort .ws-l::after { content: ""; position: absolute; left: 9%; top: 6%; bottom: 6%; width: 16%; border-radius: 6px; background: rgba(255,255,255,.26); }
+  html body.fun.g-water-sort .ws-l::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgba(255,255,255,.22); }
+  html body.fun.g-water-sort .ws-hint { min-height: 1.6em; }
+  /* bottom corners: Undo (left) and Hint (right) as big yellow circles with a label */
+  html body.fun.g-water-sort .panel .toolbar, html body.fun.g-water-sort .panel .ws-opts { display: contents; }
+  html body.fun.g-water-sort .panel #undo-btn { position: absolute; left: 4px; bottom: 6px; }
+  html body.fun.g-water-sort .panel #hint-btn { position: absolute; right: 4px; bottom: 6px; }
+  html body.fun.g-water-sort .panel #reset-btn { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); }
+  html body.fun.g-water-sort .panel #sym-btn { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); }
+  html body.fun.g-water-sort .panel #undo-btn, html body.fun.g-water-sort .panel #hint-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; width: auto; min-width: 70px; height: auto; min-height: 0; padding: 0; background: none; box-shadow: none; color: #ffbf2e; font-size: 20px; letter-spacing: .02em; text-transform: capitalize; }
+  html body.fun.g-water-sort .panel #undo-btn .glyph { display: none; }
+  html body.fun.g-water-sort .panel #undo-btn::before, html body.fun.g-water-sort .panel #hint-btn::before { content: ""; width: 68px; height: 68px; border-radius: 50%; background-color: #ffbf2e; box-shadow: 0 5px 0 #c98a00; display: block; }
+  html body.fun.g-water-sort .panel #undo-btn::after, html body.fun.g-water-sort .panel #hint-btn::after { content: ""; position: absolute; top: 14px; left: 50%; width: 40px; height: 40px; margin-left: -20px; background: #fff; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+  html body.fun.g-water-sort .panel #undo-btn::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5 4 10l5 5'/%3E%3Cpath d='M4 10h10a6 6 0 0 1 0 12H8'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5 4 10l5 5'/%3E%3Cpath d='M4 10h10a6 6 0 0 1 0 12H8'/%3E%3C/svg%3E"); }
+  html body.fun.g-water-sort .panel #hint-btn::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21.5h4'/%3E%3Cpath d='M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2h5.6c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21.5h4'/%3E%3Cpath d='M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2h5.6c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5z'/%3E%3C/svg%3E"); }
+    html body.fun.g-water-sort .panel #undo-btn:disabled { opacity: .45; }
+  html body.fun.g-water-sort .panel #sym-btn, html body.fun.g-water-sort .panel #reset-btn { min-height: 0; height: 36px; padding: 0 14px; font-size: 14px; align-self: center; }
+  /* the pour: the tube lifts, tips over its target and a stream falls (see game.js) */
+  .ws-stream { position: fixed; z-index: 40; width: 8px; border-radius: 4px; pointer-events: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
