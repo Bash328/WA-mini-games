@@ -374,11 +374,25 @@
       }
       tone = WIN_RE.test(full) ? "win" : BAD_RE.test(full) ? "bad" : "";
     }
-    const key = head + "|" + text;
+    // "Yellow — taunt" / "Player 2: taunt": the name says who the line is FOR, but
+    // reads as if they said it. Lift it out into a "For Yellow" label.
+    let to = "";
+    recent.forEach((l) => {
+      const k = text.indexOf(l);
+      const m = k > 0 && /(?:^|[.!?] )([^.!?—:]{1,24}?) (?:—|:) $/.exec(text.slice(0, k));
+      if (m && !to) {
+        to = m[1];
+        const pre = text.slice(0, k - m[1].length - 3).trim();
+        text = text.slice(k);
+        if (pre) head = head ? head + " " + pre : pre;
+      }
+    });
+    const key = head + "|" + to + "|" + text;
     if (msg.dataset.key !== key) {
       msg.dataset.key = key;
       msg.replaceChildren();
       if (head) { const h = mk("span", "gk-head"); h.textContent = head; msg.appendChild(h); }
+      if (to) { const f = mk("span", "gk-to"); f.textContent = "For " + to; msg.appendChild(f); }
       if (text) { const t = mk("span", "gk-tail"); t.textContent = text; msg.appendChild(t); }
     }
     msg.hidden = !text;

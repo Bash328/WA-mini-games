@@ -94,6 +94,19 @@ Eleven more games, built in the order you gave, one commit each on `claude/live-
 - [ ] The "you should know" review plugin never loaded in this session (the `/plugin` command was unavailable here), so review was my own checks plus `/code-review` at the end.
 - [ ] `crazy-8/game.js` still has its own copy of the online room screens that `multiseat.js` now provides for the new games; moving Crazy 8 onto it is a clean-up, not a bug.
 
+
+## 10. Chunky "fun" look and games from the design screenshots
+The user's reference screenshots (flat, chunky, Lilita One, round buttons, per-game colour). Built as opt-in `fun.css` / `fun.js` (`class="fun"` on the body); hub keeps the terminal look.
+- [x] Pilots in the new look: Word Guess, Mancala (now vertical), Dots and Boxes.
+- [ ] Roll the look out to every other game, matching the screenshots where one exists: Hangman, Memory, Yatzy, Water Sort; the rest in the same style.
+- [ ] Dots and Boxes: the latest line should show cyan, as in the screenshot.
+- [ ] The "fold the menus on the first tap" rule can shift the layout under a finger, so a first tap on a button below the menus can be lost. Delay the fold to the click.
+- [ ] **New games, not in the repo yet** (from the screenshots):
+  - [ ] **Ludo:** four-colour cross board, roll button and die, 2 to 4 players, vs bot (Easy / Medium / Hard).
+  - [ ] **Word Search ("word connect"):** swipe across a ring of letters to spell words that fill a crossword, levels, shuffle button, hints.
+  - [ ] **Hearts:** four players (you plus three computer seats), pass three cards each round, the card table and hand as in the screenshots.
+  - [ ] **Car parking (Unblock Me / Rush Hour style):** slide cars and trucks to free the red one, levels, undo, hints.
+
 ---
 
 ## What is left

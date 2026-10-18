@@ -1,0 +1,167 @@
+/* ============================================================
+   fun.css — the chunky "casual game" look, opt-in per game page.
+   Add class "fun" to <body> (next to its g-<game> class) and load this
+   after shared.css. Everything is scoped to body.fun, so games that have
+   not been moved over are untouched.
+
+   A game picks its mood with two variables on its body rule:
+     --fun-bg    page background        (salmon #f7977a, charcoal #1b1b1d, ...)
+     --fun-ink   text on that background (#fff on salmon/charcoal)
+   The chunky pieces (button, pill, circle) derive from --fun-btn.
+   ============================================================ */
+@font-face {
+  font-family: 'Lilita One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/lilita-one-latin-400-normal.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+body.fun[class*="g-"] {
+  --fun-bg:   #f7977a;
+  --fun-ink:  #fff;
+  --fun-btn:  #d1584a;                 /* the red ROLL-style button */
+  --fun-chip: rgba(0,0,0,.22);         /* pills, circles, the score bar */
+  --font-mono: "Lilita One", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+
+  --bg: var(--fun-bg);
+  --bg-2: var(--fun-chip);
+  --panel: transparent;
+  --panel-2: var(--fun-chip);
+  --fg: var(--fun-ink);
+  --muted: color-mix(in srgb, var(--fun-ink) 72%, transparent);
+  --dim: color-mix(in srgb, var(--fun-ink) 50%, transparent);
+  --border: rgba(0,0,0,.18);
+  --border-hi: rgba(0,0,0,.3);
+  --accent: #ffbf2e;
+
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: .02em;
+  background: var(--fun-bg);
+  color: var(--fun-ink);
+}
+body.fun[class*="g-"] .wrap { padding-top: max(14px, env(safe-area-inset-top)); }
+
+/* ── Top bar: round back button, centre piece (score bar / stat boxes / title), round buttons on the right ── */
+body.fun[class*="g-"] .wrap { padding-inline: 11px; }
+body.fun[class*="g-"] .topbar {
+  display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 8px;
+  border: 0; margin-bottom: 18px; padding: 0;
+}
+body.fun[class*="g-"] .topbar .back {
+  grid-column: 1; grid-row: 1; width: 56px; height: 56px; min-height: 0; padding: 0; position: relative;
+  border-radius: 50%; background: var(--fun-chip); font-size: 0; box-shadow: none;
+}
+body.fun[class*="g-"] .topbar .back::before {      /* the chevron, cut from the reference screenshot */
+  content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 26px; transform: translate(-58%, -50%);
+  background: #fff; -webkit-mask: url(fun/back.png) center / contain no-repeat; mask: url(fun/back.png) center / contain no-repeat;
+}
+body.fun[class*="g-"] .topbar .back:hover { background: var(--fun-chip); filter: brightness(1.15); }
+body.fun[class*="g-"] .topbar h1 {
+  grid-column: 2; grid-row: 1; justify-self: center; text-align: center;
+  font-size: 22px; font-weight: 400; text-transform: capitalize; color: var(--fun-ink);
+}
+body.fun[class*="g-"] .topbar:has(.fun-vs, .fun-pills) h1 { display: none; }
+body.fun[class*="g-"] .gk-theme { display: none; }
+body.fun[class*="g-"] .gk-top-r { grid-column: 3; grid-row: 1; gap: 8px; }
+body.fun[class*="g-"] .gk-top-r .man-trigger, body.fun[class*="g-"] .fun-restart {
+  width: 56px; height: 56px; min-height: 0; padding: 0; border: 0; border-radius: 50%; box-shadow: none; position: relative;
+  background: var(--fun-chip); color: var(--fun-ink); font-size: 0; justify-content: center; cursor: pointer;
+}
+body.fun[class*="g-"] .gk-top-r .man-trigger .q { font-size: 28px; color: var(--fun-ink); }
+body.fun[class*="g-"] .fun-restart::before {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 34px; height: 30px; background: #fff;
+  -webkit-mask: url(fun/restart.png) center / contain no-repeat; mask: url(fun/restart.png) center / contain no-repeat;
+}
+body.fun[class*="g-"] .fun-restart:active { transform: scale(.94); }
+body[data-fun-reset].fun .gk-new { display: none; }
+
+/* the "YOU 0 | MEDIUM VS | BOT 0" bar */
+.fun-vs {
+  grid-column: 2; grid-row: 1; justify-self: center; position: relative; width: min(229px, 100%); height: 48px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: 8px;
+  background: var(--vs-bg, #6e4646); border-radius: 12px; color: #fff; text-transform: uppercase;
+}
+.fun-vs .tab {
+  position: absolute; left: 50%; top: -8px; transform: translateX(-50%); padding: 0 14px; height: 14px; line-height: 14px;
+  background: var(--vs-bg, #6e4646); border-radius: 8px 8px 0 0; font-size: 10px; color: rgba(255,255,255,.7); letter-spacing: .06em; white-space: nowrap;
+}
+.fun-vs b { display: flex; flex-direction: column; align-items: center; font-weight: 400; font-size: 13px; line-height: 1; letter-spacing: .04em; padding-top: 3px; }
+.fun-vs b i { font-style: normal; font-size: 26px; line-height: 1.05; }
+.fun-vs b.l { color: var(--vs-l, #ff5f56); } .fun-vs b.r { color: var(--vs-r, #00c2ee); }
+.fun-vs em { font-style: normal; font-size: 24px; padding: 0 6px; }
+
+/* two dark stat boxes (word games) */
+.fun-pills { grid-column: 2; grid-row: 1; justify-self: center; display: flex; gap: 14px; }
+.fun-pills div {
+  min-width: 100px; height: 46px; padding: 0 8px; border-radius: 10px; background: #0b0b0b; text-align: center; text-transform: uppercase;
+  display: flex; flex-direction: column; justify-content: center; line-height: 1;
+}
+.fun-pills small { font-size: 10.5px; letter-spacing: .02em; color: #fff; }
+.fun-pills b { font-size: 24px; font-weight: 400; color: #fff; margin-top: 1px; }
+.fun-pills .best b { color: #2fe3b9; }
+
+/* ── The card dissolves: the board sits straight on the colour ── */
+body.fun[class*="g-"] .panel {
+  background: transparent; border: 0; box-shadow: none; border-radius: 0; padding: 0;
+}
+
+/* status line = big friendly text; a "score" line = the dark pill from the references */
+body.fun[class*="g-"] .panel .status {
+  color: var(--fun-ink); font-size: 20px; line-height: 1.2; letter-spacing: .02em; text-align: center;
+}
+body.fun[class*="g-"] .panel .status strong, body.fun[class*="g-"] .panel .status b { color: var(--fun-ink); font-weight: 400; }
+body.fun[class*="g-"] .panel #score {
+  display: inline-block; padding: 8px 18px; border-radius: 14px; background: rgba(60,25,25,.55);
+  font-size: 16px; text-transform: uppercase;
+}
+
+/* ── Buttons: fat, flat, with a darker lip underneath ── */
+body.fun[class*="g-"] .panel button,
+body.fun[class*="g-"] .panel .btn {
+  font-family: inherit; font-weight: 400; letter-spacing: .03em; font-size: 16px; text-transform: uppercase;
+  min-height: 48px; padding: 8px 20px; border: 0; border-radius: 16px;
+  background: var(--fun-btn); color: #fff;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--fun-btn) 72%, #000);
+}
+body.fun[class*="g-"] .panel button:hover, body.fun[class*="g-"] .panel .btn:hover {
+  background: var(--fun-btn); color: #fff; filter: brightness(1.08);
+}
+body.fun[class*="g-"] .panel button:active, body.fun[class*="g-"] .panel .btn:active {
+  transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--fun-btn) 72%, #000);
+}
+body.fun[class*="g-"] .panel button:disabled { opacity: .5; }
+/* quiet buttons (new game, how to, options) are flat dark pills, no lip */
+body.fun[class*="g-"] .panel button.ghost,
+body.fun[class*="g-"] .panel .btn.ghost {
+  background: var(--fun-chip); color: var(--fun-ink); box-shadow: none; font-size: 14px; border-radius: 999px;
+}
+body.fun[class*="g-"] .panel button.ghost:hover { background: var(--fun-chip); color: var(--fun-ink); filter: brightness(1.2); }
+body.fun[class*="g-"] .panel .tool-btn .glyph, body.fun[class*="g-"] .man-trigger .q { color: var(--accent); }
+body.fun[class*="g-"] .toolbar { border: 0; padding-top: 10px; }
+
+/* menus */
+body.fun[class*="g-"] .panel select,
+body.fun[class*="g-"] .gk-sel-btn {
+  background: var(--fun-chip); color: var(--fun-ink); border: 0; border-radius: 999px; font-family: inherit; font-size: 15px;
+}
+body.fun[class*="g-"] .gk-msg { background: var(--fun-chip); border: 0; color: var(--fun-ink); font-weight: 400; }
+/* the manual window keeps its own terminal look */
+body.fun .man-window, body.fun .man-window button { font-family: "Fira Mono", ui-monospace, Menlo, Consolas, monospace; text-transform: none; letter-spacing: 0; }
+
+/* whose move: a big dark pill, the player's colour only on the dot */
+body.fun[class*="g-"] .turn {
+  border: 0; border-radius: 999px; background: rgba(60,25,25,.55); color: #fff; font-size: 22px; min-height: 60px;
+}
+body.fun[class*="g-"] .turn.wait { background: rgba(60,25,25,.35); opacity: 1; }
+/* dropdowns: quiet dark pills, not red buttons */
+body.fun[class*="g-"] .panel .gk-sel-btn {
+  background: var(--fun-chip); color: var(--fun-ink); box-shadow: none; border: 0; border-radius: 999px; font-size: 15px; text-transform: none;
+}
+body.fun[class*="g-"] .panel .gk-sel-btn:hover { background: var(--fun-chip); filter: brightness(1.15); border: 0; }
+body.fun[class*="g-"] .panel .wa-note, body.fun[class*="g-"] .panel .hint { color: var(--muted); }
+body[data-fun-vs].fun .panel #score { display: none; }
+
+body.fun[class*="g-"] .topbar { position: relative; z-index: 5; }

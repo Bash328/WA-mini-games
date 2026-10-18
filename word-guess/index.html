@@ -9,8 +9,28 @@
 <meta name="description" content="Word Guess — find the hidden five-letter word in six tries. A new word every day, or play random words as often as you like.">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <style>
   .wg-grid { display: flex; flex-direction: column; gap: 6px; width: min(310px, 86%); margin: 10px auto; }
   .wg-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
@@ -38,13 +58,36 @@
   .wg-share { display: block; margin: 12px auto 0; min-width: 180px; font-weight: 600; }
   .wg-share[hidden] { display: none; }
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+  /* chunky look: dark board, taupe keys, SUBMIT bar, pink hint */
+  body.fun.g-word-guess { --fun-bg: #131313; --fun-btn: #9a938e; --fun-chip: #0b0b0b; }
+  body.fun .wg-grid { gap: 6px; width: 306px; margin: 4px auto 0; }
+  body.fun .wg-row { gap: 6px; }
+  body.fun .wg-tile { background: #262626; border: 0; border-radius: 11px; font-size: 30px; color: #fff; }
+  body.fun .wg-tile.filled { background: #262626; box-shadow: inset 0 0 0 3px #4a4a4a; }
+  body.fun .wg-tile.c { background: #6ac43a; } body.fun .wg-tile.p { background: #ffbf2e; } body.fun .wg-tile.a { background: #3b3b3b; }
+  body.fun .wg-kb { width: 100%; gap: 6px; margin-top: 26px; }
+  body.fun .wg-kbrow { gap: 4px; }
+  body.fun #kb .wg-key { flex: 1 1 0; background: #9a938e; color: #fff; border: 0; border-radius: 7px; min-height: 52px; height: 52px; box-shadow: none; padding: 0; font-size: 27px; font-weight: 400; text-transform: uppercase; }
+  body.fun #kb .wg-key.wide { flex: 1.7 1 0; font-size: 22px; background: #9a938e; }
+  body.fun #kb .wg-key.c { background: #6ac43a; } body.fun #kb .wg-key.p { background: #ffbf2e; }
+  body.fun #kb .wg-key.a { background: #2a2a2a; color: #8a8a8a; opacity: 1; }
+  .wg-act { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 22px 0 0; }
+  body.fun[class*="g-"] .panel .wg-submit { flex: 0 1 270px; height: 50px; min-height: 0; border-radius: 25px; background: #9a938e; color: #404656; font-size: 30px; box-shadow: none; padding: 0; }
+  body.fun[class*="g-"] .panel .wg-hint { position: relative; width: 54px; height: 54px; min-height: 0; padding: 0; border-radius: 50%; background: #e0629c; box-shadow: 0 3px 0 #b84d80; flex: none; }
+  .wg-hint svg { width: 34px; height: 34px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; display: block; margin: auto; }
+  .wg-hint b { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #3f4553; font-size: 15px; font-weight: 400; line-height: 22px; text-align: center; }
+  .wg-hint:disabled { opacity: .45; }
+  body.fun[class*="g-"] .panel #status { font-size: 17px; min-height: 0; margin: 6px 0; }
+  body.fun .gk-optbtn { font-size: 13px; }
+  body.fun #stats { display: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-word-guess">
+<body class="g-word-guess fun">
 <main class="wrap">
   <div class="topbar">
     <h1>word guess</h1>
+    <div class="fun-pills"><div><small>Current streak</small><b id="st-cur">0</b></div><div class="best"><small>All time</small><b id="st-best">0</b></div></div>
     <a class="back" href="../">← all games</a>
   </div>
   <div class="panel">
@@ -65,6 +108,7 @@
     <div class="wg-grid" id="grid" aria-label="Guesses"></div>
     <button class="btn primary wg-share" id="share-btn" type="button" hidden>Share result</button>
     <div class="wg-kb" id="kb"></div>
+    <div class="wg-act"><button class="wg-submit" id="submit-btn" type="button">Submit</button><button class="wg-hint" id="hint-btn" type="button" aria-label="Hint"><svg viewBox="0 0 24 24"><path d="M12 5a5.5 5.5 0 0 0-3.2 10v2.2h6.4V15A5.5 5.5 0 0 0 12 5z"/><path d="M9.6 20.3h4.8"/><path d="M12 1.8v1M4.6 5l.8.8M19.4 5l-.8.8M2.6 11h1M20.4 11h1"/></svg><b id="hint-n">1</b></button></div>
   </div>
 </main>
 
@@ -96,6 +140,7 @@
 <script defer src="../taunts.js"></script>
 <script defer src="../gamekit.js"></script>
 <script defer src="words.js"></script>
+<script defer src="../fun.js"></script>
 <script defer src="game.js"></script>
 </body>
 </html>

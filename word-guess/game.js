@@ -46,7 +46,6 @@
     kbEl.innerHTML = ""; keyEls = {};
     KEYS.forEach((letters, ri) => {
       const row = document.createElement("div"); row.className = "wg-kbrow";
-      if (ri === 2) row.appendChild(key("Enter", "enter", true));
       for (const ch of letters) row.appendChild(key(ch, ch));
       if (ri === 2) row.appendChild(key("⌫", "back", true));
       kbEl.appendChild(row);
@@ -77,15 +76,29 @@
     const RANK = { a: 1, p: 2, c: 3 }, best = {};
     guesses.forEach((g) => score(g, answer).forEach((st, i) => { if (!best[g[i]] || RANK[st] > RANK[best[g[i]]]) best[g[i]] = st; }));
     for (const l in keyEls) keyEls[l].className = "wg-key" + (best[l] ? " " + best[l] : "");
-    shareBtn.hidden = !over;
+    shareBtn.hidden = !over; renderHint();
     renderStats();
   }
 
   function stats() { return store.getJSON("stats", { played: 0, won: 0, streak: 0, max: 0, dist: [0, 0, 0, 0, 0, 0] }); }
   function renderStats() {
     const s = stats();
+    document.getElementById("st-cur").textContent = s.streak; document.getElementById("st-best").textContent = s.max;
     statsEl.textContent = "Played " + s.played + " · Won " + s.won + " · Streak " + s.streak + " (best " + s.max + ")";
   }
+  // one hint a game: names one letter of the word that is not yet green
+  let hints = 1;
+  const hintBtn = document.getElementById("hint-btn");
+  function showHint() {
+    if (over || hints < 1) return;
+    const last = guesses[guesses.length - 1], open = [];
+    for (let i = 0; i < COLS; i++) if (!last || last[i] !== answer[i]) open.push(i);
+    const i = open[Math.floor(Math.random() * open.length)];
+    hints--; say("Hint: letter " + (i + 1) + " is " + answer[i].toUpperCase() + "."); renderHint();
+  }
+  function renderHint() { document.getElementById("hint-n").textContent = hints; hintBtn.disabled = hints < 1 || over; }
+  hintBtn.addEventListener("click", showHint);
+  document.getElementById("submit-btn").addEventListener("click", () => press("enter"));
   const say = (t) => { statusEl.textContent = t; };
   function shake() {
     const row = gridEl.children[guesses.length];
@@ -131,7 +144,7 @@
   function dailyAnswer() { return ANSWERS[Gamekit.dailySeed("word-guess", "daily") % ANSWERS.length]; }
 
   function newGame(randomWord) {
-    guesses = []; current = ""; over = false; won = false; busy = false;
+    guesses = []; current = ""; over = false; won = false; busy = false; hints = 1;
     if (mode === "daily" && !randomWord) answer = dailyAnswer();
     else { randomIdx = Math.floor(Math.random() * ANSWERS.length); answer = ANSWERS[randomIdx]; }
     say(mode === "daily" ? "Today's word. Six guesses." : "A random word. Six guesses.");

@@ -71,13 +71,27 @@
   function boardToStr(b) { return b.map(v => String(v).padStart(2, "0")).join(""); }
   function strToBoard(s) { const out = []; for (let i = 0; i < 14; i++) out.push(parseInt(s.slice(i*2, i*2+2), 10)); return out; }
 
+  // seed positions (% of the pit) for 1-4 seeds; more are scattered in a spiral
+  const SEED_AT = [[], [[50, 50]], [[33, 50], [67, 50]], [[50, 31], [32, 66], [68, 66]], [[34, 34], [66, 34], [34, 66], [66, 66]]];
+  function seedSpots(n) {
+    if (n < SEED_AT.length) return SEED_AT[n];
+    const out = [];
+    for (let k = 0; k < Math.min(n, 40); k++) { const r = 11 * Math.sqrt(k + 0.5), a = k * 2.4; out.push([50 + r * Math.cos(a), 50 + r * Math.sin(a)]); }
+    return out;
+  }
   function makePit(i, count, clickable, extraClass) {
     const d = document.createElement("button");
     d.type = "button";
     const isStore = i === P1_STORE || i === P2_STORE;
     d.className = "mk-cell " + (isStore ? "mk-store" : "mk-pit") + (extraClass ? " " + extraClass : "");
     d.disabled = !clickable;
-    d.textContent = String(count);
+    if (isStore) d.innerHTML = count ? '<span class="store-n">' + count + "</span>" : "";
+    else {
+      const pit = document.createElement("span"); pit.className = "pit";
+      seedSpots(count).forEach(([x, y]) => { const s = document.createElement("span"); s.className = "seed"; s.style.left = x + "%"; s.style.top = y + "%"; pit.appendChild(s); });
+      const num = document.createElement("span"); num.className = "num"; num.textContent = count;
+      d.append(pit, num);
+    }
     d.setAttribute("aria-label", (i === P1_STORE ? "Player 1 store" : i === P2_STORE ? "Player 2 store" : "Pit " + i) + ": " + count + " seeds");
     return d;
   }
@@ -85,26 +99,24 @@
   function renderBoard(board, current, canClick, onClick, lastPit) {
     boardEl.innerHTML = "";
     const p2 = makePit(P2_STORE, board[P2_STORE], false, "p2");
-    p2.style.gridColumn = "1"; p2.style.gridRow = "1 / span 2";
     boardEl.appendChild(p2);
 
     [12,11,10,9,8,7].forEach((pit, i) => {
       const clickable = canClick && current === P2 && board[pit] > 0;
-      const el = makePit(pit, board[pit], clickable, (pit === lastPit ? "last" : ""));
-      el.style.gridColumn = String(2 + i); el.style.gridRow = "1";
+      const el = makePit(pit, board[pit], clickable, "p2" + (pit === lastPit ? " last" : ""));
+      el.style.gridColumn = "2"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
       boardEl.appendChild(el);
     });
     [0,1,2,3,4,5].forEach((pit, i) => {
       const clickable = canClick && current === P1 && board[pit] > 0;
-      const el = makePit(pit, board[pit], clickable, (pit === lastPit ? "last" : ""));
-      el.style.gridColumn = String(2 + i); el.style.gridRow = "2";
+      const el = makePit(pit, board[pit], clickable, "p1" + (pit === lastPit ? " last" : ""));
+      el.style.gridColumn = "1"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
       boardEl.appendChild(el);
     });
 
     const p1 = makePit(P1_STORE, board[P1_STORE], false, "p1");
-    p1.style.gridColumn = "8"; p1.style.gridRow = "1 / span 2";
     boardEl.appendChild(p1);
 
     scoreEl.textContent = `Player 1: ${board[P1_STORE]} · Player 2: ${board[P2_STORE]}`;

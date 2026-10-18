@@ -15,8 +15,28 @@
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .db-board {
@@ -63,10 +83,43 @@
   #score .sc.p1 { color: var(--p1); }
   #score .sc.p2 { color: var(--p2); }
 
+  /* chunky look: full-width white card, big black dots, big "your turn" disc */
+  body.fun.g-dots-and-boxes { --fun-bg: #f79879; --vs-l: #ff5f56; --vs-r: #00c2ee; overflow: hidden; }
+  body.fun.g-dots-and-boxes .panel { display: flex; flex-direction: column; }
+  body.fun.g-dots-and-boxes .panel > * { order: 10; }
+  .db-board {
+    grid-template-columns: 13px repeat(4, 1fr 13px); grid-template-rows: 13px repeat(4, 1fr 13px);
+    width: calc(100% + 22px); margin: 8px -11px 0; padding: 22px 20px; box-sizing: border-box; max-width: none;
+    background: #ffeeea; border: 0; border-radius: 42px;
+  }
+  #board .db-h { height: 13px; background: #fff; } #board .db-v { width: 13px; background: #fff; }
+  #board .db-edge { border-radius: 6px; box-shadow: none; }
+  .db-dot { width: 25px; height: 25px; background: #000; z-index: 2; position: relative; flex: none; }
+  #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: #444; }
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: #444; }
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #444; }
+  #board .db-edge.drawn.last.p1, #board .db-edge.drawn.last.p1:disabled { background: #ff6f66; box-shadow: none; }
+  #board .db-edge.drawn.last.p2, #board .db-edge.drawn.last.p2:disabled { background: #0fd0ff; box-shadow: none; }
+  /* the page changes colour with whose move it is; Player 2's disc sits at the top, upside down, for the person across the table */
+  body.fun.g-dots-and-boxes { transition: background-color .35s; }
+  body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: #63aed2; --vs-bg: #3f7d9e; }
+  body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) #board { background: #e7f3f8; }
+  body.fun[class*="g-"] .panel > .turn[data-p="2"] { order: 0; margin: -190px 0 26px; background: #489bc0; transform: rotate(180deg); }
+  .db-boxcell.owned { font-size: 0; }
+  .db-boxcell.owned.p1 { background: #ff5f56; } .db-boxcell.owned.p2 { background: #00c2ee; }
+  .db-boxcell.owned::after { content: none !important; }
+  body.fun[class*="g-"] .panel > .turn {
+    order: 50; align-self: center; width: 326px; height: 326px; min-height: 0; margin: 26px 0 -190px; padding: 0 44px 130px; box-sizing: border-box;
+    border: 8px solid #fff; border-radius: 50%; background: #e28062; color: #fff; font-size: 30px; line-height: 1.1; text-align: center;
+  }
+  body.fun[class*="g-"] .panel > .turn.wait { background: #e28062; opacity: .8; }
+  body.fun .turn-dot { display: none; }
+  body.fun .turn-text { white-space: normal; overflow: visible; }
+  body.fun[class*="g-"] .panel > .toolbar { order: 40; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-dots-and-boxes">
+<body class="g-dots-and-boxes fun" data-fun-vs="P1,P2">
 <main class="wrap">
   <div class="topbar">
     <h1>dots and boxes</h1>
@@ -140,6 +193,7 @@
 <script src="../account.js"></script>
 <script src="../live-share.js"></script>
 <script src="game.js"></script>
+<script src="../fun.js"></script>
 <script defer src="../manpage.js"></script>
 </body>
 </html>

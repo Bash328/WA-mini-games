@@ -15,51 +15,72 @@
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../fun.css">
 <link rel="stylesheet" href="../async-share.css">
 <style>
+  /* chunky look: tall board, you on the left + bottom store, them on the right + top store */
+  body.fun.g-mancala { --fun-bg: #f79879; --fun-btn: #d1584a; --vs-l: #00c2ee; --vs-r: #ff5f56; }
   .mk-board {
-    display: grid;
-    grid-template-columns: 1.3fr repeat(6, 1fr) 1.3fr;
-    grid-template-rows: repeat(2, 1fr);
-    gap: 5px;
-    width: min(560px, 100%);
-    aspect-ratio: 3.2 / 1;
-    margin: 8px auto;
-    background: #6b4a2f;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1.05fr repeat(6, 1fr) 1.05fr;
+    gap: 7px 6px; padding: 12px 14px; box-sizing: border-box;
+    height: min(680px, calc(100dvh - 250px)); min-height: 440px; aspect-ratio: 298 / 680; width: auto; max-width: 100%; margin: 6px auto 0;
+    background: #ffc473; border: 8px solid #000; border-radius: 52px;
+    box-shadow: inset 0 0 0 6px #eeae5b, 14px 16px 0 rgba(0,0,0,.1);
   }
-  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button"
-     rule (specificity 0-2-1 vs a plain class at 0-1-0 / 0-2-0), which was
-     otherwise painting over the tan-wood pit color and forcing square
-     40px-min-height buttons instead of round pits — same fix as
-     dots-and-boxes's #board .db-edge. */
+  /* #board-prefixed to beat the shared "body[class*='g-'] .panel button" rules */
   #board .mk-cell {
-    border: 1px solid rgba(0,0,0,0.25);
-    border-radius: 50%;
-    background: #d9c39a;
-    color: #2a1a0d;
-    font-weight: 700;
-    font-size: clamp(0.9rem, 3vw, 1.3rem);
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
+    position: relative; display: flex; align-items: center; padding: 0; min-height: 0; min-width: 0; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none; text-transform: none; cursor: pointer; color: inherit;
   }
-  .mk-cell:disabled { cursor: default; opacity: 0.9; }
-  #board .mk-cell.p1, #board .mk-cell.p2 { border-radius: 14px; }
-  .mk-cell.last { box-shadow: 0 0 0 3px #f5c800; }
-  .mk-cell:not(:disabled):hover { filter: brightness(1.08); }
-
+  #board .mk-cell:disabled { cursor: default; opacity: 1; }
+  #board .mk-pit.p1 { justify-content: flex-start; } #board .mk-pit.p2 { justify-content: flex-end; }
+  .mk-cell .pit {
+    position: relative; height: 90%; aspect-ratio: 1; border-radius: 50%; border: 6px solid #000; box-sizing: border-box; overflow: hidden;
+    background: radial-gradient(circle at 30% 25%, #26cdf5, #00b4e4 60%, #0aa5d2);
+  }
+  #board .mk-pit.p2 .pit { background: radial-gradient(circle at 30% 25%, #ff7a70, #ff5f56 60%, #ee4f47); }
+  .mk-cell .seed {
+    position: absolute; width: 31%; aspect-ratio: 1; border-radius: 50%; background: #ffeec2; border: 3px solid #000; box-sizing: border-box;
+    transform: translate(-50%, -50%); box-shadow: 1px 2px 0 rgba(0,0,0,.3);
+  }
+  #board .mk-pit { gap: 8px; }
+  #board .mk-pit.p2 { flex-direction: row-reverse; justify-content: flex-start; }
+  .mk-cell .num { font-size: 34px; line-height: 1; color: #c96a2d; opacity: .9; }
+  #board .mk-pit.p1 .num { transform: rotate(90deg); }
+  #board .mk-pit.p2 .num { transform: rotate(-90deg); }
+  /* the two stores */
+  #board .mk-store { grid-column: 1 / span 2; justify-content: center; border: 7px solid #000; border-radius: 40px; font-size: 30px; color: #fff; }
+  #board .mk-store.p2 { grid-row: 1; background: linear-gradient(#ee4f47 0 18%, #ff6258 18%); }
+  #board .mk-store.p1 { grid-row: 8; background: linear-gradient(#0aa5d2 0 18%, #00c2ee 18%); }
+  #board .mk-store .store-n { text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .mk-cell.last .pit { box-shadow: 0 0 0 4px #fff; }
+  .mk-cell:not(:disabled):hover .pit { filter: brightness(1.1); }
+  body.fun .gk-top-r { gap: 8px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-mancala">
+<body class="g-mancala fun" data-fun-vs="P1,P2" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>mancala</h1>
@@ -120,6 +141,7 @@
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
 <script src="game.js"></script>
+<script src="../fun.js"></script>
 <script defer src="../manpage.js"></script>
 </body>
 </html>
