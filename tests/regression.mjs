@@ -321,6 +321,31 @@ check('resume-notice-icon', 'the "Picked up where you left off" pill showed a br
   return bad;
 }, ['crazy-8']);
 
+check('backgammon-board-look', 'backgammon should match the reference: dice lie on the board, trays sit outside it above and below, a red ROLL button is on screen, checkers are black and white', async () => {
+  const p = await open('backgammon', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(400);
+  const roll = await p.evaluate(() => { const b = document.querySelector('.bg-dice .btn'); if (!b) return null; const r = b.getBoundingClientRect(); return { bottom: r.bottom, text: b.textContent.trim(), bg: getComputedStyle(b).backgroundColor }; });
+  const bad = [];
+  if (!roll) bad.push('no Roll button');
+  else {
+    if (roll.bottom > 844) bad.push('the Roll button is below the fold (' + Math.round(roll.bottom) + 'px)');
+    if (roll.text !== 'Roll') bad.push('button says "' + roll.text + '", wanted "Roll"');
+    if (!/217, 90, 78/.test(roll.bg)) bad.push('Roll button is not the red one');
+    await p.locator('.bg-dice .btn').click(); await p.waitForTimeout(500);
+  }
+  const geo = await p.evaluate(() => { const b = document.getElementById('board').getBoundingClientRect(); const d = [...document.querySelectorAll('#dice-on .bg-die')].map((e) => e.getBoundingClientRect()); const t = [...document.querySelectorAll('.bg-tray')].map((e) => e.getBoundingClientRect()); return { b: { top: b.top, bottom: b.bottom, left: b.left, right: b.right }, d: d.map((r) => ({ top: r.top, bottom: r.bottom, left: r.left, right: r.right })), t: t.map((r) => ({ top: r.top, bottom: r.bottom })), p1: getComputedStyle(document.querySelector('.bg-ch.p1')).backgroundColor, sw: document.documentElement.scrollWidth }; });
+  if (!geo.d.length) bad.push('no dice after rolling');
+  for (const r of geo.d) if (r.top < geo.b.top || r.bottom > geo.b.bottom || r.left < geo.b.left + geo.b.right * 0.4) bad.push('a die is not on the right half of the board');
+  const [tt, tb] = geo.t;
+  if (!tt || !tb || tt.bottom > geo.b.top + 12 || tb.top < geo.b.bottom - 12) bad.push('trays are not above and below the board');
+  if (!/59, 66, 82/.test(geo.p1)) bad.push('your checkers are not the flat dark slate colour');
+  if (geo.sw > 390) bad.push('page got wider');
+  await p.close();
+  const src = fs.readFileSync(path.join(ROOT, 'backgammon/game.js'), 'utf8');
+  if (/NAMES = \{[^}]*"Red"/.test(src)) bad.push('"Red" is back in backgammon');
+  return bad;
+}, ['backgammon']);
+
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
   const e = p.errs.slice(); await p.close();

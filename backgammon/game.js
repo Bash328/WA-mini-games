@@ -3,13 +3,15 @@
 
   const R = globalThis.BackgammonRules;
   const RED = 1, WHITE = 2;
-  const NAMES = { [RED]: "Red", [WHITE]: "White" };
+  const NAMES = { [RED]: "Black", [WHITE]: "White" };
   const other = R.other;
 
   const boardEl = document.getElementById("board");
   const statusEl = document.getElementById("status");
   const infoEl = document.getElementById("info");
   const diceEl = document.getElementById("dice");
+  const diceOnEl = document.getElementById("dice-on");     // the dice themselves lie on the board
+  const scoreEl = document.getElementById("score");
   const hintEl = document.getElementById("hint");
   const undoBtn = document.getElementById("undo-btn");
   const resetBtn = document.getElementById("reset-btn");
@@ -105,7 +107,7 @@
     [other(viewer), viewer].forEach((p, k) => {
       const t = el("button", "bg-tray " + (k ? "bot" : "top"));
       t.type = "button";
-      if (S.off[p - 1]) { const c = el("span", "bg-ch p" + p, String(S.off[p - 1])); t.append(c); }
+      for (let n = 0; n < S.off[p - 1]; n++) t.append(el("span", "bg-ch p" + p));      // one stripe per checker borne off
       const can = act && p === cur && dests.has(-2);
       if (can) t.classList.add("dest");
       t.disabled = !can;
@@ -115,7 +117,7 @@
     });
 
     // dice and the buttons
-    diceEl.innerHTML = "";
+    diceEl.innerHTML = ""; diceOnEl.innerHTML = "";
     const shown = dice || (!act && liveDice) || null;
     if (shown) {
       if (!dice) diceEl.append(el("span", "bg-who", NAMES[cur] + " to play:"));
@@ -123,18 +125,22 @@
       list.forEach((d) => {
         let isUsed = false;
         if (dice) { const i = pending.indexOf(d); if (i < 0) isUsed = true; else pending.splice(i, 1); }
-        diceEl.append(dieEl(d, isUsed));
+        diceOnEl.append(dieEl(d, isUsed));
       });
     }
     const noMoves = act && dice && steps.length === 0;
     if (act && !dice && mode !== "live") {
-      const b = el("button", "btn primary", "Roll the dice"); b.type = "button"; b.addEventListener("click", roll);
+      const b = el("button", "btn primary", "Roll"); b.type = "button"; b.addEventListener("click", roll);
       diceEl.append(b);
     }
     if (act && dice && (left.length === 0 || noMoves)) {
       const b = el("button", "btn primary", left.length === 0 ? "Done" : noMoves && taken.length === 0 ? "No move: pass" : "Done"); b.type = "button"; b.addEventListener("click", done);
       diceEl.append(b);
     }
+    // the header counts checkers borne off: you (or Black) on the left
+    const me = mode === "ai" ? humanIs : RED;
+    scoreEl.dataset.l = mode === "ai" ? "YOU" : "BLACK"; scoreEl.dataset.r = mode === "ai" ? "BOT" : "WHITE";
+    scoreEl.textContent = "A: " + S.off[me - 1] + " B: " + S.off[other(me) - 1];
     undoBtn.disabled = !act || taken.length === 0;
     infoEl.textContent = infoText();
     hintEl.textContent = !act ? "" : !dice ? (mode === "live" ? "Waiting for your dice…" : "Roll the dice to start your turn.") :

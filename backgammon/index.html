@@ -91,10 +91,51 @@
   html body.fun.g-backgammon .turn .turn-dot { display: none; }
 
   html body.fun.g-backgammon .panel .bg-board { border: 6px solid #000; }
+
+  /* ---- the redesign: peach board in a rust frame, black outline, flat checkers, trays above and below, ROLL button ---- */
+  html body.fun.g-backgammon .bg-wrap { position: relative; width: 100%; margin: 0; }
+  html body.fun.g-backgammon .bg-info { min-height: 68px; width: 56%; margin: 0; text-align: left; display: flex; align-items: flex-end; font-size: 15px; color: var(--muted); padding-bottom: 8px; box-sizing: border-box; }
+  html body.fun.g-backgammon .panel .bg-board { position: relative; width: calc(100% + 22px); margin: 0 -11px; padding: 12px; grid-template-columns: repeat(6, 1fr) .55fr repeat(6, 1fr); aspect-ratio: 1.05;
+    background: #93311a; border: 6px solid #000; border-radius: 24px; box-sizing: border-box; max-width: none; }
+  html body.fun.g-backgammon #board .bg-pt { background: #fdbf8c; --tri: #f0a070; }
+  html body.fun.g-backgammon #board .bg-pt.alt { --tri: #ffdcbb; }
+  html body.fun.g-backgammon #board .bg-pt::before { left: 4%; right: 4%; }
+  html body.fun.g-backgammon #board .bg-pt.top::before { clip-path: polygon(0 0, 100% 0, 50% 80%); }
+  html body.fun.g-backgammon #board .bg-pt.bot::before { clip-path: polygon(0 100%, 100% 100%, 50% 20%); }
+  html body.fun.g-backgammon #board .bg-pt.sel { box-shadow: inset 0 0 0 3px #ffbf2e; }
+  html body.fun.g-backgammon #board .bg-pt.dest { box-shadow: none; background: #fdbf8c; --tri: #73c640; }
+  html body.fun.g-backgammon #board .bg-pt.dest.alt { --tri: #73c640; }
+  html body.fun.g-backgammon #board .bg-pt.last { box-shadow: none; }
+  html body.fun.g-backgammon #board .bg-pt:disabled { opacity: 1; }
+  html body.fun.g-backgammon #board .bg-bar { background: #93311a; }
+  html body.fun.g-backgammon .bg-bar .half:not(.sel) { box-shadow: none; }
+  html body.fun.g-backgammon .bg-bar .half.sel { box-shadow: inset 0 0 0 3px #ffbf2e; }
+  html body.fun.g-backgammon .bg-ch { box-shadow: 0 3px 0 rgba(0,0,0,.16); border: 3px solid #000; box-sizing: border-box; width: 80%; }
+  html body.fun.g-backgammon .bg-ch.p1 { background: #3b4252; color: #fff; }
+  html body.fun.g-backgammon .bg-ch.p2 { background: radial-gradient(circle, #fff 52%, #ece8f2 54%); color: #3b4252; }
+  /* trays sit outside the board, above (the other side's) and below (yours): vertical stripes are the borne-off checkers */
+  html body.fun.g-backgammon #board .bg-tray { position: absolute; right: 8px; width: 36%; height: 56px; padding: 0; flex-direction: row; align-items: center; justify-content: center; gap: 3px;
+    background: rgba(255,255,255,.07) repeating-linear-gradient(90deg, rgba(255,255,255,.13) 0 5px, transparent 5px 8px); border: 0; overflow: visible; }
+  html body.fun.g-backgammon #board .bg-tray.top { top: -62px; bottom: auto; grid-row: auto; border-radius: 14px 14px 0 0; padding: 0; }
+  html body.fun.g-backgammon #board .bg-tray.bot { bottom: -62px; top: auto; grid-row: auto; border-radius: 0 0 14px 14px; padding: 0; }
+  html body.fun.g-backgammon #board .bg-tray.dest { box-shadow: 0 0 0 3px #73c640; }
+  html body.fun.g-backgammon .bg-tray .bg-ch { width: 5px; height: 58%; aspect-ratio: auto; border-radius: 2px; border: 0; box-shadow: none; font-size: 0; flex: none; }
+  html body.fun.g-backgammon .bg-tray .bg-ch.p1 { background: #3b4252; } html body.fun.g-backgammon .bg-tray .bg-ch.p2 { background: #fff; }
+  /* dice sit on the board, in the open middle of the right-hand half */
+  html body.fun.g-backgammon .bg-dice-on { position: absolute; left: 53%; right: 3%; top: 50%; transform: translateY(-50%); display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; pointer-events: none; }
+  html body.fun.g-backgammon .bg-die { width: 42px; height: 42px; padding: 5px; border-radius: 9px; background: #fff; border: 3px solid #3b4252; box-shadow: none; }
+  html body.fun.g-backgammon .bg-die i.on { background: #3b4252; }
+  html body.fun.g-backgammon .bg-die.used { opacity: .35; }
+  html body.fun.g-backgammon .bg-dice { margin: 76px 0 0; min-height: 70px; }
+  html body.fun.g-backgammon .panel .bg-dice .btn { position: relative; width: min(300px, 80%); height: 66px; min-height: 0; padding: 0 56px; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 34px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; }
+  html body.fun.g-backgammon .panel .bg-dice .btn::before, html body.fun.g-backgammon .panel .bg-dice .btn::after {
+    content: "\2605\FE0E"; position: absolute; top: 50%; width: 34px; height: 34px; margin-top: -17px; border-radius: 8px; background: #fff; color: #d95a4e; font-size: 22px; line-height: 34px; text-align: center; }
+  html body.fun.g-backgammon .panel .bg-dice .btn::before { left: 18px; } html body.fun.g-backgammon .panel .bg-dice .btn::after { right: 18px; }
+  html body.fun.g-backgammon .bg-hint { font-size: 16px; color: var(--muted); min-height: 2.6em; margin-top: 6px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-backgammon fun" data-fun-zone data-fun-reset>
+<body class="g-backgammon fun" data-fun-zone="mini" data-fun-reset data-fun-vs="BLACK,WHITE">
 <main class="wrap">
   <div class="topbar">
     <h1>backgammon</h1>
@@ -120,14 +161,16 @@
         <option data-short="Local" value="local">2 players · same device</option>
       </select>
       <select id="side" aria-label="Your colour" hidden>
-        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Black" value="1" selected>Play Black (first)</option>
         <option data-short="Play White" value="2">Play White</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
+    <span id="score" hidden></span>
     <div class="bg-wrap">
       <div class="bg-info" id="info"></div>
       <div class="bg-board" id="board" role="group" aria-label="Backgammon board"></div>
+      <div class="bg-dice-on" id="dice-on"></div>
       <div class="bg-dice" id="dice"></div>
     </div>
     <p class="bg-hint" id="hint"></p>
@@ -144,7 +187,7 @@
 
   <h2>Rules</h2>
   <ul>
-    <li>Fifteen checkers each. <strong>Red</strong> moves from the top right round to the bottom right (its home); <strong>White</strong> goes the other way, to the top right. Red goes first.</li>
+    <li>Fifteen checkers each. <strong>Black</strong> moves from the top right round to the bottom right (its home); <strong>White</strong> goes the other way, to the top right. Black goes first.</li>
     <li>Roll two dice. Each die moves one checker that many points (one checker may use both). <strong>Doubles</strong> give four moves.</li>
     <li>A point with <strong>two or more enemy checkers is blocked</strong>. Land on a <strong>single</strong> enemy checker and you hit it: it goes to the <strong>bar</strong> (the middle) and its owner must bring it back in before doing anything else, onto an open point in your home board.</li>
     <li>You must play <strong>as many dice as you can</strong>; if only one die can be played it has to be the larger one. If you can't move at all, you pass.</li>
@@ -161,7 +204,7 @@
 
   <h2>Playing over WhatsApp</h2>
   <ul>
-    <li>Whoever starts is <strong>Red</strong>. Your whole turn, all its moves, goes in one link: tap <code>Done</code>, then <code>Send on WhatsApp</code>.</li>
+    <li>Whoever starts is <strong>Black</strong>. Your whole turn, all its moves, goes in one link: tap <code>Done</code>, then <code>Send on WhatsApp</code>.</li>
     <li>Over WhatsApp your own browser rolls your dice, so it runs on trust (like Pig). For dice nobody can touch, play <strong>Online</strong>: there the server rolls them.</li>
   </ul>
 
