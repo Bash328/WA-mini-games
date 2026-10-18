@@ -567,6 +567,40 @@ check('liars-dice-look-and-fit', 'the liars dice page should have the green felt
   return bad;
 }, ['liars-dice']);
 
+check('hub-look', 'the game hub should be the dark page with a top bar (menu, your name, invite) and big rounded game tiles in two columns, every tile leading to a real page, nothing wider than the phone, and its scripts and styles stamped', async () => {
+  const bad = [];
+  for (const w of [320, 390]) {
+    const p = await browser.newPage({ viewport: { width: w, height: 844 } });
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(e.message));
+    await p.goto(base); await p.waitForTimeout(700);
+    const r = await p.evaluate(() => { const cards = [...document.querySelectorAll('a.card')]; const first = cards[0].getBoundingClientRect(), second = cards[1].getBoundingClientRect(); return { n: cards.length, hrefs: cards.map((c) => c.getAttribute('href')), bg: getComputedStyle(document.body).backgroundColor, sw: document.documentElement.scrollWidth, sameRow: Math.abs(first.top - second.top) < 4, topbar: !!document.getElementById('menu-btn') && !!document.getElementById('name-btn') && !!document.getElementById('invite-btn'), radius: parseFloat(getComputedStyle(cards[0]).borderTopLeftRadius), title: !!cards[0].querySelector('h3') }; });
+    if (r.n < 40) bad.push(w + 'px: only ' + r.n + ' game tiles');
+    if (!/23, 23, 25/.test(r.bg)) bad.push(w + 'px: page is not the dark background (' + r.bg + ')');
+    if (r.sw > w) bad.push(w + 'px: page is ' + r.sw + 'px wide');
+    if (!r.sameRow) bad.push(w + 'px: tiles are not in two columns');
+    if (!r.topbar) bad.push('top bar is missing the menu, name or invite button');
+    if (r.radius < 20) bad.push('tiles are not rounded');
+    if (w === 390) {
+      for (const h of r.hrefs) if (!fs.existsSync(path.join(ROOT, h.replace(/\/$/, ''), 'index.html'))) bad.push('tile links to a missing page: ' + h);
+      await p.locator('#menu-btn').click(); await p.waitForTimeout(150);
+      if (await p.locator('#menu').isHidden()) bad.push('the menu does not open');
+      await p.locator('body').click({ position: { x: 380, y: 600 } }); await p.waitForTimeout(150);
+      if (!(await p.locator('#menu').isHidden())) bad.push('tapping outside does not close the menu');
+    }
+    if (errs.length) bad.push('errors: ' + errs.join(';'));
+    await p.close();
+  }
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  for (const m of html.matchAll(/(?:src|href)="([\w./-]+\.(?:js|css))(\?v=([\w]+))?"/g)) {
+    const f = path.join(ROOT, m[1]);
+    if (!fs.existsSync(f)) continue;
+    const want = crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 8);
+    if (m[3] !== want) bad.push('hub: ' + m[1] + ' is not stamped with its current hash (run node tests/cache-bust.mjs)');
+  }
+  return bad;
+}, ['hub']);
+
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
   const e = p.errs.slice(); await p.close();

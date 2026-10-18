@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="ga.js"></script>
+<script src="ga.js?v=e72d72bb"></script>
 <title>WA mini-games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Two-player mini-games you play with friends over WhatsApp — one link per move, no accounts. Plus classics and logic puzzles.">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#171719">
+<script>document.documentElement.setAttribute("data-theme","dark")</script>
 <meta property="og:title" content="WA mini-games">
 <meta property="og:description" content="Tic-Tac-Toe, Connect Four and Minesweeper, played with a friend over WhatsApp one link at a time.">
 <meta property="og:type" content="website">
@@ -40,36 +41,32 @@
 <link rel="apple-touch-startup-image" href="splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="shared.css?v=5db52064">
+<link rel="stylesheet" href="fun.css?v=c9ecf78f">
 <style>
-  /* Hub: uses the game pages' warm dark theme (body.g-hub picks up the
-     body[class*="g-"] tokens in shared.css). */
-  /* Light variant of the warm theme. shared.css pins game tokens on body,
-     so the hub overrides them here: explicit toggle, else system setting. */
-  body.g-hub { --wa: #25d366; }
-  html[data-theme="light"] body.g-hub {
-    --bg: #f6f1e9; --bg-2: #efe8dc; --panel: #fffaf2; --panel-2: #f6f1e9;
-    --fg: #231f1a; --muted: #6b6459; --dim: #a39b8c;
-    --border: #ddd3c2; --border-hi: #c9bca5; --accent: #b87d00; --wa: #1a9f4b;
+  /* ---- the hub, redesigned: a dark page, a top bar (menu, your name, invite) and big rounded game tiles ---- */
+  html body.g-hub {
+    --bg: #171719; --bg-2: #222226; --panel: #222226; --panel-2: #2b2b30; --fg: #fff; --muted: #a9a9b4; --dim: #74747e;
+    --border: #34343b; --border-hi: #4a4a54; --accent: #ffbf2e; --wa: #25d366; --forest: #5df29a; --coral: #ff7a6e;
+    background: var(--bg); color: var(--fg); font-family: "Lilita One", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif; letter-spacing: .02em;
   }
-  @media (prefers-color-scheme: light) {
-    html:not([data-theme="dark"]) body.g-hub {
-      --bg: #f6f1e9; --bg-2: #efe8dc; --panel: #fffaf2; --panel-2: #f6f1e9;
-      --fg: #231f1a; --muted: #6b6459; --dim: #a39b8c;
-      --border: #ddd3c2; --border-hi: #c9bca5; --accent: #b87d00; --wa: #1a9f4b;
-    }
-  }
-  .wrap { max-width: 1000px; padding: 40px 20px 64px; }
-  .brand { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 6px; }
-  .brand span { color: var(--accent); }
-  .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; }
-  .brand-row .brand { margin: 0; }
-  .name-btn { display: none; flex: none; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; text-decoration: none; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 5px 11px; }
-  .name-btn.has { color: var(--muted); border-color: var(--border-hi); font-weight: 400; }
-  @media (max-width: 700px) { .name-btn { display: block; } }
-  .lede { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 0 28px; line-height: 1.5; }
-  .lede b { color: var(--fg); font-weight: 600; }
-  .sec { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; font-weight: 500; }
+  .wrap { max-width: 1000px; padding: max(18px, env(safe-area-inset-top)) 16px 64px; }
+  .hub-top { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; }
+  .menu-btn { flex: none; width: 52px; height: 52px; padding: 0; display: grid; place-content: center; gap: 7px; background: none; border: 0; cursor: pointer; }
+  .menu-btn i { display: block; width: 36px; height: 6px; border-radius: 3px; background: #fff; }
+  .menu-btn i:nth-child(2) { width: 24px; } .menu-btn i:nth-child(3) { width: 30px; }
+  .name-btn { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 18px; box-sizing: border-box; border-radius: 16px; background: #ffe9c4; color: #3b2d17; font-size: 24px; text-decoration: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+  .name-btn.has { color: #3b2d17; }
+  .invite-btn { flex: none; height: 54px; padding: 0 20px; border: 0; border-radius: 16px; background: #915b9e; color: #fff; font-family: inherit; font-size: 22px; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 0 #5f3868; }
+  .invite-btn:active, .name-btn:active { transform: translateY(3px); box-shadow: none; }
+  .menu { position: absolute; z-index: 30; left: 16px; top: 78px; min-width: 220px; padding: 8px; border-radius: 20px; background: #2b2b30; box-shadow: 0 14px 0 rgba(0,0,0,.25), 0 20px 40px rgba(0,0,0,.5); }
+  .menu a { display: block; padding: 12px 16px; border-radius: 12px; color: #fff; font-size: 20px; text-decoration: none; }
+  .menu a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .menu[hidden] { display: none; }
+  .brand { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
+  .lede { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 0 8px; line-height: 1.4; }
+  .lede b { color: #fff; font-weight: 400; }
+  .sec { font-size: 22px; letter-spacing: .06em; text-transform: uppercase; color: #fff; margin: 30px 0 14px; font-weight: 400; }
 
   /* "Your name": a colourful card (account-ui.js) */
   .acct { margin-top: 36px; }
@@ -111,88 +108,50 @@
   .acct-msg.bad { color: var(--coral); font-weight: 600; }
   .acct-install { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--a3) 10%, transparent); border: 1px dashed color-mix(in srgb, var(--a3) 45%, var(--border)); }
   .acct-share { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  /* Phones: two columns so more games fit on screen */
-  @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
 
+  /* a tile: a dark rounded frame, a tinted inner tile, the name top-left with an underline, tilted art along the bottom */
   .card {
-    /* card chrome + art tokens: dark by default, flipped for light mode below */
-    --card-bg: #0e0c0a; --scrim: 14,12,10; --h: #fff; --p: #f1ece3; --halo: rgba(0,0,0,.9);
-    --pill-fg: #5df29a; --pill-bg: rgba(8,28,16,.85); --pill-bd: rgba(93,242,154,.45);
-    --live-fg: #ffd24d; --live-bg: rgba(48,34,4,.88); --live-bd: rgba(255,210,77,.55);
-    --a-ink: #ede8e1; --a-hole: #1b1815; --a-cell: #2a2621; --a-line: #4a443a; --a-mine: #4f483c;
-    --a-mineline: #6b6355; --a-panel: #241f1a; --a-radar: #10242b; --a-panel2: #2b2620; --a-line2: #3a342c;
-    position: relative; display: flex; flex-direction: column; overflow: hidden; color: var(--h);
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.18);
-    transition: transform .12s, border-color .15s;
+    --tile: color-mix(in srgb, var(--c, #6b7bd6) 40%, #14121b); --tc: color-mix(in srgb, var(--c, #6b7bd6) 55%, #fff);
+    --a-ink: #ede8e1; --a-hole: #1b1815; --a-cell: #2a2621; --a-line: #4a443a; --a-mine: #4f483c; --a-mineline: #6b6355; --a-panel: #241f1a; --a-radar: #10242b; --a-panel2: #2b2620; --a-line2: #3a342c;
+    position: relative; display: block; aspect-ratio: 1 / 1.14; padding: 9px; box-sizing: border-box; border: 3px solid #323238; border-radius: 28px; background: #222226; color: #fff; text-decoration: none; overflow: hidden;
+    box-shadow: 0 6px 0 rgba(0,0,0,.28); transition: transform .12s;
   }
-  html[data-theme="light"] .card {
-    --card-bg: #fffaf2; --scrim: 255,250,242; --h: #231f1a; --p: #3b352c; --halo: rgba(255,250,242,.95);
-    --pill-fg: #137a3a; --pill-bg: rgba(37,211,102,.16); --pill-bd: rgba(19,122,58,.4);
-    --live-fg: #7a4d00; --live-bg: rgba(255,200,60,.28); --live-bd: rgba(160,100,0,.45);
-    --a-ink: #2b2620; --a-hole: #f6f1e9; --a-cell: #e3dac9; --a-line: #c9bfab; --a-mine: #d9d0be;
-    --a-mineline: #b5ab97; --a-panel: #ece4d4; --a-radar: #dcebf0; --a-panel2: #e9e1d1; --a-line2: #cfc5b2;
-    box-shadow: 0 1px 3px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.12);
-  }
-  @media (prefers-color-scheme: light) {
-    html:not([data-theme="dark"]) .card {
-      --card-bg: #fffaf2; --scrim: 255,250,242; --h: #231f1a; --p: #3b352c; --halo: rgba(255,250,242,.95);
-      --pill-fg: #137a3a; --pill-bg: rgba(37,211,102,.16); --pill-bd: rgba(19,122,58,.4);
-      --live-fg: #7a4d00; --live-bg: rgba(255,200,60,.28); --live-bd: rgba(160,100,0,.45);
-      --a-ink: #2b2620; --a-hole: #f6f1e9; --a-cell: #e3dac9; --a-line: #c9bfab; --a-mine: #d9d0be;
-      --a-mineline: #b5ab97; --a-panel: #ece4d4; --a-radar: #dcebf0; --a-panel2: #e9e1d1; --a-line2: #cfc5b2;
-      box-shadow: 0 1px 3px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.12);
-    }
-  }
-  .card:hover { transform: translateY(-2px); border-color: var(--border-hi); color: var(--h); }
-  /* art on top, fitted to the card width at full brightness; text in its own solid zone below */
-  .artbox { position: relative; width: 100%; aspect-ratio: 110 / 78; }
-  .artbox svg { display: block; width: 100%; height: 100%; }
-  .txt {
-    position: relative; display: flex; flex-direction: column; flex: 1; margin-top: -14px; padding: 18px 14px 14px;
-    background: linear-gradient(to bottom, rgba(var(--scrim),0) 0, rgba(var(--scrim),.9) 14px, rgb(var(--scrim)) 22px);
-  }
-  .card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--h); text-shadow: 0 1px 2px var(--halo), 0 0 10px var(--halo); }
-  .card p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--p); text-shadow: 0 1px 2px var(--halo); }
-  /* WhatsApp at the left, Online at the right: one row, bottom of the card */
-  .pills { margin-top: auto; display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; align-items: center; }
-  .pills .pill { margin-top: 0; }
-  .pill.live { color: var(--live-fg); background: var(--live-bg); border-color: var(--live-bd); font-weight: 700; }
-  .pill {
-    margin-top: auto; align-self: flex-start; font-size: 10px; letter-spacing: .8px; text-transform: uppercase;
-    color: var(--pill-fg); background: var(--pill-bg); border: 1px solid var(--pill-bd);
-    padding: 2px 8px; border-radius: 999px;
-  }
-  @media (max-width: 560px) {
-    .txt { margin-top: -12px; padding: 18px 12px 12px; background: linear-gradient(to bottom, rgba(var(--scrim),0) 0, rgba(var(--scrim),.9) 12px, rgb(var(--scrim)) 20px); }
-    .card h3 { font-size: 15px; }
-    .card p { font-size: 11.5px; }
-    .pills .pill { font-size: 9px; letter-spacing: .4px; padding: 2px 6px; }
-  }
+  .card::before { content: ""; position: absolute; inset: 9px; border-radius: 19px; background: var(--tile); }
+  .card:hover { transform: translateY(-2px); color: #fff; }
+  .card:active { transform: scale(.98); }
+  .artbox { position: absolute; z-index: 1; left: 9px; right: 9px; bottom: 9px; top: 62px; overflow: hidden; border-radius: 0 0 19px 19px; }
+  .artbox svg { position: absolute; left: 0; bottom: -6%; width: 100%; height: auto; display: block; transform: rotate(-7deg) scale(1.22); transform-origin: 50% 75%; }
+  .txt { position: absolute; z-index: 2; left: 20px; right: 16px; top: 20px; bottom: 16px; display: block; pointer-events: none; }
+  .card h3 { margin: 0; font-size: 19px; line-height: 1.05; font-weight: 400; text-transform: uppercase; letter-spacing: .03em; color: var(--tc); text-shadow: none; }
+  .card h3::after { content: ""; display: block; width: 42px; height: 4px; margin-top: 7px; border-radius: 3px; background: var(--tc); }
+  .card p { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
+  .pills { position: absolute; left: 0; bottom: 0; display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #5df29a; background: rgba(8,28,16,.85); border: 0; padding: 3px 8px; border-radius: 999px; }
+  .pill.live { color: #ffd24d; background: rgba(48,34,4,.88); }
+  .txt > .pill { position: absolute; left: 0; bottom: 0; }
 
-  .footer {
-    margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border);
-    color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;
-  }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 3px solid #26262b; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; }
   .footer a { color: var(--muted); text-decoration: underline; }
-  .footer a:hover { color: var(--fg); }
+  .footer a:hover { color: #fff; }
   .footer .links { display: flex; gap: 14px; align-items: center; }
-  .theme-toggle {
-    background: transparent; border: 1px solid var(--border); color: var(--muted);
-    padding: 4px 10px; min-height: 28px; border-radius: 8px; font-family: inherit;
-    font-size: 11px; letter-spacing: .5px; text-transform: uppercase; cursor: pointer;
-  }
-  .theme-toggle:hover { color: var(--fg); border-color: var(--border-hi); }
 </style>
 </head>
 <body class="g-hub">
 <main class="wrap">
-  <div class="brand-row">
-    <h1 class="brand">WA <span>Mini Games</span></h1>
+  <header class="hub-top">
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu"><i></i><i></i><i></i></button>
     <a class="name-btn" id="name-btn" href="#account">Create username</a>
-  </div>
-  <p class="lede"><b>Play a friend over WhatsApp.</b> Make a move, send the link, wait for theirs. No logins, no accounts, no ads. Plus classics and logic puzzles to play solo.</p>
+    <button class="invite-btn" id="invite-btn" type="button">Invite</button>
+  </header>
+  <nav class="menu" id="menu" aria-label="Menu" hidden>
+    <a href="#account">Your name</a>
+    <a href="privacy/">Privacy</a>
+    <a href="https://github.com/Bash328/WA-mini-games">Source</a>
+  </nav>
+  <h1 class="brand">WA Mini Games</h1>
+  <p class="lede"><b>Play a friend over WhatsApp.</b> One link per move. No logins, no ads.</p>
 
   <h2 class="sec">Play a friend on WhatsApp</h2>
   <nav class="grid" aria-label="Two-player games over WhatsApp">
@@ -532,14 +491,13 @@
   <footer class="footer">
     <div>Based on <a href="https://github.com/wavde/games">wavde/games</a> &copy; Tejas Wavde · MIT</div>
     <div class="links">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">theme</button>
       <a href="privacy/">privacy</a>
       <a href="https://github.com/Bash328/WA-mini-games">source</a>
     </div>
   </footer>
 </main>
-<script src="account.js"></script>
-<script src="account-ui.js"></script>
+<script src="account.js?v=160336a8"></script>
+<script src="account-ui.js?v=ec42aed1"></script>
 <script>
   // Header shortcut to the "Your name" card: says "Create username" until there is one, then shows the name.
   (function () {
@@ -552,23 +510,20 @@
   })();
 </script>
 <script>
-  // Theme toggle: cycles dark -> light -> system
+  // Menu and invite button in the top bar
   (function () {
-    const KEY = "games:theme";
-    const btn = document.getElementById("theme-toggle");
-    const html = document.documentElement;
-    function apply(mode) {
-      if (mode === "light" || mode === "dark") html.setAttribute("data-theme", mode);
-      else html.removeAttribute("data-theme");
-      btn.textContent = "theme: " + (mode || "system");
-      try { mode ? localStorage.setItem(KEY, mode) : localStorage.removeItem(KEY); } catch (e) {}
-    }
-    let mode = null;
-    try { mode = localStorage.getItem(KEY); } catch (e) {}
-    apply(mode);
-    btn.addEventListener("click", () => {
-      const cur = html.getAttribute("data-theme");
-      apply(cur === "dark" ? "light" : cur === "light" ? null : "dark");
+    const mb = document.getElementById("menu-btn"), menu = document.getElementById("menu"), inv = document.getElementById("invite-btn");
+    function show(on) { menu.hidden = !on; mb.setAttribute("aria-expanded", String(on)); }
+    mb.addEventListener("click", (e) => { e.stopPropagation(); show(menu.hidden); });
+    document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) show(false); });
+    menu.addEventListener("click", () => show(false));
+    inv.addEventListener("click", async () => {
+      const url = location.origin + "/", text = "Play mini-games with me over WhatsApp: no logins, one link per move.";
+      try {
+        if (navigator.share) { await navigator.share({ title: "WA Mini Games", text: text, url: url }); return; }
+        await navigator.clipboard.writeText(text + " " + url);
+        inv.textContent = "Copied!"; setTimeout(() => { inv.textContent = "Invite"; }, 1600);
+      } catch (e) { /* the person backed out of the share sheet */ }
     });
   })();
 </script>

@@ -18,21 +18,22 @@ const hash = (f) => crypto.createHash('sha1').update(fs.readFileSync(f)).digest(
 const REF = /((?:src|href)=")((?:\.\.\/)?[\w./-]+\.(?:js|css))(\?v=[\w]+)?(")/g;
 
 let stale = 0;
-for (const dir of fs.readdirSync(ROOT, { withFileTypes: true })) {
-  if (!dir.isDirectory()) continue;
-  const page = path.join(ROOT, dir.name, 'index.html');
+// the redesigned game pages, and the hub (the root index.html)
+const pages = [{ name: '', dir: ROOT }, ...fs.readdirSync(ROOT, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => ({ name: d.name, dir: path.join(ROOT, d.name) }))];
+for (const dir of pages) {
+  const page = path.join(dir.dir, 'index.html');
   if (!fs.existsSync(page)) continue;
   const html = fs.readFileSync(page, 'utf8');
   if (!html.includes('fun.css')) continue;                       // only the redesigned pages
   const out = html.replace(REF, (m, a, p, v, z) => {
-    const file = path.join(ROOT, dir.name, p);
+    const file = path.join(dir.dir, p);
     if (!fs.existsSync(file) || /^https?:/.test(p)) return m;
     return a + p + '?v=' + hash(file) + z;
   });
   if (out !== html) {
     stale++;
-    if (check) console.log('out of date: ' + dir.name + '/index.html');
-    else { fs.writeFileSync(page, out); console.log('stamped ' + dir.name + '/index.html'); }
+    if (check) console.log('out of date: ' + (dir.name || '(hub)') + '/index.html');
+    else { fs.writeFileSync(page, out); console.log('stamped ' + (dir.name || '(hub)') + '/index.html'); }
   }
 }
 if (check) process.exit(stale ? 1 : 0);
