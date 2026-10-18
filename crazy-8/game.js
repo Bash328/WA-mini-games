@@ -404,7 +404,9 @@
   function onCard(c) {
     if (selected === c) return playSelected();
     selected = c;
-    renderHand(); renderActions(); showHint(c);
+    // flip the class on the cards already there: rebuilding the hand would restart them and skip the lift
+    Array.from(handEl.children).forEach((e) => e.classList.toggle("sel", e.dataset.c === c));
+    renderActions(); showHint(c);
   }
   function playSelected() {
     const t = M && M.table;
