@@ -226,3 +226,41 @@ body.fun[class*="g-"] .gk-slot[data-reserve] .gk-msg[hidden] { display: block; v
 
 /* the turn pill keeps its place when it is hidden (game over), so the board stays put */
 body.fun[class*="g-"] .turn[hidden] { display: flex !important; visibility: hidden; }
+
+/* ── Steady layout (pages with data-fun-zone) ────────────────────────────────────────────
+   Header, then ONE message zone of fixed height, then the Options bar, then the board: the board
+   sits in the same place in every mode and state. The turn pill, the status line and a taunt all
+   draw in that one zone (a taunt or status covers the pill while it is there), and the Options
+   menus open as a popover over the board instead of pushing it down. */
+body.fun[data-fun-zone] { --zone: 84px; }
+html body.fun[data-fun-zone] .panel { position: relative; padding-top: var(--zone); }
+html body.fun[data-fun-zone] .panel > .row {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--zone); margin: 0; padding: 0 6px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; text-align: center; pointer-events: none; z-index: 2;
+}
+html body.fun[data-fun-zone] .panel > .row .status { margin: 0; font-size: 21px; line-height: 1.15; text-wrap: balance; }
+html body.fun[data-fun-zone] .panel > .row .status.dup, html body.fun[data-fun-zone] .panel > .row .status:empty { display: none; }
+html body.fun[data-fun-zone] .panel > .turn {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); margin: 0; height: 68px; min-height: 0; box-sizing: border-box;
+  max-width: 100%; white-space: nowrap;
+}
+html body.fun[data-fun-zone] .panel:has(> .row .status:not(.dup):not(:empty)) > .turn { visibility: hidden; }
+html body.fun[data-fun-zone] .panel .gk-slot, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--zone); min-height: 0; margin: 0; z-index: 3; display: block;
+}
+html body.fun[data-fun-zone] .panel .gk-slot .gk-msg, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] .gk-msg {
+  min-height: 0; height: 100%; margin: 0; padding: 6px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden; font-size: 16px; line-height: 1.2; border-radius: 22px;
+}
+html body.fun[data-fun-zone] .panel .gk-slot .gk-msg[hidden] { display: none; }
+html body.fun[data-fun-zone] .panel .gk-say { margin: 0; text-align: center; }
+html body.fun[data-fun-zone] .gk-optwrap { position: relative; z-index: 30; }
+html body.fun[data-fun-zone] .gk-optbtn { margin: 0 0 12px; }
+html body.fun[data-fun-zone] .gk-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% - 6px); padding: 12px; border-radius: 28px; display: flex; flex-direction: column; gap: 8px;
+  background: color-mix(in srgb, var(--fun-bg) 60%, #000); box-shadow: 0 14px 0 rgba(0,0,0,.22), 0 24px 40px rgba(0,0,0,.4);
+}
+html body.fun[data-fun-zone] .gk-menu .gk-ctl, html body.fun[data-fun-zone] .gk-menu .gk-opts { margin: 0; justify-content: center; }
+html body.fun[data-fun-zone].gk-play .gk-menu { display: none; }
+/* the one-line "make the first move, then send the link" hint adds nothing the pill and the mode tab do not say, and it moved the board */
+html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-code-box)) { display: none; }

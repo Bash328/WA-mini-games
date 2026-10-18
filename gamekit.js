@@ -627,7 +627,14 @@
       ctl.appendChild(b);
     });
     const row = $(".row", panel) || null;
-    if (row) row.after(ctl, opts); else panel.prepend(ctl, opts);
+    // data-fun-zone pages: the menus live in a popover under the Options button, so opening them never moves the board
+    const menu = "funZone" in body.dataset ? mk("div", "gk-menu") : null;
+    if (menu) {
+      menu.append(ctl, opts);
+      const wrap = mk("div", "gk-optwrap");
+      wrap.append(menu);
+      if (row) row.after(wrap); else panel.prepend(wrap);
+    } else if (row) row.after(ctl, opts); else panel.prepend(ctl, opts);
     kids.forEach(({ box }) => { if (box !== acts && !box.children.length) box.remove(); });
     if (!acts.isConnected) { const fn = $(".footer-note", panel); if (fn) fn.before(acts); else panel.appendChild(acts); }
     if (!acts.children.length) acts.hidden = true;
@@ -639,7 +646,8 @@
       ob.type = "button";
       ob.innerHTML = '<svg class="gk-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span>';
       ob.addEventListener("click", () => body.classList.toggle("gk-play"));
-      ctl.before(ob);
+      (menu || ctl).before(ob);
+      if (menu) body.classList.add("gk-play");     // closed to start with: the board is the first thing you see
       panel.addEventListener("click", (e) => {
         if (!e.target.closest(".gk-ctl, .gk-opts, .gk-acts, .gk-optbtn, .row, .wa-ui, [id$='-room'], select, input, a")) body.classList.add("gk-play");
       });
