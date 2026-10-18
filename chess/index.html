@@ -100,11 +100,12 @@
   /* chunky look: black-framed tan board edge to edge; the page turns blue while the bot thinks */
   html body.fun.g-chess { --fun-bg: #2f3555; --fun-btn: #5a63b8; --vs-bg: #1c2038; --vs-l: #ff7a7a; --vs-r: #3fd0c0; transition: background-color .35s; }
   html body.fun.g-chess:has(.turn.wait) { --fun-bg: #3d2d4f; }
-  html body.fun.g-chess .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-chess .turn { width: fit-content; max-width: 100%; box-sizing: border-box; min-height: 0; margin: 14px auto 18px; padding: 14px 20px; border-radius: 14px; font-size: 26px; }
   html body.fun.g-chess .turn .turn-dot { display: none; }
   html body.fun.g-chess .panel .board { width: calc(100% + 22px); margin: 8px -11px; border: 6px solid #000; border-radius: 0; box-sizing: border-box; max-width: none; background: #000; }
   .sq.dark { background: #b08b5f; }
   .sq.light { background: #d7bc94; }
+  html body.fun.g-chess:has(#turn-badge:not([hidden])) #info { display: none; }
   .sq.last { background: #8fa3a6; box-shadow: none; }
   .sq.sel { outline-color: #ffbf2e; }
   .sq.w { color: #fff; -webkit-text-stroke: 1.4px #000; text-shadow: none; filter: none; paint-order: stroke fill; }

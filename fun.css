@@ -48,7 +48,7 @@ body.fun[class*="g-"] .wrap { padding-top: max(14px, env(safe-area-inset-top)); 
 /* ── Top bar: round back button, centre piece (score bar / stat boxes / title), round buttons on the right ── */
 body.fun[class*="g-"] .wrap { padding-inline: 11px; }
 body.fun[class*="g-"] .topbar {
-  display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 8px;
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 8px;
   border: 0; margin-bottom: 18px; padding: 0;
 }
 body.fun[class*="g-"] .topbar .back {
@@ -149,8 +149,31 @@ body.fun[class*="g-"] .gk-sel-btn {
   background: var(--fun-chip); color: var(--fun-ink); border: 0; border-radius: 999px; font-family: inherit; font-size: 15px;
 }
 body.fun[class*="g-"] .gk-msg { background: var(--fun-chip); border: 0; color: var(--fun-ink); font-weight: 400; }
-/* the manual window keeps its own terminal look */
-body.fun .man-window, body.fun .man-window button { font-family: "Fira Mono", ui-monospace, Menlo, Consolas, monospace; text-transform: none; letter-spacing: 0; }
+/* How to play: a dark rounded card, big title, the rules on a white panel, a round X at the top right.
+   (manpage.js builds the window; the terminal "MAN ..." title is swapped for the words here) */
+body.fun .man-backdrop { background: rgba(0,0,0,.72); backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.fun .man-window {
+  max-width: 520px; max-height: min(92dvh, 820px); border: 0; border-radius: 36px; background: #1d1d25; color: #3b4151;
+  font-family: var(--font-mono); font-size: 18px; box-shadow: 0 14px 0 rgba(0,0,0,.25); letter-spacing: .01em; text-transform: none;
+}
+body.fun .man-titlebar { position: relative; justify-content: center; padding: 22px 70px 14px; background: none; border: 0; color: #fff; }
+body.fun .man-titlebar > span:first-child { font-size: 0; }
+body.fun .man-titlebar > span:first-child::before { content: "How to play"; font-size: 34px; line-height: 1; letter-spacing: .02em; text-transform: uppercase; color: #fff; }
+body.fun .man-titlebar .man-hint, body.fun .man-footer { display: none; }
+body.fun .man-close {
+  position: absolute; right: 16px; top: 16px; width: 46px; height: 46px; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 50%;
+  background: rgba(255,255,255,.14); color: #fff; font-family: inherit; font-size: 30px; line-height: 1; box-shadow: none; cursor: pointer;
+}
+body.fun .man-close:focus { outline: none; }
+body.fun .man-close:hover { background: rgba(255,255,255,.22); color: #fff; }
+body.fun .man-body { margin: 0 14px 14px; padding: 22px 20px 26px; border-radius: 28px; background: #fff; color: #3b4151; line-height: 1.45; }
+body.fun .man-body h2 { margin: 22px 0 8px; font-size: 22px; font-weight: 400; letter-spacing: .02em; color: #3b4151; text-transform: uppercase; }
+body.fun .man-body h2::after { display: none; }
+body.fun .man-body p, body.fun .man-body ul, body.fun .man-body ol { color: #3b4151; }
+body.fun .man-body li::marker { color: #ff9a5c; }
+body.fun .man-body strong { color: #d9622b; font-weight: 400; }
+body.fun .man-body code, body.fun .man-body .k { background: #eef0f5; border: 0; color: #3b4151; border-radius: 8px; padding: 1px 8px; font-size: .9em; }
+body.fun .man-body .muted { color: #6a7184; }
 
 /* whose move: a big dark pill, the player's colour only on the dot */
 body.fun[class*="g-"] .turn {

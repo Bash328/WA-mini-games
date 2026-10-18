@@ -302,7 +302,7 @@
       statusEl.textContent = (current === P1 ? "Red" : "Yellow") + " to move." + (note ? " " + note : "");
       Gamekit.turn(current, (current === P1 ? "Red" : "Yellow") + " to move");
     } else if (current === humanIs) {
-      statusEl.textContent = "Your turn · drop a checker." + (note ? " " + note : "");
+      statusEl.textContent = "Your turn." + (note ? " " + note : "");
       Gamekit.turn(current, "Your turn · you're " + (current === P1 ? "Red" : "Yellow"));
     } else {
       statusEl.textContent = "Computer thinking…";

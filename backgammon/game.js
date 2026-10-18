@@ -235,7 +235,7 @@
   function aiTurn() {
     thinking = true;
     Gamekit.turn(cur, "Computer thinking…", true);
-    statusEl.textContent = "Computer rolling…";
+    statusEl.textContent = "Computer thinking…";
     render();
     aiTimer = setTimeout(() => {
       aiTimer = null;

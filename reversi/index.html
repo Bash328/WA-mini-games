@@ -91,7 +91,7 @@
 
   /* chunky look: the page turns blue while the bot thinks */
   html body.fun.g-reversi { --fun-bg: #2f3555; --fun-btn: #5a63b8; --vs-bg: #1c2038; --vs-l: #ff7a7a; --vs-r: #3fd0c0; transition: background-color .35s; }
-  html body.fun.g-reversi .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-reversi .turn { width: fit-content; max-width: 100%; box-sizing: border-box; min-height: 0; margin: 14px auto 18px; padding: 14px 20px; border-radius: 14px; font-size: 26px; }
   html body.fun.g-reversi .turn .turn-dot { display: none; }
 
   html body.fun.g-reversi .panel .rv-board { width: calc(100% + 22px); margin: 8px -11px; gap: 0; padding: 0; border: 6px solid #000; border-radius: 0; box-sizing: border-box; max-width: none; background: #000; }

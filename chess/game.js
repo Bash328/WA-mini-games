@@ -4,7 +4,8 @@
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 /* Use filled glyphs for both sides — styled via CSS for a chess.com-like look */
-const GLYPH = { w:{k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'}, b:{k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'} };
+// U+FE0E asks for the text look: without it iPhones draw the pawn as a black emoji for both sides
+const GLYPH = { w:{k:'♚︎',q:'♛︎',r:'♜︎',b:'♝︎',n:'♞︎',p:'♟︎'}, b:{k:'♚︎',q:'♛︎',r:'♜︎',b:'♝︎',n:'♞︎',p:'♟︎'} };
 const VAL = { p:100, n:320, b:330, r:500, q:900, k:20000 };
 
 // Piece-square tables (from white's perspective; flipped for black).
@@ -528,11 +529,12 @@ function renderBoard() {
   if (mode === 'ai') {
     const note = (!thinking && state.turn === humanColor && confidenceNote) ? ' ' + confidenceNote : '';
     if (note) confidenceNote = '';
-    document.getElementById('status').textContent =
-      (thinking ? 'Computer thinking…' : (state.turn === humanColor ? 'Your move.' : 'Computer to move.')) + (inChk ? ' — check!' : '') + note;
     const aiToMove = thinking || state.turn !== humanColor;
+    // same words as the turn pill so the status line stays hidden and the board never shifts
+    document.getElementById('status').textContent =
+      (aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : 'Your move.') + note;
     Gamekit.turn(state.turn === 'w' ? 1 : 2,
-      aiToMove ? 'Computer thinking…' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black') + (inChk ? ' — check!' : ''),
+      aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black'),
       aiToMove);
   }
 }
@@ -589,7 +591,7 @@ function aiTurn() {
     thinking = false;
     renderBoard();
     checkEnd();
-  }, 800);
+  }, 1300);
 }
 
 function checkEnd() {
