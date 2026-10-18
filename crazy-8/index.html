@@ -112,7 +112,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-stage.rev .c8-arr { transform: scaleX(-1); }
   .c8-stage.rev .c8-arr.tl { margin-left: 26cqw; } .c8-stage.rev .c8-arr.tr { margin-left: -36cqw; }
   .c8-stage.rev .c8-arr.bl { margin-left: 26cqw; } .c8-stage.rev .c8-arr.br { margin-left: -36cqw; }
-  .c8-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 5cqw; margin: 0; }
+  .c8-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 9cqw; margin: 0; }
   .c8-pile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 3.2cqw; color: var(--c8-name); }
   .c8-pile > span:last-child { position: absolute; top: 100%; margin-top: 1.4cqw; white-space: nowrap; }
   .c8-pile:not(.draw) > span { display: none; }
@@ -122,10 +122,9 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   #c8-top { position: relative; width: 19cqw; height: 27.5cqw; }
   #c8-top .c8-card { position: absolute; left: 0; top: 0; }
   #c8-top .c8-card.top { z-index: 3; transform: rotate(4deg); }
-  #c8-top .c8-card.peek { filter: brightness(.72); }
-  #c8-top .c8-card.peek:nth-child(1) { transform: translate(-3cqw, 1cqw) rotate(-14deg); z-index: 1; }
-  #c8-top .c8-card.peek:nth-child(2) { transform: translate(-1.6cqw, .5cqw) rotate(-7deg); z-index: 2; }
-  #c8-top .c8-card.peek:nth-child(1):nth-last-child(2) { transform: translate(-2.4cqw, .6cqw) rotate(-10deg); }
+  #c8-top .c8-card.peek { filter: brightness(.6); transform: translate(-3cqw, 1cqw) rotate(-14deg); z-index: 1; }
+  /* the card played just before sits out to the left with its number and suit showing */
+  #c8-top .c8-card.peek:nth-last-child(2) { filter: brightness(.88); transform: translate(-8cqw, .5cqw) rotate(-6deg); z-index: 2; }
   #draw-btn {
     position: absolute; left: 50%; bottom: 8cqw; transform: translateX(-50%); z-index: 3; min-height: 0; height: 12cqw; padding: 0 7cqw;
     border: 1.8cqw solid #fff; border-radius: 6.5cqw; background: #2fb44a; color: #fff; font-size: 6cqw; letter-spacing: .04em; white-space: nowrap;
