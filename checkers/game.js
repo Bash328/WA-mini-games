@@ -423,7 +423,7 @@
       localCurrent = opp;
       checkConfidence();
       renderLocal();
-    }, 300);
+    }, 900);
   }
 
   const chips = Gamekit.wireDifficultyChips({

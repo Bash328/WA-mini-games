@@ -118,7 +118,7 @@
     setStatus("Computer thinking…");
     aiBadge();
     cancelAI();
-    aiTimer = setTimeout(aiMove, 200);
+    aiTimer = setTimeout(aiMove, 800);
   }
 
   function aiMove() {
@@ -154,7 +154,7 @@
       render(null);
       setStatus("Computer thinking…");
     aiBadge();
-      aiTimer = setTimeout(aiMove, 200);
+      aiTimer = setTimeout(aiMove, 800);
     } else {
       render(null);
       setStatus("Your turn (" + human + ").");
@@ -290,7 +290,7 @@
     board = s.board.slice(); turn = s.turn; gameOver = false;
     render(null);
     if (turn === human) { setStatus("Your turn (" + human + ")."); humanBadge(); }
-    else { setStatus("Computer thinking…"); aiBadge(); aiTimer = setTimeout(aiMove, 200); }
+    else { setStatus("Computer thinking…"); aiBadge(); aiTimer = setTimeout(aiMove, 800); }
     return true;
   });
   if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();

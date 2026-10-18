@@ -326,7 +326,7 @@
         const col = pickAIMove(current);
         thinking = false;
         if (col >= 0) playMove(col);
-      }, 150);
+      }, 800);
     }
   }
 

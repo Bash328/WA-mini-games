@@ -81,12 +81,11 @@
   }
 
   /* chunky look: a fat black # on the colour, red crosses and blue rings; the page turns blue while the bot thinks */
-  html body.fun.g-tic-tac-toe { --fun-bg: #f7977a; --fun-btn: #5a63b8; transition: background-color .35s; }
-  html body.fun.g-tic-tac-toe:has(.turn.wait) { --fun-bg: #62a8d0; }
+  html body.fun.g-tic-tac-toe { --fun-bg: #2f3555; --fun-btn: #5a63b8; transition: background-color .35s; }
+  html body.fun.g-tic-tac-toe:has(.turn.wait) { --fun-bg: #3d2d4f; }
   html body.fun.g-tic-tac-toe .turn { width: fit-content; min-height: 0; margin: 14px auto 18px; padding: 14px 30px; border-radius: 14px; font-size: 26px; }
   html body.fun.g-tic-tac-toe .turn .turn-dot { display: none; }
-  html body.fun.g-tic-tac-toe .turn.wait { background: #2f5560; opacity: 1; }
-  html body.fun.g-tic-tac-toe .panel .board { gap: 0; background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; width: min(380px, 92%); margin: 18px auto; }
+  html body.fun.g-tic-tac-toe .panel .board { gap: 0; background: #e9e6f2; border: 0; box-shadow: none; border-radius: 36px; padding: 18px; box-sizing: border-box; width: calc(100% + 22px); margin: 18px -11px; }
   html body.fun.g-tic-tac-toe .panel .cell { background: none; border: 0; border-radius: 0; box-shadow: none; opacity: 1; transform: none; padding: 0; min-height: 0; font-size: 0; position: relative; outline: 0; }
   html body.fun.g-tic-tac-toe .panel .cell:not(:nth-child(3n)) { border-right: 13px solid #000; }
   html body.fun.g-tic-tac-toe .panel .cell:nth-child(-n+6) { border-bottom: 13px solid #000; }

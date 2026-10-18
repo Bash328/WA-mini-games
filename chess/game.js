@@ -589,7 +589,7 @@ function aiTurn() {
     thinking = false;
     renderBoard();
     checkEnd();
-  }, 20);
+  }, 800);
 }
 
 function checkEnd() {
