@@ -15,7 +15,7 @@
   const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
   const suitPick = $("c8-suitpick"), suitsEl = $("c8-suits"), toastEl = $("c8-toast"), tauntsEl = $("c8-taunts");
   const store = Gamekit.storage("crazy-8:");
-  const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over");
+  const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over"), feltEl = $("c8-felt"), glowEl = $("c8-glow");
 
   let diff = store.get("diff", "medium");
   if (!["easy", "medium", "hard"].includes(diff)) diff = "medium";
@@ -138,6 +138,9 @@
     for (let k = 1; k <= n; k++) { const i = (from + k + n) % n; if (i !== t.you) order.push(i); }
     const pos = POS[Math.min(3, order.length)] || [];
     stageEl.classList.toggle("no-top", !pos.includes("top"));
+    seatPosOf = {};
+    order.slice(0, 3).forEach((i, k) => { seatPosOf[i] = pos[k]; });
+    if (t.you !== null) seatPosOf[t.you] = "you";
     order.slice(0, 3).forEach((i, k) => {
       const s = t.seats[i];
       const box = el("div", "c8-opp pos-" + pos[k] + (t.turn === i && M.phase === "playing" ? " on-turn" : "") + (s.status === "out" ? " gone" : ""));
@@ -261,10 +264,96 @@
     logEl.textContent = ev.join(" · ");
   }
 
+  /* ---------- the moving parts: cards fly, pick-ups pop, skips are crossed out ---------- */
+  const reduceMotion = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const ANG = { top: 0, right: 90, you: 180, left: 270 };
+  let seatPosOf = {}, animSig = null;
+  const relRect = (e) => { const a = tableEl.getBoundingClientRect(), b = e.getBoundingClientRect(); return { x: b.left - a.left, y: b.top - a.top, w: b.width, h: b.height }; };
+  function seatRect(i) {
+    const p = seatPosOf[i];
+    const e = p === "you" ? handEl : oppsEl.querySelector(".c8-opp.pos-" + p + " .fan");
+    return e ? relRect(e) : null;
+  }
+  // a card (or a card back) slides from one place to another, then is gone
+  function fly(card, from, to, o) {
+    o = o || {};
+    const c = cardEl(card, { cls: "lg" });
+    c.classList.add("c8-fly");
+    tableEl.append(c);
+    const w = c.offsetWidth, h = c.offsetHeight;
+    const tx = to.x + to.w / 2 - w / 2, ty = to.y + to.h / 2 - h / 2;
+    c.style.left = tx + "px"; c.style.top = ty + "px";
+    const dx = from.x + from.w / 2 - w / 2 - tx, dy = from.y + from.h / 2 - h / 2 - ty;
+    const a = c.animate([
+      { transform: "translate(" + dx + "px," + dy + "px) scale(.8) rotate(" + (o.fromRot || 0) + "deg)", opacity: 1 },
+      { transform: "translate(0,0) scale(1) rotate(" + (o.rot || 0) + "deg)", opacity: 1 },
+    ], { duration: o.fade ? 480 : 520, delay: o.delay || 0, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
+    a.onfinish = () => c.remove();
+  }
+  const slashColor = (evs) => {
+    const p = evs.filter((e) => e.e === "play" && e.card && !C.isJoker(e.card)).pop();
+    return p && (C.suitOf(p.card) === "H" || C.suitOf(p.card) === "D") ? "#ff5a4f" : "#5bb4ff";
+  };
+  const SLASH_AT = { top: [50, 40], left: [10, 88], right: [90, 88], you: [50, 121] };
+  function slash(seat, delay, color) {
+    const p = seatPosOf[seat];
+    const at = SLASH_AT[p] || [50, 88];
+    const d = el("div", "c8-slash");
+    d.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
+    d.style.color = color; d.style.left = at[0] + "%"; d.style.top = at[1] + "cqw"; d.style.animationDelay = delay + "ms";
+    stageEl.append(d);
+    setTimeout(() => d.remove(), 1400 + delay);
+  }
+  function plus(n, seat, delay) {
+    const p = seatPosOf[seat];
+    const box = el("div", "c8-plus");
+    box.style.animationDelay = delay + "ms";
+    box.append("+" + n);
+    box.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + (ANG[p] || 0) + 'deg)"><path d="M12 2 4 12h5v10h6V12h5z"/></svg>');
+    setTimeout(() => { feltEl.classList.add("dark"); feltEl.append(box); }, delay);
+    setTimeout(() => { feltEl.classList.remove("dark"); box.remove(); }, delay + 1400);
+  }
+  function animateEvents() {
+    const t = M && M.table;
+    if (!t) return;
+    const evs = M.lastEvents || [];
+    const sig = (M.turnSince || "") + "|" + JSON.stringify(evs);
+    if (sig === animSig) return;
+    const first = animSig === null;
+    animSig = sig;
+    if (first || reduceMotion() || !tableEl.classList.contains("on")) return;
+    const pile = drawEl.firstChild ? relRect(drawEl.firstChild) : null;
+    const topCard = topEl.querySelector(".c8-card.top");
+    let d = 0;
+    evs.forEach((e) => {
+      if (e.e === "play") {
+        const from = seatRect(e.seat), tc = topEl.querySelector(".c8-card.top");
+        if (from && tc) {
+          const to = relRect(tc);
+          tc.style.opacity = "0"; setTimeout(() => { tc.style.opacity = ""; }, d + 560);
+          fly(e.card, from, to, { delay: d, rot: 4, fromRot: e.seat === t.you ? 0 : -20 });
+          d += 140;
+        }
+      } else if (e.e === "draw" || e.e === "pickup") {
+        const n = e.e === "draw" ? 1 : Math.min(e.n, 6), to = seatRect(e.seat);
+        if (pile && to) for (let k = 0; k < n; k++) fly(null, pile, to, { delay: d + k * 110, fade: true });
+        if (e.e === "pickup" && e.n >= 2) plus(e.n, e.seat, d);
+        d += 140;
+      } else if (e.e === "skip") slash(e.seat, d, slashColor(evs));
+      else if (e.e === "blocked") slash(e.seat, d, "#5bd17a");
+      else if (e.e === "reverse") { stageEl.classList.add("spin"); setTimeout(() => stageEl.classList.remove("spin"), 900); }
+    });
+  }
+
+  const t0turn = (t) => t.turn !== null && t.turn !== undefined;
   function renderTable() {
     if (!M || !M.table || M.phase === "lobby") { tableEl.classList.remove("on"); return; }
     tableEl.classList.add("on");
     renderOpps(); renderMid(); renderBanner(); renderHand(); renderActions(); renderLog();
+    const ts = M.phase === "playing" && t0turn(M.table) ? seatPosOf[M.table.turn] : null;
+    glowEl.style.opacity = ts ? "1" : "0";
+    if (ts) glowEl.style.transform = "rotate(" + ANG[ts] + "deg)";
+    animateEvents();
     renderTaunts();
     if (selected) showHint(selected); else idleHint();
   }

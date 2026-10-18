@@ -157,6 +157,25 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-suitpick button { min-height: 68px; font-size: 34px; border-radius: 16px; background: #fff; color: #0f2a4f; border: 3px solid #0d0d0d; font-family: inherit; }
   .c8-suitpick button.red { color: #c4161c; }
 
+  /* ---------- the moving parts ---------- */
+  .c8-fly { position: absolute; left: 0; top: 0; z-index: 30; pointer-events: none; margin: 0 !important; will-change: transform, opacity; }
+  .c8-glow { position: absolute; inset: -3cqw; border-radius: 50%; pointer-events: none; z-index: 0; transition: transform .6s cubic-bezier(.3,1.25,.5,1), opacity .3s;
+    background: conic-gradient(from -34deg, transparent 0, rgba(255,205,160,.30) 34deg, transparent 68deg);
+    -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%); mask: radial-gradient(circle, transparent 60%, #000 61%); }
+  .c8-felt.dark::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.62); z-index: 3; pointer-events: none; animation: c8dark 1.3s ease forwards; }
+  @keyframes c8dark { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  .c8-plus { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 1cqw; z-index: 4; pointer-events: none; color: #fff; font-size: 26cqw; line-height: 1; opacity: 0;
+    text-shadow: 0 1cqw 0 rgba(0,0,0,.35); animation: c8plus 1.3s cubic-bezier(.2,1.4,.4,1) forwards; }
+  .c8-plus svg { width: 16cqw; height: 16cqw; fill: #ff6b5a; filter: drop-shadow(0 1cqw 0 rgba(0,0,0,.35)); }
+  @keyframes c8plus { 0% { opacity: 0; transform: scale(.4); } 18% { opacity: 1; transform: scale(1.12); } 30% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+  .c8-slash { position: absolute; width: 17cqw; height: 17cqw; margin: -8.5cqw 0 0 -8.5cqw; z-index: 6; pointer-events: none; opacity: 0; animation: c8slash 1.2s ease forwards; }
+  .c8-slash svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0.8cqw 0 rgba(0,0,0,.35)); }
+  @keyframes c8slash { 0% { opacity: 0; transform: scale(.3) rotate(-30deg); } 20% { opacity: 1; transform: scale(1.18); } 35% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+  .c8-stage.spin .c8-arr { animation: c8spin .8s ease; }
+  @keyframes c8spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .c8-opp .nm, #c8 .c8-you { transition: background-color .3s, color .3s; }
+  @media (prefers-reduced-motion: reduce) { .c8-glow { transition: none; } }
+
   /* ---------- game over card ---------- */
   .c8-over { position: fixed; inset: 0; z-index: 55; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 18px;
     background: rgba(30,14,9,.78); overflow-y: auto; font-family: var(--font-mono); }
@@ -268,7 +287,8 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
       <div class="c8-stage" id="c8-stage">
         <div class="c8-opps" id="c8-opps"></div>
         <i class="c8-arr tl"></i><i class="c8-arr tr"></i><i class="c8-arr br"></i><i class="c8-arr bl"></i>
-        <div class="c8-felt">
+        <div class="c8-felt" id="c8-felt">
+          <div class="c8-glow" id="c8-glow"></div>
           <div class="c8-mid">
             <div class="c8-pile draw"><div id="c8-draw"></div><span id="c8-drawn">0 left</span></div>
             <div class="c8-pile"><div id="c8-top"></div><span>discard</span></div>
