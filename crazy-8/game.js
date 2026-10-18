@@ -318,7 +318,7 @@
     const p = evs.filter((e) => e.e === "play" && e.card && !C.isJoker(e.card)).pop();
     return p && (C.suitOf(p.card) === "H" || C.suitOf(p.card) === "D") ? "#ff5a4f" : "#5bb4ff";
   };
-  const SLASH_AT = { top: [50, 40], left: [10, 88], right: [90, 88], you: [50, 121] };
+  const SLASH_AT = { top: [50, 46], left: [10, 88], right: [90, 88], you: [50, 126] };
   function slash(seat, delay, color) {
     const p = seatPosOf[seat];
     const at = SLASH_AT[p] || [50, 88];
