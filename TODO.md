@@ -100,8 +100,8 @@ The user's reference screenshots (flat, chunky, Lilita One, round buttons, per-g
 - **Before the redesign:** the last version with the old look is commit `bff01d7` (git tag `pre-redesign`). Compare with `git diff pre-redesign` or open it in a separate folder with `git worktree add ../WA-mini-games-before pre-redesign`. The old build was also live on Cloudflare until the 2026-10-18 deploy.
 - [x] Pilots in the new look: Word Guess, Mancala (now vertical), Dots and Boxes.
 - [ ] Roll the look out to every other game, matching the screenshots where one exists: Hangman, Memory, Yatzy, Water Sort; the rest in the same style.
-- [ ] Dots and Boxes: the latest line should show cyan, as in the screenshot.
-- [ ] The "fold the menus on the first tap" rule can shift the layout under a finger, so a first tap on a button below the menus can be lost. Delay the fold to the click.
+- [x] Dots and Boxes: lines are in the colour of the player who drew them, the latest one is ringed.
+- [x] (fixed: the fold now happens on click, not pointerdown) The "fold the menus on the first tap" rule can shift the layout under a finger, so a first tap on a button below the menus can be lost. Delay the fold to the click.
 - [ ] **New games, not in the repo yet** (from the screenshots):
   - [ ] **Ludo:** four-colour cross board, roll button and die, 2 to 4 players, vs bot (Easy / Medium / Hard).
   - [ ] **Word Search ("word connect"):** swipe across a ring of letters to spell words that fill a crossword, levels, shuffle button, hints.

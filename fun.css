@@ -165,3 +165,21 @@ body.fun[class*="g-"] .panel .wa-note, body.fun[class*="g-"] .panel .hint { colo
 body[data-fun-vs].fun .panel #score { display: none; }
 
 body.fun[class*="g-"] .topbar { position: relative; z-index: 5; }
+
+/* custom dropdown list: solid, so the page text never shows through it */
+body.fun[class*="g-"] .gk-sel-list {
+  background: color-mix(in srgb, var(--fun-bg) 35%, #1b1b1d); color: #fff; border: 0; border-radius: 20px; padding: 6px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.35); font-family: inherit;
+}
+body.fun[class*="g-"] .gk-sel-list li { font-size: 16px; padding: 12px 14px; border-radius: 14px; }
+body.fun[class*="g-"] .gk-sel-list li.on { background: rgba(255,255,255,.12); }
+body.fun[class*="g-"] .gk-sel-list li[aria-selected="true"] { color: var(--accent); font-weight: 400; }
+/* the "Online" shortcut beside the mode menu, room code box, WhatsApp send */
+body.fun[class*="g-"] .panel .btn.live-cta { background: var(--fun-chip); color: #ffd24a; border: 0; border-radius: 999px; box-shadow: none; }
+body.fun[class*="g-"] .panel input {
+  background: var(--fun-chip); color: #fff; border: 0; border-radius: 999px; font-family: inherit; font-size: 16px; text-transform: uppercase; padding: 0 18px; min-height: 48px;
+}
+body.fun[class*="g-"] .panel input::placeholder { color: rgba(255,255,255,.6); }
+body.fun[class*="g-"] .panel .btn.wa-send {
+  background: #3fcf6b; color: #0b2a14; border: 0; border-radius: 16px; box-shadow: 0 5px 0 #23904a; font-size: 16px;
+}

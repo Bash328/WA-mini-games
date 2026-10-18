@@ -84,7 +84,7 @@
   #score .sc.p2 { color: var(--p2); }
 
   /* chunky look: full-width white card, big black dots, turn pill */
-  body.fun.g-dots-and-boxes { --fun-bg: #f79879; --vs-l: #ff5f56; --vs-r: #00c2ee; overflow: hidden; }
+  body.fun.g-dots-and-boxes { --fun-bg: #f79879; --vs-l: #ff5f56; --vs-r: #00c2ee; }
   .db-board {
     grid-template-columns: 13px repeat(4, 1fr 13px); grid-template-rows: 13px repeat(4, 1fr 13px);
     width: calc(100% + 22px); margin: 8px -11px 0; padding: 22px 20px; box-sizing: border-box; max-width: none;
@@ -93,11 +93,12 @@
   #board .db-h { height: 13px; background: #fff; } #board .db-v { width: 13px; background: #fff; }
   #board .db-edge { border-radius: 6px; box-shadow: none; }
   .db-dot { width: 25px; height: 25px; background: #000; z-index: 2; position: relative; flex: none; }
+  /* every line is in the colour of the player who drew it */
   #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: #444; }
-  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: #444; }
-  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #444; }
-  #board .db-edge.drawn.last.p1, #board .db-edge.drawn.last.p1:disabled { background: #ff6f66; box-shadow: none; }
-  #board .db-edge.drawn.last.p2, #board .db-edge.drawn.last.p2:disabled { background: #0fd0ff; box-shadow: none; }
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: #ff6f66; }
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #0fd0ff; }
+  /* the latest line is ringed so it still stands out */
+  #board .db-edge.drawn.last, #board .db-edge.drawn.last:disabled { box-shadow: 0 0 0 3px rgba(0,0,0,.45); position: relative; z-index: 1; }
   /* the page changes colour with whose move it is */
   body.fun.g-dots-and-boxes { transition: background-color .35s; }
   body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: #63aed2; --vs-bg: #3f7d9e; }

@@ -639,7 +639,7 @@
       ob.type = "button"; ob.textContent = "⚙ Options";
       ob.addEventListener("click", () => body.classList.remove("gk-play"));
       ctl.before(ob);
-      panel.addEventListener("pointerdown", (e) => {
+      panel.addEventListener("click", (e) => {
         if (!e.target.closest(".gk-ctl, .gk-opts, .gk-acts, .gk-optbtn, .row, .wa-ui, [id$='-room'], select, input, a")) body.classList.add("gk-play");
       });
     }
