@@ -11,6 +11,36 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 
+  const HOUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
+  const LABELS = { "3k": "3x", "4k": "4x", fh: HOUSE, ss: "SM", ls: "LG", y: "YATZY", c: "?" };
+  function icon(b) {
+    if (LABELS[b] === undefined) {                                  // ones to sixes: the die face
+      const d = el("div", "yz-ic"), on = new Set(PIPS[Number(b)]);
+      for (let k = 0; k < 9; k++) d.append(el("i", on.has(k) ? "on" : ""));
+      return d;
+    }
+    const d = el("div", "yz-ic txt" + (b === "y" ? " y" : ""));
+    if (b === "fh") d.innerHTML = HOUSE; else d.textContent = LABELS[b];
+    return d;
+  }
+
+  // a roll tumbles the dice that were thrown (the kept ones stay put)
+  let rollAnimKey = "";
+  const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function tumble(thrown) {
+    if (calm()) return;
+    thrown.forEach((d, k) => {
+      if (!d.animate) return;
+      const spin = (k % 2 ? 1 : -1) * 360;
+      d.animate([
+        { transform: "translateY(-70px) rotate(0deg) scale(1.25)", opacity: 0.2 },
+        { transform: "translateY(0) rotate(" + spin + "deg) scale(1)", opacity: 1, offset: 0.6 },
+        { transform: "translateY(-10px) rotate(" + (spin + 12) + "deg)", offset: 0.76 },
+        { transform: "translateY(0) rotate(" + spin + "deg)" },
+      ], { duration: 620, delay: k * 60, easing: "cubic-bezier(.2,.8,.3,1)" });
+    });
+  }
+
   function render() {
     const g = game, card = g.card, over = Y.finished(card);
     // dice
@@ -25,8 +55,15 @@
       b.addEventListener("click", () => { Y.hold(g, i); sel = null; render(); });
       diceEl.append(b);
     });
+    const key = g.turn + ":" + g.roll + ":" + g.dice.join("");
+    if (g.roll > 0 && key !== rollAnimKey && !g.held.every(Boolean)) {
+      const kids = [...diceEl.children];
+      tumble(kids.filter((d, i) => !g.held[i]));
+    }
+    if (g.roll > 0) rollAnimKey = key;
     rollBtn.disabled = g.roll >= 3 || over;
-    rollBtn.textContent = over ? "Game over" : g.roll === 0 ? "Roll the dice" : g.roll === 3 ? "No rolls left: pick a box" : "Roll again (" + (3 - g.roll) + " left)";
+    rollBtn.replaceChildren(el("span", "", over ? "Done" : g.roll === 0 ? "Roll" : g.roll === 3 ? "Pick a box" : "Roll"));
+    if (!over && g.roll < 3) for (let k = 1; k <= 3; k++) rollBtn.append(el("i", k <= g.roll ? "used" : "", String(k)));   // the three rolls of a turn
     // the scorecard
     const allowed = g.roll > 0 && !over ? new Set(Y.allowed(card, g.dice)) : new Set();
     cardEl.innerHTML = "";
@@ -34,7 +71,7 @@
       const filled = card.boxes[b] !== null, can = allowed.has(b);
       const r = el("button", "yz-row" + (filled ? " done" : "") + (can ? " can" : "") + (sel === b ? " sel" : ""));
       r.type = "button";
-      r.append(el("span", "", Y.NAMES[b]));
+      r.append(icon(b));
       const pot = can ? Y.score(b, g.dice, Y.isJoker(card, g.dice, b)) : null;
       r.append(el("span", "v" + (filled ? "" : " pot"), filled ? String(card.boxes[b]) : can ? String(pot) : "–"));
       r.disabled = !can;
@@ -42,13 +79,14 @@
       r.setAttribute("aria-label", Y.NAMES[b] + (filled ? ", " + card.boxes[b] + " points" : can ? ", would score " + pot : ", open"));
       return r;
     };
-    cardEl.append(el("div", "yz-sec", "Upper"));
-    Y.UPPER.forEach((b) => cardEl.append(row(b)));
+    const colU = el("div", "yz-col"), colL = el("div", "yz-col");
+    Y.UPPER.forEach((b) => colU.append(row(b)));
     const up = Y.upperSum(card);
-    const bl = el("div", "yz-line");
-    bl.append(el("span", "", "Upper bonus (" + Y.BONUS_AT + "+ earns " + Y.BONUS + ")"), el("b", "", up + " / " + Y.BONUS_AT + (Y.upperBonus(card) ? "  +" + Y.BONUS : "")));
-    cardEl.append(bl, el("div", "yz-sec", "Lower"));
-    Y.LOWER.forEach((b) => cardEl.append(row(b)));
+    const bl = el("div", "yz-bonus");
+    bl.append(el("b", "", "Bonus"), el("span", "", "+" + Y.BONUS), el("i", "", up + "/" + Y.BONUS_AT));
+    colU.append(bl);
+    Y.LOWER.forEach((b) => colL.append(row(b)));
+    cardEl.append(colU, colL);
     if (card.extra) { const xl = el("div", "yz-line"); xl.append(el("span", "", "Extra Yatzy bonus (" + card.extra + " × " + Y.EXTRA_YATZY + ")"), el("b", "", "+" + card.extra * Y.EXTRA_YATZY)); cardEl.append(xl); }
     const tot = el("div", "yz-total"); tot.append(el("span", "", "Total"), el("span", "", String(Y.total(card))));
     cardEl.append(tot);
@@ -57,7 +95,7 @@
     bestEl.textContent = store.get("best", "—");
     if (over) {
       const t = Y.total(card);
-      statusEl.textContent = "Final score: " + t + ".";
+      statusEl.textContent = "Game over. Final score: " + t + ".";
       if (!saved) { saved = true; const b = Number(store.get("best", 0)); if (!b || t > b) store.set("best", t); bestEl.textContent = store.get("best", "—"); resumer.clear(); }
       hintEl.textContent = "That's 13 turns. Start a new game whenever you like.";
     } else {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>liar's dice · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -38,8 +38,9 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../multiseat.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=c9ecf78f">
+<link rel="stylesheet" href="../multiseat.css?v=031feb9b">
 <style>
   .ld-opps { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 8px 0; }
   .ld-opp { padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); text-align: center; min-height: 86px; }
@@ -78,10 +79,43 @@
   .ld-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.4em; }
   #ld { display: none; }
   #ld.on { display: block; }
+
+  /* chunky look: a dark wood room, a green felt table showing the bid, your dice on a red floor */
+  html body.fun.g-liars-dice { --fun-bg: #2f2218; --fun-btn: #8a6a4a; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-liars-dice .ld-opps { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; margin: 4px 0 10px; }
+  html body.fun.g-liars-dice .ld-opp { padding: 0; border: 0; background: none; min-height: 0; }
+  html body.fun.g-liars-dice .ld-opp .nm { font-size: 15px; color: rgba(255,255,255,.75); font-weight: 400; }
+  html body.fun.g-liars-dice .ld-opp .st { font-size: 12px; min-height: 0; color: rgba(255,255,255,.5); }
+  html body.fun.g-liars-dice .ld-opp.act .nm { color: #fff; }
+  html body.fun.g-liars-dice .ld-opp.act .ld-dice { outline: 0; }
+  html body.fun.g-liars-dice .ld-die { border: 0; background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  html body.fun.g-liars-dice .ld-die i.on { background: #2f3a46; }
+  html body.fun.g-liars-dice .ld-die.wild i.on { background: #e8353a; }
+  html body.fun.g-liars-dice .ld-die.back { background: #6a4a8a; box-shadow: 0 3px 0 #46305e; }
+  html body.fun.g-liars-dice .ld-die.hit { outline: 3px solid #2fbf7f; }
+  /* the table */
+  html body.fun.g-liars-dice .ld-bid { margin: 0 -11px; padding: 22px 14px; min-height: 170px; border: 0; border-radius: 0; background: radial-gradient(circle at 50% 40%, #2f8a55, #1f6b40 75%); color: #fff; justify-content: center; align-content: center; gap: 6px; }
+  html body.fun.g-liars-dice .ld-bid .q { font-size: 44px; font-weight: 400; color: #fff; }
+  html body.fun.g-liars-dice .ld-bid .by { font-size: 16px; color: rgba(255,255,255,.8); }
+  html body.fun.g-liars-dice .ld-banner { width: fit-content; max-width: 100%; box-sizing: border-box; margin: 14px auto 8px; padding: 10px 26px; border: 4px solid #fff; border-radius: 999px; background: #e07a5f; color: #fff; font-size: 24px; font-weight: 400; min-height: 0; text-wrap: balance; }
+  html body.fun.g-liars-dice .ld-banner.you { border-color: #fff; color: #fff; }
+  html body.fun.g-liars-dice .ld-banner:not(.you) { background: rgba(0,0,0,.25); border-color: rgba(255,255,255,.5); font-size: 19px; }
+  html body.fun.g-liars-dice .ld-log { color: rgba(255,255,255,.65); font-size: 14px; }
+  html body.fun.g-liars-dice .ld-mine { margin: 8px -11px 0; padding: 18px 12px; gap: 10px; background: #8f2e2e; border-radius: 26px 26px 0 0; min-height: 0; }
+  html body.fun.g-liars-dice .ld-mine .ld-die.lg { width: 52px; height: 52px; padding: 8px; border-radius: 12px; }
+  html body.fun.g-liars-dice .ld-faces { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  html body.fun.g-liars-dice .panel .ld-face { min-width: 0; }
+  html body.fun.g-liars-dice .ld-hint { color: rgba(255,255,255,.6); font-size: 14px; }
+  html body.fun.g-liars-dice .ld-qty .n { font-weight: 400; font-size: 32px; }
+  html body.fun.g-liars-dice .panel .ld-step { border-radius: 14px; min-height: 48px; min-width: 52px; }
+  html body.fun.g-liars-dice .panel .ld-face { background: #fff; color: #2f3a46; border: 0; box-shadow: 0 4px 0 #b9c2cc; border-radius: 12px; opacity: 1; }
+  html body.fun.g-liars-dice .panel .ld-face.sel { outline: 0; box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; transform: translateY(-3px); }
+  html body.fun.g-liars-dice .panel .ld-face:disabled { opacity: .35; }
+  html body.fun.g-liars-dice .ld-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-liars-dice">
+<body class="g-liars-dice fun" data-fun-zone="slim" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>liar's dice</h1>
@@ -158,13 +192,14 @@
   <p class="muted">With 10 dice on the table, about a third of them show any given face (once the wild ones count). Open with what you hold, nudge the bid up one step at a time, and call dudo when a bid asks for far more than your own dice and the odds can support.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="../account.js"></script>
-<script defer src="../live-share.js"></script>
-<script defer src="../multiseat.js"></script>
-<script defer src="engine.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../multiseat.js?v=15143c7e"></script>
+<script defer src="engine.js?v=05d7ade0"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=3499cc4f"></script>
 </body>
 </html>

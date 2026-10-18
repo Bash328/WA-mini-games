@@ -336,7 +336,7 @@
     return slotEl;
   }
 
-  const END_RE = /(\bwins?\b[.!]|\bwins the match|\byou win\b|\byou won\b|^draw\s*[.—:!-]|\bstalemate\b|\bcheckmate\b|\bcracked it\b|\bout of guesses\b|\bboom\b|\bsolved\b|\bit's a draw\b|\byou lose\b)/i;
+  const END_RE = /(\bwins?\b[.!]|\bwins the match|\byou win\b|\byou won\b|^draw\s*[.—:!-]|\bstalemate\b|\bcheckmate\b|\bcracked it\b|\bout of guesses\b|\bboom\b|\bsolved\b|\bit's a draw\b|\byou lose\b|^game over[.!:]\s+\S)/i;
   const WIN_RE = /\b(you win|you won|cracked it|solved)\b/i;
   const BAD_RE = /\b(computer wins|you lose|boom|out of guesses|lost)\b/i;
 
@@ -438,7 +438,7 @@
       const l = mk("span"); l.textContent = label; const n = mk("span", "v"); n.textContent = String(v);
       row.append(l, n); stats.append(row);
     });
-    card.append(stats);
+    if (!document.body.hasAttribute("data-no-wins")) card.append(stats);
     const acts = mk("div", "acts");
     const home = mk("a", "home"); home.href = "../"; home.setAttribute("aria-label", "All games"); home.innerHTML = ICON_HOME;
     const again = mk("button", "again"); again.type = "button"; again.textContent = "Play again";

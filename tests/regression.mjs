@@ -26,12 +26,12 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
 const MAXTOP = { hangman: 520 };
-const BOARD = { 'water-sort': '#tubes', hangman: '#gallows' };
+const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
 // make a page show its end-of-game text the way the game itself writes it
@@ -48,6 +48,9 @@ const END = {
   minesweeper: "document.getElementById('status').textContent='Boom. '+Gamekit.taunt('boom')",
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
+  'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  pig: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  yatzy: "document.getElementById('status').textContent='Game over. Final score: 120. '+Gamekit.taunt('win')",
   hangman: "document.getElementById('status').textContent='Player 1 wins. The word was not guessed in time. '+Gamekit.taunt('loss')",
 };
 
@@ -468,6 +471,101 @@ check('backgammon-dice-tumble', 'a roll used to just appear; the dice should tum
   await p.close();
   return bad;
 }, ['backgammon']);
+
+check('yatzy-look-and-play', 'yatzy should match the reference: a tray of five star slots, a red ROLL button with its 1-2-3 counter, a two-column scorecard with an icon and a score cell on every row; a whole game must still play out to the result card', async () => {
+  const p = await open('yatzy');
+  const bad = [];
+  const pre = await p.evaluate(() => ({ blank: document.querySelectorAll('.yz-die.blank').length, star: getComputedStyle(document.querySelector('.yz-die.blank'), '::after').content !== 'none', pills: document.querySelectorAll('#roll-btn i').length, roll: getComputedStyle(document.getElementById('roll-btn')).backgroundColor, rows: document.querySelectorAll('.yz-row').length, icons: document.querySelectorAll('.yz-row .yz-ic').length, cols: document.querySelectorAll('.yz-col').length, sw: document.documentElement.scrollWidth, rollBottom: document.getElementById('roll-btn').getBoundingClientRect().bottom }));
+  if (pre.blank !== 5 || !pre.star) bad.push('the five dice slots should show a star before the first roll');
+  if (pre.pills !== 3) bad.push('the ROLL button should show the three roll counters');
+  if (!/217, 90, 78/.test(pre.roll)) bad.push('ROLL is not the red button');
+  if (pre.rows !== 13 || pre.icons !== 13 || pre.cols !== 2) bad.push('the scorecard should have 13 rows with icons in two columns (saw ' + pre.rows + ' rows, ' + pre.icons + ' icons, ' + pre.cols + ' columns)');
+  if (pre.sw > 390) bad.push('page is wider than the phone');
+  if (pre.rollBottom > 844) bad.push('ROLL is below the fold');
+  await p.locator('#roll-btn').click(); await p.waitForTimeout(100);
+  const mid = await p.evaluate(() => ({ dice: [...document.querySelectorAll('.yz-die:not(.blank)')].length, moving: [...document.querySelectorAll('.yz-die')].filter((d) => d.getAnimations().length).length, used: document.querySelectorAll('#roll-btn i.used').length }));
+  if (mid.dice !== 5) bad.push('five dice should show after rolling');
+  if (mid.moving < 5) bad.push('the dice should tumble when rolled (' + mid.moving + ' moving)');
+  if (mid.used !== 1) bad.push('the first roll counter should light up');
+  // play a whole game: roll, pick the first scoring box twice (select, then confirm), thirteen times
+  for (let t = 0; t < 13; t++) {
+    if (t > 0) { await p.locator('#roll-btn').click(); await p.waitForTimeout(60); }
+    const row = p.locator('.yz-row.can').first();
+    await row.click(); await p.waitForTimeout(40); await row.click(); await p.waitForTimeout(80);
+  }
+  await p.waitForTimeout(600);
+  if (!(await p.locator('.gk-over').count())) bad.push('no result card after thirteen turns');
+  else if (await p.locator('.gk-over .stats').count()) bad.push('the result card shows a "Your wins" panel for a solo score game');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['yatzy']);
+
+check('dominoes-look-and-play', 'dominoes should match the reference: a header with your score, the goal and the bot, grey tile backs on top, a tall salmon table that turns blue while the bot plays, your tiles on a red floor (not boxed in buttons), and the hand must not jump as the line grows', async () => {
+  const p = await open('dominoes');
+  const bad = [];
+  const info = await p.evaluate(() => ({ tab: document.querySelector('.fun-vs .tab')?.textContent, left: document.querySelector('.fun-vs .l')?.textContent, back: getComputedStyle(document.querySelector('.dm.back')).backgroundColor, line: document.getElementById('dm-line').getBoundingClientRect().height, hand: getComputedStyle(document.getElementById('dm-hand')).backgroundColor, boxed: getComputedStyle(document.querySelector('.dm-tile')).backgroundColor, sw: document.documentElement.scrollWidth }));
+  if (!/GOAL \d+/.test(info.tab || '')) bad.push('the header tab should read GOAL <points>, saw "' + info.tab + '"');
+  if (!/^YOU/.test(info.left || '')) bad.push('the header should show YOU on the left');
+  if (!/133, 124, 110/.test(info.back)) bad.push('the bot tile backs should be the grey-brown tiles');
+  if (!/143, 46, 46/.test(info.hand)) bad.push('your hand should sit on the red floor');
+  if (info.boxed !== 'rgba(0, 0, 0, 0)') bad.push('hand tiles are boxed in a button background (' + info.boxed + ')');
+  if (info.line < 230) bad.push('the table is too short (' + Math.round(info.line) + 'px)');
+  if (info.sw > 390) bad.push('page is wider than the phone');
+  // play some turns; the hand must stay where it is and the line must keep its height
+  const hand0 = await p.evaluate(() => Math.round(document.getElementById('dm-hand').getBoundingClientRect().top + scrollY));
+  let blue = false;
+  for (let k = 0; k < 10; k++) {
+    const tile = p.locator('.dm-tile:not(.dim)').first();
+    if (await tile.count()) { await tile.click(); await p.waitForTimeout(120); await tile.click().catch(() => {}); }
+    else { const a = p.locator('.dm-actions .btn').first(); if (await a.count()) await a.click().catch(() => {}); }
+    for (let w = 0; w < 14; w++) { await p.waitForTimeout(110); if (await p.evaluate(() => /98, 168, 208|143, 201, 230|62, 168, 208/.test(getComputedStyle(document.getElementById('dm-line')).backgroundImage))) blue = true; }
+  }
+  const after = await p.evaluate(() => ({ hand: Math.round(document.getElementById('dm-hand').getBoundingClientRect().top + scrollY), line: document.getElementById('dm-line').getBoundingClientRect().height }));
+  if (Math.abs(after.line - info.line) > 1) bad.push('the table changed height as tiles were played');
+  if (!blue) bad.push('the table never turned blue while the bot was playing');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['dominoes']);
+
+check('pig-look-and-roll', 'pig should look like the others: the scores and the goal in the header, a big white die that spins while it rolls, a red ROLL and a green HOLD, and the page turning blue while the computer plays', async () => {
+  const p = await open('pig', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(400);
+  const bad = [];
+  const info = await p.evaluate(() => ({ tab: document.querySelector('.fun-vs .tab')?.textContent, left: document.querySelector('.fun-vs .l')?.textContent, cards: getComputedStyle(document.querySelector('.pig-scores')).display, die: document.querySelector('.pig-die svg').getBoundingClientRect().width, roll: getComputedStyle(document.getElementById('roll-btn')).backgroundColor, hold: getComputedStyle(document.getElementById('hold-btn')).backgroundColor, sw: document.documentElement.scrollWidth }));
+  if (!/GOAL \d+/.test(info.tab || '')) bad.push('header tab should read GOAL <points>');
+  if (!/^YOU/.test(info.left || '')) bad.push('header should show YOU on the left');
+  if (info.cards !== 'none') bad.push('the old score cards should be gone (the header has the scores)');
+  if (info.die < 140) bad.push('the die is too small (' + Math.round(info.die) + 'px)');
+  if (!/217, 90, 78/.test(info.roll)) bad.push('ROLL is not the red button');
+  if (!/47, 180, 74/.test(info.hold)) bad.push('HOLD is not the green button');
+  if (info.sw > 390) bad.push('page is wider than the phone');
+  await p.locator('#roll-btn').click(); await p.waitForTimeout(90);
+  const spin = await p.evaluate(() => document.querySelector('.pig-die').classList.contains('rolling') && document.querySelector('.pig-die svg').getAnimations().length > 0);
+  if (!spin) bad.push('the die should spin while it rolls');
+  await p.waitForTimeout(500);
+  const stopped = await p.evaluate(() => !document.querySelector('.pig-die').classList.contains('rolling'));
+  if (!stopped) bad.push('the die keeps spinning after it landed');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['pig']);
+
+check('liars-dice-look-and-fit', 'the liars dice page should have the green felt table with the bid, a pill for whose turn it is, your dice on a red floor, and the bid controls must stay inside the screen (the 6 face button touched the edge)', async () => {
+  const p = await open('liars-dice');
+  const bad = [];
+  const r = await p.evaluate(() => { const box = document.querySelector('.panel').getBoundingClientRect(); const faces = [...document.querySelectorAll('.ld-face')].map((e) => e.getBoundingClientRect()); return { felt: getComputedStyle(document.getElementById('ld-bid')).backgroundImage.includes('rgb(47, 138, 85)'), floor: getComputedStyle(document.getElementById('ld-mine')).backgroundColor, pill: parseFloat(getComputedStyle(document.getElementById('ld-banner')).borderTopLeftRadius), faces: faces.length, inside: faces.every((f) => f.left >= box.left - 1 && f.right <= box.right + 1), sw: document.documentElement.scrollWidth }; });
+  if (!r.felt) bad.push('the bid is not on the green felt');
+  if (!/143, 46, 46/.test(r.floor)) bad.push('your dice are not on the red floor');
+  if (r.pill < 20) bad.push('the turn banner is not a pill');
+  if (r.faces < 6) bad.push('the six face buttons should show on your opening bid (saw ' + r.faces + ')');
+  else if (!r.inside) bad.push('the face buttons run past the edge of the panel');
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['liars-dice']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);

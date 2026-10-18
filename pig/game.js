@@ -56,6 +56,9 @@
       '<span class="pig-name">' + nameOf(p) + '</span><span class="pig-num">' + score[p] + "</span>" +
       '<span class="pig-bar"><i style="width:' + Math.min(100, score[p]) + '%"></i></span></div>').join("");
     scoreEl.innerHTML = cards;
+    // the header shows both scores and the goal
+    const sc = document.getElementById("score");
+    if (sc) { sc.dataset.l = mode === "ai" ? "YOU" : "P1"; sc.dataset.r = mode === "ai" ? "BOT" : "P2"; sc.dataset.tab = "GOAL " + GOAL; sc.textContent = "A: " + score[P1] + " B: " + score[P2]; }
     dieEl.innerHTML = dieSvg(lastFace);
     dieEl.classList.toggle("bust", lastFace === 1 && rolls.length > 0 && rolls[rolls.length - 1] === 1);
     turnEl.innerHTML = over ? "" :
@@ -76,10 +79,11 @@
     busy = true;
     render();
     if (reduceMotion) { lastFace = final; busy = false; return done(); }
+    dieEl.classList.add("rolling");
     let n = 0;
     (function frame() {
       if (n++ < 4) { lastFace = 1 + Math.floor(Math.random() * 6); dieEl.innerHTML = dieSvg(lastFace); timer = setTimeout(frame, 70); }
-      else { timer = null; lastFace = final; busy = false; done(); }
+      else { timer = null; lastFace = final; busy = false; dieEl.classList.remove("rolling"); done(); }
     })();
   }
 

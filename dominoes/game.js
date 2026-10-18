@@ -86,7 +86,14 @@
     const t = M.table;
     infoEl.innerHTML = "";
     const me = t.you !== null ? t.seats[t.you] : null;
-    [(me ? "You: " + me.score + " pts" : ""), "Round " + t.round, "Boneyard: " + t.boneyard, "First to " + t.target].filter(Boolean).forEach((x) => infoEl.append(el("span", "", x)));
+    ["Round " + t.round, "Boneyard: " + t.boneyard].forEach((x) => infoEl.append(el("span", "", x)));
+    // the header shows your score, the goal and the best opponent's score
+    const sc = $("score");
+    if (sc) {
+      const others = t.seats.filter((s, i) => i !== t.you), top = others.reduce((m, s) => Math.max(m, s.score), 0);
+      sc.dataset.l = "YOU"; sc.dataset.r = others.length > 1 ? "BEST" : "BOT"; sc.dataset.tab = "GOAL " + t.target;
+      sc.textContent = "A: " + (me ? me.score : 0) + " B: " + top;
+    }
   }
 
   function renderLine() {

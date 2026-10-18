@@ -27,6 +27,7 @@
         const o = mode.options[mode.selectedIndex];
         tab.textContent = o ? o.dataset.short || o.textContent : "";
       }
+      if (score && score.dataset.tab) tab.textContent = score.dataset.tab;
       tab.hidden = !tab.textContent;
     };
     if (score) new MutationObserver(sync).observe(score, { childList: true, subtree: true, characterData: true, attributes: true });
