@@ -64,7 +64,7 @@ body.fun[class*="g-"] .topbar h1 {
   grid-column: 2; grid-row: 1; justify-self: center; text-align: center;
   font-size: 22px; font-weight: 400; text-transform: capitalize; color: var(--fun-ink);
 }
-body.fun[class*="g-"] .topbar:has(.fun-vs, .fun-pills) h1 { display: none; }
+body.fun[class*="g-"] .topbar:has(.fun-vs, .fun-pills:not([hidden])) h1 { display: none; }
 body.fun[class*="g-"] .gk-theme { display: none; }
 body.fun[class*="g-"] .gk-top-r { grid-column: 3; grid-row: 1; gap: 8px; }
 body.fun[class*="g-"] .gk-top-r .man-trigger, body.fun[class*="g-"] .fun-restart {
@@ -286,3 +286,23 @@ html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-co
 .gk-over .acts .home svg { width: 34px; height: 34px; }
 .gk-over .acts .again { flex: 1; background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
 .gk-over .view { background: none; border: 0; color: rgba(255,255,255,.7); font-family: inherit; font-size: 17px; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; padding: 6px 12px; }
+
+/* two score boxes between the round buttons: shrink to what is left of the header */
+body.fun[class*="g-"] .fun-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-width: 0; width: min(190px, 100%); }
+body.fun[class*="g-"] .fun-pills div { min-width: 0; padding: 0 4px; }
+body.fun[class*="g-"] .fun-pills b { font-size: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.fun[class*="g-"] .fun-pills small { font-size: 10px; white-space: nowrap; }
+/* "slim" pages (no turn pill, nothing to say above the board): no message zone, no reserved strip */
+body.fun[data-fun-zone="slim"] { --zone: 0px; }
+html body.fun[data-fun-zone="slim"] .panel > .row { display: none; }
+html body.fun[data-fun-zone="slim"] .panel .gk-slot, html body.fun[data-fun-zone="slim"] .panel .gk-slot[data-reserve], html body.fun[data-fun-zone="mini"] .panel .gk-slot, html body.fun[data-fun-zone="mini"] .panel .gk-slot[data-reserve] { height: auto; margin: 0; }
+
+/* "mini" pages: a short message zone for one line of hint */
+body.fun[data-fun-zone="mini"] { --zone: 52px; }
+html body.fun[data-fun-zone="mini"] .panel > .row .status { font-size: 18px; }
+html body.fun[data-fun-zone="mini"] .panel > .turn { height: 44px; font-size: 20px; }
+.fun-pills div[hidden] { display: none; }
+body.fun[class*="g-"] .fun-pills b { text-transform: none; }
+
+.fun-pills[hidden] { display: none; }
+body.fun[class*="g-"] .fun-pills { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 1fr; width: min(200px, 100%); }

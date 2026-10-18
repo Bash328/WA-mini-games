@@ -20,7 +20,7 @@ function resetSolo() {
   cards = shuffled.concat(shuffled).sort(()=>Math.random()-0.5).map((e,i)=>({id:i, emoji:e.emoji, color:e.color, flipped:false, matched:false}));
   flipped = []; matched = 0; moves = 0; locked = false;
   document.getElementById('moves').textContent = 0;
-  document.getElementById('time').textContent = 0;
+  document.getElementById('time').textContent = '0s';
   document.getElementById('status').textContent = 'Flip two. Match all pairs.';
   const best = store.getInt('best:' + size, null);
   document.getElementById('best').textContent = best !== null ? best + 's' : '—';
@@ -31,7 +31,7 @@ function resetSolo() {
 function startTimer() {
   startTime = Date.now();
   timerId = setInterval(() => {
-    document.getElementById('time').textContent = Math.floor((Date.now()-startTime)/1000);
+    document.getElementById('time').textContent = Math.floor((Date.now()-startTime)/1000) + 's';
   }, 250);
 }
 
@@ -93,7 +93,7 @@ function finish() {
   if (prev === null || secs < prev) store.set('best:' + size, secs);
   const newBest = store.getInt('best:' + size, null);
   document.getElementById('best').textContent = newBest !== null ? newBest + 's' : '—';
-  document.getElementById('status').textContent = `Done in ${moves} moves, ${secs}s 🎉`;
+  document.getElementById('status').textContent = `You won! Done in ${moves} moves, ${secs}s. ` + Gamekit.taunt('win');
 }
 
 // ---------- 2 players over WhatsApp ----------
@@ -287,7 +287,7 @@ const resumer = Gamekit.resume('memory', () => (mode !== 'solo' || !startTime ||
   clearInterval(timerId);
   startTimer();
   startTime = Date.now() - e * 1000;
-  document.getElementById('time').textContent = e;
+  document.getElementById('time').textContent = e + 's';
   renderSolo();
   return true;
 });

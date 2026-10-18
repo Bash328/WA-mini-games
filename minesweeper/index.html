@@ -38,7 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=4">
+<link rel="stylesheet" href="../fun.css?v=4">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .ms {
@@ -96,14 +97,30 @@
   .ms-key1 { color: var(--coral); }
   .ms-key2 { color: var(--teal); }
 
+
+  /* chunky look: charcoal page, white tiles, coloured numbers */
+  html body.fun.g-minesweeper { --fun-bg: #1b2022; --fun-btn: #5f6b70; --fun-chip: rgba(255,255,255,.09); }
+  html body.fun.g-minesweeper .panel .ms { gap: 3px; padding: 0; border: 0; background: none; border-radius: 0; margin: 10px auto 0; overflow: visible; }
+  html body.fun.g-minesweeper .panel .c { background: #fff; border: 0; border-radius: 7px; color: #1b2022; box-shadow: none; font-weight: 400; }
+  html body.fun.g-minesweeper .panel .c.open { background: transparent; }
+  html body.fun.g-minesweeper .panel .c.flag { background: #ffbf2e; color: #7a3d00; }
+  html body.fun.g-minesweeper .panel .c.mine { background: #ff5a52; color: #fff; }
+  html body.fun.g-minesweeper .n1 { color: #4fc3f7; } html body.fun.g-minesweeper .n2 { color: #3fd04a; } html body.fun.g-minesweeper .n3 { color: #ff6b6b; }
+  html body.fun.g-minesweeper .n4 { color: #b388ff; } html body.fun.g-minesweeper .n5 { color: #ffb74d; } html body.fun.g-minesweeper .n6 { color: #26c6da; }
+  html body.fun.g-minesweeper .n7 { color: #fff; } html body.fun.g-minesweeper .n8 { color: #bbb; }
+  html body.fun.g-minesweeper .panel .c.open.by1 { box-shadow: inset 0 -3px 0 #ff7a7a; } html body.fun.g-minesweeper .panel .c.open.by2 { box-shadow: inset 0 -3px 0 #3fd0c0; }
+  html body.fun.g-minesweeper .kbd { display: none; }
+  html body.fun.g-minesweeper .fun-pills b .ms-key1, html body.fun.g-minesweeper .fun-pills b .ms-key2 { font-size: .7em; }
+  html body.fun.g-minesweeper .fun-pills #score { font-size: 14px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-minesweeper">
+<body class="g-minesweeper fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>minesweeper</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Mines</small><b id="mines">0</b></div><div><small>Time</small><b id="time">0s</b></div><div hidden><small>Tiles</small><b id="score"></b></div></div>
   </div>
   <div class="panel">
     <div class="row">
@@ -125,9 +142,6 @@
         <option value="medium" selected>Medium · 16×16 · 40</option>
         <option value="hard">Hard · 20×20 · 80</option>
       </select>
-      <span id="mines" class="kbd">0 mines</span>
-      <span id="score" class="kbd" hidden></span>
-      <span id="time" class="kbd">0s</span>
     </div>
   </div>
 </main>
@@ -170,9 +184,10 @@
 </template>
 
 <script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
+<script src="../gamekit.js?v=4"></script>
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
+<script defer src="../fun.js?v=4"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("minesweeper"));</script>

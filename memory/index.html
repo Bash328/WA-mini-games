@@ -38,7 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=4">
+<link rel="stylesheet" href="../fun.css?v=4">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   .mem {
@@ -70,19 +71,30 @@
   .mem .card .face { opacity: 0; transition: opacity 0.15s; }
   .mem .card.flip .face, .mem .card.match .face { opacity: 1; }
 
+
+  /* chunky look: plum page, yellow tiles that turn white to show the fruit */
+  html body.fun.g-memory { --fun-bg: #5e2a40; --fun-btn: #a8506f; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-memory .panel .mem { width: 100%; gap: 10px; margin: 8px auto 0; }
+  html body.fun.g-memory .panel .mem .card { background: #ffbf2e; border: 0; border-radius: 14px; box-shadow: 0 4px 0 #c98a00; transform: rotate(-1.5deg); transition: transform .15s, background .15s; }
+  html body.fun.g-memory .panel .mem .card:nth-child(3n) { transform: rotate(2deg); }
+  html body.fun.g-memory .panel .mem .card:nth-child(4n+1) { transform: rotate(-3deg); }
+  html body.fun.g-memory .panel .mem .card:nth-child(5n+2) { transform: rotate(1deg); }
+  html body.fun.g-memory .panel .mem .card:hover { background: #ffc94d; }
+  html body.fun.g-memory .panel .mem .card.flip, html body.fun.g-memory .panel .mem .card.match { background: #fff; box-shadow: 0 4px 0 #c9b9c0; transform: rotate(0deg); }
+  html body.fun.g-memory .panel .mem .card.match { opacity: .55; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-memory">
+<body class="g-memory fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>memory</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills" id="stats"><div><small>Moves</small><b id="moves">0</b></div><div><small>Time</small><b id="time">0</b></div><div class="best"><small>Best</small><b id="best">—</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Flip two. Match all pairs.</p>
-      <p class="status" id="stats">Moves: <span id="moves">0</span> · Time: <span id="time">0</span>s · Best: <span id="best">—</span></p>
       <p class="status" id="score" hidden></p>
       <button class="btn ghost tool-btn man-trigger" data-man="memory" data-man-title="MEMORY(1)" type="button">
         how to <span class="q">?</span>
@@ -137,9 +149,10 @@
 </template>
 
 <script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
+<script src="../gamekit.js?v=4"></script>
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
+<script defer src="../fun.js?v=4"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("memory"));</script>

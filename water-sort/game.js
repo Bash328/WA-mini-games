@@ -62,7 +62,7 @@
     const key = "best:" + diff, b = Number(store.get(key, 0)), n = log.length;
     if (!b || n < b) store.set(key, n);
     bestEl.textContent = store.get(key, String(n));
-    statusEl.textContent = "Sorted in " + n + " moves! " + Gamekit.taunt("win");
+    statusEl.textContent = "You won! Sorted in " + n + " moves. " + Gamekit.taunt("win");
     resumer.clear();
     render();
   }

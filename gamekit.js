@@ -373,7 +373,7 @@
         if (at > 0 && cut >= 0) { head = full.slice(0, cut + 1); text = full.slice(cut + 2); }
       }
       tone = WIN_RE.test(full) ? "win" : BAD_RE.test(full) ? "bad" : "";
-      if (END_RE.test(full)) ended = full;
+      if (END_RE.test(full) || /\bgame over\b/i.test(full)) ended = full;
     }
     // fun pages: the result and its taunt get their own card instead of the strip (Crazy 8 has its own)
     if (document.body.classList.contains("fun") && !document.getElementById("c8-over")) {
@@ -414,7 +414,7 @@
     if (overEl) overEl.remove();
     const m = /^(.*?[.!?])\s+([\s\S]*)$/.exec(full);
     const result = (m ? m[1] : full).replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "").trim();
-    const taunt = m ? m[2].trim() : "";
+    const taunt = m ? m[2].replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "").replace(/\s+/g, " ").trim() : "";
     const draw = /^draw/i.test(full);
     const st = storage(GAME_ID + ":");
     let log = st.getJSON("winlog", []);
@@ -426,7 +426,9 @@
     const card = mk("div", "card");
     const h = mk("h2"); h.textContent = tone === "win" ? "You won!" : draw ? "Draw" : "Game over";
     const big = mk("div", "big"); big.textContent = result;
-    card.append(h, big);
+    const norm = (t) => t.toLowerCase().replace(/[^a-z ]/g, "").trim();
+    card.append(h);
+    if (norm(result) !== norm(h.textContent)) card.append(big);        // "You won!" twice is noise
     if (taunt) { const q = mk("p", "taunt"); q.textContent = taunt; card.append(q); }
     const stats = mk("div", "stats");
     const h3 = mk("h3"); h3.textContent = "Your wins"; stats.append(h3);

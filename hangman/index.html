@@ -38,7 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=4">
+<link rel="stylesheet" href="../fun.css?v=4">
 <link rel="stylesheet" href="../async-share.css">
 <style>
   #word {
@@ -92,10 +93,27 @@
   #keyboard .hm-key.hit { background: rgba(60,180,100,0.3); border-color: rgba(60,180,100,0.6); }
   #keyboard .hm-key.miss { background: rgba(200,60,60,0.25); border-color: rgba(200,60,60,0.55); opacity: 0.7; }
 
+
+  /* chunky look: charcoal page, red gallows that fills in with every miss, grey keys */
+  html body.fun.g-hangman { --fun-bg: #1c1d20; --fun-btn: #9a938e; --fun-chip: rgba(255,255,255,.09); }
+  html body.fun.g-hangman .hm-gallows { display: block; width: min(200px, 52%); aspect-ratio: 1; margin: 2px auto 0; }
+  .hm-gallows .fr { stroke: #e2403a; stroke-width: 7; stroke-linecap: round; fill: none; }
+  .hm-gallows .ground { stroke: #8a5a3c; stroke-width: 7; stroke-linecap: round; }
+  .hm-gallows .pt { stroke: #fff; stroke-width: 6; stroke-linecap: round; fill: none; display: none; }
+  .hm-gallows .pt.on { display: inline; }
+  html body.fun.g-hangman #word { font-size: clamp(1.8rem, 9vw, 2.8rem); font-weight: 400; color: #fff; margin: 14px 0 4px; letter-spacing: .12em; }
+  html body.fun.g-hangman #misses { color: rgba(255,255,255,.7); font-size: 16px; min-height: 1.4em; margin-bottom: 6px; }
+  html body.fun.g-hangman .hm-keyboard { width: 100%; gap: 6px; grid-template-columns: repeat(7, 1fr); }
+  html body.fun.g-hangman #keyboard .hm-key { background: #9a938e; color: #fff; border: 0; border-radius: 8px; min-height: 46px; padding: 0; font-size: 22px; font-weight: 400; box-shadow: none; opacity: 1; }
+  html body.fun.g-hangman #keyboard .hm-key.hit { background: #6ac43a; }
+  html body.fun.g-hangman #keyboard .hm-key.miss { background: #2a2b2e; color: #6d6d70; }
+  html body.fun.g-hangman #keyboard .hm-key:disabled:not(.hit):not(.miss) { opacity: .55; }
+  html body.fun.g-hangman #setup { margin: 8px 0; }
+  html body.fun.g-hangman #setup-error { color: #ff8a7a; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-hangman">
+<body class="g-hangman fun" data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>hangman</h1>
@@ -120,6 +138,7 @@
       <button class="btn primary" id="setup-btn" type="button">Set word</button>
       <p id="setup-error"></p>
     </div>
+    <svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg>
     <p id="word"></p>
     <p id="misses"></p>
     <div class="hm-keyboard" id="keyboard" hidden></div>
@@ -156,9 +175,10 @@
 </template>
 
 <script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
+<script src="../gamekit.js?v=4"></script>
 <script src="../vendor/lz-string.min.js"></script>
 <script src="../async-share.js"></script>
+<script defer src="../fun.js?v=4"></script>
 <script src="game.js"></script>
 <script defer src="../manpage.js"></script>
 </body>

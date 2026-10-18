@@ -7,6 +7,14 @@
   const A_CODE = "A".charCodeAt(0);
 
   const statusEl = document.getElementById("status");
+  // the gallows draws one more part for every miss; it reads the "Misses: n / 6" line, whichever mode wrote it
+  (function () {
+    const missesNode = document.getElementById("misses"), parts = document.querySelectorAll("#gallows .pt");
+    if (!missesNode || !parts.length) return;
+    const draw = () => { const m = /Misses: (\d+)/.exec(missesNode.textContent); const n = m ? Number(m[1]) : 0; parts.forEach((p, i) => p.classList.toggle("on", i < n)); };
+    new MutationObserver(draw).observe(missesNode, { childList: true, characterData: true, subtree: true });
+    draw();
+  })();
   const wordEl = document.getElementById("word");
   const missesEl = document.getElementById("misses");
   const setupEl = document.getElementById("setup");
@@ -425,7 +433,7 @@
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
       statusEl.textContent = loStatus === "in_progress"
         ? "Player 2: guess a letter." + (loNote ? " " + loNote : "")
-        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins — the word wasn't guessed in time. " + lossTaunt(loWord, loMask));
+        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins. The word wasn't guessed in time. " + lossTaunt(loWord, loMask));
       Gamekit.turn(loStatus === "in_progress" ? P2 : null, "Player 2 · guess a letter");
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);

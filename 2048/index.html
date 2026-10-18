@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=4">
+<link rel="stylesheet" href="../fun.css?v=4">
 <style>
   .board2048 {
     display: grid;
@@ -76,18 +77,31 @@
   .t4096, .t8192 { background: var(--accent); color: #0a0a0a; border-color: var(--accent); font-size: clamp(0.9rem, 4vw, 1.5rem); }
   @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
   .tile.merged { animation: pop 0.18s ease-out; }
+
+  /* chunky look: dark brown page, mauve board, cream and orange tiles */
+  html body.fun.g-2048 { --fun-bg: #2b1f1d; --fun-btn: #8a5f63; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-2048 .panel .board2048 { width: calc(100% + 22px); margin: 8px -11px 0; padding: 12px; gap: 12px; box-sizing: border-box; max-width: none; border: 0; border-radius: 22px; background: #8a6a6c; }
+  html body.fun.g-2048 .panel .tile { border: 0; border-radius: 14px; background: #a07f81; color: #4a3436; font-weight: 400; font-size: clamp(1.6rem, 9vw, 2.6rem); box-shadow: none; }
+  html body.fun.g-2048 .panel .t2, html body.fun.g-2048 .panel .t4 { background: #fff3e0; color: #4a3436; }
+  html body.fun.g-2048 .panel .t8 { background: #fbb25c; color: #fff; } html body.fun.g-2048 .panel .t16 { background: #f89a4a; color: #fff; }
+  html body.fun.g-2048 .panel .t32 { background: #f2794a; color: #fff; } html body.fun.g-2048 .panel .t64 { background: #e8553f; color: #fff; }
+  html body.fun.g-2048 .panel .t128 { background: #f4cf4a; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); } html body.fun.g-2048 .panel .t256 { background: #f0c22f; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); }
+  html body.fun.g-2048 .panel .t512 { background: #8fcf4a; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); }
+  html body.fun.g-2048 .panel .t1024, html body.fun.g-2048 .panel .t2048, html body.fun.g-2048 .panel .t4096, html body.fun.g-2048 .panel .t8192 { background: #3fc9b0; color: #fff; font-size: clamp(1.1rem, 6.2vw, 1.8rem); box-shadow: none; }
+  html body.fun.g-2048 .kbd { display: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-2048">
+<body class="g-2048 fun" data-fun-zone="slim" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>2048</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Score</small><b id="score">0</b></div><div class="best"><small>Best</small><b id="best">0</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
-      <p class="status">Slide tiles. Merge to 2048. Score: <span class="hot" id="score">0</span> · Best: <span id="best">0</span> <span id="over-msg"></span></p>
+      <p class="status" id="status"><span id="over-msg"></span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="2048" data-man-title="2048(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -134,7 +148,8 @@
 
 <script defer src="../manpage.js"></script>
 <script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
+<script defer src="../gamekit.js?v=4"></script>
+<script defer src="../fun.js?v=4"></script>
 <script defer src="game.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("2048"));</script>
 </body>

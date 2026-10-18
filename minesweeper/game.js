@@ -80,12 +80,12 @@ function scores() {
 function updateHud() {
   if (mode === 'whatsapp') {
     const [a, b] = scores();
-    document.getElementById('mines').textContent = `${M} mines`;
+    document.getElementById('mines').textContent = String(M);
     document.getElementById('score').innerHTML = `<span class="ms-key1">■</span> P1 ${a} · <span class="ms-key2">■</span> P2 ${b}`;
     return;
   }
   let flagged=0; for (let i=0;i<H*W;i++) if (flags[i]) flagged++;
-  document.getElementById('mines').textContent = `${M - flagged} mines left`;
+  document.getElementById('mines').textContent = String(M - flagged);
   if (over) document.getElementById('status').textContent = won ? 'You won! 🎉 ' + Gamekit.taunt('clear') : 'Boom. 💥 ' + Gamekit.taunt('boom');
 }
 
@@ -96,7 +96,7 @@ function cellSize(el) {
   const avail = Math.min(panel.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight), 600);
   const chrome = parseFloat(bs.paddingLeft) + parseFloat(bs.paddingRight) +
     parseFloat(bs.borderLeftWidth) + parseFloat(bs.borderRightWidth) + (parseFloat(bs.columnGap) || 0) * (W - 1);
-  return Math.max(8, Math.min(28, Math.floor((avail - chrome) / W)));
+  return Math.max(8, Math.min(40, Math.floor((avail - chrome) / W)));
 }
 
 function render() {
@@ -241,8 +241,8 @@ const modeSel = document.getElementById('mode');
 
 function applyMode() {
   const wa = mode === 'whatsapp';
-  document.getElementById('time').hidden = wa;
-  document.getElementById('score').hidden = !wa;
+  document.getElementById('time').parentElement.hidden = wa;
+  document.getElementById('score').parentElement.hidden = !wa;
   if (wa) { link.show(); return; }
   link.hide();
   document.getElementById('diff').disabled = false;
