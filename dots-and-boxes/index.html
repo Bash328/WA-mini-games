@@ -83,10 +83,8 @@
   #score .sc.p1 { color: var(--p1); }
   #score .sc.p2 { color: var(--p2); }
 
-  /* chunky look: full-width white card, big black dots, big "your turn" disc */
+  /* chunky look: full-width white card, big black dots, turn pill */
   body.fun.g-dots-and-boxes { --fun-bg: #f79879; --vs-l: #ff5f56; --vs-r: #00c2ee; overflow: hidden; }
-  body.fun.g-dots-and-boxes .panel { display: flex; flex-direction: column; }
-  body.fun.g-dots-and-boxes .panel > * { order: 10; }
   .db-board {
     grid-template-columns: 13px repeat(4, 1fr 13px); grid-template-rows: 13px repeat(4, 1fr 13px);
     width: calc(100% + 22px); margin: 8px -11px 0; padding: 22px 20px; box-sizing: border-box; max-width: none;
@@ -100,22 +98,13 @@
   #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #444; }
   #board .db-edge.drawn.last.p1, #board .db-edge.drawn.last.p1:disabled { background: #ff6f66; box-shadow: none; }
   #board .db-edge.drawn.last.p2, #board .db-edge.drawn.last.p2:disabled { background: #0fd0ff; box-shadow: none; }
-  /* the page changes colour with whose move it is; Player 2's disc sits at the top, upside down, for the person across the table */
+  /* the page changes colour with whose move it is */
   body.fun.g-dots-and-boxes { transition: background-color .35s; }
   body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: #63aed2; --vs-bg: #3f7d9e; }
   body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) #board { background: #e7f3f8; }
-  body.fun[class*="g-"] .panel > .turn[data-p="2"] { order: 0; margin: -190px 0 26px; background: #489bc0; transform: rotate(180deg); }
   .db-boxcell.owned { font-size: 0; }
   .db-boxcell.owned.p1 { background: #ff5f56; } .db-boxcell.owned.p2 { background: #00c2ee; }
   .db-boxcell.owned::after { content: none !important; }
-  body.fun[class*="g-"] .panel > .turn {
-    order: 50; align-self: center; width: 326px; height: 326px; min-height: 0; margin: 26px 0 -190px; padding: 0 44px 130px; box-sizing: border-box;
-    border: 8px solid #fff; border-radius: 50%; background: #e28062; color: #fff; font-size: 30px; line-height: 1.1; text-align: center;
-  }
-  body.fun[class*="g-"] .panel > .turn.wait { background: #e28062; opacity: .8; }
-  body.fun .turn-dot { display: none; }
-  body.fun .turn-text { white-space: normal; overflow: visible; }
-  body.fun[class*="g-"] .panel > .toolbar { order: 40; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
