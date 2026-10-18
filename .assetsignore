@@ -26,3 +26,6 @@ LICENSE
 # in the repo so switching back is a DNS change and nothing more.
 CNAME
 .nojekyll
+
+tests/
+CLAUDE.md
