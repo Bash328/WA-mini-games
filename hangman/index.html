@@ -96,7 +96,14 @@
 
   /* chunky look: charcoal page, red gallows that fills in with every miss, grey keys */
   html body.fun.g-hangman { --fun-bg: #1c1d20; --fun-btn: #9a938e; --fun-chip: rgba(255,255,255,.09); }
-  html body.fun.g-hangman .hm-gallows { display: block; width: min(200px, 52%); aspect-ratio: 1; margin: 2px auto 0; }
+  html body.fun.g-hangman .hm-stage { display: flex; align-items: flex-start; gap: 6px; margin: 2px 0 0; }
+  html body.fun.g-hangman .hm-gallows { display: block; flex: 0 0 auto; width: min(190px, 46%); aspect-ratio: 1; margin: 0; }
+  /* the hanged man talks: a speech bubble to the right of the gallows, tail pointing at his head */
+  html body.fun.g-hangman .hm-bubble { position: relative; flex: 1 1 0; min-width: 0; align-self: flex-start; margin: 4% 0 0 14px; padding: 12px 14px; border-radius: 20px; background: #fff; color: #2b2d33; font-size: 18px; line-height: 1.25; text-wrap: balance; animation: hm-pop .22s ease-out; }
+  html body.fun.g-hangman .hm-bubble::before { content: ""; position: absolute; left: -12px; top: 22px; border: 8px solid transparent; border-right: 14px solid #fff; border-left: 0; }
+  html body.fun.g-hangman .hm-bubble[hidden] { display: none; }
+  html body.fun.g-hangman .hm-bubble.beg { background: #ffe9a8; } html body.fun.g-hangman .hm-bubble.beg::before { border-right-color: #ffe9a8; }
+  @keyframes hm-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .hm-gallows .fr { stroke: #e2403a; stroke-width: 7; stroke-linecap: round; fill: none; }
   .hm-gallows .ground { stroke: #8a5a3c; stroke-width: 7; stroke-linecap: round; }
   .hm-gallows .pt { stroke: #fff; stroke-width: 6; stroke-linecap: round; fill: none; display: none; }
@@ -138,7 +145,7 @@
       <button class="btn primary" id="setup-btn" type="button">Set word</button>
       <p id="setup-error"></p>
     </div>
-    <svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg>
+    <div class="hm-stage"><svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg><div class="hm-bubble" id="bubble" role="status" aria-live="polite" hidden></div></div>
     <p id="word"></p>
     <p id="misses"></p>
     <div class="hm-keyboard" id="keyboard" hidden></div>

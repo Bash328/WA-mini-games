@@ -7,6 +7,16 @@
   const A_CODE = "A".charCodeAt(0);
 
   const statusEl = document.getElementById("status");
+  const bubbleEl = document.getElementById("bubble");
+  let spoken = "";
+  function speak(line) {
+    const t = line ? line.text : "";
+    if (t === spoken) return;                       // a re-render must not restart the bubble
+    spoken = t;
+    bubbleEl.hidden = !t;
+    bubbleEl.textContent = t;
+    bubbleEl.classList.toggle("beg", !!(line && line.beg));
+  }
   // the gallows draws one more part for every miss; it reads the "Misses: n / 6" line, whichever mode wrote it
   (function () {
     const missesNode = document.getElementById("misses"), parts = document.querySelectorAll("#gallows .pt");
@@ -116,7 +126,7 @@
   // The guess reaction belongs to one board state: it's shown only while
   // waMask still equals waNoteMask, so a re-render keeps it and a fresh
   // link never inherits a stale one.
-  let waNote = "", waNoteMask = -1, waTaunt = newTauntState();
+  let waNote = "", waNoteMask = -1, waTaunt = newTauntState(), waEnd = "", waEndKey = "";
 
   function loadLink(s, canMove) {
     waInGame = !!s;
@@ -128,7 +138,7 @@
     } else {
       waWord = ""; waMask = 0; waCurrent = P1;
     }
-    if (waMask === 0) { waNote = ""; waNoteMask = -1; waTaunt = newTauntState(); }
+    if (waMask === 0) { waNote = ""; waNoteMask = -1; waTaunt = newTauntState(); waEnd = ""; waEndKey = ""; }
     renderWA();
   }
 
@@ -140,10 +150,16 @@
       const misses = wrongCount(waWord, waMask);
       const guesserTurn = waCanMove && waCurrent === P2 && waStatus === "in_progress";
       const note = guesserTurn && waNoteMask === waMask ? waNote : "";
-      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}` + (note ? " — " + note : "");
+      missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
+      if (reveal) {
+        const k = waWord + ":" + waMask;
+        if (waEndKey !== k) { waEndKey = k; waEnd = isSolved(waWord, waMask) ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(waWord, waMask) }; }
+        speak(waEnd);
+      } else speak(note);
     } else {
       wordEl.textContent = "";
       missesEl.textContent = "";
+      speak("");
     }
     const guesserCanGuess = waCanMove && waInGame && waCurrent === P2 && waStatus === "in_progress";
     keyboardEl.hidden = !guesserCanGuess && !(waInGame && waStatus !== "in_progress");
@@ -173,7 +189,7 @@
     let status = "in_progress", winner = null;
     if (isSolved(waWord, mask)) { status = "won"; winner = P2; }
     else if (wrongCount(waWord, mask) >= MAX_WRONG) { status = "won"; winner = P1; }
-    waNote = guessNote(waTaunt, waWord, mask, String.fromCharCode(A_CODE + i));
+    waNote = voice(guessNote(waTaunt, waWord, mask, String.fromCharCode(A_CODE + i)), waWord, mask, String.fromCharCode(A_CODE + i));
     waNoteMask = mask;
     // Keep the turn with the guesser while the game is on. Once it's over
     // the default (turn goes to the opponent) must apply, otherwise Player 1
@@ -185,7 +201,7 @@
   // Hangman's own gallows-humor taunts, rather than Gamekit's generic
   // pool — "the one hanging" joke doesn't land in checkers.
   const HANGMAN_LAST_CHANCE = [
-    "Try harder — if I was the one hanging, I'd be scared.",
+    "Try harder. I'm the one hanging here!",
     "One more miss and that's curtains.",
     "The rope's getting tighter. Figuratively. Mostly.",
     "Last letter standing between you and the noose.",
@@ -197,7 +213,6 @@
     "One wrong move from game over.",
     "The executioner is checking their watch.",
     "Pick wisely. Or don't — it's funnier that way.",
-    "😂",
   ];
   const HANGMAN_LOSS = [
     "Hanged by your own indecision.",
@@ -212,7 +227,6 @@
     "Well, the letters tried to warn you.",
     "That's going in the hangman hall of shame.",
     "The rope wins this round.",
-    "😂",
   ];
   // Mid-game mockery for a pile of misses that hasn't reached the gallows
   // yet — distinct from the last-chance line, which is reserved for the
@@ -229,7 +243,6 @@
     "This is turning into a greatest-misses album.",
     "Half your guesses gone and the word's barely dented.",
     "The keyboard is starting to feel personally attacked.",
-    "😂",
   ];
   // A hint dressed up as a jab. Only offered while the word still has an
   // unguessed vowel (see guessNote), so it never points at a letter that
@@ -254,7 +267,6 @@
     "Right idea, wrong vowel.",
     "You listened! ...and still missed.",
     "A vowel, yes. The vowel, no.",
-    "😂",
   ];
   const HANGMAN_COMEBACK = [
     "Now we're talking.",
@@ -340,7 +352,38 @@
     "You could taste the win. Then you couldn't.",
     "One more correct guess and this ends differently.",
     "You really couldn't tell, huh?",
-    "😂",
+  ];
+  // The hanged man does the talking: taunts, and now and then begging for his life.
+  const HANGMAN_BEGS = [
+    "Wait, wait, wait! I have a family!",
+    "Please! I'm only made of sticks!",
+    "Tell my stick wife I love her.",
+    "I'm too young to hang!",
+    "Not that letter again, please!",
+    "I can see the rope from here!",
+    "Can we talk about this?",
+    "I'll give you my last twig.",
+    "Is there a vowel you haven't tried?",
+    "My knees are shaking. I have no knees!",
+  ];
+  const HANGMAN_BEGS_LAST = [
+    "ONE LEFT! Please, please, please!",
+    "I can't look. I have no eyes. I can't look!",
+    "I'll be good! I'll be so good!",
+    "Don't do this to me!",
+    "Tell them I was a good stick man.",
+    "My whole life is flashing before me. It's two lines!",
+  ];
+  const HANGMAN_RELIEF = [
+    "Yes! Keep going, you beauty!",
+    "I can breathe again. Slightly.",
+    "That's the one, that's the one!",
+    "My toes are touching the floor again!",
+  ];
+  const HANGMAN_SAVED = [
+    "Phew! You saved me. I owe you my life.",
+    "I'm free! Drinks are on me. I have no pockets.",
+    "Never doubted you. Okay, I doubted you a little.",
   ];
   function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
   function missingUniqueCount(word, mask) {
@@ -378,6 +421,15 @@
   // (so the next guess can call back to it) and how many right letters in
   // a row have landed while on the last life.
   function newTauntState() { return { nudge: null, lastLifeHits: 0 }; }
+  function voice(note, word, mask, ch) {
+    const misses = wrongCount(word, mask), hit = word.includes(ch);
+    if (isSolved(word, mask) || misses >= MAX_WRONG) return "";
+    if (!hit && misses === MAX_WRONG - 1 && Math.random() < 0.7) return { text: pick(HANGMAN_BEGS_LAST), beg: true };
+    if (!hit && misses >= 2 && Math.random() < 0.45) return { text: pick(HANGMAN_BEGS), beg: true };
+    if (hit && misses >= 3 && !note && Math.random() < 0.35) return { text: pick(HANGMAN_RELIEF) };
+    return note ? { text: note } : "";
+  }
+
 
   // The line (or "") to show after the guesser picks `ch`; `mask` already
   // includes it. Decided once per guess and stored by the caller, so a
@@ -417,10 +469,10 @@
     return pick(HANGMAN_MANY_WRONG);
   }
 
-  let loWord = "", loMask = 0, loStatus = "in_progress", loNote = "", loTaunt = newTauntState();
+  let loWord = "", loMask = 0, loStatus = "in_progress", loNote = "", loTaunt = newTauntState(), loEnd = "";
 
   function resetLocal() {
-    loWord = ""; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
+    loWord = ""; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
     renderLocal();
   }
 
@@ -431,15 +483,17 @@
       renderWord(loWord, loMask, reveal);
       const misses = wrongCount(loWord, loMask);
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
+      if (loStatus !== "in_progress" && !loEnd) loEnd = { text: loStatus === "won-p2" ? pick(HANGMAN_SAVED) : lossTaunt(loWord, loMask) };
       statusEl.textContent = loStatus === "in_progress"
-        ? "Player 2: guess a letter." + (loNote ? " " + loNote : "")
-        : (loStatus === "won-p2" ? "Player 2 wins!" : "Player 1 wins. The word wasn't guessed in time. " + lossTaunt(loWord, loMask));
+        ? "Player 2: guess a letter."
+        : (loStatus === "won-p2" ? "Player 2 wins! " + loEnd.text : "Player 1 wins. The word wasn't guessed in time. " + loEnd.text);
+      speak(loStatus === "in_progress" ? loNote : loEnd);
       Gamekit.turn(loStatus === "in_progress" ? P2 : null, "Player 2 · guess a letter");
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
     } else {
       Gamekit.turn(P1, "Player 1 · set a secret word");
-      wordEl.textContent = ""; missesEl.textContent = "";
+      wordEl.textContent = ""; missesEl.textContent = ""; speak("");
       statusEl.textContent = "Player 1: set a secret word, then hand the device to Player 2.";
       keyboardEl.hidden = true;
     }
@@ -449,7 +503,7 @@
     const word = normalizeWord(setupInput.value);
     if (!validWord(word)) { setupError.textContent = "Enter a word from 3 to 20 letters (A-Z only)."; return; }
     setupError.textContent = "";
-    loWord = word; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
+    loWord = word; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
     renderLocal();
   }
 
@@ -458,7 +512,7 @@
     loMask |= bit(i);
     if (isSolved(loWord, loMask)) loStatus = "won-p2";
     else if (wrongCount(loWord, loMask) >= MAX_WRONG) loStatus = "won-p1";
-    loNote = guessNote(loTaunt, loWord, loMask, String.fromCharCode(A_CODE + i));
+    loNote = voice(guessNote(loTaunt, loWord, loMask, String.fromCharCode(A_CODE + i)), loWord, loMask, String.fromCharCode(A_CODE + i));
     renderLocal();
   }
 
@@ -486,7 +540,7 @@
     if (!Number.isInteger(s.mask) || s.mask < 0 || s.mask >= (1 << 26)) return false;
     if (wrongCount(s.word, s.mask) >= MAX_WRONG || isSolved(s.word, s.mask)) return false;
     modeSel.value = "local"; applyMode();
-    loWord = s.word; loMask = s.mask; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState();
+    loWord = s.word; loMask = s.mask; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
     renderLocal();
     return true;
   });

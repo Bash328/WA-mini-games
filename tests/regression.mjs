@@ -229,6 +229,31 @@ check('no-red-in-checkers', 'checkers pieces are black and white now; "Red" must
   return /\bRed\b/.test(s.replace(/\/\*[\s\S]*?\*\//g, '')) ? ['"Red" appears in checkers'] : [];
 }, ['checkers']);
 
+check('hangman-man-speaks', 'the taunts should come from the stick man in a speech bubble beside the gallows (sometimes begging), not from a line of text', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const bad = [];
+  const state = () => p.evaluate(() => { const b = document.getElementById('bubble'), g = document.getElementById('gallows').getBoundingClientRect(), r = b.getBoundingClientRect(); return { hidden: b.hidden, text: b.textContent, beg: b.classList.contains('beg'), left: r.left, right: r.right, gRight: g.right, gTop: Math.round(g.top + scrollY), sw: document.documentElement.scrollWidth, gl: g.left }; });
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const t0 = (await state()).gTop;
+  for (const c of 'ZX') { await press(c); await p.waitForTimeout(200); }       // two misses
+  const s = await state();
+  if (s.hidden || !s.text) bad.push('no speech bubble after two misses');
+  else {
+    if (!s.beg) bad.push('expected him to beg (random forced to 0)');
+    if (s.left < s.gRight - 2) bad.push('bubble overlaps the gallows');
+    if (s.right > 390) bad.push('bubble runs off the screen');
+    if (/[\u{1F300}-\u{1FAFF}]/u.test(s.text)) bad.push('emoji in the bubble');
+  }
+  if (s.gl > 40) bad.push('gallows is not at the left edge (more room is wanted for the bubble)');
+  if (s.gTop !== t0) bad.push('gallows moved when he spoke');
+  if (s.sw > 390) bad.push('page got wider');
+  for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
+  const e = await state();
+  if (e.hidden || !e.text) bad.push('he says nothing when the game ends');
+  await p.close();
+  return bad;
+}, ['hangman']);
+
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
   const e = p.errs.slice(); await p.close();
