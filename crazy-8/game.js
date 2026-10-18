@@ -15,6 +15,7 @@
   const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
   const suitPick = $("c8-suitpick"), suitsEl = $("c8-suits"), toastEl = $("c8-toast"), tauntsEl = $("c8-taunts");
   const store = Gamekit.storage("crazy-8:");
+  const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over");
 
   let diff = store.get("diff", "medium");
   if (!["easy", "medium", "hard"].includes(diff)) diff = "medium";
@@ -127,30 +128,37 @@
     }
   }
 
+  // where the other players sit: one across, two either side, three left / across / right
+  const POS = { 1: ["top"], 2: ["left", "right"], 3: ["left", "top", "right"] };
   function renderOpps() {
-    const t = M.table;
+    const t = M.table, n = t.seats.length;
     oppsEl.innerHTML = "";
-    t.seats.forEach((s, i) => {
-      if (i === t.you) return;
-      const box = el("div", "c8-opp" + (t.turn === i && M.phase === "playing" ? " on-turn" : "") + (s.status === "out" ? " gone" : ""));
+    const order = [];
+    const from = t.you === null ? -1 : t.you;
+    for (let k = 1; k <= n; k++) { const i = (from + k + n) % n; if (i !== t.you) order.push(i); }
+    const pos = POS[Math.min(3, order.length)] || [];
+    stageEl.classList.toggle("no-top", !pos.includes("top"));
+    order.slice(0, 3).forEach((i, k) => {
+      const s = t.seats[i];
+      const box = el("div", "c8-opp pos-" + pos[k] + (t.turn === i && M.phase === "playing" ? " on-turn" : "") + (s.status === "out" ? " gone" : ""));
       box.style.setProperty("--pc", seatCol(i));
-      box.append(el("div", "nm", s.name));
-      let st = s.bot ? "computer" : "";
+      const nm = el("div", "nm", s.name);
+      nm.append(el("span", "ct", String(s.count)));
+      box.append(nm);
+      let st = "";
       const p = M.players && M.players.find((x) => x.seat === i);
       if (p && !s.bot) {
         if (p.autoBot && !p.online) st = "offline: a computer is playing";
         else if (!p.online) {
           const left = Math.max(0, Math.ceil((p.offlineSince + M.takeoverMs - nowMs()) / 1000));
           st = "offline: computer in " + left + "s";
-        } else st = "";
+        }
       }
       if (s.status === "out") st = "out of the tournament";
       else if (s.status === "safe") st = "safe this round";
-      const stEl = el("div", "st" + (p && !p.online ? " warn" : ""), st || " ");
-      box.append(stEl);
+      if (st) box.append(el("div", "st" + (p && !p.online ? " warn" : ""), st));
       const fan = el("div", "fan");
-      for (let k = 0; k < Math.min(8, s.count); k++) fan.append(cardEl(null, { cls: "sm" }));
-      fan.append(el("span", "n", String(s.count)));
+      for (let c = 0; c < Math.min(12, s.count); c++) fan.append(cardEl(null, { cls: "sm" }));
       box.append(fan);
       oppsEl.append(box);
     });
@@ -175,7 +183,7 @@
     }
     infoEl.append(must);
     if (t.pending > 0) infoEl.append(el("span", "c8-chip hot", "Pick up " + t.pending));
-    infoEl.append(el("span", "c8-chip", t.dir === 1 ? "↻ clockwise" : "↺ reversed"));
+    stageEl.classList.toggle("rev", t.dir !== 1);
   }
 
   const SEAT_COL = ["#4aa3ff", "#ff6b6b", "#46c46f", "#f5b83d"];
@@ -227,6 +235,7 @@
     const youOut = t.you === null || t.seats[t.you].status === "out";
     if (youOut) { handEl.append(el("span", "note", "")); return; }
     const hand = sortHand(t.seats[t.you].hand || []);
+    handEl.style.setProperty("--n", Math.max(2, hand.length));
     if (selected && !hand.includes(selected)) selected = null;
     hand.forEach((c) => {
       const b = cardEl(c, { button: true, cls: c === selected ? "sel" : "" });
@@ -240,7 +249,9 @@
     const mine = t.turn === t.you && M.phase === "playing";
     const o = t.options;
     drawBtn.disabled = !(mine && o.draw);
-    drawBtn.textContent = t.pending > 0 ? "Pick up " + t.pending + " cards" : "Pick up a card";
+    drawBtn.textContent = t.pending > 0 ? "Pick up " + t.pending : "Draw";
+    youEl.classList.toggle("on-turn", mine);
+    if (t.you !== null) youEl.style.setProperty("--pc", seatCol(t.you));
     passBtn.hidden = !(mine && o.pass);
     playBtn.disabled = !(mine && selected);
   }
@@ -322,6 +333,7 @@
     const bots = [null].concat(Array(n).fill(diff));
     L = { st: C.create({ names, bots, mode: cfg.mode, starter: 0 }, Math.random), cfg, events: [], timer: null };
     selected = null;
+    document.body.classList.add("gk-play");
     localRender(); localSchedule();
   }
   function localRender() {
@@ -507,6 +519,7 @@
     roomEl.innerHTML = "";
     if (!M || M.kind === "local") { roomEl.hidden = true; return; }
     roomEl.hidden = false;
+    if (M.phase === "game_over") { roomEl.hidden = true; return; }
     if (M.phase === "landing") {
       roomEl.append(el("h3", "", "Play Crazy 8 online"));
       roomEl.append(el("p", "note", "Up to 4 players. Create a room and send the invite link, or join a friend's room with its code. The host can add computer players to fill seats."));
@@ -603,13 +616,58 @@
     roomEl.hidden = true;                  // in a game: the table is the screen
   }
 
-  function renderLocalGameOver() {
-    if (!M || M.kind !== "local" || M.phase !== "game_over") return;
-    roomEl.hidden = false;
-    roomEl.innerHTML = "";
-    const t = M.table;
-    roomEl.append(el("h3", "", t.winner === 0 ? "You won!" : seatName(t.winner) + " won"));
-    roomEl.append(btn("Play again", "primary", localStart));
+  /* ---------- game over: a card with your win counts (kept on this device) ---------- */
+  const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zM6 7v1a2 2 0 0 0 1.5 1.9A5 5 0 0 1 7 8.3V7zm12 0h-1v1.3a5 5 0 0 1-.5 1.6A2 2 0 0 0 18 8z"/></svg>';
+  const ICON_HOME = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
+  let overSeen = false;
+  function winCounts() {
+    const w = store.getJSON("winlog", []), now = new Date();
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return { today: w.filter((x) => x >= day).length, week: w.filter((x) => x >= now.getTime() - 7 * 864e5).length, all: w.length };
+  }
+  function renderOver() {
+    const show = !!(M && M.phase === "game_over" && M.table);
+    overEl.classList.toggle("on", show);
+    if (!show) { overSeen = false; overEl.innerHTML = ""; return; }
+    const t = M.table, won = t.winner === t.you;
+    if (!overSeen) { overSeen = true; if (won) store.setJSON("winlog", store.getJSON("winlog", []).concat(Date.now()).slice(-1000)); }
+    const c = winCounts();
+    overEl.innerHTML = "";
+    const card = el("div", "card");
+    card.append(el("h2", "", won ? "You won!" : "Game over"), el("div", "who", "Winner"), el("div", "big", won ? "You" : seatName(t.winner)));
+    const stats = el("div", "stats");
+    stats.append(el("h3", "", "Your wins"));
+    [["t1", "Today", c.today], ["t2", "This week", c.week], ["t3", "All time", c.all]].forEach(([cls, label, v]) => {
+      const row = el("div", "row " + cls);
+      row.innerHTML = ICON_TROPHY;
+      row.append(el("span", "", label), el("span", "v", String(v)));
+      stats.append(row);
+    });
+    card.append(stats);
+    overEl.append(card);
+    if (M.kind === "online" && M.you && M.you.host) {
+      const cfg = el("div", "c8-cfg");
+      cfg.append(seg("Game type", [["normal", "Normal"], ["tournament", "Tournament"]], M.config.mode, (v) => onlineSend({ t: "config", mode: v }), () => true));
+      cfg.append(seg("Computer players", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), (v) => M.players.length + v <= 4));
+      overEl.append(cfg);
+    }
+    const acts = el("div", "acts");
+    const home = el("a", "home"); home.href = "../"; home.setAttribute("aria-label", "All games"); home.innerHTML = ICON_HOME;
+    acts.append(home);
+    if (M.kind === "local") {
+      const again = el("button", "again", "Play again"); again.type = "button";
+      again.addEventListener("click", localStart);
+      acts.append(again);
+    } else {
+      const mine = M.players.find((p) => p.pid === M.you.pid);
+      const rm = el("button", "again", mine && mine.voted ? "Waiting" : "Rematch"); rm.type = "button";
+      rm.disabled = !!(mine && mine.voted);
+      rm.addEventListener("click", () => onlineSend({ t: "vote" }));
+      const lv = el("button", "leave", "Leave"); lv.type = "button";
+      lv.addEventListener("click", () => { onlineSend({ t: "leave" }); setTimeout(leaveLocalState, 300); });
+      acts.append(rm, lv);
+    }
+    overEl.append(acts);
   }
 
   function setStatus(text) { statusEl.textContent = text; }
@@ -617,8 +675,8 @@
   /* ---------- put it all on screen ---------- */
   function renderAll() {
     renderRoom();
-    renderLocalGameOver();
     renderTable();
+    renderOver();
     if (M && M.kind === "online") {
       if (M.phase === "playing" || M.phase === "round_over") setStatus("");
       else if (M.phase === "lobby") setStatus("Waiting for players");

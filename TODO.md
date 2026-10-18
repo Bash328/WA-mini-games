@@ -99,6 +99,7 @@ Eleven more games, built in the order you gave, one commit each on `claude/live-
 The user's reference screenshots (flat, chunky, Lilita One, round buttons, per-game colour). Built as opt-in `fun.css` / `fun.js` (`class="fun"` on the body); hub keeps the terminal look.
 - **Before the redesign:** the last version with the old look is commit `bff01d7` (git tag `pre-redesign`). Compare with `git diff pre-redesign` or open it in a separate folder with `git worktree add ../WA-mini-games-before pre-redesign`. The old build was also live on Cloudflare until the 2026-10-18 deploy.
 - [x] Pilots in the new look: Word Guess, Mancala (now vertical), Dots and Boxes.
+- [x] Crazy 8 rebuilt in the new look: round felt table with direction arrows, players left / across / right, fanned hand, Draw button on the table, per-player turn tab colours, Game Over card with your win counts (today / week / all time, kept on the device). Not yet checked in a live online room (lobby and rematch screens use the same old panels, restyled by fun.css).
 - [ ] Roll the look out to every other game, matching the screenshots where one exists: Hangman, Memory, Yatzy, Water Sort; the rest in the same style.
 - [x] Dots and Boxes: lines are in the colour of the player who drew them, the latest one is ringed.
 - [x] (fixed: the fold now happens on click, not pointerdown) The "fold the menus on the first tap" rule can shift the layout under a finger, so a first tap on a button below the menus can be lost. Delay the fold to the click.
