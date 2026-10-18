@@ -218,8 +218,8 @@ check('how-to-card', 'the how-to window kept its terminal look; it should be the
 check('cache-versions', 'phones kept an old fun.css/gamekit.js for a while after a deploy; pages must link them with ?v=', async (g) => {
   const html = fs.readFileSync(path.join(ROOT, g, 'index.html'), 'utf8');
   const bad = [];
-  for (const f of ['fun.css', 'shared.css', 'gamekit.js']) if (new RegExp('\\.\\./' + f.replace('.', '\\.') + '"').test(html)) bad.push(f + ' is linked without ?v=');
-  const vs = new Set([...html.matchAll(/\.\.\/(?:fun\.css|shared\.css|gamekit\.js|fun\.js)\?v=(\d+)/g)].map((m) => m[1]));
+  for (const f of ['fun.css', 'shared.css', 'gamekit.js', 'async-share.js', 'async-share.css']) if (new RegExp('\\.\\./' + f.replace('.', '\\.') + '"').test(html)) bad.push(f + ' is linked without ?v=');
+  const vs = new Set([...html.matchAll(/\.\.\/(?:fun\.css|shared\.css|gamekit\.js|fun\.js|async-share\.js|async-share\.css)\?v=(\d+)/g)].map((m) => m[1]));
   if (vs.size > 1) bad.push('mixed ?v= numbers: ' + [...vs].join(','));
   return bad;
 }, FUN);
@@ -256,6 +256,70 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   await p.close();
   return bad;
 }, ['hangman']);
+
+check('hangman-one-taunt', 'two taunts showed on the finished WhatsApp game: one after the word and a big strip above the stick man; only the stick man taunts now', async () => {
+  const p = await open('hangman');
+  await p.evaluate(() => {
+    const t = Gamekit.taunt('loss');
+    const ui = document.getElementById('wa-ui'); ui.hidden = false;
+    ui.innerHTML = '<div class="banner bad">You lost.</div><p class="wa-note">The word was HARD.</p><p class="wa-note">' + t + '</p>';
+  });
+  await p.waitForTimeout(600);
+  const r = await p.evaluate(() => { const m = document.querySelector('.gk-msg'); const slot = document.querySelector('.gk-slot'); return { strip: !!slot && getComputedStyle(slot).display !== 'none' && m && !m.hidden, detail: /The word was \w+\.\s+\S/.test(document.querySelector('.wa-note').textContent) }; });
+  const src = fs.readFileSync(path.join(ROOT, 'hangman/game.js'), 'utf8');
+  await p.close();
+  const bad = [];
+  if (r.strip) bad.push('a taunt strip is showing on the hangman page');
+  if (/return `The word was \$\{word\}\.` \+/.test(src)) bad.push('"The word was X." has a taunt tacked on again');
+  return bad;
+}, ['hangman']);
+
+check('wa-finished-buttons', 'on a finished WhatsApp game "Copy link" was stacked above "New game"; they sit side by side under the Send button', async () => {
+  const p = await open('tic-tac-toe');                   // WhatsApp mode is the default
+  const cell = (i) => p.locator('.cell').nth(i).click();
+  const here = async () => { await p.locator('.wa-ui button:has-text("on this device")').click(); await p.waitForTimeout(200); };
+  await cell(0); await p.waitForTimeout(200); await here();
+  await cell(3); await p.waitForTimeout(200); await here();
+  await cell(1); await p.waitForTimeout(200); await here();
+  await cell(4); await p.waitForTimeout(200); await here();
+  await cell(2); await p.waitForTimeout(300);            // three in a row: the game is over
+  const r = await p.evaluate(() => { const f = (t) => [...document.querySelectorAll('.wa-ui .btn, .wa-ui a.btn')].find((b) => b.textContent.trim().toLowerCase().startsWith(t)); const s = f('send'), c = f('copy'), n = f('new'); if (!s || !c || !n) return { missing: [!s && 'send', !c && 'copy', !n && 'new'].filter(Boolean).join(',') }; const rs = s.getBoundingClientRect(), rc = c.getBoundingClientRect(), rn = n.getBoundingClientRect(); return { sendBottom: rs.bottom, copyTop: rc.top, newTop: rn.top, copyRight: rc.right, newLeft: rn.left, sw: document.documentElement.scrollWidth }; });
+  await p.close();
+  if (r.missing) return ['finished game is missing: ' + r.missing];
+  const bad = [];
+  if (Math.abs(r.copyTop - r.newTop) > 4) bad.push('Copy link and New game are not on one row');
+  if (r.copyRight > r.newLeft + 1) bad.push('Copy link is not to the left of New game');
+  if (r.sendBottom > r.copyTop) bad.push('Send is not above the pair');
+  if (r.sw > 390) bad.push('page got wider');
+  return bad;
+}, ['tic-tac-toe']);
+
+check('minesweeper-numbers-show', 'revealed minesweeper tiles had no numbers: the numbers were dark on the dark page', async () => {
+  const p = await open('minesweeper', 390, "var m=document.querySelector('#mode');m.value='solo';m.dispatchEvent(new Event('change'))");
+  await p.evaluate(() => document.querySelectorAll('.c')[40].dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await p.waitForTimeout(500);
+  const r = await p.evaluate(() => {
+    const lum = (c) => { const m = c.match(/\d+/g).map(Number); return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
+    const page = lum(getComputedStyle(document.body).backgroundColor);
+    const nums = [...document.querySelectorAll('.c.open')].filter((e) => /^[1-8]$/.test(e.textContent));
+    return { n: nums.length, worst: nums.length ? Math.min(...nums.map((e) => Math.abs(lum(getComputedStyle(e).color) - page))) : 1 };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.n) bad.push('the first tap opened no numbered tile to look at (try another tile)');
+  else if (r.worst < 0.35) bad.push('a number is too close to the page colour to read');
+  return bad;
+}, ['minesweeper']);
+
+check('resume-notice-icon', 'the "Picked up where you left off" pill showed a broken box and the letters BB in front of it', async () => {
+  const css = fs.readFileSync(path.join(ROOT, 'fun.css'), 'utf8');
+  const bad = [];
+  if (/[\x00-\x08\x0b\x0e-\x1f]/.test(css)) bad.push('fun.css has a control character in it (a mangled escape)');
+  const m = /\.game-notice::before \{([^}]*)\}/.exec(css);
+  if (!m) bad.push('no icon rule for the notice');
+  else if (/content:\s*"[^"]+"/.test(m[1])) bad.push('the notice icon is text; it must be an image mask');
+  return bad;
+}, ['crazy-8']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);

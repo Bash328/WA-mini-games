@@ -105,7 +105,7 @@ function render() {
   el.style.gridTemplateColumns = `repeat(${W}, ${sz}px)`;
   el.style.gridTemplateRows = `repeat(${H}, ${sz}px)`;
   el.replaceChildren();
-  el.style.fontSize = sz < 16 ? '0.55rem' : sz < 22 ? '0.65rem' : sz < 26 ? '0.75rem' : '0.9rem';
+  el.style.fontSize = sz < 16 ? '0.55rem' : sz < 22 ? '0.65rem' : sz < 26 ? '0.75rem' : sz < 32 ? '0.95rem' : '1.4rem';
   for (let r=0;r<H;r++) for (let c=0;c<W;c++) {
     const i = idx(r,c);
     const d = document.createElement('div');

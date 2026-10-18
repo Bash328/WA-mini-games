@@ -74,3 +74,7 @@ body[class*="g-"] .panel .btn.live-cta:hover {
   border: 1px dashed var(--border-hi); border-radius: 10px; background: var(--panel-2); color: var(--fg);
   -webkit-user-select: all; user-select: all;
 }
+
+/* two small buttons that belong together (Copy link + New game) share one row */
+.wa-actions.wa-pair { flex-wrap: nowrap; }
+.wa-actions.wa-pair .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; }

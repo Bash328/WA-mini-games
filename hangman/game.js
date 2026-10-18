@@ -116,9 +116,8 @@
     onState: loadLink,
     detail: (s, viewer) => {
       const { word, mask } = strToBoard(s.board);
-      const lostAsGuesser = s.status === "won" && s.winner === P1 && viewer === P2;
-      const almost = lostAsGuesser && missingUniqueCount(word, mask) <= ALMOST_MAX_MISSING;
-      return `The word was ${word}.` + (almost ? " " + pick(HANGMAN_ALMOST_LOSS) : "");
+      // just the fact: the taunt comes from the stick man's speech bubble, not from here
+      return `The word was ${word}.`;
     },
   });
 

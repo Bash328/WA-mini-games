@@ -296,6 +296,7 @@
       const row = el("div", "wa-actions");
       buttons.forEach(b => row.appendChild(b));
       ui.appendChild(row);
+      return row;
     }
     function button(text, cls, onClick) {
       const b = el("button", "btn " + cls, text);
@@ -455,9 +456,10 @@
       if (extra) note(extra);
       if (v.kind === "sent") {
         note(s.resigned ? "Let them know you threw in the towel." : "Send the final board so your opponent sees how it ended.");
-        actions(sendButton(v.enc, true, undefined, s.resigned), copyButton(v.enc, true, undefined, s.resigned));
-      }
-      actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
+        // Send on its own line; "Copy link" and "New game" side by side under it
+        actions(sendButton(v.enc, true, undefined, s.resigned));
+        actions(copyButton(v.enc, true, undefined, s.resigned), button("New game", "ghost", newGame)).classList.add("wa-pair");
+      } else actions(button("New game", "primary", newGame));
     }
 
     return {

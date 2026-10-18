@@ -215,7 +215,8 @@ body.fun .game-notice {
   background: rgba(30,18,18,.94); color: #fff; font-size: 18px; text-align: center; white-space: nowrap;
   box-shadow: 0 6px 0 rgba(0,0,0,.25), 0 12px 24px rgba(0,0,0,.25); animation: fun-drop .4s cubic-bezier(.2,1.4,.4,1);
 }
-body.fun .game-notice::before { content: "BB"; color: var(--accent); margin-right: 10px; font-size: 20px; }
+body.fun .game-notice::before { content: ""; display: inline-block; width: 24px; height: 22px; margin-right: 12px; vertical-align: -4px; background: var(--accent);
+  -webkit-mask: url(fun/restart.png) center / contain no-repeat; mask: url(fun/restart.png) center / contain no-repeat; }
 body.fun .game-notice.fade { opacity: 0; transition: opacity .5s; }
 @keyframes fun-drop { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 
