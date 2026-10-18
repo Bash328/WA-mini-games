@@ -15,6 +15,7 @@
 import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -215,12 +216,17 @@ check('how-to-card', 'the how-to window kept its terminal look; it should be the
   return bad;
 }, ['chess', '2048', 'crazy-8']);
 
-check('cache-versions', 'phones kept an old fun.css/gamekit.js for a while after a deploy; pages must link them with ?v=', async (g) => {
+check('cache-versions', 'phones kept an OLD copy of a script or stylesheet for a while after a deploy (the water sort pour animation never showed); every script and style a fun page loads must be stamped with its content hash: run node tests/cache-bust.mjs', async (g) => {
   const html = fs.readFileSync(path.join(ROOT, g, 'index.html'), 'utf8');
   const bad = [];
-  for (const f of ['fun.css', 'shared.css', 'gamekit.js', 'async-share.js', 'async-share.css']) if (new RegExp('\\.\\./' + f.replace('.', '\\.') + '"').test(html)) bad.push(f + ' is linked without ?v=');
-  const vs = new Set([...html.matchAll(/\.\.\/(?:fun\.css|shared\.css|gamekit\.js|fun\.js|async-share\.js|async-share\.css)\?v=(\d+)/g)].map((m) => m[1]));
-  if (vs.size > 1) bad.push('mixed ?v= numbers: ' + [...vs].join(','));
+  for (const m of html.matchAll(/(?:src|href)="((?:\.\.\/)?[\w./-]+\.(?:js|css))(\?v=([\w]+))?"/g)) {
+    const f = path.join(ROOT, g, m[1]);
+    if (!fs.existsSync(f)) continue;
+    const want = crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 8);
+    if (!m[2]) bad.push(m[1] + ' has no ?v= stamp');
+    else if (m[3] !== want) bad.push(m[1] + ' is stamped ' + m[3] + ' but the file is now ' + want);
+  }
+  if (bad.length) bad.push('run: node tests/cache-bust.mjs');
   return bad;
 }, FUN);
 
@@ -235,6 +241,7 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   const state = () => p.evaluate(() => { const b = document.getElementById('bubble'), g = document.getElementById('gallows').getBoundingClientRect(), r = b.getBoundingClientRect(); return { hidden: b.hidden, text: b.textContent, beg: b.classList.contains('beg'), left: r.left, right: r.right, gRight: g.right, gTop: Math.round(g.top + scrollY), sw: document.documentElement.scrollWidth, gl: g.left }; });
   const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
   const t0 = (await state()).gTop;
+  if (await p.evaluate(() => !document.getElementById('ghost').hasAttribute('hidden'))) bad.push('the ghost is out before the game is lost');
   await press('Z'); await p.waitForTimeout(200);                                  // the first miss draws his head ...
   const first = await state();
   if (first.hidden || !first.text) bad.push('he says nothing when his head appears (first miss)');
@@ -252,7 +259,14 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   if (s.sw > 390) bad.push('page got wider');
   for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
   const e = await state();
-  if (e.hidden || !e.text) bad.push('he says nothing when the game ends');
+  if (e.hidden || !e.text) bad.push('nothing says the last line when the game ends');
+  const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), b = document.getElementById('bubble'), gr = g.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
+  if (!ghost.shown) bad.push('no ghost appears when he runs out of chances');
+  if (!ghost.bubbleGhost) bad.push('the last line is not spoken from the ghost');
+  if (!ghost.nextToBubble) bad.push('the ghost is not beside its speech bubble');
+  if (!ghost.besideMan) bad.push('the ghost is not next to the man');
+  if (!ghost.inside) bad.push('the ghost runs off the screen');
+  if (/[\u{1F300}-\u{1FAFF}]/u.test(e.text)) bad.push('emoji in the ghost\'s line');
   await p.close();
   return bad;
 }, ['hangman']);
@@ -349,10 +363,19 @@ check('backgammon-board-look', 'backgammon should match the reference: dice lie 
 check('water-sort-look-and-pour', 'water sort should have glass tubes with a shine and rounded bottoms, vivid colours, big round Undo/Hint buttons, and a pour animation (a stream falls while a tube tips over)', async () => {
   const p = await open('water-sort');
   const bad = [];
-  const look = await p.evaluate(() => { const t = document.querySelector('.ws-tube'); const cs = getComputedStyle(t); const af = getComputedStyle(t, '::after'), bf = getComputedStyle(t, '::before'); const u = getComputedStyle(document.getElementById('undo-btn'), '::before'); const h = document.getElementById('hint-btn').getBoundingClientRect(), un = document.getElementById('undo-btn').getBoundingClientRect(); return { radius: parseFloat(cs.borderBottomLeftRadius), shine: af.content !== 'none' && parseFloat(af.width) > 4, lip: bf.content !== 'none', ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], first: getComputedStyle(document.querySelector('.ws-l')).backgroundColor, sw: document.documentElement.scrollWidth }; });
-  if (look.radius < 20) bad.push('tube bottoms are not rounded');
-  if (!look.shine) bad.push('no glass shine on the tubes');
-  if (!look.lip) bad.push('no flared lip on the tubes');
+  const look = await p.evaluate(() => {
+    const t = document.querySelector('.ws-tube'), tr = t.getBoundingClientRect(), af = getComputedStyle(t, '::after');
+    const l = [...t.children].map((e) => e.getBoundingClientRect());
+    const u = getComputedStyle(document.getElementById('undo-btn'), '::before'), h = document.getElementById('hint-btn').getBoundingClientRect(), un = document.getElementById('undo-btn').getBoundingClientRect();
+    const full = [...document.querySelectorAll('.ws-tube')].find((x) => x.children.length === 4) || t;
+    const fr = full.getBoundingClientRect(), fl = [...full.children].map((e) => e.getBoundingClientRect());
+    return { picture: /fun\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
+      inside: fl.length ? fl.every((r) => r.left >= fr.left + fr.width * 0.12 && r.right <= fr.right - fr.width * 0.12 && r.bottom <= fr.bottom - 1 && r.top >= fr.top + fr.height * 0.17) : true,
+      ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], first: getComputedStyle(document.querySelector('.ws-l')).backgroundColor, sw: document.documentElement.scrollWidth };
+  });
+  if (!look.picture) bad.push('the tubes are not the glass picture from the reference (fun/tube.png)');
+  if (look.ratio < 2.8 || look.ratio > 3.2) bad.push('tube proportions are off: height/width is ' + look.ratio.toFixed(2) + ', the picture is 2.98');
+  if (!look.inside) bad.push('the liquid pokes outside the glass or into its neck');
   if (!look.ucircle) bad.push('Undo is not a big round button');
   if (look.hint[1] > 844 || look.undo[1] > 844) bad.push('Undo / Hint are below the fold');
   if (look.hint[0] < look.undo[0] + 200) bad.push('Hint should sit at the right, Undo at the left');
@@ -425,6 +448,26 @@ check('2048-slides-smoothly', 'tiles used to teleport to their new place; they s
   await p.close();
   return bad;
 }, ['2048']);
+
+check('backgammon-dice-tumble', 'a roll used to just appear; the dice should tumble (spin and bounce, faces flicker) and then settle on the real values', async () => {
+  const p = await open('backgammon', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.locator('.bg-dice .btn').click(); await p.waitForTimeout(120);
+  const mid = await p.evaluate(() => { const ds = [...document.querySelectorAll('#dice-on .bg-die')]; return { n: ds.length, running: ds.filter((d) => d.getAnimations().length > 0).length }; });
+  const bad = [];
+  if (!mid.n) bad.push('no dice after rolling');
+  else if (mid.running < mid.n) bad.push('only ' + mid.running + ' of ' + mid.n + ' dice are animating right after the roll');
+  await p.waitForTimeout(1300);
+  const end = await p.evaluate(() => [...document.querySelectorAll('#dice-on .bg-die')].map((d) => ({ shown: Number(d.getAttribute('aria-label').replace(/\D/g, '')), pips: d.querySelectorAll('i.on').length, anim: d.getAnimations().length })));
+  for (const d of end) { if (d.anim) bad.push('a die is still moving after 1.3 s'); if (d.shown !== d.pips) bad.push('a die settled on ' + d.pips + ' pips but should show ' + d.shown); }
+  // tapping around afterwards must not roll them again
+  await p.evaluate(() => { document.querySelector('#board .bg-pt').click(); });
+  await p.waitForTimeout(150);
+  const again = await p.evaluate(() => [...document.querySelectorAll('#dice-on .bg-die')].some((d) => d.getAnimations().length > 0));
+  if (again) bad.push('the dice tumbled again after a tap, with no new roll');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['backgammon']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);

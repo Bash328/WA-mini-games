@@ -9,13 +9,17 @@
   const statusEl = document.getElementById("status");
   const bubbleEl = document.getElementById("bubble");
   let spoken = "";
+  const ghostEl = document.getElementById("ghost");
   function speak(line) {
     const t = line ? line.text : "";
-    if (t === spoken) return;                       // a re-render must not restart the bubble
-    spoken = t;
+    const key = t + (line && line.ghost ? "|ghost" : "");
+    if (key === spoken) return;                     // a re-render must not restart the bubble
+    spoken = key;
     bubbleEl.hidden = !t;
     bubbleEl.textContent = t;
     bubbleEl.classList.toggle("beg", !!(line && line.beg));
+    bubbleEl.classList.toggle("ghost", !!(line && line.ghost));
+    ghostEl.toggleAttribute("hidden", !(line && line.ghost));   // the last line, when he has run out of chances, comes from his ghost (an SVG has no .hidden property)
   }
   // the gallows draws one more part for every miss; it reads the "Misses: n / 6" line, whichever mode wrote it
   (function () {
@@ -152,7 +156,7 @@
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
       if (reveal) {
         const k = waWord + ":" + waMask;
-        if (waEndKey !== k) { waEndKey = k; waEnd = isSolved(waWord, waMask) ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(waWord, waMask) }; }
+        if (waEndKey !== k) { waEndKey = k; waEnd = isSolved(waWord, waMask) ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(waWord, waMask), ghost: true }; }
         speak(waEnd);
       } else speak(note);
     } else {
@@ -491,7 +495,7 @@
       renderWord(loWord, loMask, reveal);
       const misses = wrongCount(loWord, loMask);
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
-      if (loStatus !== "in_progress" && !loEnd) loEnd = { text: loStatus === "won-p2" ? pick(HANGMAN_SAVED) : lossTaunt(loWord, loMask) };
+      if (loStatus !== "in_progress" && !loEnd) loEnd = loStatus === "won-p2" ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(loWord, loMask), ghost: true };
       statusEl.textContent = loStatus === "in_progress"
         ? "Player 2: guess a letter."
         : (loStatus === "won-p2" ? "Player 2 wins! " + loEnd.text : "Player 1 wins. The word wasn't guessed in time. " + loEnd.text);

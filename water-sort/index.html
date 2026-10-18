@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>water sort · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=6">
-<link rel="stylesheet" href="../fun.css?v=6">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=c9ecf78f">
 <style>
   .ws-tubes { --per: 5; display: grid; grid-template-columns: repeat(var(--per), 1fr); gap: 14px 8px; width: min(480px, 100%); margin: 14px auto 8px; padding: 0 4px; box-sizing: border-box; }
   body.g-water-sort .panel .ws-tube { position: relative; width: 100%; max-width: 64px; margin: 0 auto; aspect-ratio: 1 / 3.5; min-height: 0; min-width: 0; padding: 3px; display: flex; flex-direction: column-reverse; justify-content: flex-start; gap: 2px; box-sizing: border-box; background: color-mix(in srgb, var(--fg) 7%, transparent); border: 2px solid color-mix(in srgb, var(--fg) 35%, transparent); border-radius: 6px 6px 22px 22px; cursor: pointer; transition: transform .12s; }
@@ -97,6 +97,18 @@
   html body.fun.g-water-sort .panel #sym-btn, html body.fun.g-water-sort .panel #reset-btn { min-height: 0; height: 36px; padding: 0 14px; font-size: 14px; align-self: center; }
   /* the pour: the tube lifts, tips over its target and a stream falls (see game.js) */
   .ws-stream { position: fixed; z-index: 40; width: 8px; border-radius: 4px; pointer-events: none; }
+
+  /* ---- the glass tube is the picture from the reference (fun/tube.png): the liquid sits inside it, the glass and its shine over the top ---- */
+  html body.fun.g-water-sort .panel .ws-tube { max-width: 62px; aspect-ratio: 1 / 2.981; padding: 59.6% 14.5% 4.4%; border: 0; border-radius: 0; background: none; gap: 0; overflow: visible;
+    filter: drop-shadow(0 10px 8px rgba(0,0,0,.3)); }
+  html body.fun.g-water-sort .panel .ws-tube::before { content: none; }
+  html body.fun.g-water-sort .panel .ws-tube::after { content: ""; position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; z-index: 3; pointer-events: none;
+    background: url(../fun/tube.png) center / 100% 100% no-repeat; }
+  html body.fun.g-water-sort .panel .ws-tube.sel { transform: translateY(-16px); border: 0; filter: drop-shadow(0 0 10px rgba(255,210,74,.8)); }
+  html body.fun.g-water-sort .panel .ws-tube.done, html body.fun.g-water-sort .panel .ws-tube.hint { border: 0; filter: drop-shadow(0 0 9px rgba(141,240,170,.75)); }
+  html body.fun.g-water-sort .ws-l { height: 25%; border-radius: 0; }
+  html body.fun.g-water-sort .ws-l:first-child { border-radius: 0 0 50% 50% / 0 0 64% 64%; }
+  html body.fun.g-water-sort .ws-l::before, html body.fun.g-water-sort .ws-l::after { content: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -158,11 +170,11 @@
   <p class="muted">Keep an empty tube free as long as you can. Pour onto the same colour first, and uncover colours you need before you bury them. Never pour a layer onto a different colour unless there is room to move it again.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js?v=6"></script>
-<script defer src="puzzle.js"></script>
-<script defer src="../fun.js?v=6"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=e5680d5d"></script>
+<script defer src="puzzle.js?v=83a0ddd2"></script>
+<script defer src="../fun.js?v=64498396"></script>
+<script defer src="game.js?v=b71065a6"></script>
 </body>
 </html>

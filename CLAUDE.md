@@ -21,9 +21,10 @@ code moved, update the check; do not delete it. Say in your reply which new chec
 
 ## Things that have bitten before
 
-- Shared files (`fun.css`, `fun.js`, `gamekit.js`, `shared.css`) are linked from the fun pages with `?v=N`.
-  When you change one of them, bump N on every fun page (the `cache-versions` check fails on mixed numbers).
-  The host caches scripts and styles for 10 minutes and lets phones show the old copy once.
+- Every script and stylesheet a fun page loads (its own `game.js` too, not only the shared files) carries
+  `?v=<hash of the file>`. After changing ANY of them run `node tests/cache-bust.mjs` before testing/deploying
+  (the `cache-versions` check fails when a stamp is stale). The host caches scripts and styles for 10 minutes and
+  lets phones show the old copy once, so without the stamp a deployed change can silently not appear.
 - Fun pages use the steady layout (`data-fun-zone` on `<body>`): header, one fixed message zone, the Options
   bar, then the board. The board must not move when Options opens, a status changes or a mode changes.
   `data-fun-zone="slim"` / `"mini"` shrink the zone for pages with nothing to say above the board.

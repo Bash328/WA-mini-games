@@ -51,7 +51,7 @@
     const side = rb.left >= ra.left ? 1 : -1;
     const pivotX = rb.left + rb.width / 2 - side * rb.width * 0.5;                 // the lip ends up just over the target's near rim
     const dx = pivotX - (ra.left + ra.width / 2), pivotY = rb.top - 22, dy = pivotY - ra.top;
-    const layer = (rb.height - 10) / 4, surface = rb.bottom - 6 - b.children.length * layer;
+    const layer = rb.height * 0.185, surface = rb.bottom - rb.height * 0.015 - b.children.length * layer;   // four layers fill the glass to about 3/4 of its height
     const stream = document.createElement("div");
     stream.className = "ws-stream";
     stream.style.cssText = "left:" + (rb.left + rb.width / 2 - 4) + "px;top:" + pivotY + "px;background:" + colour + ";height:0";

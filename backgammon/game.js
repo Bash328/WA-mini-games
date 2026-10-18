@@ -56,6 +56,30 @@
     d.setAttribute("aria-label", "die showing " + v);
     return d;
   }
+  // A roll tumbles: each die is thrown in, spins and bounces while its face flickers, then settles on the real value.
+  let rollAnimKey = "";
+  const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function tumble() {
+    if (calm()) return;
+    [...diceOnEl.children].forEach((d, k) => {
+      if (!d.animate) return;
+      const finals = [...d.children].map((i) => i.className);
+      const spin = (k % 2 ? 1 : -1) * 360 * (1 + (k % 2));            // whole turns, so it lands the way it started
+      d.animate([
+        { transform: "translate(" + (k % 2 ? -34 : 34) + "px,-80px) rotate(0deg) scale(1.3)", opacity: 0.2 },
+        { transform: "translate(0,0) rotate(" + spin + "deg) scale(1)", opacity: 1, offset: 0.55 },
+        { transform: "translate(0,-12px) rotate(" + (spin + 16) + "deg) scale(1.05)", offset: 0.72 },
+        { transform: "translate(0,0) rotate(" + spin + "deg) scale(1)" },
+      ], { duration: 680, delay: k * 70, easing: "cubic-bezier(.2,.8,.3,1)" });
+      let n = 0;
+      const iv = setInterval(() => {
+        n++;
+        if (n >= 9) { clearInterval(iv); [...d.children].forEach((i, j) => { i.className = finals[j]; }); return; }
+        const on = new Set(PIPS[1 + Math.floor(Math.random() * 6)]);
+        [...d.children].forEach((i, j) => { i.className = on.has(j) ? "on" : ""; });
+      }, 75);
+    });
+  }
   // the board from the viewer's side: their home board bottom right (White's view swaps the rows)
   const topIdx = (c) => (viewer === RED ? 12 + c : 11 - c);
   const botIdx = (c) => (viewer === RED ? 11 - c : 12 + c);
@@ -128,6 +152,8 @@
         diceOnEl.append(dieEl(d, isUsed));
       });
     }
+    const rollKey2 = shown ? shown.join(",") + ":" + cur + ":" + turnsPlayed : "";
+    if (rollKey2 && rollKey2 !== rollAnimKey) { rollAnimKey = rollKey2; tumble(); } else if (!rollKey2) rollAnimKey = "";
     const noMoves = act && dice && steps.length === 0;
     if (act && !dice && mode !== "live") {
       const b = el("button", "btn primary", "Roll"); b.type = "button"; b.addEventListener("click", roll);
