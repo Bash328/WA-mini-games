@@ -45,8 +45,8 @@
 try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || localStorage.getItem("crazy-8:theme"); document.documentElement.setAttribute("data-c8theme", window.c8Theme(p)); } catch (e) { document.documentElement.setAttribute("data-c8theme", window.c8Theme()); }</script>
 <style>
   /* ---------- the chunky look: cards ---------- */
-  body.fun.g-crazy-8 { --fun-bg: #2e1810; --fun-btn: #2fb44a; --fun-chip: rgba(0,0,0,.3); --accent: #ffbf2e; --c8-felt: #47190e; --c8-ring: #6a2a19; --c8-tab: #6b2d1c; --c8-name: #a05a3d; --c8-hi: #f7c9a8; --c8-arrow: #a0543a; }
-  body.fun.g-crazy-8 .topbar h1 { display: none; }
+  html body.fun.g-crazy-8 { --fun-bg: #2e1810; --fun-btn: #2fb44a; --fun-chip: rgba(0,0,0,.3); --accent: #ffbf2e; --c8-felt: #47190e; --c8-ring: #6a2a19; --c8-tab: #6b2d1c; --c8-name: #a05a3d; --c8-hi: #f7c9a8; --c8-arrow: #a0543a; }
+  html body.fun.g-crazy-8 .topbar h1 { display: none; }
   #c8 .c8-card {
     --ink: #0f2a4f;
     position: relative; flex: 0 0 auto; width: 21cqw; height: 29.5cqw; padding: 0; min-height: 0; min-width: 0;
@@ -71,7 +71,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   #c8-hand .c8-card.sel { transform: translateY(-4cqw); box-shadow: 0 0 0 0.9cqw var(--accent); z-index: 2; }
 
   /* ---------- the table: players round a felt circle ---------- */
-  #c8 { display: none; container-type: inline-size; position: relative; }
+  #c8 { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
   #c8.on { display: block; }
   .c8-stage { position: relative; height: 136cqw; }
   .c8-stage.no-top { margin-top: -34cqw; }
@@ -88,13 +88,15 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-opp.pos-top .fan { left: 50%; top: 6cqw; transform: translateX(-50%); }
   .c8-opp.pos-top .nm { left: 50%; top: 40cqw; transform: translateX(-50%); }
   .c8-opp.pos-top .st { left: 50%; top: 31cqw; transform: translateX(-50%); }
-  .c8-opp.pos-left .fan, .c8-opp.pos-right .fan { top: 88cqw; flex-direction: column; transform: translateY(-50%); }
+  .c8-stage { --side: 36cqw; }
+  .c8-stage.no-top { --side: 50cqw; }
+  .c8-opp.pos-left .fan, .c8-opp.pos-right .fan { top: var(--side); flex-direction: column; }
   .c8-opp.pos-left .fan { left: -10cqw; } .c8-opp.pos-right .fan { right: -10cqw; }
   .c8-opp.pos-left .c8-card.sm, .c8-opp.pos-right .c8-card.sm { width: 20cqw; height: 14cqw; margin-left: 0; margin-top: -7.6cqw; }
   .c8-opp.pos-left .c8-card.sm:first-child, .c8-opp.pos-right .c8-card.sm:first-child { margin-top: 0; }
-  .c8-opp.pos-left .nm { left: 8.6cqw; top: 88cqw; transform: translate(-50%, -50%) rotate(-90deg); }
-  .c8-opp.pos-right .nm { right: 8.6cqw; top: 88cqw; transform: translate(50%, -50%) rotate(90deg); }
-  .c8-opp.pos-left .st { left: 1cqw; top: 124cqw; } .c8-opp.pos-right .st { right: 1cqw; top: 124cqw; }
+  .c8-opp.pos-left .nm, .c8-opp.pos-right .nm { top: calc(var(--side) - 12cqw); height: auto; padding: 1.4cqw 3cqw; border-radius: 3.4cqw; font-size: 4.6cqw; }
+  .c8-opp.pos-left .nm { left: 1cqw; } .c8-opp.pos-right .nm { right: 1cqw; }
+  .c8-opp.pos-left .st { left: 1cqw; top: calc(var(--side) - 5cqw); } .c8-opp.pos-right .st { right: 1cqw; top: calc(var(--side) - 5cqw); }
 
   .c8-felt {
     position: absolute; left: 50%; top: 51cqw; width: 73cqw; height: 73cqw; margin-left: -36.5cqw; border-radius: 50%; z-index: 2;
@@ -106,7 +108,9 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-arr.tr { margin: -35cqw 0 0 26cqw; -webkit-mask-image: url(../fun/arrow-tr.png); mask-image: url(../fun/arrow-tr.png); }
   .c8-arr.br { margin: 24cqw 0 0 26cqw; -webkit-mask-image: url(../fun/arrow-br.png); mask-image: url(../fun/arrow-br.png); }
   .c8-arr.bl { margin: 24cqw 0 0 -36cqw; -webkit-mask-image: url(../fun/arrow-bl.png); mask-image: url(../fun/arrow-bl.png); }
-  .c8-stage.rev .c8-arr { transform: rotate(180deg); }
+  .c8-stage.rev .c8-arr { transform: scaleX(-1); }
+  .c8-stage.rev .c8-arr.tl { margin-left: 26cqw; } .c8-stage.rev .c8-arr.tr { margin-left: -36cqw; }
+  .c8-stage.rev .c8-arr.bl { margin-left: 26cqw; } .c8-stage.rev .c8-arr.br { margin-left: -36cqw; }
   .c8-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 5cqw; margin: 0; }
   .c8-pile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 3.2cqw; color: var(--c8-name); }
   .c8-pile > span:last-child { position: absolute; top: 100%; margin-top: 1.4cqw; white-space: nowrap; }
@@ -134,7 +138,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-pips .c8-chip { padding: 3px 12px; font-size: 13px; border: 0; background: rgba(0,0,0,.3); color: var(--c8-hi); font-weight: 400; }
   .c8-pips .c8-chip.hot { color: #ff9a7a; }
   .c8-chip .red { color: #ff7a6e; }
-  .c8-banner, .c8-log { text-align: center; margin: 4px 0; padding: 2px 8px; border: 0; background: none; color: var(--c8-hi); font-size: 17px; font-weight: 400; min-height: 26px; display: flex; align-items: center; justify-content: center; }
+  .c8-banner, .c8-log { text-align: center; margin: 4px 0; padding: 2px 4cqw; text-wrap: balance; border: 0; background: none; color: var(--c8-hi); font-size: 17px; font-weight: 400; min-height: 26px; display: block; }
   .c8-banner.alert { color: #ff9a7a; } .c8-banner.you { color: #ffd77a; }
   .c8-log { font-size: 13px; color: var(--c8-name); min-height: 18px; }
   .c8-log:empty { visibility: hidden; }
@@ -157,11 +161,19 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-suitpick button { min-height: 68px; font-size: 34px; border-radius: 16px; background: #fff; color: #0f2a4f; border: 3px solid #0d0d0d; font-family: inherit; }
   .c8-suitpick button.red { color: #c4161c; }
 
+  .c8-drawn { position: absolute; left: 50%; bottom: -8cqw; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; align-items: center; }
+  .c8-drawn[hidden] { display: none; }
+  .c8-drawn .c8-card { cursor: default; }
+  .c8-kp { position: relative; margin-top: -10cqw; display: flex; gap: 2.4cqw; padding: 2cqw; background: #fff; border-radius: 7.5cqw; box-shadow: 0 0 0 1.4cqw rgba(0,0,0,.35); }
+  body.fun[class*="g-"] .c8-kp .btn { min-height: 0; height: 10cqw; min-width: 26cqw; padding: 0 3cqw; border: 0; border-radius: 5.5cqw; background: #2fb44a; color: #fff; font-size: 6cqw; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 0.8cqw 0 #1c7a31; }
+  body.fun[class*="g-"] .c8-kp .btn:disabled { opacity: .35; }
+  /* nothing to announce above the table in this game, so no room is held back for it */
+  html body.fun.g-crazy-8 .gk-slot[data-reserve], html body.fun.g-crazy-8 .gk-slot[data-reserve] .gk-msg { min-height: 0; }
+
   /* ---------- the moving parts ---------- */
   .c8-fly { position: absolute; left: 0; top: 0; z-index: 30; pointer-events: none; margin: 0 !important; will-change: transform, opacity; }
-  .c8-glow { position: absolute; inset: -3cqw; border-radius: 50%; pointer-events: none; z-index: 0; transition: transform .6s cubic-bezier(.3,1.25,.5,1), opacity .3s;
-    background: conic-gradient(from -34deg, transparent 0, rgba(255,205,160,.30) 34deg, transparent 68deg);
-    -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%); mask: radial-gradient(circle, transparent 60%, #000 61%); }
+  .c8-glow { position: absolute; left: 50%; top: 50%; width: 32cqw; height: 32cqw; margin: -16cqw 0 0 -16cqw; border-radius: 50%; pointer-events: none; z-index: 0; opacity: 0; transition: opacity .3s;
+    background: radial-gradient(circle, rgba(255,205,160,.45), rgba(255,205,160,0) 68%); }
   .c8-felt.dark::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.62); z-index: 3; pointer-events: none; animation: c8dark 1.3s ease forwards; }
   @keyframes c8dark { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
   .c8-plus { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 1cqw; z-index: 4; pointer-events: none; color: #fff; font-size: 26cqw; line-height: 1; opacity: 0;
@@ -171,10 +183,9 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   .c8-slash { position: absolute; width: 17cqw; height: 17cqw; margin: -8.5cqw 0 0 -8.5cqw; z-index: 6; pointer-events: none; opacity: 0; animation: c8slash 1.2s ease forwards; }
   .c8-slash svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0.8cqw 0 rgba(0,0,0,.35)); }
   @keyframes c8slash { 0% { opacity: 0; transform: scale(.3) rotate(-30deg); } 20% { opacity: 1; transform: scale(1.18); } 35% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
-  .c8-stage.spin .c8-arr { animation: c8spin .8s ease; }
-  @keyframes c8spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .c8-stage.spin .c8-arr { animation: c8flip .6s ease; }
+  @keyframes c8flip { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
   .c8-opp .nm, #c8 .c8-you { transition: background-color .3s, color .3s; }
-  @media (prefers-reduced-motion: reduce) { .c8-glow { transition: none; } }
 
   /* ---------- game over card ---------- */
   .c8-over { position: fixed; inset: 0; z-index: 55; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 18px;
@@ -294,6 +305,10 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
             <div class="c8-pile"><div id="c8-top"></div><span>discard</span></div>
           </div>
           <button class="btn" id="draw-btn" type="button" disabled>Draw</button>
+          <div class="c8-drawn" id="c8-drawnbox" hidden>
+            <div id="c8-dcard"></div>
+            <div class="c8-kp"><button class="btn" id="keep-btn" type="button">Keep</button><button class="btn" id="playdrawn-btn" type="button">Play</button></div>
+          </div>
         </div>
         <div class="c8-you" id="c8-you">YOU</div>
       </div>

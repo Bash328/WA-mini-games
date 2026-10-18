@@ -87,7 +87,7 @@
   #score .sc.p2 { color: var(--p2); }
 
   /* chunky look: full-width card, big black dots, turn pill. All colours are variables so a palette is one block. */
-  body.fun.g-dots-and-boxes {
+  html body.fun.g-dots-and-boxes {
     --d-bg1: #2f3555; --d-bg2: #3d2d4f;          /* page: Player 1's move / Player 2's move */
     --d-vs1: #1c2038; --d-vs2: #28193a;          /* score bar */
     --d-board1: #e9e6f2; --d-board2: #efe6f0;    /* the card the dots sit on */
@@ -95,13 +95,13 @@
     --fun-bg: var(--d-bg1); --vs-bg: var(--d-vs1); --vs-l: var(--d-p1); --vs-r: var(--d-p2);
     transition: background-color .35s;
   }
-  body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: var(--d-bg2); --vs-bg: var(--d-vs2); }
+  html body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: var(--d-bg2); --vs-bg: var(--d-vs2); }
   .db-board {
     grid-template-columns: 13px repeat(4, 1fr 13px); grid-template-rows: 13px repeat(4, 1fr 13px);
     width: calc(100% + 22px); margin: 8px -11px 0; padding: 22px 20px; box-sizing: border-box; max-width: none;
     background: var(--d-board1); border: 0; border-radius: 42px; transition: background-color .35s;
   }
-  body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) #board { background: var(--d-board2); }
+  html body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) #board { background: var(--d-board2); }
   #board .db-h { height: 13px; background: #fff; } #board .db-v { width: 13px; background: #fff; }
   #board .db-edge { border-radius: 6px; box-shadow: none; }
   .db-dot { width: 25px; height: 25px; background: #000; z-index: 2; position: relative; flex: none; }

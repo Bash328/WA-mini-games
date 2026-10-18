@@ -15,7 +15,7 @@
   const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
   const suitPick = $("c8-suitpick"), suitsEl = $("c8-suits"), toastEl = $("c8-toast"), tauntsEl = $("c8-taunts");
   const store = Gamekit.storage("crazy-8:");
-  const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over"), feltEl = $("c8-felt"), glowEl = $("c8-glow");
+  const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over"), feltEl = $("c8-felt"), glowEl = $("c8-glow"), drawnBox = $("c8-drawnbox"), dcardEl = $("c8-dcard"), keepBtn = $("keep-btn"), playDrawnBtn = $("playdrawn-btn");
 
   let diff = store.get("diff", "medium");
   if (!["easy", "medium", "hard"].includes(diff)) diff = "medium";
@@ -161,7 +161,7 @@
       else if (s.status === "safe") st = "safe this round";
       if (st) box.append(el("div", "st" + (p && !p.online ? " warn" : ""), st));
       const fan = el("div", "fan");
-      for (let c = 0; c < Math.min(12, s.count); c++) fan.append(cardEl(null, { cls: "sm" }));
+      for (let c = 0; c < Math.min(10, s.count); c++) fan.append(cardEl(null, { cls: "sm" }));
       box.append(fan);
       oppsEl.append(box);
     });
@@ -208,7 +208,7 @@
     } else if (t.seats[t.you].status === "safe") {
       text = "You're safe this round. Watching the rest.";
     } else if (mine && t.drawn) {
-      text = "You picked up " + short(t.drawn) + ". Play it, or keep it and pass.";
+      text = "You picked up " + short(t.drawn) + ". Play it or keep it.";
       bannerEl.classList.add("you");
     } else if (mine && t.pending > 0) {
       text = "Pick up " + t.pending + ", chain a 2 or joker, or block with an Ace";
@@ -231,20 +231,38 @@
     return Math.max(0, Math.ceil((M.turnSince + M.idleMs - nowMs()) / 1000));
   }
 
+  let handRects = new Map();           // card -> where it was on screen (relative to the table) before the last redraw
   function renderHand() {
     const t = M.table;
+    const before = new Map();
+    const tr = tableEl.getBoundingClientRect();
+    Array.from(handEl.children).forEach((e) => { if (e.dataset.c) { const r = e.getBoundingClientRect(); before.set(e.dataset.c, { x: r.left - tr.left, y: r.top - tr.top, w: r.width, h: r.height }); } });
+    handRects = before;
     handEl.innerHTML = "";
     if (t.you !== null) handEl.style.setProperty("--pc", seatCol(t.you));
     const youOut = t.you === null || t.seats[t.you].status === "out";
     if (youOut) { handEl.append(el("span", "note", "")); return; }
-    const hand = sortHand(t.seats[t.you].hand || []);
+    const holding = t.turn === t.you && M.phase === "playing" && t.drawn;
+    const hand = sortHand(t.seats[t.you].hand || []).filter((c) => !(holding && c === t.drawn));
     handEl.style.setProperty("--n", Math.max(2, hand.length));
     if (selected && !hand.includes(selected)) selected = null;
+    const fresh = [];
     hand.forEach((c) => {
       const b = cardEl(c, { button: true, cls: c === selected ? "sel" : "" });
+      b.dataset.c = c;
       b.addEventListener("click", () => onCard(c));
       handEl.append(b);
+      fresh.push(b);
     });
+    // FLIP: from where each card used to be to where it is now
+    if (before.size && !reduceMotion()) {
+      fresh.forEach((b) => {
+        const o = before.get(b.dataset.c);
+        if (!o) return;
+        const r = b.getBoundingClientRect(), dx = o.x - (r.left - tr.left), dy = o.y - (r.top - tr.top);
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) b.animate([{ transform: "translate(" + dx + "px," + dy + "px)" }, { transform: "translate(0,0)" }], { duration: 280, easing: "cubic-bezier(.22,.9,.3,1)" });
+      });
+    }
   }
 
   function renderActions() {
@@ -255,7 +273,13 @@
     drawBtn.textContent = t.pending > 0 ? "Pick up " + t.pending : "Draw";
     youEl.classList.toggle("on-turn", mine);
     if (t.you !== null) youEl.style.setProperty("--pc", seatCol(t.you));
-    passBtn.hidden = !(mine && o.pass);
+    passBtn.hidden = true;
+    const holding = mine && t.drawn;
+    drawnBox.hidden = !holding;
+    if (holding) {
+      dcardEl.innerHTML = ""; dcardEl.append(cardEl(t.drawn, { cls: "lg" }));
+      playDrawnBtn.disabled = !o.plays.includes(t.drawn);
+    }
     playBtn.disabled = !(mine && selected);
   }
 
@@ -287,8 +311,9 @@
     const a = c.animate([
       { transform: "translate(" + dx + "px," + dy + "px) scale(.8) rotate(" + (o.fromRot || 0) + "deg)", opacity: 1 },
       { transform: "translate(0,0) scale(1) rotate(" + (o.rot || 0) + "deg)", opacity: 1 },
-    ], { duration: o.fade ? 480 : 520, delay: o.delay || 0, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
-    a.onfinish = () => c.remove();
+    ], { duration: o.fade ? 380 : 460, delay: o.delay || 0, easing: "cubic-bezier(.22,.9,.3,1)", fill: "both" });
+    a.onfinish = () => { c.remove(); if (o.done) o.done(); };
+    return a;
   }
   const slashColor = (evs) => {
     const p = evs.filter((e) => e.e === "play" && e.card && !C.isJoker(e.card)).pop();
@@ -313,6 +338,24 @@
     setTimeout(() => { feltEl.classList.add("dark"); feltEl.append(box); }, delay);
     setTimeout(() => { feltEl.classList.remove("dark"); box.remove(); }, delay + 1400);
   }
+  let glowAng = null;
+  function moveGlow(pos) {
+    if (!pos) { glowEl.style.opacity = "0"; return; }
+    const target = ANG[pos];
+    const R = feltEl.offsetWidth / 2;
+    const pt = (deg) => { const r = deg * Math.PI / 180; return "translate(" + (R * Math.sin(r)).toFixed(1) + "px," + (-R * Math.cos(r)).toFixed(1) + "px)"; };
+    glowEl.style.opacity = "1";
+    if (glowAng === target) return;
+    const from = glowAng === null ? target : glowAng;
+    let diff = ((target - from + 540) % 360) - 180;          // the short way round
+    if (diff === -180) diff = 180;
+    glowEl.style.transform = pt(target);
+    glowAng = target;
+    if (diff === 0 || reduceMotion() || !glowEl.animate) return;
+    const steps = Math.max(2, Math.ceil(Math.abs(diff) / 15)), frames = [];
+    for (let k = 0; k <= steps; k++) frames.push({ transform: pt(from + diff * k / steps) });
+    glowEl.animate(frames, { duration: 650, easing: "cubic-bezier(.4,0,.2,1)" });
+  }
   function animateEvents() {
     const t = M && M.table;
     if (!t) return;
@@ -330,13 +373,15 @@
         const from = seatRect(e.seat), tc = topEl.querySelector(".c8-card.top");
         if (from && tc) {
           const to = relRect(tc);
-          tc.style.opacity = "0"; setTimeout(() => { tc.style.opacity = ""; }, d + 560);
-          fly(e.card, from, to, { delay: d, rot: 4, fromRot: e.seat === t.you ? 0 : -20 });
-          d += 140;
+          tc.style.opacity = "0";
+          fly(e.card, e.seat === t.you && handRects.get(e.card) || from, to, { delay: d, rot: 4, fromRot: e.seat === t.you ? 0 : -20, done: () => { tc.style.opacity = ""; } });
+          d += 160;
         }
       } else if (e.e === "draw" || e.e === "pickup") {
-        const n = e.e === "draw" ? 1 : Math.min(e.n, 6), to = seatRect(e.seat);
-        if (pile && to) for (let k = 0; k < n; k++) fly(null, pile, to, { delay: d + k * 110, fade: true });
+        const toSlot = e.e === "draw" && e.seat === t.you && !drawnBox.hidden;
+        const n = e.e === "draw" ? 1 : Math.min(e.n, 6), to = toSlot ? relRect(dcardEl) : seatRect(e.seat);
+        if (toSlot) dcardEl.style.opacity = "0";
+        if (pile && to) for (let k = 0; k < n; k++) fly(null, pile, to, { delay: d + k * 90, fade: true, done: toSlot ? () => { dcardEl.style.opacity = ""; } : null });
         if (e.e === "pickup" && e.n >= 2) plus(e.n, e.seat, d);
         d += 140;
       } else if (e.e === "skip") slash(e.seat, d, slashColor(evs));
@@ -350,9 +395,7 @@
     if (!M || !M.table || M.phase === "lobby") { tableEl.classList.remove("on"); return; }
     tableEl.classList.add("on");
     renderOpps(); renderMid(); renderBanner(); renderHand(); renderActions(); renderLog();
-    const ts = M.phase === "playing" && t0turn(M.table) ? seatPosOf[M.table.turn] : null;
-    glowEl.style.opacity = ts ? "1" : "0";
-    if (ts) glowEl.style.transform = "rotate(" + ANG[ts] + "deg)";
+    moveGlow(M.phase === "playing" && t0turn(M.table) ? seatPosOf[M.table.turn] : null);
     animateEvents();
     renderTaunts();
     if (selected) showHint(selected); else idleHint();
@@ -387,6 +430,8 @@
   playBtn.addEventListener("click", playSelected);
   drawBtn.addEventListener("click", doDraw);
   passBtn.addEventListener("click", () => send({ t: "pass" }));
+  keepBtn.addEventListener("click", () => send({ t: "pass" }));
+  playDrawnBtn.addEventListener("click", () => { if (M && M.table && M.table.drawn) { selected = M.table.drawn; playSelected(); } });
 
   // an action goes to the local game or to the room
   function send(action) {

@@ -1766,4 +1766,4 @@ body.gk-play .gk-optbtn { display: block; }
 body.gk-play .gk-ctl, body.gk-play .gk-opts { display: none; }
 
 .gk-optbtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.gk-optbtn .gk-gear { width: 16px; height: 16px; flex: none; }
+.gk-optbtn .gk-gear { width: 20px; height: 20px; flex: none; }
