@@ -235,7 +235,10 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   const state = () => p.evaluate(() => { const b = document.getElementById('bubble'), g = document.getElementById('gallows').getBoundingClientRect(), r = b.getBoundingClientRect(); return { hidden: b.hidden, text: b.textContent, beg: b.classList.contains('beg'), left: r.left, right: r.right, gRight: g.right, gTop: Math.round(g.top + scrollY), sw: document.documentElement.scrollWidth, gl: g.left }; });
   const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
   const t0 = (await state()).gTop;
-  for (const c of 'ZX') { await press(c); await p.waitForTimeout(200); }       // two misses
+  await press('Z'); await p.waitForTimeout(200);                                  // the first miss draws his head ...
+  const first = await state();
+  if (first.hidden || !first.text) bad.push('he says nothing when his head appears (first miss)');
+  await press('X'); await p.waitForTimeout(200);                                  // ... and a second miss
   const s = await state();
   if (s.hidden || !s.text) bad.push('no speech bubble after two misses');
   else {

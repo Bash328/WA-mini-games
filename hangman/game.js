@@ -374,6 +374,14 @@
     "Tell them I was a good stick man.",
     "My whole life is flashing before me. It's two lines!",
   ];
+  // the first miss draws his head: that is when he starts talking
+  const HANGMAN_FIRST_MISS = [
+    "Hey! Where did my head come from?",
+    "Oh no. Is that a rope?",
+    "Well, that's a head. I didn't ask for one.",
+    "Uh oh. I can see the noose.",
+    "Hello? Something just appeared above my neck.",
+  ];
   const HANGMAN_RELIEF = [
     "Yes! Keep going, you beauty!",
     "I can breathe again. Slightly.",
@@ -424,6 +432,7 @@
   function voice(note, word, mask, ch) {
     const misses = wrongCount(word, mask), hit = word.includes(ch);
     if (isSolved(word, mask) || misses >= MAX_WRONG) return "";
+    if (!hit && misses === 1) return { text: pick(HANGMAN_FIRST_MISS), beg: true };
     if (!hit && misses === MAX_WRONG - 1 && Math.random() < 0.7) return { text: pick(HANGMAN_BEGS_LAST), beg: true };
     if (!hit && misses >= 2 && Math.random() < 0.45) return { text: pick(HANGMAN_BEGS), beg: true };
     if (hit && misses >= 3 && !note && Math.random() < 0.35) return { text: pick(HANGMAN_RELIEF) };
