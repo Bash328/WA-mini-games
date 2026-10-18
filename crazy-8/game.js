@@ -12,7 +12,7 @@
   const statusEl = $("status"), modeSel = $("mode"), botsSel = $("bots"), gmodeSel = $("gmode"), chipsEl = $("chips");
   const roomEl = $("c8-room"), tableEl = $("c8"), oppsEl = $("c8-opps"), drawEl = $("c8-draw"), topEl = $("c8-top"), drawnEl = $("c8-drawn");
   const infoEl = $("c8-info"), bannerEl = $("c8-banner"), logEl = $("c8-log"), hintEl = $("c8-hint"), handEl = $("c8-hand");
-  const playBtn = $("play-btn"), drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
+  const drawBtn = $("draw-btn"), passBtn = $("pass-btn"), resetBtn = $("reset-btn");
   const suitPick = $("c8-suitpick"), suitsEl = $("c8-suits"), toastEl = $("c8-toast"), tauntsEl = $("c8-taunts");
   const store = Gamekit.storage("crazy-8:");
   const stageEl = $("c8-stage"), youEl = $("c8-you"), overEl = $("c8-over"), feltEl = $("c8-felt"), glowEl = $("c8-glow"), drawnBox = $("c8-drawnbox"), dcardEl = $("c8-dcard"), keepBtn = $("keep-btn"), playDrawnBtn = $("playdrawn-btn");
@@ -280,7 +280,6 @@
       dcardEl.innerHTML = ""; dcardEl.append(cardEl(t.drawn, { cls: "lg" }));
       playDrawnBtn.disabled = !o.plays.includes(t.drawn);
     }
-    playBtn.disabled = !(mine && selected);
   }
 
   function renderLog() {
@@ -427,7 +426,6 @@
   }
   suitPick.addEventListener("click", (e) => { if (e.target === suitPick) { suitPick.classList.remove("on"); pendingPlay = null; } });
   function doDraw() { if (M && M.table && M.table.options.draw) send({ t: "draw" }); }
-  playBtn.addEventListener("click", playSelected);
   drawBtn.addEventListener("click", doDraw);
   passBtn.addEventListener("click", () => send({ t: "pass" }));
   keepBtn.addEventListener("click", () => send({ t: "pass" }));
@@ -463,7 +461,7 @@
     clearTimeout(L && L.timer);
     const n = Number(botsSel.value);
     const cfg = { bots: n, level: diff, mode: gmodeSel.value };
-    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Computer " + (i + 1)));
+    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n).fill(diff));
     L = { st: C.create({ names, bots, mode: cfg.mode, starter: 0 }, Math.random), cfg, events: [], timer: null };
     selected = null;
@@ -691,7 +689,7 @@
         row.append(el("span", "tag", (p.host ? "host" : "") + (p.online ? "" : " · offline")));
         seats.append(row);
       });
-      for (let i = 0; i < M.config.bots; i++) { const r = el("div", "c8-seat"); r.append(el("span", "", "Computer " + (i + 1)), el("span", "tag", M.config.level)); seats.append(r); }
+      for (let i = 0; i < M.config.bots; i++) { const r = el("div", "c8-seat"); r.append(el("span", "", "Bot " + (i + 1)), el("span", "tag", M.config.level)); seats.append(r); }
       for (let i = M.players.length + M.config.bots; i < 4; i++) seats.append(el("div", "c8-seat empty", "Waiting for someone to join…"));
       roomEl.append(seats);
       // settings

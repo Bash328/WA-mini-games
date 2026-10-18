@@ -177,7 +177,7 @@ function startGame(room, hostPid, now, rng, auto) {
   const seats = [];
   const names = [], bots = [];
   people.forEach((p, i) => { seats.push({ kind: "human", pid: p.pid }); names.push(displayName(room, p)); bots.push(null); });
-  for (let b = 0; b < room.config.bots; b++) { seats.push({ kind: "bot", level: room.config.level }); names.push("Computer " + (b + 1)); bots.push(room.config.level); }
+  for (let b = 0; b < room.config.bots; b++) { seats.push({ kind: "bot", level: room.config.level }); names.push("Bot " + (b + 1)); bots.push(room.config.level); }
   // two players can never share a display name
   const seen = new Set();
   names.forEach((n, i) => { if (seen.has(n)) names[i] = n + " " + (i + 1); seen.add(names[i]); });
