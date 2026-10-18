@@ -358,7 +358,7 @@
       const t = st ? st.textContent.trim() : "";
       if (t && t !== "Game over" && END_RE.test(t)) src = st;
     }
-    let text = "", head = "", tone = "";
+    let text = "", head = "", tone = "", ended = null;
     if (src) {
       const full = src.textContent.replace(/^[\s·]+/, "").replace(/\s+/g, " ").trim();
       text = full;
@@ -373,6 +373,11 @@
         if (at > 0 && cut >= 0) { head = full.slice(0, cut + 1); text = full.slice(cut + 2); }
       }
       tone = WIN_RE.test(full) ? "win" : BAD_RE.test(full) ? "bad" : "";
+      if (END_RE.test(full)) ended = full;
+    }
+    // fun pages: the result and its taunt get their own card instead of the strip (Crazy 8 has its own)
+    if (document.body.classList.contains("fun") && !document.getElementById("c8-over")) {
+      if (ended) { showOver(ended, tone); text = ""; head = ""; } else hideOver();
     }
     // "Yellow — taunt" / "Player 2: taunt": the name says who the line is FOR, but
     // reads as if they said it. Lift it out into a "For Yellow" label.
@@ -397,6 +402,54 @@
     }
     msg.hidden = !text;
     msg.className = "gk-msg" + (tone ? " " + tone : "");
+  }
+  /* ---------- Game over card (fun pages) ---------- */
+  let overEl = null, overKey = "";
+  const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zM6 7v1a2 2 0 0 0 1.5 1.9A5 5 0 0 1 7 8.3V7zm12 0h-1v1.3a5 5 0 0 1-.5 1.6A2 2 0 0 0 18 8z"/></svg>';
+  const ICON_HOME = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
+  function hideOver() { overKey = ""; if (overEl) { overEl.remove(); overEl = null; } }
+  function showOver(full, tone) {
+    if (overKey === full) return;                 // already shown (or dismissed) for this result
+    overKey = full;
+    if (overEl) overEl.remove();
+    const m = /^(.*?[.!?])\s+([\s\S]*)$/.exec(full);
+    const result = (m ? m[1] : full).replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "").trim();
+    const taunt = m ? m[2].trim() : "";
+    const draw = /^draw/i.test(full);
+    const st = storage(GAME_ID + ":");
+    let log = st.getJSON("winlog", []);
+    if (tone === "win") { log = log.concat(Date.now()).slice(-1000); st.set("winlog", JSON.stringify(log)); }
+    const now = new Date(), day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const counts = [["Today", log.filter((x) => x >= day).length], ["This week", log.filter((x) => x >= now.getTime() - 7 * 864e5).length], ["All time", log.length]];
+    overEl = mk("div", "gk-over " + (tone || (draw ? "draw" : "")));
+    overEl.setAttribute("role", "dialog"); overEl.setAttribute("aria-label", "Game over");
+    const card = mk("div", "card");
+    const h = mk("h2"); h.textContent = tone === "win" ? "You won!" : draw ? "Draw" : "Game over";
+    const big = mk("div", "big"); big.textContent = result;
+    card.append(h, big);
+    if (taunt) { const q = mk("p", "taunt"); q.textContent = taunt; card.append(q); }
+    const stats = mk("div", "stats");
+    const h3 = mk("h3"); h3.textContent = "Your wins"; stats.append(h3);
+    counts.forEach(([label, v], i) => {
+      const row = mk("div", "row t" + (i + 1));
+      row.innerHTML = ICON_TROPHY;
+      const l = mk("span"); l.textContent = label; const n = mk("span", "v"); n.textContent = String(v);
+      row.append(l, n); stats.append(row);
+    });
+    card.append(stats);
+    const acts = mk("div", "acts");
+    const home = mk("a", "home"); home.href = "../"; home.setAttribute("aria-label", "All games"); home.innerHTML = ICON_HOME;
+    const again = mk("button", "again"); again.type = "button"; again.textContent = "Play again";
+    again.addEventListener("click", () => {
+      hideOver();
+      const n = document.querySelector(".gk-new, #reset-btn, #new-btn, #reset");
+      if (n) n.click();
+    });
+    acts.append(home, again);
+    const view = mk("button", "view"); view.type = "button"; view.textContent = "View board";
+    view.addEventListener("click", () => { if (overEl) { overEl.remove(); overEl = null; } });
+    overEl.append(card, acts, view);
+    document.body.appendChild(overEl);
   }
   function queueScan() {
     if (scanQueued) return;

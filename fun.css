@@ -246,13 +246,14 @@ html body.fun[data-fun-zone] .panel > .turn {
 }
 html body.fun[data-fun-zone] .panel:has(> .row .status:not(.dup):not(:empty)) > .turn { visibility: hidden; }
 html body.fun[data-fun-zone] .panel .gk-slot, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] {
-  position: absolute; top: 0; left: 0; right: 0; height: var(--zone); min-height: 0; margin: 0; z-index: 3; display: block;
+  position: static; height: 58px; min-height: 0; margin: 0 0 6px; display: block;
 }
 html body.fun[data-fun-zone] .panel .gk-slot .gk-msg, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] .gk-msg {
-  min-height: 0; height: 100%; margin: 0; padding: 6px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
-  overflow: hidden; font-size: 16px; line-height: 1.2; border-radius: 22px;
+  min-height: 0; height: 100%; margin: 0; padding: 4px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden; font-size: 15px; line-height: 1.2; border-radius: 20px; text-align: center;
 }
 html body.fun[data-fun-zone] .panel .gk-slot .gk-msg[hidden] { display: none; }
+html body.fun[data-fun-zone] #legend { display: none; }
 html body.fun[data-fun-zone] .panel .gk-say { margin: 0; text-align: center; }
 html body.fun[data-fun-zone] .gk-optwrap { position: relative; z-index: 30; }
 html body.fun[data-fun-zone] .gk-optbtn { margin: 0 0 12px; }
@@ -264,3 +265,24 @@ html body.fun[data-fun-zone] .gk-menu .gk-ctl, html body.fun[data-fun-zone] .gk-
 html body.fun[data-fun-zone].gk-play .gk-menu { display: none; }
 /* the one-line "make the first move, then send the link" hint adds nothing the pill and the mode tab do not say, and it moved the board */
 html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-code-box)) { display: none; }
+
+/* ── Game over card (gamekit.js builds it when a result shows up) ── */
+.gk-over { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 18px;
+  background: rgba(14,14,22,.78); overflow-y: auto; font-family: var(--font-mono); letter-spacing: .02em; }
+.gk-over .card { width: min(400px, 100%); border-radius: 36px; padding: 26px 16px 16px; text-align: center; background: color-mix(in srgb, var(--fun-bg, #2f3555) 55%, #000); color: #fff; box-shadow: 0 10px 0 rgba(0,0,0,.25); }
+.gk-over h2 { margin: 0; font-size: 42px; font-weight: 400; text-transform: uppercase; }
+.gk-over .big { margin: 14px 0 6px; font-size: 34px; line-height: 1.1; color: #ffbf2e; word-break: break-word; }
+.gk-over.bad .big { color: #ff8a7a; }
+.gk-over .taunt { margin: 0 6px 16px; font-size: 19px; line-height: 1.3; color: rgba(255,255,255,.82); text-wrap: balance; }
+.gk-over .stats { border-radius: 28px; background: #fff; color: #3b4151; padding: 14px 12px 12px; margin-top: 14px; }
+.gk-over .stats h3 { margin: 0 0 8px; font-size: 24px; font-weight: 400; color: #3b4151; text-transform: uppercase; }
+.gk-over .row { display: flex; align-items: center; gap: 12px; height: 46px; margin-top: 8px; padding: 0 16px; border-radius: 16px; background: #eef0f5; font-size: 20px; color: #3b4151; }
+.gk-over .row svg { width: 26px; height: 26px; flex: none; }
+.gk-over .row .v { margin-left: auto; }
+.gk-over .row.t1 svg { color: #f0a800; } .gk-over .row.t2 svg { color: #e8648a; } .gk-over .row.t3 svg { color: #1fbf9a; }
+.gk-over .acts { display: flex; gap: 14px; width: min(400px, 100%); }
+.gk-over .acts a, .gk-over .acts button { height: 62px; border: 0; border-radius: 18px; color: #fff; font-family: inherit; font-size: 28px; letter-spacing: .03em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; }
+.gk-over .acts .home { width: 76px; background: var(--fun-chip, rgba(255,255,255,.14)); }
+.gk-over .acts .home svg { width: 34px; height: 34px; }
+.gk-over .acts .again { flex: 1; background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+.gk-over .view { background: none; border: 0; color: rgba(255,255,255,.7); font-family: inherit; font-size: 17px; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; padding: 6px 12px; }
