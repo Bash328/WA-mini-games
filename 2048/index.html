@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5">
-<link rel="stylesheet" href="../fun.css?v=5">
+<link rel="stylesheet" href="../shared.css?v=6">
+<link rel="stylesheet" href="../fun.css?v=6">
 <style>
   .board2048 {
     display: grid;
@@ -88,6 +88,8 @@
   html body.fun.g-2048 .panel .t128 { background: #f4cf4a; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); } html body.fun.g-2048 .panel .t256 { background: #f0c22f; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); }
   html body.fun.g-2048 .panel .t512 { background: #8fcf4a; color: #fff; font-size: clamp(1.3rem, 7.5vw, 2.1rem); }
   html body.fun.g-2048 .panel .t1024, html body.fun.g-2048 .panel .t2048, html body.fun.g-2048 .panel .t4096, html body.fun.g-2048 .panel .t8192 { background: #3fc9b0; color: #fff; font-size: clamp(1.1rem, 6.2vw, 1.8rem); box-shadow: none; }
+  html body.fun.g-2048 .panel .board2048 { position: relative; }
+  html body.fun.g-2048 .tile.ghost { box-shadow: none; }
   html body.fun.g-2048 .kbd { display: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -148,8 +150,8 @@
 
 <script defer src="../manpage.js"></script>
 <script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js?v=5"></script>
-<script defer src="../fun.js?v=5"></script>
+<script defer src="../gamekit.js?v=6"></script>
+<script defer src="../fun.js?v=6"></script>
 <script defer src="game.js"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("2048"));</script>
 </body>

@@ -307,3 +307,9 @@ body.fun[class*="g-"] .fun-pills b { text-transform: none; }
 
 .fun-pills[hidden] { display: none; }
 body.fun[class*="g-"] .fun-pills { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 1fr; width: min(200px, 100%); }
+
+/* the chosen difficulty chip stays white: a tap leaves the chip "hovered" on a phone, and the button hover colour used to win over it */
+body.fun[class*="g-"] .panel .chip.active, body.fun[class*="g-"] .panel .chip.active:hover, body.fun[class*="g-"] .panel .chip.active:focus,
+body.fun[class*="g-"] .panel .chip[aria-selected="true"], body.fun[class*="g-"] .panel .chip[aria-selected="true"]:hover {
+  background: #fff; color: var(--fun-bg); box-shadow: none; filter: none;
+}

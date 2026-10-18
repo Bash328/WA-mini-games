@@ -38,9 +38,9 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5">
-<link rel="stylesheet" href="../fun.css?v=5">
-<link rel="stylesheet" href="../async-share.css?v=5">
+<link rel="stylesheet" href="../shared.css?v=6">
+<link rel="stylesheet" href="../fun.css?v=6">
+<link rel="stylesheet" href="../async-share.css?v=6">
 <style>
   .bg-wrap { width: min(560px, 100%); margin: 8px auto 0; }
   .bg-info { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; margin: 0 0 6px; }
@@ -122,16 +122,17 @@
   html body.fun.g-backgammon .bg-tray .bg-ch { width: 5px; height: 58%; aspect-ratio: auto; border-radius: 2px; border: 0; box-shadow: none; font-size: 0; flex: none; }
   html body.fun.g-backgammon .bg-tray .bg-ch.p1 { background: #3b4252; } html body.fun.g-backgammon .bg-tray .bg-ch.p2 { background: #fff; }
   /* dice sit on the board, in the open middle of the right-hand half */
-  html body.fun.g-backgammon .bg-dice-on { position: absolute; left: 53%; right: 3%; top: 50%; transform: translateY(-50%); display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; pointer-events: none; }
-  html body.fun.g-backgammon .bg-die { width: 42px; height: 42px; padding: 5px; border-radius: 9px; background: #fff; border: 3px solid #3b4252; box-shadow: none; }
+  /* an overlay the size of the board (same width and ratio), dice centred in its right half */
+  html body.fun.g-backgammon .bg-dice-on { position: absolute; left: -11px; width: calc(100% + 22px); top: 68px; aspect-ratio: 1.05; box-sizing: border-box; padding: 0 4% 0 54%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: center; pointer-events: none; }
+  html body.fun.g-backgammon .bg-die { width: 38px; height: 38px; padding: 4px; border-radius: 9px; background: #fff; border: 3px solid #3b4252; box-shadow: none; }
   html body.fun.g-backgammon .bg-die i.on { background: #3b4252; }
   html body.fun.g-backgammon .bg-die.used { opacity: .35; }
-  html body.fun.g-backgammon .bg-dice { margin: 76px 0 0; min-height: 70px; }
-  html body.fun.g-backgammon .panel .bg-dice .btn { position: relative; width: min(300px, 80%); height: 66px; min-height: 0; padding: 0 56px; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 34px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; }
+  html body.fun.g-backgammon .bg-dice { margin: 72px 0 0; min-height: 64px; }
+  html body.fun.g-backgammon .panel .bg-dice .btn { position: relative; width: min(300px, 80%); height: 60px; min-height: 0; padding: 0 56px; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 30px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; }
   html body.fun.g-backgammon .panel .bg-dice .btn::before, html body.fun.g-backgammon .panel .bg-dice .btn::after {
     content: "\2605\FE0E"; position: absolute; top: 50%; width: 34px; height: 34px; margin-top: -17px; border-radius: 8px; background: #fff; color: #d95a4e; font-size: 22px; line-height: 34px; text-align: center; }
   html body.fun.g-backgammon .panel .bg-dice .btn::before { left: 18px; } html body.fun.g-backgammon .panel .bg-dice .btn::after { right: 18px; }
-  html body.fun.g-backgammon .bg-hint { font-size: 16px; color: var(--muted); min-height: 2.6em; margin-top: 6px; }
+  html body.fun.g-backgammon .bg-hint { font-size: 14px; color: var(--muted); min-height: 2.6em; margin-top: 6px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -219,13 +220,13 @@
 
 <script defer src="../manpage.js"></script>
 <script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js?v=5"></script>
+<script defer src="../gamekit.js?v=6"></script>
 <script defer src="../vendor/lz-string.min.js"></script>
-<script defer src="../async-share.js?v=5"></script>
+<script defer src="../async-share.js?v=6"></script>
 <script defer src="../account.js"></script>
 <script defer src="../live-share.js"></script>
 <script defer src="rules.js"></script>
-<script defer src="../fun.js?v=5"></script>
+<script defer src="../fun.js?v=6"></script>
 <script defer src="game.js"></script>
 </body>
 </html>

@@ -378,6 +378,54 @@ check('water-sort-look-and-pour', 'water sort should have glass tubes with a shi
   return bad;
 }, ['water-sort']);
 
+check('chip-stays-white', 'after you tap a difficulty chip the chosen one went blue instead of white (the hover colour stuck on the phone)', async (g) => {
+  const p = await open(g, 390, "var m=document.querySelector('#mode');if(m&&[...m.options].some(o=>o.value==='ai')){m.value='ai';m.dispatchEvent(new Event('change'))}");
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);
+  const chips = p.locator('#chips .chip:visible');
+  const n = await chips.count();
+  if (!n) { await p.close(); return ['no visible difficulty chips to test']; }
+  await chips.nth(n - 1).click(); await p.waitForTimeout(250);          // the pointer stays over the chip, like a thumb that just tapped
+  const bg = await p.evaluate(() => getComputedStyle(document.querySelector('#chips .chip.active')).backgroundColor);
+  await p.close();
+  const m = bg.match(/\d+/g).map(Number);
+  return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255 > 0.9 ? [] : ['chosen chip is ' + bg + ', not white'];
+}, ['backgammon', 'checkers', 'water-sort', '2048']);
+
+check('backgammon-dice-clear-of-checkers', 'on a double roll (four dice) the dice sat low on the board and covered the checkers at the bottom', async () => {
+  const p = await open('backgammon', 390, "Math.random=()=>0;var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.locator('.bg-dice .btn').click(); await p.waitForTimeout(600);
+  const r = await p.evaluate(() => { const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; const dice = [...document.querySelectorAll('#dice-on .bg-die')].map((e) => e.getBoundingClientRect()); const ch = [...document.querySelectorAll('#board .bg-pt .bg-ch, #board .bg-bar .bg-ch')].map((e) => e.getBoundingClientRect()); const bd = document.getElementById('board').getBoundingClientRect(); return { n: dice.length, over: dice.some((d) => ch.some((c) => hit(d, c))), mid: dice.length ? dice.reduce((s, d) => s + (d.top + d.bottom) / 2, 0) / dice.length : 0, boardMid: (bd.top + bd.bottom) / 2 }; });
+  await p.close();
+  const bad = [];
+  if (r.n !== 4) bad.push('expected four dice on a double, saw ' + r.n);
+  if (r.over) bad.push('a die covers a checker');
+  if (Math.abs(r.mid - r.boardMid) > 14) bad.push('dice are not centred on the board (' + Math.round(r.mid - r.boardMid) + 'px off)');
+  return bad;
+}, ['backgammon']);
+
+check('2048-slides-smoothly', 'tiles used to teleport to their new place; they should slide (ghost tiles travel from the old cell to the new one), and the board still ends up correct', async () => {
+  const p = await open('2048');
+  const bad = [];
+  await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 4], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); move('left'); });
+  const mid = await p.evaluate(() => ({ ghosts: document.querySelectorAll('.tile.ghost').length, running: [...document.querySelectorAll('.tile.ghost')].some((g) => g.getAnimations().length > 0), hidden: [...document.querySelectorAll('#board .tile')].filter((t) => t.style.visibility === 'hidden').length }));
+  if (mid.ghosts !== 2) bad.push('expected 2 sliding tiles (the second 2 joining the first, and the 4), saw ' + mid.ghosts);
+  if (!mid.running) bad.push('the tiles are not animating');
+  if (mid.hidden < 2) bad.push('the real tiles should stay hidden until the slide lands');
+  await p.waitForTimeout(400);
+  const end = await p.evaluate(() => ({ ghosts: document.querySelectorAll('.tile.ghost').length, hidden: [...document.querySelectorAll('#board .tile')].filter((t) => t.style.visibility === 'hidden').length, row0: grid[0].join(','), row1: grid[1].join(','), cells: document.querySelectorAll('#board .tile:not(.ghost)').length }));
+  if (end.ghosts || end.hidden) bad.push('ghost tiles or hidden tiles were left behind');
+  if (end.row0.split(',')[0] !== '4' || end.row1.split(',')[0] !== '4') bad.push('the board is wrong after the move: ' + end.row0 + ' / ' + end.row1);
+  if (end.cells !== 16) bad.push('board does not have 16 cells');
+  // a second swipe in the middle of a slide must not break anything
+  await p.evaluate(() => { move('right'); move('left'); move('right'); });
+  await p.waitForTimeout(400);
+  const after = await p.evaluate(() => ({ ghosts: document.querySelectorAll('.tile.ghost').length, cells: document.querySelectorAll('#board .tile:not(.ghost)').length, hidden: [...document.querySelectorAll('#board .tile')].filter((t) => t.style.visibility === 'hidden').length, sum: grid.flat().reduce((a, b) => a + b, 0) }));
+  if (after.ghosts || after.hidden || after.cells !== 16) bad.push('quick successive swipes left the board in a bad state');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['2048']);
+
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
   const e = p.errs.slice(); await p.close();
