@@ -26,7 +26,7 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
@@ -49,6 +49,8 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  nonogram: "document.getElementById('status').textContent='Solved in 2:10.'",
+  'lights-out': "document.getElementById('status').textContent='Solved in 12 moves.'",
   'sudoku': "document.getElementById('status').textContent='Solved in 3:21.'",
   'mini-sudoku': "document.getElementById('status').textContent='Solved in 3:21.'",
   'blokus-duo': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
@@ -698,6 +700,28 @@ check('sudoku-look-and-play', 'sudoku and mini sudoku should be the redesign: th
   await p.close();
   return bad;
 }, ['sudoku', 'mini-sudoku']);
+
+check('puzzle-grids-look', 'nonogram and lights out should be the redesign: their own dark page colour, the grid edge to edge (lights out in a heavy frame), a glowing yellow lit tile, Time/Moves and Best in the header, and the symbol characters gone from the buttons', async (g) => {
+  const p = await open(g, 390, g === 'lights-out' ? "var m=document.querySelector('#mode');if(m&&[...m.options].some(o=>o.value==='solo')){m.value='solo';m.dispatchEvent(new Event('change'))}" : '');
+  await p.waitForTimeout(400);
+  const bad = [];
+  const r = await p.evaluate(() => { const b = document.getElementById('board'), rect = b.getBoundingClientRect(); return { page: getComputedStyle(document.body).backgroundColor, width: rect.width, pills: [...document.querySelectorAll('.fun-pills')].filter((e) => !e.hidden).length, sw: document.documentElement.scrollWidth, btns: [...document.querySelectorAll('.ng-tools .btn')].map((x) => x.textContent) }; });
+  if (g === 'nonogram' && !/52, 40, 90/.test(r.page)) bad.push('page is not the violet (' + r.page + ')');
+  if (g === 'lights-out' && !/29, 40, 72/.test(r.page)) bad.push('page is not the night blue (' + r.page + ')');
+  if (r.width < 340) bad.push('the grid is too narrow (' + Math.round(r.width) + 'px)');
+  if (r.pills < 1) bad.push('score boxes missing from the header');
+  if (r.btns.some((t) => /[\u2600-\u27BF\u25A0]/.test(t))) bad.push('symbol characters on the tool buttons');
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  if (g === 'lights-out') {
+    const lit = await p.evaluate(() => { const cells = [...document.querySelectorAll('.lo-cell')]; cells[12].click(); return getComputedStyle(document.querySelector('.lo-cell.on') || cells[0]).backgroundColor; });
+    if (!/255, 210, 63/.test(lit)) bad.push('a lit tile is not the glowing yellow (' + lit + ')');
+    const off = await p.evaluate(() => getComputedStyle([...document.querySelectorAll('.lo-cell:not(.on)')][0]).backgroundColor);
+    if (!/58, 70, 120/.test(off)) bad.push('an unlit tile is not the dark blue (' + off + '): a light-theme rule in shared.css is winning');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['nonogram', 'lights-out']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
