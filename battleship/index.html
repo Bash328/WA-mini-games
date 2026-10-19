@@ -248,6 +248,14 @@
 
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { padding-top: 7px; gap: 11px; }
   .bs-tab.right span { font-size: 12px; }
+
+  /* v6: the Options menu no longer pushes the page 10px past the right edge; the tab text sits inside the visible half; FIRE on the cannon; the cannon leaves downwards */
+  body.bs-battle .gk-optwrap { width: auto; max-width: calc(100vw - 20px); box-sizing: border-box; }
+  html body.fun.g-battleship .panel .bs-tab.right { padding: 0 38px 0 0; }
+  html body.fun.g-battleship .panel .bs-cannon.away { transform: translate(-50%, calc(100svh + 60px)); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: block; left: 50%; top: 56%; bottom: auto; transform: translate(-50%, -50%) scale(.6); opacity: 0; font-size: 30px; letter-spacing: .06em; color: #fff; background: none; padding: 0; text-shadow: 0 3px 0 #000, 0 0 10px rgba(0,0,0,.8); transition: opacity .15s ease, transform .2s cubic-bezier(.2,1.4,.4,1); pointer-events: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon.armed .cap { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .bs-home { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -351,7 +359,7 @@
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script src="game.js?v=5df47591"></script>
+<script src="game.js?v=563a2086"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

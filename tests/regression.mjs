@@ -708,7 +708,7 @@ check('battleship-reference-battle-screen', 'battleship: the battle screen must 
   return bad;
 }, ['battleship']);
 
-check('battleship-cannon-slides-away-and-back', 'battleship: the cannon faded instead of leaving; it now slides off the top of the screen while the opponent plays (fully out of sight) and slides back down on your turn', async () => {
+check('battleship-cannon-slides-away-and-back', 'battleship: the cannon faded instead of leaving; it now slides down off the bottom of the screen while the opponent plays (fully out of sight) and slides back down on your turn', async () => {
   const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
   await p.waitForTimeout(500);
   const bad = [];
@@ -720,10 +720,10 @@ check('battleship-cannon-slides-away-and-back', 'battleship: the cannon faded in
   await draw(false); await p.waitForTimeout(120);
   const mid = await state();
   if (!mid.away) bad.push('the cannon does not start to leave when it is not your turn');
-  if (!(mid.bottom < mine.bottom)) bad.push('the cannon did not move up while leaving (' + mine.bottom + ' -> ' + mid.bottom + ')');
+  if (!(mid.bottom > mine.bottom)) bad.push('the cannon did not move down while leaving (' + mine.bottom + ' -> ' + mid.bottom + ')');
   await p.waitForTimeout(900);
   const gone = await state();
-  if (gone.bottom > 0 || gone.vis !== 'hidden') bad.push('the cannon is not fully out of sight after leaving (bottom ' + gone.bottom + ', ' + gone.vis + ', opacity ' + gone.op + ')');
+  if (gone.top < 844 || gone.vis !== 'hidden') bad.push('the cannon is not fully out of sight after leaving (top ' + gone.top + ', ' + gone.vis + ', opacity ' + gone.op + ')');
   if (gone.op !== '1') bad.push('the cannon was faded (opacity ' + gone.op + ') instead of slid away');
   await draw(true); await p.waitForTimeout(950);
   const back = await state();
@@ -748,6 +748,36 @@ check('battleship-ships-from-the-screenshots', 'battleship: the ship pictures mu
   await p.locator('#bs-opt-tab').click(); await p.waitForTimeout(300);
   const menuOpen = await p.evaluate(() => { const m = document.querySelector('.gk-menu'); return !document.body.classList.contains('gk-play') && !!m && getComputedStyle(m).display !== 'none' && !!m.querySelector('.bs-home'); });
   if (!menuOpen) bad.push('tapping the Options tab does not open the Options menu (with an All games link)');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('battleship-vs-computer-turn-and-fire-word', 'battleship vs the computer: the computer fired back instantly so the cannon never left; it now pauses, the cannon slides away downwards and comes back for your turn; FIRE shows on the cannon once a square is aimed at; nothing sticks out past the right edge; the menu link says Home with the home icon', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+  const cap = () => p.evaluate(() => { const c = document.querySelector('#bs-fire .cap'); return { op: getComputedStyle(c).opacity, text: c.textContent }; });
+  if ((await cap()).op !== '0') bad.push('FIRE is showing before any square is aimed at');
+  await p.locator('#bs-main .bs-cell').nth(45).click(); await p.waitForTimeout(350);
+  const armed = await cap();
+  if (armed.op !== '1' || !/fire/i.test(armed.text)) bad.push('FIRE does not show on the cannon once a square is aimed at (' + JSON.stringify(armed) + ')');
+  await p.locator('#bs-fire').click();
+  await p.waitForTimeout(900);
+  const away = await p.evaluate(() => { const e = document.getElementById('bs-fire'); return { top: Math.round(e.getBoundingClientRect().top), vis: getComputedStyle(e).visibility, pill: document.body.className }; });
+  if (away.top < 844 || away.vis !== 'hidden') bad.push('the cannon did not slide away down while the computer takes its turn (' + JSON.stringify(away) + ')');
+  await p.waitForTimeout(2200);
+  const back = await p.evaluate(() => { const e = document.getElementById('bs-fire'); return { bottom: Math.round(e.getBoundingClientRect().bottom), vis: getComputedStyle(e).visibility, mine: document.querySelectorAll('#bs-sub .bs-cell.hit, #bs-sub .bs-cell.miss, #bs-sub .bs-cell.sunk').length }; });
+  if (back.vis !== 'visible' || back.bottom > 844) bad.push('the cannon did not come back for your turn (' + JSON.stringify(back) + ')');
+  if (back.mine !== 1) bad.push('the computer should have fired exactly once (' + back.mine + ')');
+  const edge = await p.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => !e.closest('.bs-tab') && !e.classList.contains('bs-tab') && e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().right > innerWidth + 1 && getComputedStyle(e).position !== 'fixed' || (e.classList.contains('gk-optwrap') && e.getBoundingClientRect().right > innerWidth + 1)).map((e) => (e.id || e.className).toString().slice(0, 24)));
+  if (edge.length) bad.push('these stick out past the right edge: ' + edge.slice(0, 5).join(', '));
+  await p.locator('#bs-opt-tab').click(); await p.waitForTimeout(300);
+  const home = await p.evaluate(() => { const a = document.querySelector('.bs-home'); return a ? { text: a.textContent.trim(), icon: !!a.querySelector('svg') } : null; });
+  if (!home || home.text !== 'Home' || !home.icon) bad.push('the menu link should be "Home" with the home icon (' + JSON.stringify(home) + ')');
+  const tabText = await p.evaluate(() => { const r = document.querySelector('#bs-opt-tab span').getBoundingClientRect(); return { l: r.left, r2: r.right }; });
+  if (tabText.r2 > 390 + 0.5) bad.push('the word Options runs off the right edge of the screen (to ' + Math.round(tabText.r2) + 'px)');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;

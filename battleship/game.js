@@ -366,7 +366,8 @@
       fireBtn.hidden = !!v.handoff;                      // on a shared device the End turn button replaces it
       setCannon(v.canFire);
       fireBtn.disabled = !v.canFire || sel < 0 || firing;
-      capEl.textContent = v.handoff ? "" : !v.canFire ? "Waiting" : sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
+      capEl.textContent = "FIRE";
+      fireBtn.classList.toggle("armed", v.canFire && sel >= 0);
       fireActions.hidden = !v.handoff;
       endBtn.hidden = !v.handoff;
       hintEl.textContent = "";
@@ -587,7 +588,7 @@
     const home = document.createElement("a");
     home.className = "btn ghost bs-home";
     home.href = "../";
-    home.textContent = "All games";
+    home.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="20" height="20"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg> Home';
     menu.appendChild(home);
   })();
   fireBtn.addEventListener("click", () => {
@@ -773,12 +774,13 @@
       return;
     }
     const me = L.turn, foe = other(me);
-    statusEl.textContent = L.handoff ? "Shot fired — end your turn." : (vsc ? "Your shot." : NAMES[me] + ": take your shot.");
-    Gamekit.turn(me, who(me) + (L.handoff ? " · end turn" : " · fire"), L.handoff);
+    statusEl.textContent = L.thinking ? "Computer thinking…" : L.handoff ? "Shot fired — end your turn." : (vsc ? "Your shot." : NAMES[me] + ": take your shot.");
+    if (L.thinking) Gamekit.turn(P2, "Computer thinking…", true);
+    else Gamekit.turn(me, who(me) + (L.handoff ? " · end turn" : " · fire"), L.handoff);
     draw({
       kind: "battle", me: me, myFleet: L.F[me], enemyFleet: L.F[foe],
       myShots: L.S[me], theirShots: L.S[foe],
-      canFire: !L.handoff, handoff: L.handoff,
+      canFire: !L.handoff && !L.thinking, handoff: L.handoff,
       lastMine: L.hl.mine, lastTheirs: L.hl.theirs, note: L.report,
     });
   }
@@ -813,18 +815,28 @@
       L.phase = "over"; L.winner = me;
       L.report = (L.vsComputer ? (me === P1 ? "You" : "The computer") : NAMES[me]) + " sank the whole fleet.";
     } else if (L.vsComputer) {
-      const c = aiPick(L.F[P1], L.S[P2]);
-      const r2 = shotResult(L.F[P1], L.S[P2], c);
-      L.S[P2].push(c);
-      L.hl.theirs = c;
-      L.report += " The computer fired at " + cellName(c) + ": " + resText(r2, false);
-      if (allSunk(L.F[P1], L.S[P2])) {
-        L.phase = "over"; L.winner = P2;
-        L.report = "The computer sank your whole fleet.";
-      }
+      L.thinking = true;                         // your shot is shown, the cannon slides away, and the computer takes a moment
+      clearTimeout(L.aiTimer);
+      L.aiTimer = setTimeout(() => computerShot(L), 1000 + Math.random() * 400);
     } else {
       L.handoff = true;
       L.pending = { by: me, cell: cell, res: res };
+    }
+    renderLocal();
+  }
+
+  // the computer fires back (called after its pause, or at once when a refresh finds it still owed a shot)
+  function computerShot(L) {
+    if (lo !== L || !L.thinking || L.phase !== "battle") return;
+    L.thinking = false;
+    const c = aiPick(L.F[P1], L.S[P2]);
+    const r2 = shotResult(L.F[P1], L.S[P2], c);
+    L.S[P2].push(c);
+    L.hl.theirs = c;
+    L.report += " The computer fired at " + cellName(c) + ": " + resText(r2, false);
+    if (allSunk(L.F[P1], L.S[P2])) {
+      L.phase = "over"; L.winner = P2;
+      L.report = "The computer sank your whole fleet.";
     }
     renderLocal();
   }
@@ -867,7 +879,7 @@
   // games are not saved here.) On one device the cover screen comes back first, so a refresh
   // never shows one player the other's fleet.
   const resumer = Gamekit.resume("battleship", () => (modeSel.value === "whatsapp" || !lo || lo.phase !== "battle") ? null : {
-    vsComputer: lo.vsComputer, F: lo.F, S: lo.S, turn: lo.turn, handoff: lo.handoff, pending: lo.pending,
+    vsComputer: lo.vsComputer, F: lo.F, S: lo.S, turn: lo.turn, handoff: lo.handoff, pending: lo.pending, thinking: !!lo.thinking,
   }, (s) => {
     const shotsOk = (a) => Array.isArray(a) && a.length <= CELLS && a.every(v => Number.isInteger(v) && v >= 0 && v < CELLS) && new Set(a).size === a.length;
     if (!s.F || !validFleet(s.F[P1]) || !validFleet(s.F[P2]) || !s.S || !shotsOk(s.S[P1]) || !shotsOk(s.S[P2])) return false;
@@ -883,7 +895,9 @@
     lo.cover = s.vsComputer ? null : lo.turn;      // hide the fleets until the right player takes over
     lo.report = "Welcome back. Pick up where you left off.";
     lo.hl = { mine: -1, theirs: -1 };
+    lo.thinking = !!s.thinking && !!s.vsComputer;   // a refresh in the computer's pause: it still owes its shot
     renderLocal();
+    if (lo.thinking) computerShot(lo);
     return true;
   });
   if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
