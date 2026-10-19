@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>tango · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
 <style>
   .tg-grid {
     display: grid;
@@ -89,19 +90,30 @@
   .tg-edge.neq { color: var(--accent);   border-color: var(--accent); }
 
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+
+  html body.fun.g-tango { --fun-bg: #3a2b5c; --fun-btn: #7a62b8; --fun-chip: rgba(255,255,255,.1); }
+
+  /* chunky look: violet page, white tiles in a heavy frame, warm suns and blue moons */
+  html body.fun.g-tango .panel .tg-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; padding: 12px; gap: 8px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
+  html body.fun.g-tango .panel .tg-cell { border: 0; border-radius: 12px; background: #fff; box-shadow: none; opacity: 1; font-size: clamp(1.8rem, 9vw, 2.6rem); }
+  html body.fun.g-tango .panel .tg-cell.given { background: #e6e2f4; }
+  html body.fun.g-tango .panel .tg-cell.sun { color: #ff9f1c; } html body.fun.g-tango .panel .tg-cell.moon { color: #3b6fe0; }
+  html body.fun.g-tango .panel .tg-cell.error { box-shadow: inset 0 0 0 4px #e8353a; }
+  html body.fun.g-tango .tg-edge { background: #fff; color: #2f3a46; border: 3px solid #14172b; border-radius: 8px; font-size: 14px; font-weight: 400; }
+  html body.fun.g-tango .tg-edge.eq, html body.fun.g-tango .tg-edge.neq { color: #2f3a46; border-color: #14172b; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-tango">
+<body class="g-tango fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>tango</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Fill with suns and moons.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="tango" data-man-title="TANGO(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -117,7 +129,7 @@
     <div class="tg-grid" id="board"></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
-      <button class="btn ghost tool-btn" id="hint-btn" type="button"><span class="glyph">💡</span> hint</button>
+      <button class="btn ghost tool-btn" id="hint-btn" type="button">hint</button>
       <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
     </div>
   </div>
@@ -140,7 +152,7 @@
   <ul>
     <li><strong>Tap a cell</strong> to cycle: empty → sun → moon → empty.</li>
     <li><code>↶ undo</code> takes back one entry.</li>
-    <li><code>💡 hint</code> reveals one correct cell (use sparingly).</li>
+    <li><code>hint</code> reveals one correct cell (use sparingly).</li>
     <li><code>↻ reset</code> clears your entries; <code>↻ new</code> generates a fresh puzzle.</li>
   </ul>
 
@@ -148,9 +160,10 @@
   <p class="muted">Harder puzzles give fewer starting cells and fewer edge clues — you'll lean more on the "no three in a row" and row/column balance rules.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=760aa454"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>patches · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
 <style>
   .pt-grid {
     position: relative;
@@ -85,19 +86,28 @@
   .pt-rect-overlay.pc10 { background: rgba(77,217,172,0.22); border-color: #4dd9ac; }
   .pt-rect-overlay.pc11 { background: rgba(245,184,0,0.22); border-color: #f5b800; }
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+
+  html body.fun.g-patches { --fun-bg: #2f4a3a; --fun-btn: #4f8a6a; --fun-chip: rgba(255,255,255,.1); }
+
+  /* chunky look: green page, a white grid in a heavy frame, the clue numbers in dark ink */
+  html body.fun.g-patches .panel .pt-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; background: #fff; }
+  html body.fun.g-patches .pt-cell { border-color: #d5dbe3; color: #2f3a46; font-weight: 400; }
+  html body.fun.g-patches .pt-cell.clue { color: #14172b; font-size: clamp(1.1rem, 5.4vw, 1.6rem); }
+  html body.fun.g-patches .pt-cell.drag { background: rgba(255,191,46,.35); }
+  html body.fun.g-patches .pt-rect-overlay { border: 3px solid #14172b; border-radius: 6px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-patches">
+<body class="g-patches fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>patches</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Draw rectangles — each clue's number = its rectangle's area.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="patches" data-man-title="PATCHES(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -140,9 +150,10 @@
   <p class="muted">Start with clues that have only one possible rectangle shape — small numbers in a corner, or primes. Use those to lock in walls that constrain the rest.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=d378779a"></script>
 </body>
 </html>
