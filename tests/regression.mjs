@@ -570,6 +570,8 @@ check('tic-tac-toe-win-line-then-card', 'tic-tac-toe: the result card jumped up 
 
 check('options-opens-without-moving', 'opening Options moved the board or made the page scroll on some games, although the menu opens over the board', async (g) => {
   const p = await open(g, 390);
+  await p.evaluate(() => new Promise((res) => { const t0 = Date.now(), f = () => { const c = document.getElementById('c8'); if (!c || getComputedStyle(c).display !== 'none' || Date.now() - t0 > 4000) res(); else setTimeout(f, 100); }; f(); }));   // crazy 8 shows its table a moment after loading
+  await p.waitForTimeout(300);
   const snap = () => p.evaluate(() => { const els = [...document.querySelectorAll('.panel > *')].filter((e) => e.getBoundingClientRect().height > 40 && getComputedStyle(e).position !== 'absolute' && !e.classList.contains('gk-optwrap') && !e.classList.contains('row') && getComputedStyle(e).display !== 'none'); const e = els.find((x) => x.getBoundingClientRect().top > 120) || els[0]; return { top: Math.round(e.getBoundingClientRect().top + scrollY), over: Math.max(0, document.documentElement.scrollHeight - innerHeight) }; });
   const bad = [];
   if (!(await p.locator('.gk-optbtn').count())) { await p.close(); return bad; }
@@ -782,6 +784,17 @@ check('battleship-vs-computer-turn-and-fire-word', 'battleship vs the computer: 
   await p.close();
   return bad;
 }, ['battleship']);
+
+check('crazy-8-table-full-size', 'crazy 8: the table had been narrowed to stop the page scrolling, which made the cards small and pulled the side player cards in from the screen edge; the table must be the full width of the screen', async () => {
+  const p = await open('crazy-8', 390, "var m=document.querySelector('#mode');if(m&&[...m.options].some(o=>o.value==='computer')){m.value='computer';m.dispatchEvent(new Event('change'))}");
+  await p.waitForTimeout(700);
+  const r = await p.evaluate(() => { const c = document.getElementById('c8').getBoundingClientRect(), st = document.getElementById('c8-stage').getBoundingClientRect(), hand = document.querySelector('#c8-hand .c8-card'); return { w: Math.round(c.width), stage: Math.round(st.width), card: hand ? Math.round(hand.getBoundingClientRect().height) : 0 }; });
+  await p.close();
+  const bad = [];
+  if (r.w < 385) bad.push('the table is only ' + r.w + 'px wide');
+  if (r.card < 100) bad.push('your cards are only ' + r.card + 'px tall');
+  return bad;
+}, ['crazy-8']);
 
 check('options-toggle', 'pressing Options while the menus are showing did not hide them', async (g) => {
   const p = await open(g);

@@ -72,8 +72,8 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
   /* ---------- the table: players round a felt circle ---------- */
   #c8 { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
-  /* the table scales with its width (cqw), so on a short phone narrow it until the whole page fits without scrolling */
-  html body.fun.g-crazy-8 #c8 { width: clamp(300px, calc((100svh - 430px) / 1.36 + 22px), 100%); margin-inline: auto; box-sizing: border-box; }
+  /* the table is as wide as the screen again (cards big, the side players' cards at the screen edges); only the space under it is tightened */
+  html body.fun.g-crazy-8 .c8-hint { min-height: 2.9em; margin: 4px 0 2px; }
   #c8.on { display: block; }
   .c8-stage { position: relative; height: 136cqw; }
   .c8-stage.no-top { margin-top: -34cqw; }
