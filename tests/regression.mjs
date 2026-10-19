@@ -26,12 +26,14 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['word-ladder', 'letter-boxed', 'cross-sums', 'sliding-puzzle', 'tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['mastermind', 'rock-paper-scissors', 'word-ladder', 'letter-boxed', 'cross-sums', 'sliding-puzzle', 'tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
-const MAXTOP = { hangman: 520, battleship: 470, onitama: 470 };
-const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', 'word-ladder': '#ladder', 'letter-boxed': '#box', 'cross-sums': '#grid', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
+const MAXTOP = { hangman: 520, battleship: 470, onitama: 470, mastermind: 620, 'rock-paper-scissors': 620 };
+// pages whose layout legitimately differs between modes (the guess panel only exists while it is your turn)
+const NOMODECMP = new Set(['mastermind']);
+const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', mastermind: '#count', 'rock-paper-scissors': '#choices', 'word-ladder': '#ladder', 'letter-boxed': '#box', 'cross-sums': '#grid', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
 // make a page show its end-of-game text the way the game itself writes it
@@ -49,6 +51,8 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  mastermind: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'rock-paper-scissors': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'word-ladder': "document.getElementById('status').textContent='Solved. Perfect! 4 steps. '+Gamekit.taunt('win')",
   'letter-boxed': "document.getElementById('status').textContent='Solved in 3 words. '+Gamekit.taunt('win')",
   'cross-sums': "document.getElementById('status').textContent='Solved in 4:05.'",
@@ -144,7 +148,7 @@ check('board-steady', 'the board jumped down when Options opened, or sat far dow
   } else bad.push('no Options button');
   if (t0 > (MAXTOP[g] || 360)) bad.push('board starts ' + t0 + 'px down: too much empty space above it');
   const modes = await p.evaluate(() => [...document.querySelectorAll('#mode option')].map((o) => o.value).filter((v) => v !== 'live'));
-  for (const m of modes) {
+  for (const m of NOMODECMP.has(g) ? [] : modes) {
     await p.evaluate((v) => { const s = document.querySelector('#mode'); s.value = v; s.dispatchEvent(new Event('change')); }, m);
     await p.waitForTimeout(400);
     const t = await top(p, g);
@@ -683,7 +687,7 @@ check('header-title-fits', 'a long page title (ultimate tic-tac-toe) ran into th
   await p.close();
   if (!r) return [];
   return r.textLeft < r.backRight - 1 || r.textRight > r.rightLeft + 1 ? ['the title (' + Math.round(r.textLeft) + '..' + Math.round(r.textRight) + ') runs into the header buttons (' + Math.round(r.backRight) + ' / ' + Math.round(r.rightLeft) + ')'] : [];
-}, ['ultimate-tic-tac-toe', 'letter-boxed', 'word-ladder']);
+}, ['ultimate-tic-tac-toe', 'letter-boxed', 'word-ladder', 'rock-paper-scissors']);
 
 check('sudoku-look-and-play', 'sudoku and mini sudoku should be the redesign: the white grid in a heavy black frame edge to edge, thick box lines still visible, the number pad as chunky white keys, Time and Best in the header, and tapping a cell then a key must still write the digit', async (g) => {
   const p = await open(g);
@@ -767,6 +771,26 @@ check('word-pages-look', 'word ladder and letter boxed should be the redesign: p
   await p.close();
   return bad;
 }, ['word-ladder', 'letter-boxed']);
+
+check('mastermind-and-rps-look', 'mastermind and rock paper scissors should be the redesign: their own page colour, flat ringed pegs / white choice cards, no sideways scroll, and a round must still play through', async (g) => {
+  const p = await open(g, 390, "var m=document.querySelector('#mode');if(m){var o=[...m.options].find(function(x){return /comp|ai/.test(x.value)});if(o){m.value=o.value;m.dispatchEvent(new Event('change'))}}");
+  await p.waitForTimeout(500);
+  const bad = [];
+  const r = await p.evaluate(() => ({ page: getComputedStyle(document.body).backgroundColor, sw: document.documentElement.scrollWidth, peg: (() => { const e = document.querySelector('.mm-peg:not(.empty)'); return e ? getComputedStyle(e).borderTopWidth : null; })(), choice: (() => { const e = document.querySelector('.rps-choice'); return e ? getComputedStyle(e).backgroundColor : null; })() }));
+  if (g === 'mastermind' && !/58, 37, 72/.test(r.page)) bad.push('page is not the plum (' + r.page + ')');
+  if (g === 'rock-paper-scissors' && !/32, 64, 90/.test(r.page)) bad.push('page is not the ocean blue (' + r.page + ')');
+  if (g === 'mastermind' && r.peg && parseFloat(r.peg) < 3) bad.push('pegs have no heavy ring');
+  if (g === 'rock-paper-scissors' && r.choice && !/255, 255, 255/.test(r.choice)) bad.push('choice cards are not white (' + r.choice + ')');
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  if (g === 'rock-paper-scissors') {
+    await p.locator('.rps-choice').first().click(); await p.waitForTimeout(1200);
+    const after = await p.evaluate(() => document.getElementById('score').textContent.length > 0);
+    if (!after) bad.push('the score is empty after a round');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['mastermind', 'rock-paper-scissors']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
