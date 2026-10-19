@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>cross sums · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
 <style>
   .cs-grid { --n: 8; display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(480px, 100%); aspect-ratio: 1; margin: 8px auto; border: 2px solid var(--fg); background: #1d1a16; font-size: calc(min(100vw - 40px, 480px) / var(--n) * 0.5); user-select: none; }
   .cs-b { background: #1d1a16; border: 1px solid #3a342a; position: relative; color: #e8e2d4; box-sizing: border-box; min-width: 0; min-height: 0; }
@@ -54,19 +55,38 @@
   .cs-pad2 .btn { flex: 1; min-height: 42px; }
   .cs-pad2 .btn.on { background: var(--fg); color: var(--bg); }
   .cs-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 3em; margin: 4px 0; }
+
+  /* chunky look: steel-blue page, a heavy frame, dark clue squares with a diagonal, white answer squares, white number keys */
+  html body.fun.g-cross-sums { --fun-bg: #2b3a52; --fun-btn: #5a7fb0; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-cross-sums .panel .cs-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; background: #14172b; }
+  html body.fun.g-cross-sums .cs-b { background: #14172b; border-color: #232846; color: #fff; }
+  html body.fun.g-cross-sums .cs-b .a, html body.fun.g-cross-sums .cs-b .d { font-weight: 400; }
+  html body.fun.g-cross-sums .cs-b.clue::after { opacity: .7; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w { border-color: #d5dbe3; background: #fff; color: #1f6fe0; font-weight: 400; box-shadow: none; opacity: 1; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w.given { background: #e6e2f4; color: #2f3a46; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w.peer { background: #e6f0ff; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w.sel { background: #ffd23f; outline: 0; box-shadow: inset 0 0 0 3px #e0a800; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w.bad { background: #ffc4bb; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-w.mine { color: #1f6fe0; }
+  html body.fun.g-cross-sums .cs-pad { width: 100%; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 5px; }
+  html body.fun.g-cross-sums.g-cross-sums .panel .cs-pad button { min-height: 50px; border: 0; border-radius: 12px; background: #fff; color: #2f3a46; font-weight: 400; font-size: 1.4rem; box-shadow: 0 4px 0 #b9c2cc; }
+  html body.fun.g-cross-sums .cs-pad2 { width: 100%; }
+  html body.fun.g-cross-sums .panel .cs-pad2 .btn { background: rgba(255,255,255,.12); border: 0; box-shadow: none; border-radius: 14px; }
+  html body.fun.g-cross-sums .panel .cs-pad2 .btn.on { background: #ffbf2e; color: #5a3a00; }
+  html body.fun.g-cross-sums .cs-hint { color: rgba(255,255,255,.75); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-cross-sums">
+<body class="g-cross-sums fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>cross sums</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Fill every white square.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="cross-sums" data-man-title="CROSS-SUMS(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -118,10 +138,11 @@
   <p class="muted">Start with the runs that have only one or two ways to be made: 3 or 4 in two squares, 16 or 17 in two, 6 or 7 in three. Squares where an across run and a down run both allow only one digit are solved. Notes keep track of what's left.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="puzzle.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="puzzle.js?v=d6fa6f7e"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=f43d9519"></script>
 </body>
 </html>

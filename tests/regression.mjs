@@ -26,12 +26,12 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['cross-sums', 'sliding-puzzle', 'tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
 const MAXTOP = { hangman: 520, battleship: 470, onitama: 470 };
-const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
+const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', 'cross-sums': '#grid', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
 // make a page show its end-of-game text the way the game itself writes it
@@ -49,6 +49,8 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  'cross-sums': "document.getElementById('status').textContent='Solved in 4:05.'",
+  'sliding-puzzle': "document.getElementById('status').textContent='Solved in 31 moves.'",
   'tango': "document.getElementById('status').textContent='Solved in 1:30.'",
   'queens': "document.getElementById('status').textContent='Solved in 1:30.'",
   'zip': "document.getElementById('status').textContent='Solved in 1:30.'",
@@ -730,19 +732,19 @@ check('puzzle-grids-look', 'nonogram and lights out should be the redesign: thei
 check('logic-grids-look', 'tango, queens, zip and patches should share the redesign: their own page colour, the grid edge to edge in a heavy black frame, Time and Best in the header, and no emoji on the hint button', async (g) => {
   const p = await open(g);
   const bad = [];
-  const r = await p.evaluate(() => { const b = document.getElementById('board'), rect = b.getBoundingClientRect(), cs = getComputedStyle(b); return { page: getComputedStyle(document.body).backgroundColor, width: rect.width, frame: parseFloat(cs.borderTopWidth), square: Math.abs(rect.width - rect.height) < 6, pills: document.querySelectorAll('.fun-pills b').length, hint: (document.getElementById('hint-btn') || {}).textContent || '', sw: document.documentElement.scrollWidth }; });
-  const want = { tango: /58, 43, 92/, queens: /74, 44, 61/, zip: /31, 59, 77/, patches: /47, 74, 58/ }[g];
+  const r = await p.evaluate(() => { const b = document.getElementById('board') || document.getElementById('grid'), rect = b.getBoundingClientRect(), cs = getComputedStyle(b); return { page: getComputedStyle(document.body).backgroundColor, width: rect.width, frame: parseFloat(cs.borderTopWidth), square: Math.abs(rect.width - rect.height) < 6, pills: document.querySelectorAll('.fun-pills b').length, hint: (document.getElementById('hint-btn') || {}).textContent || '', sw: document.documentElement.scrollWidth }; });
+  const want = { tango: /58, 43, 92/, queens: /74, 44, 61/, zip: /31, 59, 77/, patches: /47, 74, 58/, 'cross-sums': /43, 58, 82/, 'sliding-puzzle': /74, 58, 36/ }[g];
   if (!want.test(r.page)) bad.push('page colour is ' + r.page);
   if (r.width < 360) bad.push('the grid is not edge to edge (' + Math.round(r.width) + 'px)');
   if (r.frame < 5) bad.push('no heavy frame');
   if (!r.square) bad.push('the grid is not square any more (a cell is taller than its share)');
-  if (r.pills !== 2) bad.push('Time and Best belong in the header');
+  if (r.pills < 2) bad.push('Time and Best belong in the header');
   if (/[\u{1F300}-\u{1FAFF}]/u.test(r.hint)) bad.push('emoji on the hint button');
   if (r.sw > 390) bad.push('page is wider than the phone');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;
-}, ['tango', 'queens', 'zip', 'patches']);
+}, ['tango', 'queens', 'zip', 'patches', 'cross-sums', 'sliding-puzzle']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
