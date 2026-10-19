@@ -294,3 +294,5 @@
   if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("quoridor"));
 })();
+
+if (window.Gamekit && Gamekit.glidePieces) Gamekit.glidePieces(document.getElementById("board"), ".qd-pawn");   // pawns glide

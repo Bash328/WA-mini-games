@@ -278,3 +278,5 @@
   resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("nonogram"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

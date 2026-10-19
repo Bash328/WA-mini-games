@@ -372,3 +372,5 @@
   window.addEventListener("load", () => Manpage.autoOpen("gomoku"));
 
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

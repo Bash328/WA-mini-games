@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a83d4623">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   #word {
@@ -104,13 +104,10 @@
   html body.fun.g-hangman .hm-ghosts { position: absolute; left: 0; top: 0; width: min(190px, 46%); aspect-ratio: 1; z-index: 2; pointer-events: none; }
   html body.fun.g-hangman .hm-ghosts[hidden] { display: none; }
   html body.fun.g-hangman .hm-g { position: absolute; transform: translateX(-50%); overflow: visible; filter: drop-shadow(0 0 7px rgba(255,255,255,.5)); }
-  html body.fun.g-hangman .hm-g.big { left: 80%; top: -2%; width: 52px; height: 125px; animation: hm-float 2.4s ease-in-out infinite; }
-  html body.fun.g-hangman .hm-g.w1, html body.fun.g-hangman .hm-g.w2, html body.fun.g-hangman .hm-g.w3 { top: 40%; width: 30px; height: 72px; opacity: 0; animation: hm-rise 3.6s ease-in infinite; }
-  html body.fun.g-hangman .hm-g.w1 { left: 60%; animation-delay: .2s; }
-  html body.fun.g-hangman .hm-g.w2 { left: 96%; animation-delay: 1.4s; }
-  html body.fun.g-hangman .hm-g.w3 { left: 72%; animation-delay: 2.6s; width: 22px; height: 53px; }
-  @keyframes hm-rise { 0% { transform: translate(-50%, 26px); opacity: 0; } 18% { opacity: .85; } 100% { transform: translate(-50%, -80px); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { html body.fun.g-hangman .hm-g { animation: none !important; } html body.fun.g-hangman .hm-g.w1, html body.fun.g-hangman .hm-g.w2, html body.fun.g-hangman .hm-g.w3 { opacity: .5; } }
+  html body.fun.g-hangman .hm-g.big { left: 71%; top: 8%; width: 32px; height: 78px; transform: translateX(-50%); animation: hm-drift 2.6s ease-in-out infinite; }
+  /* he floats beside the man, upright */
+  @keyframes hm-drift { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { html body.fun.g-hangman .hm-g { animation: none !important; } }
   html body.fun.g-hangman .hm-bubble.ghost { background: #e9e4f7; }
   html body.fun.g-hangman .hm-bubble.ghost::before { border-right-color: #e9e4f7; }
   @keyframes hm-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
@@ -163,7 +160,7 @@
       <button class="btn primary" id="setup-btn" type="button">Set word</button>
       <p id="setup-error"></p>
     </div>
-    <div class="hm-stage"><svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg><div class="hm-ghosts" id="ghost" aria-hidden="true" hidden><svg class="hm-g big" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg><svg class="hm-g w1" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg><svg class="hm-g w2" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg><svg class="hm-g w3" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg></div><div class="hm-bubble" id="bubble" role="status" aria-live="polite" hidden></div></div>
+    <div class="hm-stage"><svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg><div class="hm-ghosts" id="ghost" aria-hidden="true" hidden><svg class="hm-g big" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg></div><div class="hm-bubble" id="bubble" role="status" aria-live="polite" hidden></div></div>
     <p id="word"></p>
     <p id="misses"></p>
     <div class="hm-keyboard" id="keyboard" hidden></div>
@@ -200,7 +197,7 @@
 </template>
 
 <script src="../taunts.js?v=ec4b7770"></script>
-<script src="../gamekit.js?v=f5fe6255"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../fun.js?v=0db388a6"></script>

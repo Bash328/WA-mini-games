@@ -77,17 +77,24 @@
     }
   }
 
-  // A disc that has just landed falls from above its column and bounces (skipped when many discs
-  // appear at once: a refresh, an undo, a new game).
+  // A disc that has just landed falls from above its column and bounces. The falling disc is a separate
+  // piece; its target square stays an empty hole until it lands (skipped when many discs appear at once:
+  // a refresh, an undo, a new game).
   let shown = new Uint8Array(ROWS * COLS);
+  const falling = new Set();
   function dropAnim(fresh) {
     const noMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (noMotion || fresh.length === 0 || fresh.length > 2) return;
-    const step = boardEl.children[COLS].getBoundingClientRect().top - boardEl.children[0].getBoundingClientRect().top;
+    if (getComputedStyle(boardEl).position === "static") boardEl.style.position = "relative";
+    const step = boardEl.children[COLS].offsetTop - boardEl.children[0].offsetTop;
     for (const i of fresh) {
-      const el = boardEl.children[i], r = Math.floor(i / COLS), d = (r + 1) * step;
-      el.style.position = "relative"; el.style.zIndex = "3";
-      const a = el.animate([
+      const slot = boardEl.children[i], r = Math.floor(i / COLS), d = (r + 1) * step;
+      const disc = document.createElement("div");
+      disc.className = "c4-slot c4-fall " + (grid[r][i % COLS] === P1 ? "p1" : "p2");
+      disc.style.cssText = "position:absolute;z-index:3;pointer-events:none;animation:none;left:" + slot.offsetLeft + "px;top:" + slot.offsetTop + "px;width:" + slot.offsetWidth + "px;height:" + slot.offsetHeight + "px";
+      boardEl.appendChild(disc);
+      falling.add(i);
+      const a = disc.animate([
         { transform: "translateY(" + -d + "px)", offset: 0, easing: "cubic-bezier(.5,0,1,.6)" },
         { transform: "translateY(0)", offset: 0.62, easing: "ease-out" },
         { transform: "translateY(" + -d * 0.07 + "px)", offset: 0.78, easing: "ease-in" },
@@ -95,7 +102,12 @@
         { transform: "translateY(" + -d * 0.02 + "px)", offset: 0.95, easing: "ease-in" },
         { transform: "translateY(0)", offset: 1 },
       ], { duration: 420 + r * 70 });
-      a.onfinish = a.oncancel = () => { el.style.position = ""; el.style.zIndex = ""; };
+      a.onfinish = a.oncancel = () => {
+        disc.remove();
+        falling.delete(i);
+        const rr = Math.floor(i / COLS), cc = i % COLS;
+        if (grid[rr][cc] === P1) slot.classList.add("p1"); else if (grid[rr][cc] === P2) slot.classList.add("p2");
+      };
     }
   }
 
@@ -112,7 +124,8 @@
         const i = r * COLS + c;
         const el = boardEl.children[i];
         el.classList.remove("p1", "p2", "win", "last");
-        if (grid[r][c] === P1) el.classList.add("p1");
+        if (falling.has(i)) { /* still falling: shown as an empty hole until it lands */ }
+        else if (grid[r][c] === P1) el.classList.add("p1");
         else if (grid[r][c] === P2) el.classList.add("p2");
         if (isLinked() && lastSlot === i) el.classList.add("last");
       }

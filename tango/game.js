@@ -408,3 +408,5 @@
   resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("tango"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

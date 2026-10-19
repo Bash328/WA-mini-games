@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a83d4623">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
@@ -126,10 +126,12 @@
   .bs-mini.sunk { opacity: .35; }
   .bs-mini.sunk::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 2px; border-radius: 1px; background: #fff; transform: rotate(-12deg); }
   /* the cannon is the fire button: tap a square to aim, tap the cannon to shoot */
-  html body.fun.g-battleship .panel .bs-cannon { width: 78px; min-height: 0; height: 82px; padding: 0; margin: 0 auto; border: 0; background: none; box-shadow: none; position: relative; display: block; cursor: pointer; }
-  html body.fun.g-battleship .panel .bs-cannon:disabled { opacity: .55; cursor: default; }
+  html body.fun.g-battleship .panel .bs-cannon { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 4; width: 118px; min-height: 0; height: 124px; padding: 0; margin: 0; border: 0; background: none; box-shadow: none; display: block; cursor: pointer; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled { opacity: 1; cursor: default; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled svg { opacity: .8; }
+  .bs-cannon[hidden] { display: none !important; }
   .bs-cannon svg { width: 100%; height: 100%; overflow: visible; }
-  .bs-cannon .cap { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); font-size: 13px; color: #fff; background: rgba(0,0,0,.35); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .bs-cannon .cap { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); font-size: 13px; color: #fff; background: rgba(0,0,0,.35); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
   .bs-cannon.recoil .gun { animation: bs-recoil .42s ease-out; }
   @keyframes bs-recoil { 0% { transform: translateY(0); } 22% { transform: translateY(9px); } 100% { transform: translateY(0); } }
   .bs-ball { position: fixed; z-index: 95; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b5f6a, #1b1c21 60%); box-shadow: 0 6px 6px rgba(0,0,0,.25); pointer-events: none; }
@@ -160,11 +162,14 @@
   html body.fun.g-battleship #bs-board[data-phase="place"] .bs-actions .btn { min-height: 44px; }
   #bs-board[data-phase="battle"] .bs-title { display: none; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap { width: var(--e); margin: 6px auto 0; }
-  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: calc(var(--e) * .62); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: var(--e); position: relative; }
+  /* your own waters sit faded behind the cannon, which is always there during a battle */
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub { opacity: .42; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-grid { padding: 6px; gap: 2px; border-radius: 16px; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-note { margin: 6px 0 0; min-height: 0; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-hint { display: none; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-actions { margin: 4px 0 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-actions[hidden] { display: none; }
   html body.fun.g-battleship .bs-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
   html body.fun.g-battleship #bs-note, html body.fun.g-battleship #bs-hint { color: rgba(255,255,255,.75); font-size: 15px; }
   html body.fun.g-battleship #bs-note strong { color: #fff; font-weight: 400; }
@@ -208,6 +213,7 @@
       <div class="bs-wrap small" id="bs-sub-wrap">
         <h3 class="bs-title" id="bs-sub-title"></h3>
         <div class="bs-grid" id="bs-sub"></div>
+        <button class="bs-cannon" id="bs-fire" type="button" aria-label="Fire"><svg viewBox="0 0 90 96" aria-hidden="true"><ellipse cx="46" cy="88" rx="30" ry="6" fill="rgba(0,0,0,.18)"/><circle cx="45" cy="62" r="30" fill="#16171b"/><circle cx="45" cy="62" r="22" fill="#e5483d"/><circle cx="45" cy="62" r="14" fill="#16171b"/><g class="gun"><rect x="30" y="10" width="30" height="58" rx="14" fill="#16171b"/><rect x="37" y="18" width="7" height="40" rx="3.5" fill="#5b5f6a"/><ellipse cx="45" cy="14" rx="15" ry="6" fill="#0b0b0d"/></g></svg><span class="cap" id="bs-cap">Fire</span></button>
       </div>
       <p id="bs-note"></p>
       <div class="bs-actions" id="bs-place-actions" hidden>
@@ -217,7 +223,6 @@
         <button class="btn primary" id="bs-ready" type="button">Lock in fleet</button>
       </div>
       <div class="bs-actions" id="bs-fire-actions" hidden>
-        <button class="bs-cannon" id="bs-fire" type="button" aria-label="Fire"><svg viewBox="0 0 90 96" aria-hidden="true"><ellipse cx="46" cy="88" rx="30" ry="6" fill="rgba(0,0,0,.18)"/><circle cx="45" cy="62" r="30" fill="#16171b"/><circle cx="45" cy="62" r="22" fill="#e5483d"/><circle cx="45" cy="62" r="14" fill="#16171b"/><g class="gun"><rect x="30" y="10" width="30" height="58" rx="14" fill="#16171b"/><rect x="37" y="18" width="7" height="40" rx="3.5" fill="#5b5f6a"/><ellipse cx="45" cy="14" rx="15" ry="6" fill="#0b0b0d"/></g></svg><span class="cap" id="bs-cap">Fire</span></button>
         <button class="btn primary" id="bs-end" type="button" hidden>End turn</button>
       </div>
       <p id="bs-hint"></p>
@@ -263,11 +268,11 @@
 </template>
 
 <script src="../taunts.js?v=ec4b7770"></script>
-<script src="../gamekit.js?v=f5fe6255"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script src="game.js?v=50ffd7ef"></script>
+<script src="game.js?v=536b5aa6"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

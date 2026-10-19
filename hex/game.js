@@ -293,3 +293,5 @@
   if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("hex"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

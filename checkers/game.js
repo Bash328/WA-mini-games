@@ -186,8 +186,9 @@
     return bestTurn;
   }
 
-  // The piece that just moved slides from the square it left to the one it reached (and a jumped piece
-  // is simply gone). Shown once per move: a re-render of the same board does not slide again.
+  // The piece that just moved glides from the square it left to the one it reached. A multi-jump follows
+  // its real path, hop by hop, and each jumped piece shrinks away as it is passed. Shown once per move:
+  // a re-render of the same board does not slide again.
   let shownBoard = null;
   function slidePiece(board, lastIdx) {
     const prev = shownBoard;
@@ -195,17 +196,61 @@
     const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (still || !prev || lastIdx < 0 || !board[lastIdx] || prev[lastIdx]) return;
     const mine = colorOf(board[lastIdx]);
+    const cellAt = (i) => boardEl.querySelector('[data-i="' + i + '"]');
+    const gone = new Map();                                       // jumped pieces: square -> what stood there
     let from = -1;
-    for (let i = 0; i < N * N; i++) if (i !== lastIdx && prev[i] && prev[i] !== "0" && !board[i] && colorOf(prev[i]) === mine) { from = i; if (Math.abs(i - lastIdx) === 9 || Math.abs(i - lastIdx) === 7) break; }
-    const toCell = [...boardEl.children].find((b) => b.getAttribute("aria-label") && b.dataset.i === String(lastIdx));
-    const fromCell = [...boardEl.children].find((b) => b.dataset.i === String(from));
-    if (!toCell || !fromCell) return;
-    const piece = toCell.querySelector(".ck-piece");
-    if (!piece) return;
-    const a = fromCell.getBoundingClientRect(), b = toCell.getBoundingClientRect();
+    for (let i = 0; i < N * N; i++) {
+      if (i === lastIdx || !prev[i] || prev[i] === "0" || board[i]) continue;
+      if (colorOf(prev[i]) === mine) { if (from < 0 || Math.abs(i - lastIdx) < Math.abs(from - lastIdx)) from = i; }
+      else gone.set(i, prev[i]);
+    }
+    const toCell = cellAt(lastIdx), piece = toCell && toCell.querySelector(".ck-piece");
+    if (from < 0 || !piece) return;
+    // the squares it landed on, in order: search the diagonal jumps that use up every jumped piece
+    let route = [from, lastIdx];
+    if (gone.size) {
+      const used = new Set(), path = [from];
+      const rc = (i) => [Math.floor(i / N), i % N];
+      const walk = (pos) => {
+        if (used.size === gone.size) return pos === lastIdx;
+        const [r, c] = rc(pos);
+        for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+          const mr = r + dr, mc = c + dc, lr = r + 2 * dr, lc = c + 2 * dc;
+          if (lr < 0 || lr >= N || lc < 0 || lc >= N) continue;
+          const mid = mr * N + mc, land = lr * N + lc;
+          if (!gone.has(mid) || used.has(mid)) continue;
+          used.add(mid); path.push(land);
+          if (walk(land)) return true;
+          used.delete(mid); path.pop();
+        }
+        return false;
+      };
+      if (walk(from)) route = path;
+    }
+    const to = toCell.getBoundingClientRect();
+    const at = route.map((i) => { const r = cellAt(i).getBoundingClientRect(); return [r.left - to.left, r.top - to.top]; });
+    const hop = route.length > 2 ? 260 : 340, frames = [];
+    route.forEach((_, k) => frames.push({ transform: "translate(" + at[k][0] + "px," + at[k][1] + "px) scale(" + (k === 0 ? 1 : 1) + ")", offset: k / (route.length - 1), easing: "ease-in-out" }));
+    // lift the piece a little while it is in the air between squares
+    const lifted = [];
+    frames.forEach((f, k) => { lifted.push(f); if (k < frames.length - 1) { const a = at[k], b = at[k + 1]; lifted.push({ transform: "translate(" + (a[0] + b[0]) / 2 + "px," + (a[1] + b[1]) / 2 + "px) scale(1.16)", offset: (k + 0.5) / (route.length - 1), easing: "ease-in-out" }); } });
     toCell.style.zIndex = "3"; toCell.style.position = "relative";
-    const run = piece.animate([{ transform: "translate(" + (a.left - b.left) + "px," + (a.top - b.top) + "px) scale(1.12)" }, { transform: "translate(0,0) scale(1)" }], { duration: 300, easing: "cubic-bezier(.3,.7,.2,1)" });
+    const run = piece.animate(lifted, { duration: hop * (route.length - 1) });
     run.onfinish = run.oncancel = () => { toCell.style.zIndex = ""; toCell.style.position = ""; };
+    // each jumped piece stays put until the jumper passes, then shrinks away
+    let n = 0;
+    route.slice(0, -1).forEach((sq, k) => {
+      const [r0, c0] = [Math.floor(sq / N), sq % N], [r1, c1] = [Math.floor(route[k + 1] / N), route[k + 1] % N];
+      const mid = ((r0 + r1) / 2) * N + (c0 + c1) / 2;
+      if (!gone.has(mid)) return;
+      const cell = cellAt(mid), v = gone.get(mid);
+      if (!cell) return;
+      const ghost = document.createElement("span");
+      ghost.className = "ck-piece " + (colorOf(v) === P1 ? "p1" : "p2") + (isKingV(v) ? " king" : "");
+      cell.appendChild(ghost);
+      ghost.animate([{ transform: "scale(1)", opacity: 1, offset: 0 }, { transform: "scale(1)", opacity: 1, offset: 0.55 }, { transform: "scale(.2)", opacity: 0 }], { duration: hop * (k + 1) + 120, fill: "forwards" }).onfinish = () => ghost.remove();
+      n++;
+    });
   }
 
   function renderBoard(board, selectable, selected, targets, canClick, onClick, lastIdx) {

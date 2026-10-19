@@ -53,7 +53,6 @@ function render() {
     const v = grid[r][c];
     const d = document.createElement('div');
     d.className = 'tile' + (v ? ' t'+v : '');
-    if (mergedCells && mergedCells.has(r*N+c)) d.classList.add('merged');
     d.textContent = v || '';
     el.appendChild(d);
   }
@@ -65,6 +64,9 @@ function render() {
 }
 
 const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+// Tiles glide to their squares (ease in and out); two tiles that meet slide on top of each other, fade out as
+// they arrive and are replaced by the doubled tile, which swells and settles. A new tile grows in just after.
+const SLIDE = 170;
 function animateSlide(el, moves, spawn, merged) {
   const cells = el.children, token = ++animToken;
   if (calm() || !el.animate || cells.length < N * N) return;
@@ -79,18 +81,23 @@ function animateSlide(el, moves, spawn, merged) {
     t.textContent = m.v;
     t.style.cssText = 'position:absolute;margin:0;z-index:2;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
     el.append(t);
-    t.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)' }], { duration: 120, easing: 'ease-out', fill: 'forwards' });
+    const to = 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)';
+    const joins = merged && merged.has(m.to[0] * N + m.to[1]);
+    t.animate(joins
+      ? [{ transform: 'translate(0,0)', opacity: 1 }, { transform: to, opacity: 1, offset: 0.8 }, { transform: to, opacity: 0 }]
+      : [{ transform: 'translate(0,0)' }, { transform: to }],
+      { duration: SLIDE, easing: 'cubic-bezier(.3,.7,.25,1)', fill: 'forwards' });
     return t;
   });
-  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 160, delay: 110, fill: 'backwards', easing: 'ease-out' });
+  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.7 }, { transform: 'scale(1)', opacity: 1 }], { duration: 240, delay: SLIDE - 20, fill: 'backwards', easing: 'ease-out' });
   setTimeout(() => {
     if (token !== animToken) return;
     ghosts.forEach(t => t.remove());
     dests.forEach(i => {
       cells[i].style.visibility = '';
-      if (merged && merged.has(i)) { cells[i].classList.remove('merged'); void cells[i].offsetWidth; cells[i].classList.add('merged'); }
+      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(.88)' }, { transform: 'scale(1.18)', offset: 0.45 }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1.2)' });
     });
-  }, 125);
+  }, SLIDE);
 }
 
 // where every tile goes in one row slid towards index 0: dest[i] is the column tile i ends up in (two merging tiles share one)

@@ -84,7 +84,36 @@
     }
   }
 
+  // The winning line is drawn across the three squares (white on a black edge, matching the # grid) before the result card.
+  let lineKey = "";
+  function winLine(winInfo) {
+    const old = boardEl.querySelector(".ttt-line");
+    const key = winInfo && winInfo.line.length === 3 ? winInfo.line.join("-") + "|" + board.join("") : "";
+    if (key === lineKey) return;
+    lineKey = key;
+    if (old) old.remove();
+    if (!key) return;
+    const a = cellEls[winInfo.line[0]], z = cellEls[winInfo.line[2]];
+    const x1 = a.offsetLeft + a.offsetWidth / 2, y1 = a.offsetTop + a.offsetHeight / 2, x2 = z.offsetLeft + z.offsetWidth / 2, y2 = z.offsetTop + z.offsetHeight / 2;
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy), ext = a.offsetWidth * 0.3;
+    const ux = dx / len, uy = dy / len, sx = x1 - ux * ext, sy = y1 - uy * ext, ex = x2 + ux * ext, ey = y2 + uy * ext, total = Math.hypot(ex - sx, ey - sy);
+    const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "ttt-line");
+    svg.setAttribute("viewBox", "0 0 " + boardEl.clientWidth + " " + boardEl.clientHeight);
+    svg.setAttribute("aria-hidden", "true");
+    [["#000", 26], ["#fff", 14]].forEach(([colour, w]) => {
+      const l = document.createElementNS(ns, "line");
+      l.setAttribute("x1", sx); l.setAttribute("y1", sy); l.setAttribute("x2", ex); l.setAttribute("y2", ey);
+      l.setAttribute("stroke", colour); l.setAttribute("stroke-width", w); l.setAttribute("stroke-linecap", "round");
+      l.setAttribute("stroke-dasharray", total); l.setAttribute("stroke-dashoffset", 0);
+      svg.appendChild(l);
+      if (!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) && l.animate) l.animate([{ strokeDashoffset: total }, { strokeDashoffset: 0 }], { duration: 480, delay: 120, easing: "cubic-bezier(.5,0,.2,1)", fill: "backwards" });
+    });
+    boardEl.appendChild(svg);
+  }
+
   function render(winInfo) {
+    winLine(winInfo);
     for (let i = 0; i < 9; i++) {
       const v = board[i];
       const el = cellEls[i];
@@ -144,6 +173,9 @@
     else if (w.player === human) setStatus("You win! 🎉 " + Gamekit.taunt("win"));
     else setStatus("Computer wins. " + Gamekit.taunt());
   }
+
+  // for the checks: put the board in a position with the human to move
+  window.__tttTest = { set: (b) => { cancelAI(); board = b.slice(); turn = human; gameOver = false; render(null); } };
 
   function reset() {
     cancelAI();
@@ -295,3 +327,5 @@
   });
   if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

@@ -33,7 +33,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a83d4623">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <style>
   .board2048 {
     display: grid;
@@ -91,6 +91,9 @@
   html body.fun.g-2048 .panel .board2048 { position: relative; }
   html body.fun.g-2048 .tile.ghost { box-shadow: none; }
   html body.fun.g-2048 .kbd { display: none; }
+  /* the board sits in the middle of the space under the Options bar, not stuck to the top */
+  html body.fun.g-2048 .panel { display: flex; flex-direction: column; min-height: calc(100svh - 120px); }
+  html body.fun.g-2048 .panel .board2048 { margin: auto -11px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -150,9 +153,9 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=f5fe6255"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=a5862350"></script>
+<script defer src="game.js?v=95dc6981"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("2048"));</script>
 </body>
 </html>

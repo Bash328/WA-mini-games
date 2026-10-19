@@ -366,3 +366,5 @@
   if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("ultimate-tic-tac-toe"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

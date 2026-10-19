@@ -21,9 +21,11 @@
   if (!["easy", "medium", "hard"].includes(diff)) diff = "medium";
   let mode = store.get("mode", "whatsapp");
   if (!["whatsapp", "ai", "local"].includes(mode)) mode = "whatsapp";
-  if (new URLSearchParams(location.search).has("s")) mode = "whatsapp";
+  const params = new URLSearchParams(location.search);
+  const invited = params.has("live");
+  if (params.has("s")) mode = "whatsapp"; else if (invited) mode = "live";
   modeSel.value = mode;
-  const isLinked = () => mode === "whatsapp";
+  const isLinked = () => mode === "whatsapp" || mode === "live";
 
   // ---------- the game ----------
   let score = { [P1]: 0, [P2]: 0 };
@@ -36,9 +38,11 @@
   let lastNote = "";                      // what the previous turn did
   let lastFace = 0;
   const humanIs = P1;                     // against the computer you are Player 1
+  let me = P1;                            // online: which player you are
+  let liveBoard = null, liveId = null, liveCount = 0, bustShown = false;
 
   const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Computer") : "Player " + p);
+  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Computer") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
 
   // Pip positions on a 3x3 grid, per face.
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -58,11 +62,15 @@
     scoreEl.innerHTML = cards;
     // the header shows both scores and the goal
     const sc = document.getElementById("score");
-    if (sc) { sc.dataset.l = mode === "ai" ? "YOU" : "P1"; sc.dataset.r = mode === "ai" ? "BOT" : "P2"; sc.dataset.tab = "GOAL " + GOAL; sc.textContent = "A: " + score[P1] + " B: " + score[P2]; }
+    if (sc) {
+      const L = mode === "live" ? me : P1;
+      sc.dataset.l = mode === "ai" || mode === "live" ? "YOU" : "P1"; sc.dataset.r = mode === "ai" ? "BOT" : mode === "live" ? "OPP" : "P2";
+      sc.dataset.tab = "GOAL " + GOAL; sc.textContent = "A: " + score[L] + " B: " + score[other(L)];
+    }
     dieEl.innerHTML = dieSvg(lastFace);
-    dieEl.classList.toggle("bust", lastFace === 1 && rolls.length > 0 && rolls[rolls.length - 1] === 1);
+    dieEl.classList.toggle("bust", bustShown || (lastFace === 1 && rolls.length > 0 && rolls[rolls.length - 1] === 1));
     turnEl.innerHTML = over ? "" :
-      '<span class="pig-t">' + nameOf(current) + (mode === "ai" && current !== humanIs ? " is playing" : "") + " · this turn:</span> <b>" + turnTotal + "</b>" +
+      '<span class="pig-t">' + nameOf(current) + (mode === "ai" && current !== humanIs ? " is playing" : "") + (mode === "live" && current !== me ? " is rolling" : "") + " · this turn:</span> <b>" + turnTotal + "</b>" +
       (rolls.length ? '<span class="pig-rolls">' + rolls.map((r) => '<i class="' + (r === 1 ? "one" : "") + '">' + r + "</i>").join("") + "</span>" : "");
     lastEl.textContent = lastNote;
     const bank = score[current] + turnTotal >= GOAL ? "Hold and win!" : "Hold · bank " + turnTotal;
@@ -98,6 +106,10 @@
   // The player at the screen presses Roll.
   function doRoll() {
     if (!canAct || over || busy) return;
+    if (mode === "live") {            // the server rolls: ask, and the roll arrives with the next state
+      canAct = false; render();
+      return live.commit({ board: PigRules.rollRequest(liveBoard), status: "in_progress", winner: null, last: 0 });
+    }
     const r = rollDie();
     tumble(r, () => {
       rolls.push(r);
@@ -107,6 +119,11 @@
   }
   function doHold() {
     if (!canAct || over || busy || turnTotal === 0) return;
+    if (mode === "live") {
+      const h = PigRules.holdBoard(liveBoard, me);
+      canAct = false; render();
+      return live.commit({ board: h.board, status: h.won ? "won" : "in_progress", winner: h.won ? me : null, last: h.banked });
+    }
     endTurn(turnTotal);
   }
 
@@ -182,7 +199,7 @@
   }
 
   function newLocal() {
-    clearTimeout(timer); timer = null; busy = false;
+    clearTimeout(timer); timer = null; busy = false; bustShown = false;
     score = { [P1]: 0, [P2]: 0 };
     current = P1; over = false; winner = null; lastNote = ""; lastFace = 0;
     startTurn();
@@ -240,12 +257,48 @@
     });
   }
 
+  // ---------- online ----------
+  // Every roll and every hold is one move. A roll is only a REQUEST: the server rolls the die and writes it into
+  // the board (pig/rules.js), so neither player can choose a roll. The state that comes back is shown with a tumble.
+  const live = typeof LiveShare === "undefined" || typeof PigRules === "undefined" ? null : LiveShare.start({
+    game: "pig", version: 1, players: [P1, P2],
+    label: (p) => (p === me ? "You" : "Opponent"),
+    ui: document.getElementById("wa-ui"), statusEl: statusEl,
+    validateBoard: (s) => { const B = PigRules.parse(s.board); return !!B && B.f !== "r" && Number.isInteger(s.last) && s.last >= 0 && s.last <= 999; },
+    onState: loadLive,
+  });
+  const activeLink = () => (mode === "live" && live ? live : link);
+
+  function loadLive(s, canMove, info) {
+    clearTimeout(timer); timer = null; busy = false;
+    if (info && info.me) me = info.me;
+    const B = PigRules.parse(s ? s.board : PigRules.initial());
+    const same = s && s.id === liveId, before = liveCount;
+    liveId = s ? s.id : null; liveCount = s ? s.moveCount : 0; liveBoard = s ? s.board : null;
+    score = { [P1]: B.s[0], [P2]: B.s[1] };
+    current = s ? s.turn : P1;
+    over = !!s && s.status !== "in_progress";
+    winner = over && s.status === "won" ? s.winner : null;
+    turnTotal = 0; rolls = []; bustShown = false;
+    const mover = B.f === "b" || B.f === "h" ? other(current) : current;           // who made the roll just shown
+    if (B.f === "c") { turnTotal = B.t; rolls = B.rolls.slice(); }
+    else if (B.f === "b") { bustShown = true; lastNote = describeTurn(mover, B.rolls, 0); }
+    else if (B.f === "h") lastNote = describeTurn(mover, B.rolls, s.last);
+    const face = B.rolls.length ? B.rolls[B.rolls.length - 1] : 0;
+    canAct = !!canMove && !over;
+    if (!s) lastNote = "";
+    const rolled = !!s && same && s.moveCount === before + 1 && (B.f === "c" || B.f === "b");
+    if (rolled) tumble(face, () => render());           // the die tumbles, then shows what the server rolled
+    else { lastFace = face; render(); }
+  }
+
   // ---------- modes and controls ----------
   function applyMode() {
     chipsEl.hidden = mode !== "ai";
     resetBtn.hidden = isLinked();
-    if (mode === "whatsapp") link.show();
-    else { link.hide(); newLocal(); }
+    if (mode === "whatsapp") { if (live) live.hide(); link.show(); }
+    else if (mode === "live" && live) { link.hide(); live.show(); }
+    else { link.hide(); if (live) live.hide(); newLocal(); }
   }
   const chips = Gamekit.wireDifficultyChips({
     el: chipsEl, difficulties: ["easy", "medium", "hard"], initial: diff, storage: store, storageKey: "diff",
@@ -253,10 +306,13 @@
   });
   diff = chips.get();
 
-  modeSel.addEventListener("change", () => { mode = modeSel.value; store.set("mode", mode); applyMode(); });
-  resetBtn.addEventListener("click", () => (isLinked() ? link.newGame() : newLocal()));
+  modeSel.addEventListener("change", () => { mode = modeSel.value; if (mode !== "live") store.set("mode", mode); applyMode(); });
+  resetBtn.addEventListener("click", () => (isLinked() ? activeLink().newGame() : newLocal()));
   rollBtn.addEventListener("click", doRoll);
   holdBtn.addEventListener("click", doHold);
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  if (live && invited) liveOpt.hidden = false;
+  else if (live) LiveShare.enable(modeSel, "pig");
   applyMode();
 
   // A refresh keeps a game against the computer or on one device.
@@ -278,7 +334,14 @@
     else { canAct = true; showTurn(); render(); }
     return true;
   });
-  if (!new URLSearchParams(location.search).has("s")) resumer.restore();
+  if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("pig"));
+
+  // for the checks: feed the page an online state, and capture what it would send
+  window.__pigTest = {
+    sent: [],
+    show: (s, canMove, info) => { mode = "live"; modeSel.value = "live"; loadLive(s, canMove, info); },
+    spy: () => { if (!live) return false; live.commit = (m) => window.__pigTest.sent.push(m); return true; },
+  };
 
 })();

@@ -42,7 +42,7 @@
 <link rel="apple-touch-startup-image" href="splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="shared.css?v=5db52064">
-<link rel="stylesheet" href="fun.css?v=a83d4623">
+<link rel="stylesheet" href="fun.css?v=43227aac">
 <style>
   /* ---- the hub, redesigned: a dark page, a top bar (menu, your name, invite) and big rounded game tiles ---- */
   html body.g-hub {
@@ -129,6 +129,9 @@
   .footer a { color: var(--muted); text-decoration: underline; }
   .footer a:hover { color: #fff; }
   .footer .links { display: flex; gap: 14px; align-items: center; }
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; animation-timing-function: ease-out; }
+  @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 </style>
 </head>
 <body class="g-hub">

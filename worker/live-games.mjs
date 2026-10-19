@@ -24,6 +24,7 @@ import * as blokusDuo from "./rules/blokus-duo.mjs";
 import * as onitama from "./rules/onitama.mjs";
 import * as quoridor from "./rules/quoridor.mjs";
 import * as backgammon from "./rules/backgammon.mjs";
+import * as pig from "./rules/pig.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
@@ -43,6 +44,8 @@ export const LIVE_GAMES = {
   "quoridor":       { version: 1, players: [1, 2], first: 1, rules: quoridor },
   // the server rolls the dice (rules.stamp), so a roll cannot be chosen by a player
   "backgammon":     { version: 1, players: [1, 2], first: 1, rules: backgammon },
+  // the server rolls the die (rules.stamp): a player only asks for a roll, or holds
+  "pig":            { version: 1, players: [1, 2], first: 1, rules: pig },
   "ultimate-tic-tac-toe": { version: 1, players: [1, 2], first: 1, rules: ultimate },
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.

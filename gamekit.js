@@ -377,7 +377,13 @@
     }
     // fun pages: the result and its taunt get their own card instead of the strip (Crazy 8 has its own)
     if (document.body.classList.contains("fun") && !document.getElementById("c8-over")) {
-      if (ended) { showOver(ended, tone); text = ""; head = ""; } else hideOver();
+      if (ended) {
+        // a page that animates its win first (a line drawn, a disc landing) says data-over-delay="ms": the card waits for it
+        const wait = +document.body.dataset.overDelay || 0;
+        if (!wait || overReady === ended) showOver(ended, tone);
+        else if (overPending !== ended) { overPending = ended; setTimeout(() => { overReady = ended; queueScan(); }, wait); }
+        text = ""; head = "";
+      } else hideOver();
     }
     // "Yellow — taunt" / "Player 2: taunt": the name says who the line is FOR, but
     // reads as if they said it. Lift it out into a "For Yellow" label.
@@ -417,10 +423,10 @@
     }
   }
   /* ---------- Game over card (fun pages) ---------- */
-  let overEl = null, overKey = "";
+  let overEl = null, overKey = "", overPending = null, overReady = null;
   const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zM6 7v1a2 2 0 0 0 1.5 1.9A5 5 0 0 1 7 8.3V7zm12 0h-1v1.3a5 5 0 0 1-.5 1.6A2 2 0 0 0 18 8z"/></svg>';
   const ICON_HOME = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
-  function hideOver() { overKey = ""; if (overEl) { overEl.remove(); overEl = null; } }
+  function hideOver() { overKey = ""; overPending = overReady = null; if (overEl) { overEl.remove(); overEl = null; } }
   function showOver(full, tone) {
     if (overKey === full) return;                 // already shown (or dismissed) for this result
     overKey = full;
@@ -727,14 +733,103 @@
       ob.innerHTML = '<svg class="gk-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span>';
       ob.addEventListener("click", () => body.classList.toggle("gk-play"));
       (menu || ctl).before(ob);
-      if (menu) body.classList.add("gk-play");     // closed to start with: the board is the first thing you see
+      if (menu) {
+        body.classList.add("gk-play");     // closed to start with: the board is the first thing you see
+        // choosing something from a dropdown in the popover (mode, level, play as...) is the end of that visit: fold it away
+        menu.addEventListener("change", (e) => { if (e.target.tagName === "SELECT") body.classList.add("gk-play"); });
+      }
       panel.addEventListener("click", (e) => {
         if (!e.target.closest(".gk-ctl, .gk-opts, .gk-acts, .gk-optbtn, .row, .wa-ui, [id$='-room'], select, input, a")) body.classList.add("gk-play");
       });
     }
   }
 
+  // Anything that newly appears in a board square (a stone, a mark, a number, a piece) pops in. The board is watched,
+  // so a game only has to call Gamekit.popFilled(boardElement) once: after every change the squares are compared with
+  // the last look, and a square that was in the board's usual "empty" state and now is not gets a short pop. Highlights
+  // (last move, selection, hints) do not count. Quiet on a restore or a rebuild: only a handful of squares may pop.
+  const TRANSIENT = /\b(last|lastw|sel|selected|hint|dest|cap|selectable|focus|focused|peer|hl|highlight|hover|drag|bad|error|win|ghost|fade-in|merged|invalid|cand|active)\b/g;
+  function popFilled(container, opts) {
+    if (!container || typeof MutationObserver === "undefined" || !container.animate) return;
+    let prev = null;
+    const sigOf = (c) => String(c.className && c.className.baseVal !== undefined ? c.className.baseVal : c.className).replace(TRANSIENT, "").replace(/\s+/g, " ").trim() + "|" + (c.textContent || "").trim();
+    let queued = false;
+    const check = () => {
+      queued = false;
+      const kids = Array.from(container.children).filter((c) => c.tagName !== "svg" && !/^(ttt-line|zp-|bs-hull)/.test(String(c.className.baseVal !== undefined ? c.className.baseVal : c.className)));
+      const sigs = kids.map(sigOf);
+      const before = prev;
+      prev = sigs;
+      if (!before || before.length !== sigs.length) return;
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const split = (x) => { const i = x.indexOf("|"); return { cls: new Set(x.slice(0, i).split(" ").filter(Boolean)), text: x.slice(i + 1) }; };
+      const fresh = [];
+      for (let i = 0; i < sigs.length; i++) {
+        if (sigs[i] === before[i]) continue;
+        const now = split(sigs[i]), was = split(before[i]);
+        // newly filled: it gained text, changed its text, or gained a class it did not have (a stone, a mark, a colour)
+        if ((now.text && now.text !== was.text) || [...now.cls].some((t) => !was.cls.has(t))) fresh.push(i);
+      }
+      if (!fresh.length || fresh.length > 6) return;
+      fresh.forEach((i) => {
+        const target = (opts && opts.inner && kids[i].querySelector(opts.inner)) || kids[i];
+        target.animate([{ transform: "scale(.5)", opacity: 0.2 }, { transform: "scale(1.16)", opacity: 1, offset: 0.55 }, { transform: "scale(1)", opacity: 1 }], { duration: 260, easing: "cubic-bezier(.2,.9,.3,1.2)" });
+      });
+    };
+    new MutationObserver(() => { if (!queued) { queued = true; Promise.resolve().then(check); } }).observe(container, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+    check();
+  }
+
+  // A piece that has moved glides from its old square to its new one. Pieces of one kind (their class) are compared
+  // before and after each change of the board: when exactly one square of that kind was left and one was reached,
+  // the piece that arrived travels from the one that was left. Anything bigger (a resize, a new game) is ignored.
+  function glidePieces(container, sel) {
+    if (!container || typeof MutationObserver === "undefined" || !container.animate) return;
+    let prev = null, queued = false;
+    const snap = () => {
+      const m = new Map();
+      container.querySelectorAll(sel).forEach((el) => {
+        const r = el.getBoundingClientRect(), key = String(el.className.baseVal !== undefined ? el.className.baseVal : el.className).replace(/\s+/g, " ").trim();
+        if (!r.width) return;
+        if (!m.has(key)) m.set(key, []);
+        m.get(key).push({ el: el, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      });
+      return m;
+    };
+    const near = (a, b) => Math.abs(a.x - b.x) < 3 && Math.abs(a.y - b.y) < 3;
+    const check = () => {
+      queued = false;
+      const now = snap(), before = prev;
+      prev = now;
+      if (!before || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+      now.forEach((list, key) => {
+        const old = before.get(key) || [];
+        if (old.length !== list.length) return;
+        const gone = old.filter((o) => !list.some((n) => near(o, n))), came = list.filter((n) => !old.some((o) => near(o, n)));
+        if (gone.length !== 1 || came.length !== 1) return;
+        const dx = gone[0].x - came[0].x, dy = gone[0].y - came[0].y;
+        if (Math.hypot(dx, dy) < 4) return;
+        came[0].el.animate([{ transform: "translate(" + dx + "px," + dy + "px) scale(1.1)", zIndex: 5 }, { transform: "translate(0,0) scale(1)", zIndex: 5 }], { duration: 300, easing: "cubic-bezier(.3,.7,.2,1)" });
+      });
+    };
+    new MutationObserver(() => { if (!queued) { queued = true; Promise.resolve().then(check); } }).observe(container, { childList: true, subtree: true });
+    window.addEventListener("resize", () => { prev = null; setTimeout(() => { prev = snap(); }, 50); });
+    check();
+  }
+
+  // Every Undo button gets the same clean line icon (the one Mini Sudoku has) instead of a text arrow.
+  const UNDO_ICON = '<svg class="gk-undo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>';
+  function undoIcons() {
+    $$("#undo-btn, #undo").forEach((b) => {
+      if (b.querySelector("svg")) return;
+      const g = b.querySelector(".glyph");
+      if (g) g.remove();
+      b.insertAdjacentHTML("afterbegin", UNDO_ICON);
+    });
+  }
+
   function init() {
+    undoIcons();
     layout();
     $$("select").forEach(enhanceSelect);
     watchPanel();
@@ -742,6 +837,8 @@
   init();
 
   global.Gamekit = {
+    popFilled,
+    glidePieces,
     mulberry32,
     dailySeed,
     randomSeed,

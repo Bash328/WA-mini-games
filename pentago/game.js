@@ -273,3 +273,5 @@
 
   window.__pentagoTest = { newBoard, rotateQuadrant, winners, outcomeFor, QUADS };
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

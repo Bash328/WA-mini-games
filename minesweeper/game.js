@@ -4,6 +4,7 @@ let timerStart = 0, timerId = null, elapsed = 0;
 let mode = 'whatsapp';        // 'whatsapp' | 'solo'
 let owner;                    // WhatsApp mode: 0 hidden, 1/2 revealed by that player
 let current = 1, lastCell = null, linkCanMove = false, linkBoard = null;
+let shown = null, animOrigin = null;   // what the last render showed; where the move that is about to be drawn began
 
 function idx(r,c){ return r*W+c; }
 function inb(r,c){ return r>=0&&c>=0&&r<H&&c<W; }
@@ -30,6 +31,7 @@ function reset() {
   flags = new Uint8Array(H*W);
   owner = new Uint8Array(H*W);
   over = false; won = false; firstClick = true;
+  shown = new Uint8Array(H*W); animOrigin = null;
   stopTimer();
   elapsed = 0;
   document.getElementById('time').textContent = '0s';
@@ -99,6 +101,59 @@ function cellSize(el) {
   return Math.max(8, Math.min(40, Math.floor((avail - chrome) / W)));
 }
 
+// ---------- Motion ----------
+// Opened tiles pop in as a ripple that spreads out from the tile you pressed; a mine blows up with a
+// flash, sparks, smoke and a shake of the board, and the other mines go off one after another.
+const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function explode(cellEl) {
+  const b = cellEl.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+  const fx = document.createElement('div');
+  fx.style.cssText = 'position:fixed;z-index:96;pointer-events:none;left:' + x + 'px;top:' + y + 'px';
+  document.body.appendChild(fx);
+  const make = (css) => { const e = document.createElement('span'); e.style.cssText = 'position:absolute;border-radius:50%;' + css; fx.appendChild(e); return e; };
+  const size = Math.max(b.width, 22);
+  make('width:' + size * 2.6 + 'px;height:' + size * 2.6 + 'px;margin:' + -size * 1.3 + 'px 0 0 ' + -size * 1.3 + 'px;background:radial-gradient(circle,#fff 0,#ffe27a 30%,#ff7a2f 62%,rgba(255,60,40,0) 72%)')
+    .animate([{ transform: 'scale(.15)', opacity: 1 }, { transform: 'scale(1)', opacity: .95, offset: 0.35 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 520, easing: 'ease-out', fill: 'forwards' });
+  const cols = ['#ffd23f', '#ff7a2f', '#ff4d46', '#fff'];
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2 + Math.random() * 0.4, d = size * (1.6 + Math.random() * 1.6);
+    make('width:7px;height:7px;margin:-3px 0 0 -3px;background:' + cols[i % cols.length])
+      .animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: 'translate(' + Math.cos(a) * d + 'px,' + Math.sin(a) * d + 'px) scale(.3)', opacity: 0 }], { duration: 620, easing: 'ease-out', fill: 'forwards' });
+  }
+  for (let i = 0; i < 5; i++) {
+    const e = make('width:' + size * 0.9 + 'px;height:' + size * 0.9 + 'px;margin:' + -size * 0.45 + 'px 0 0 ' + -size * 0.45 + 'px;background:rgba(60,60,70,.55);left:' + (i - 2) * size * 0.35 + 'px');
+    e.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1)', opacity: .7, offset: 0.25 }, { transform: 'translateY(' + -size * 1.4 + 'px) scale(1.9)', opacity: 0 }], { duration: 900, delay: 120 + i * 60, easing: 'ease-out', fill: 'forwards' });
+  }
+  document.getElementById('board').animate([
+    { transform: 'translate(0,0)' }, { transform: 'translate(-7px,3px)', offset: 0.12 }, { transform: 'translate(6px,-4px)', offset: 0.28 },
+    { transform: 'translate(-5px,2px)', offset: 0.46 }, { transform: 'translate(3px,-2px)', offset: 0.66 }, { transform: 'translate(0,0)' },
+  ], { duration: 460, easing: 'ease-out' });
+  setTimeout(() => fx.remove(), 1200);
+}
+
+function animateRender(el, prev, origin) {
+  if (reduced() || !prev || origin === null || origin === undefined) return;
+  const orR = Math.floor(origin / W), orC = origin % W, cs = el.children;
+  const dist = (i) => Math.max(Math.abs(Math.floor(i / W) - orR), Math.abs(i % W - orC));
+  const hitMine = over && !won && mines[origin];
+  for (let i = 0; i < H * W; i++) {
+    const d = cs[i], opened = revealed[i] && !prev[i];
+    if (opened && cells[i] !== -1) {
+      d.animate([{ transform: 'scale(.35)', opacity: 0 }, { transform: 'scale(1.14)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }],
+        { duration: 280, delay: Math.min(dist(i) * 34, 480), easing: 'ease-out', fill: 'backwards' });
+    } else if (over && !won && mines[i] && !prev[i] && i !== origin) {      // the other mines, one after another
+      d.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.25)', opacity: 1, offset: 0.55 }, { transform: 'scale(1)' }],
+        { duration: 300, delay: 380 + Math.min(dist(i) * 55, 800), easing: 'ease-out', fill: 'backwards' });
+    }
+  }
+  if (hitMine && !prev[origin]) {
+    const d = cs[origin];
+    d.animate([{ transform: 'scale(.5)' }, { transform: 'scale(1.5)', offset: 0.3 }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' });
+    explode(d);
+  }
+}
+
 function render() {
   const el = document.getElementById('board');
   const sz = cellSize(el);
@@ -123,6 +178,11 @@ function render() {
     d.dataset.r = r; d.dataset.c = c;
     el.appendChild(d);
   }
+  const prev = shown;
+  shown = new Uint8Array(H*W);
+  for (let i = 0; i < H*W; i++) shown[i] = (revealed[i] || (over && mines[i])) ? 1 : 0;
+  const origin = animOrigin; animOrigin = null;
+  animateRender(el, prev, origin);
 }
 
 function click(r,c) {
@@ -132,6 +192,7 @@ function click(r,c) {
   if (flags[i]) return;
   if (firstClick) { placeMines(r,c); firstClick = false; startTimer(); }
   reveal(r,c);
+  animOrigin = i;
   checkWin();
   if (over) stopTimer();
   render(); updateHud();
@@ -202,6 +263,7 @@ function loadLink(state, canMove) {
     for (let i=0;i<H*W;i++) { owner[i] = +b.own[i]; revealed[i] = owner[i] ? 1 : 0; }
     over = state.status !== 'in_progress';
   }
+  animOrigin = (state && Number.isInteger(state.last)) ? state.last : null;
   render(); updateHud();
 }
 

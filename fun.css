@@ -326,3 +326,27 @@ body.fun[class*="g-"] .fun-pills:has(div:nth-child(3)) div { padding: 0 2px; }
 @keyframes gk-conf { 0% { transform: translate(0, 0) scale(.3); opacity: 1; } 100% { transform: translate(var(--x), calc(var(--y) + 90px)) rotate(240deg) scale(1); opacity: 0; } }
 @keyframes gk-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .gk-over.win h2 { animation: none; } }
+
+/* the shared Undo icon (gamekit.js adds it to every Undo button): same size and colour as the label */
+.gk-undo-ico { width: 20px; height: 20px; flex: none; vertical-align: -4px; margin-right: 6px; }
+body.fun[class*="g-"] .panel .tool-btn .gk-undo-ico { color: inherit; }
+
+/* ── Motion polish: everything eases, nothing snaps ── */
+body.fun[class*="g-"] .panel button, body.fun[class*="g-"] .panel .btn { transition: transform .09s ease-out, box-shadow .09s ease-out, background-color .18s ease, filter .18s ease, opacity .18s ease; }
+html body.fun[data-fun-zone] .gk-menu { animation: gk-menu-in .17s cubic-bezier(.2,.9,.3,1); transform-origin: 50% 0; }
+@keyframes gk-menu-in { from { opacity: 0; transform: translateY(-8px) scale(.97); } to { opacity: 1; transform: none; } }
+.gk-over { animation: gk-fade .22s ease-out; }
+.gk-over .card { animation: gk-card-in .38s cubic-bezier(.2, 1.25, .4, 1) both; }
+.gk-over .acts, .gk-over .view { animation: gk-fade .3s ease-out .18s both; }
+@keyframes gk-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gk-card-in { from { opacity: 0; transform: translateY(26px) scale(.94); } to { opacity: 1; transform: none; } }
+body.fun[class*="g-"] .panel { animation: gk-fade .28s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  html body.fun[data-fun-zone] .gk-menu, .gk-over, .gk-over .card, .gk-over .acts, .gk-over .view, body.fun[class*="g-"] .panel { animation: none; }
+  body.fun[class*="g-"] .panel button, body.fun[class*="g-"] .panel .btn { transition: none; }
+}
+
+/* moving between the hub and a game cross-fades instead of flashing (browsers without it just navigate as before) */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; animation-timing-function: ease-out; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }

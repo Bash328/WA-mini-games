@@ -271,6 +271,9 @@ check('battleship-battle-fits-and-fires', 'battleship: a battle (your shot) did 
   if (!r.strip) bad.push('the fleet strip is not between the two grids');
   if (r.ships !== 10) bad.push('the fleet strip should show 5 ships for each side (saw ' + r.ships + ')');
   if (!r.cannon) bad.push('no cannon to fire with');
+  const cn = await p.evaluate(() => { const c = document.getElementById('bs-fire').getBoundingClientRect(), g = document.getElementById('bs-sub').getBoundingClientRect(); return { shown: c.width > 0, over: c.left >= g.left - 1 && c.right <= g.right + 1 && c.top >= g.top && c.bottom <= g.bottom + 1 }; });
+  if (!cn.shown) bad.push('the cannon is not showing during the battle');
+  if (!cn.over) bad.push('the cannon should sit on top of your own (faded) grid, as in the reference');
   await p.locator('#bs-main .bs-cell').nth(44).click();
   if (!(await p.evaluate(() => !document.getElementById('bs-fire').disabled))) bad.push('the cannon stays disabled after aiming');
   await p.locator('#bs-fire').click(); await p.waitForTimeout(1500);
@@ -305,8 +308,12 @@ check('connect-four-drop-animates', 'connect four: a disc used to just appear in
   const p = await open('connect-four', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
   await p.waitForTimeout(400);
   const bad = [];
+  const hole = () => p.evaluate(() => { const r = document.querySelector('.c4-slot[data-r="5"][data-c="3"]').getBoundingClientRect(); return Math.round(r.top) + ',' + Math.round(r.left) + ',' + Math.round(r.width); });
+  const before = await hole();
   const btn = p.locator('.c4-col-btn').nth(3);
   await btn.click();
+  await p.waitForTimeout(120);
+  if ((await hole()) !== before) bad.push('the square the disc is falling into moved or vanished while the disc was still on its way (it must stay an empty hole until the disc lands)');
   const mid = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(), ys = []; const f = () => { const el = [...document.querySelectorAll('.c4-slot.p1, .c4-slot.p2')][0]; if (el) ys.push(el.getBoundingClientRect().top); if (performance.now() - t0 < 700) requestAnimationFrame(f); else res({ ys: ys, end: ys[ys.length - 1] }); }; f(); }));
   const travelled = Math.max(...mid.ys) - Math.min(...mid.ys);
   if (travelled < 60) bad.push('the disc did not fall (it moved only ' + Math.round(travelled) + 'px)');
@@ -399,6 +406,214 @@ check('word-ladder-submit-button', 'word ladder: guesses were sent with a small 
   return bad;
 }, ['word-ladder']);
 
+check('checkers-slide-smooth-over-a-game', 'checkers: slides (and multi-jump hops) must run through a whole game against the computer without errors, ending on the right squares', async () => {
+  const p = await open('checkers', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  let slid = 0;
+  for (let t = 0; t < 14; t++) {
+    const sel = p.locator('.ck-cell.selectable');
+    if (!(await sel.count())) { await p.waitForTimeout(600); continue; }
+    await sel.nth(t % (await sel.count())).click(); await p.waitForTimeout(80);
+    const tgt = p.locator('.ck-cell.hint, .ck-cell.cap');
+    if (!(await tgt.count())) continue;
+    await tgt.first().click();
+    slid += await p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /translate/.test(k.transform || ''))).length > 0 ? 1 : 0);
+    await p.waitForTimeout(1700);
+  }
+  if (slid < 3) bad.push('only ' + slid + ' of the moves slid');
+  const stuck = await p.evaluate(() => [...document.querySelectorAll('.ck-cell')].filter((c) => c.style.zIndex === '3').length + document.querySelectorAll('.ck-piece').length);
+  if (stuck < 2) bad.push('the board looks empty after the game');
+  if (await p.evaluate(() => [...document.querySelectorAll('.ck-cell')].some((c) => c.style.zIndex === '3'))) bad.push('a square was left raised after its slide');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['checkers']);
+
+check('options-closes-after-pick', 'Options: after opening it and choosing something from a dropdown (mode, level...) the menu stayed open over the board; it now folds away after the pick', async (g) => {
+  const p = await open(g);
+  const bad = [];
+  const sel = p.locator('.gk-menu select').first();
+  if (!(await sel.count())) { await p.close(); return []; }
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(200);
+  if (await p.evaluate(() => document.body.classList.contains('gk-play'))) bad.push('Options did not open');
+  const vals = await sel.evaluate((s) => [...s.options].filter((o) => o.value !== s.value && !o.disabled && !o.hidden).map((o) => o.value));
+  if (!vals.length) { await p.close(); return []; }
+  await sel.evaluate((s, v) => { s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }, vals[0]);
+  await p.waitForTimeout(250);
+  if (!(await p.evaluate(() => document.body.classList.contains('gk-play')))) bad.push('Options stayed open after choosing from a dropdown');
+  await p.close();
+  return bad;
+}, ['chess', 'checkers', 'connect-four', 'reversi', 'mancala', 'tango']);
+
+check('minesweeper-animates', 'minesweeper: opened tiles just appeared and a mine just turned red; opened tiles now ripple out from the tile you pressed, and a mine explodes (flash, sparks, smoke, board shake) before the other mines go off', async () => {
+  const p = await open('minesweeper', 390, "var m=document.querySelector('#mode');m.value='solo';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#board .c').nth(40).click();
+  const pops = await p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale/.test(k.transform || ''))).length);
+  if (pops < 1) bad.push('no pop animation on the opened tiles');
+  await p.waitForTimeout(900);
+  // press a mine
+  await p.evaluate(() => { for (let i = 0; i < H * W; i++) if (mines[i] && !revealed[i]) { click(Math.floor(i / W), i % W); return; } });
+  await p.waitForTimeout(150);
+  const boom = await p.evaluate(() => ({ fx: [...document.querySelectorAll('body > div')].filter((d) => d.style.zIndex === '96').length, shake: document.getElementById('board').getAnimations().length, over: over }));
+  if (!boom.over) bad.push('the test could not hit a mine');
+  if (boom.fx < 1) bad.push('no explosion effect when a mine is hit');
+  if (boom.shake < 1) bad.push('the board does not shake when a mine is hit');
+  await p.waitForTimeout(1600);
+  const left = await p.evaluate(() => [...document.querySelectorAll('body > div')].filter((d) => d.style.zIndex === '96').length);
+  if (left) bad.push('the explosion effect was left on the page');
+  const mineCells = await p.evaluate(() => document.querySelectorAll('#board .c.mine').length);
+  if (mineCells < 5) bad.push('the other mines were not shown after the blast (' + mineCells + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['minesweeper']);
+
+check('quoridor-wall-mode-clean', 'quoridor: pressing Wall drew rows of arcs over the whole board (the shadows of the invisible wall-spot buttons)', async () => {
+  const p = await open('quoridor', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.locator('#mode-wall').click(); await p.waitForTimeout(250);
+  const r = await p.evaluate(() => { const h = [...document.querySelectorAll('#board .qd-hit')]; return { n: h.length, shadow: h.filter((b) => getComputedStyle(b).boxShadow !== 'none').length, filled: h.filter((b) => getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)').length }; });
+  if (r.n < 60) bad.push('no wall spots in Wall mode (' + r.n + ')');
+  if (r.shadow) bad.push(r.shadow + ' wall spots draw a shadow (the arcs)');
+  if (r.filled) bad.push(r.filled + ' wall spots have a fill');
+  await p.close();
+  return bad;
+}, ['quoridor']);
+
+check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the top with a big empty area below; it now sits in the middle of the space under Options, and two tiles that meet blend into the doubled tile instead of swapping', async () => {
+  const p = await open('2048', 390); await p.waitForTimeout(400);
+  const bad = [];
+  const r = await p.evaluate(() => { const b = document.getElementById('board').getBoundingClientRect(), o = document.querySelector('.gk-optbtn').getBoundingClientRect(); const free = innerHeight - o.bottom; return { above: b.top - o.bottom, below: innerHeight - b.bottom, free, over: document.documentElement.scrollHeight - innerHeight }; });
+  if (Math.abs(r.above - r.below) > 40) bad.push('the board is not centred in the free space (gap above ' + Math.round(r.above) + ', below ' + Math.round(r.below) + ')');
+  if (r.over > 0) bad.push('the page scrolls (' + r.over + 'px)');
+  // force a merge: two 2s side by side, slide left, and watch for the blend animation
+  await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); });
+  await p.keyboard.press('ArrowLeft');
+  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let fades = 0, grow = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fades++; if (k.some((x) => /scale\(1\.18\)/.test(x.transform || ''))) grow++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ fades, grow }); }; f(); }));
+  if (!seen.fades) bad.push('the two tiles that merge do not fade into the new one');
+  if (!seen.grow) bad.push('the doubled tile does not swell as it appears');
+  await p.waitForTimeout(400);
+  const v = await p.evaluate(() => [...document.querySelectorAll('#board .tile')].map((t) => t.textContent).filter(Boolean).join(','));
+  if (!v.includes('4')) bad.push('the merge did not produce a 4 (' + v + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['2048']);
+
+check('pig-online-view-and-requests', 'pig online: you ask the server for a roll (you never send one), the screen shows what it rolled, a lost turn and a hold, and only the player to move can act', async () => {
+  const p = await open('pig', 390); await p.waitForTimeout(500);
+  const bad = [];
+  const env = (board, o = {}) => JSON.stringify(Object.assign({ game: 'pig', version: 1, id: 'abc', turn: 1, board: board, status: 'in_progress', winner: null, moveCount: 3, last: 0 }, o));
+  const show = (e, canMove, me) => p.evaluate(([e, canMove, me]) => window.__pigTest.show(JSON.parse(e), canMove, { me: me }), [e, canMove, me]);
+  if (!(await p.evaluate(() => window.__pigTest.spy()))) { bad.push('online mode is not available on the page'); await p.close(); return bad; }
+  await show(env('10.5.9.45.c'), true, 1); await p.waitForTimeout(200);
+  const a = await p.evaluate(() => ({ roll: !document.getElementById('roll-btn').disabled, hold: document.getElementById('hold-btn').textContent, turn: document.getElementById('pig-turn').textContent }));
+  if (!a.roll) bad.push('Roll is disabled on your turn');
+  if (!/bank 9/.test(a.hold)) bad.push('Hold should say what it banks (' + a.hold + ')');
+  if (!/9/.test(a.turn)) bad.push('the turn total is not shown (' + a.turn + ')');
+  await p.locator('#roll-btn').click();
+  await p.locator('#hold-btn').click({ force: true }).catch(() => {});
+  let sent = await p.evaluate(() => window.__pigTest.sent);
+  if (!sent.length || sent[0].board !== '10.5.9.45.r' || sent[0].last !== 0) bad.push('Roll should send a request ("10.5.9.45.r"), saw ' + JSON.stringify(sent[0]));
+  await show(env('10.5.9.45.c'), true, 1); await p.waitForTimeout(200);
+  await p.evaluate(() => { window.__pigTest.sent.length = 0; });
+  await p.locator('#hold-btn').click();
+  sent = await p.evaluate(() => window.__pigTest.sent);
+  if (!sent.length || sent[0].board !== '19.5.0.45.h' || sent[0].last !== 9 || sent[0].status !== 'in_progress') bad.push('Hold should bank 9 into your score, saw ' + JSON.stringify(sent[0]));
+  // the opponent's turn: nothing for you to press
+  await show(env('19.5.0.45.h', { turn: 2, moveCount: 4, last: 9 }), false, 1); await p.waitForTimeout(200);
+  const b = await p.evaluate(() => ({ roll: document.getElementById('roll-btn').disabled, hold: document.getElementById('hold-btn').disabled, note: document.getElementById('pig-last').textContent }));
+  if (!b.roll || !b.hold) bad.push('you can press Roll or Hold while it is the opponent turn');
+  if (!/held for \+9/.test(b.note)) bad.push('the held turn is not described (' + b.note + ')');
+  // a lost turn
+  await show(env('19.5.0.31.b', { turn: 2, moveCount: 5, last: 0 }), false, 1); await p.waitForTimeout(700);
+  const c = await p.evaluate(() => ({ note: document.getElementById('pig-last').textContent, bust: document.getElementById('pig-die').classList.contains('bust') }));
+  if (!/a 1/.test(c.note) || !c.bust) bad.push('a 1 should be shown as a lost turn (' + JSON.stringify(c) + ')');
+  // a win
+  await show(env('104.5.0.45.h', { turn: 2, status: 'won', winner: 1, moveCount: 9, last: 9 }), false, 1); await p.waitForTimeout(300);
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['pig']);
+
+check('undo-icon-shared', 'undo buttons had a small text arrow in the accent colour; every Undo now uses the same clean line icon as Mini Sudoku', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => [...document.querySelectorAll('#undo-btn, #undo')].map((b) => ({ svg: !!b.querySelector('svg'), glyph: !!b.querySelector('.glyph'), path: (b.querySelector('svg path') || { getAttribute: () => '' }).getAttribute('d') })));
+  await p.close();
+  const bad = [];
+  if (!r.length) return bad;
+  for (const b of r) { if (!b.svg) bad.push('an Undo button has no icon'); if (b.glyph) bad.push('an Undo button still has the text arrow'); if (b.svg && b.path !== 'M3 7v6h6') bad.push('the Undo icon is not the shared one'); }
+  return bad;
+}, FUN);
+
+check('tic-tac-toe-win-line-then-card', 'tic-tac-toe: the result card jumped up at once; the winning line is now drawn across the three squares first, then the card appears', async () => {
+  const p = await open('tic-tac-toe', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(600);
+  const bad = [];
+  await p.evaluate(() => window.__tttTest.set(['X', 'X', null, 'O', 'O', null, null, null, null]));
+  await p.locator('#board .cell').nth(2).click();                      // X completes the top row
+  await p.waitForTimeout(250);
+  const early = await p.evaluate(() => ({ line: !!document.querySelector('#board .ttt-line'), card: !!document.querySelector('.gk-over'), drawing: [...document.querySelectorAll('#board .ttt-line line')].some((l) => l.getAnimations().length > 0) }));
+  if (!early.line) bad.push('no winning line is drawn');
+  if (!early.drawing) bad.push('the winning line is not animated');
+  if (early.card) bad.push('the result card showed before the line had time to draw');
+  await p.waitForTimeout(1400);
+  if (!(await p.locator('.gk-over').count())) bad.push('the result card never appeared after the line');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['tic-tac-toe']);
+
+check('options-opens-without-moving', 'opening Options moved the board or made the page scroll on some games, although the menu opens over the board', async (g) => {
+  const p = await open(g, 390);
+  const snap = () => p.evaluate(() => { const els = [...document.querySelectorAll('.panel > *')].filter((e) => e.getBoundingClientRect().height > 40 && getComputedStyle(e).position !== 'absolute' && !e.classList.contains('gk-optwrap') && !e.classList.contains('row') && getComputedStyle(e).display !== 'none'); const e = els.find((x) => x.getBoundingClientRect().top > 120) || els[0]; return { top: Math.round(e.getBoundingClientRect().top + scrollY), over: Math.max(0, document.documentElement.scrollHeight - innerHeight) }; });
+  const bad = [];
+  if (!(await p.locator('.gk-optbtn').count())) { await p.close(); return bad; }
+  const a = await snap();
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(350);
+  const o = await snap();
+  if (o.top !== a.top) bad.push('the board moved ' + (o.top - a.top) + 'px when Options opened');
+  if (o.over > a.over) bad.push('the page grew by ' + (o.over - a.over) + 'px of scrolling when Options opened');
+  await p.close();
+  return bad;
+}, FUN);
+
+check('new-squares-pop-in', 'stones, marks and numbers just appeared in their squares on gomoku, tic-tac-toe, hex and the sudokus; a newly filled square now pops in', async (g) => {
+  const mode = { gomoku: 'local', 'tic-tac-toe': 'ai', hex: 'local', 'ultimate-tic-tac-toe': 'local' }[g];
+  const p = await open(g, 390, mode ? "var m=document.querySelector('#mode');m.value='" + mode + "';m.dispatchEvent(new Event('change'))" : undefined);
+  await p.waitForTimeout(600);
+  const bad = [];
+  const popping = () => p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale\(1\.16\)/.test(k.transform || ''))).length);
+  if (g === 'sudoku' || g === 'mini-sudoku') {
+    const cell = p.locator('#board .sk-cell:not(.given)').first();
+    await cell.click(); await p.locator('#pad button').first().click();
+  } else if (g === 'ultimate-tic-tac-toe') await p.locator('#board button:not([disabled])').nth(4).click();
+  else if (g === 'tic-tac-toe') await p.locator('#board .cell').nth(4).click();
+  else await p.locator('#board button:not([disabled])').nth(12).click();
+  const n = await popping();
+  if (n < 1) bad.push('nothing popped when a square was filled');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['gomoku', 'tic-tac-toe', 'sudoku']);
+
+check('pawns-glide', 'quoridor: a pawn jumped to its new square; it now glides there', async () => {
+  const p = await open('quoridor', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(600);
+  const bad = [];
+  const opts = await p.locator('#board .qd-cell.dest').count();
+  if (!opts) { bad.push('no move squares to click'); await p.close(); return bad; }
+  await p.locator('#board .qd-cell.dest').first().click();
+  const n = await p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /translate\(/.test(k.transform || ''))).length);
+  if (n < 1) bad.push('no glide animation after moving a pawn');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['quoridor']);
+
 check('options-toggle', 'pressing Options while the menus are showing did not hide them', async (g) => {
   const p = await open(g);
   const vis = () => p.evaluate(() => !document.body.classList.contains('gk-play'));
@@ -411,7 +626,7 @@ check('options-toggle', 'pressing Options while the menus are showing did not hi
 
 check('game-over-card', 'a result and its taunt showed in a small strip that overlapped Options; the card replaces it', async (g) => {
   const p = await open(g, 390, SOLO[g]);
-  await p.evaluate(END[g]); await p.waitForTimeout(800);
+  await p.evaluate(END[g]); await p.waitForTimeout(800 + (await p.evaluate(() => +document.body.dataset.overDelay || 0)));
   const bad = [];
   if (!(await p.locator('.gk-over').count())) bad.push('no game over card after the result text');
   else {
@@ -528,8 +743,8 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
   const e = await state();
   if (e.hidden || !e.text) bad.push('nothing says the last line when the game ends');
-  const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), big = g.querySelector('.big'), b = document.getElementById('bubble'), gr = big.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0 && g.querySelectorAll('.hm-g').length >= 3, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
-  if (!ghost.shown) bad.push('no ghost (with more spirits rising from the man) appears when he runs out of chances');
+  const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), big = g.querySelector('.big'), b = document.getElementById('bubble'), gr = big.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0 && g.querySelectorAll('.hm-g').length === 1, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
+  if (!ghost.shown) bad.push('no single floating ghost appears when he runs out of chances');
   if (!ghost.bubbleGhost) bad.push('the last line is not spoken from the ghost');
   if (!ghost.nextToBubble) bad.push('the ghost is not beside its speech bubble');
   if (!ghost.besideMan) bad.push('the ghost is not next to the man');

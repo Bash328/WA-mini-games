@@ -200,3 +200,5 @@
   if (!resumer.restore()) start(Gamekit.dailySeed("cross-sums", diff));
   window.addEventListener("load", () => Manpage.autoOpen("cross-sums"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("grid"));   // new squares pop in

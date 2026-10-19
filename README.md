@@ -37,7 +37,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
-## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo)
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo, Onitama, Quoridor, Backgammon, Pig)
 
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 

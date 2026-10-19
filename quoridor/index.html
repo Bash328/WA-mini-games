@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a83d4623">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .qd-wrap { width: min(520px, 100%); margin: 8px auto 0; }
@@ -85,6 +85,9 @@
   html body.fun.g-quoridor .qd-wall.lastw { background: #5a63b8; box-shadow: 0 0 0 2px #ffbf2e; }
   html body.fun.g-quoridor .qd-wall.ghost { background: rgba(47,53,85,.6); box-shadow: 0 0 0 2px #ffbf2e; }
   html body.fun.g-quoridor .qd-hint { color: rgba(255,255,255,.7); }
+  /* the 64 invisible wall-spot buttons must stay invisible: fun.css gives every button a fill and a chunky bottom shadow, which showed as rows of arcs over the board in Wall mode */
+  html body.fun.g-quoridor #board .qd-hit { background: transparent; box-shadow: none; opacity: 1; transform: none; }
+  html body.fun.g-quoridor #board .qd-hit:hover { background: rgba(255,255,255,.18); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -174,13 +177,13 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=f5fe6255"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script defer src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../account.js?v=160336a8"></script>
 <script defer src="../live-share.js?v=78191825"></script>
 <script defer src="rules.js?v=168bdf80"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=cac4be5b"></script>
+<script defer src="game.js?v=1d262ead"></script>
 </body>
 </html>

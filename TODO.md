@@ -59,7 +59,7 @@ Every bug fixed in one game must be checked in **all** the others, so the same m
   - [ ] Wave 2: Checkers, Mancala, Pentago, Memory, Minesweeper
   - [ ] Chess (extract the move generator so browser and server share it)
   - [ ] Hidden-information games: Battleship, Hangman, Mastermind. The server must hold the secrets and reveal only results, as Rock Paper Scissors does now.
-  - Gomoku went online with its own rules module; Pig stays link/computer/local only (a server can't verify a dice roll).
+  - Gomoku went online with its own rules module. Pig is online too: the server rolls the die (`pig/rules.js` + `worker/rules/pig.mjs`, a `stamp` hook like Backgammon); it still runs on trust over WhatsApp.
 
 ## 7. Accounts-lite, friends and notifications — BUILT, needs your deploy step
 - [x] **Usernames** in one Durable Object (unique by construction), secret token kept in the browser, no recovery, 3–16 letters/digits/`_`, blocklist, 90-day expiry, rate limits.

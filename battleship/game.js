@@ -324,6 +324,7 @@
     fireActions.hidden = true;
     trayEl.hidden = true;
     fleetsEl.hidden = true;
+    fireBtn.hidden = true;
     subWrap.hidden = true;
     mainEl.classList.remove("clickable");
     if (v.kind === "cover") {
@@ -357,16 +358,12 @@
       fleetsEl.hidden = false;
       drawFleetRows(v);
       noteEl.textContent = v.note || "";
-      if (v.canFire || v.handoff) {
-        fireActions.hidden = false;
-        fireBtn.hidden = !!v.handoff;
-        endBtn.hidden = !v.handoff;
-        fireBtn.disabled = sel < 0 || firing;
-        capEl.textContent = sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
-        hintEl.textContent = "";
-      } else {
-        hintEl.textContent = "";
-      }
+      fireBtn.hidden = !!v.handoff;                      // always there; on a shared device the End turn button replaces it
+      fireBtn.disabled = !v.canFire || sel < 0 || firing;
+      capEl.textContent = v.handoff ? "" : !v.canFire ? "Waiting" : sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
+      fireActions.hidden = !v.handoff;
+      endBtn.hidden = !v.handoff;
+      hintEl.textContent = "";
       return;
     }
 

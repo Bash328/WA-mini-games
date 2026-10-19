@@ -314,3 +314,7 @@
   if (!params.has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("onitama"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in
+
+if (window.Gamekit && Gamekit.glidePieces) Gamekit.glidePieces(document.getElementById("board"), ".on-pc");   // pieces glide
