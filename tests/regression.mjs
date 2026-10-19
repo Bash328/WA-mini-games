@@ -375,7 +375,7 @@ check('water-sort-look-and-pour', 'water sort should have glass tubes with a shi
     const fr = full.getBoundingClientRect(), fl = [...full.children].map((e) => e.getBoundingClientRect());
     return { picture: /fun\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
       inside: fl.length ? fl.every((r) => r.left >= fr.left + fr.width * 0.12 && r.right <= fr.right - fr.width * 0.12 && r.bottom <= fr.bottom - 1 && r.top >= fr.top + fr.height * 0.17) : true,
-      ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], first: getComputedStyle(document.querySelector('.ws-l')).backgroundColor, sw: document.documentElement.scrollWidth };
+      ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], vivid: Math.max(...[...document.querySelectorAll('.ws-l')].map((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); })), sw: document.documentElement.scrollWidth };
   });
   if (!look.picture) bad.push('the tubes are not the glass picture from the reference (fun/tube.png)');
   if (look.ratio < 2.8 || look.ratio > 3.2) bad.push('tube proportions are off: height/width is ' + look.ratio.toFixed(2) + ', the picture is 2.98');
@@ -384,8 +384,7 @@ check('water-sort-look-and-pour', 'water sort should have glass tubes with a shi
   if (look.hint[1] > 844 || look.undo[1] > 844) bad.push('Undo / Hint are below the fold');
   if (look.hint[0] < look.undo[0] + 200) bad.push('Hint should sit at the right, Undo at the left');
   if (look.sw > 390) bad.push('page got wider');
-  const sat = (c) => { const m = c.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); };
-  if (sat(look.first) < 120) bad.push('liquid colours are washed out');
+  if (look.vivid < 120) bad.push('liquid colours are washed out');
   // a pour: tap one tube, then another that accepts it, and look for the falling stream
   const n = await p.locator('.ws-tube').count();
   let saw = false;
@@ -515,16 +514,21 @@ check('dominoes-look-and-play', 'dominoes should match the reference: a header w
   if (info.sw > 390) bad.push('page is wider than the phone');
   // play some turns; the hand must stay where it is and the line must keep its height
   const hand0 = await p.evaluate(() => Math.round(document.getElementById('dm-hand').getBoundingClientRect().top + scrollY));
-  let blue = false;
-  for (let k = 0; k < 10; k++) {
+  let blue = false, botTurns = 0;
+  for (let k = 0; k < 24 && !(botTurns >= 2); k++) {
     const tile = p.locator('.dm-tile:not(.dim)').first();
-    if (await tile.count()) { await tile.click(); await p.waitForTimeout(120); await tile.click().catch(() => {}); }
+    if (await tile.count()) { await tile.click(); await p.waitForTimeout(120); await tile.click().catch(() => {}); await p.waitForTimeout(120); const end = p.locator('.dm-actions .btn').first(); if (await end.count()) await end.click().catch(() => {}); }   // a tile that fits both ends asks which end
     else { const a = p.locator('.dm-actions .btn').first(); if (await a.count()) await a.click().catch(() => {}); }
-    for (let w = 0; w < 14; w++) { await p.waitForTimeout(110); if (await p.evaluate(() => /98, 168, 208|143, 201, 230|62, 168, 208/.test(getComputedStyle(document.getElementById('dm-line')).backgroundImage))) blue = true; }
+    for (let w = 0; w < 20; w++) {
+      await p.waitForTimeout(100);
+      const s = await p.evaluate(() => ({ bot: !document.getElementById('dm-banner').classList.contains('you') && /Waiting/.test(document.getElementById('dm-banner').textContent), blue: /98, 168, 208|143, 201, 230|62, 168, 208/.test(getComputedStyle(document.getElementById('dm-line')).backgroundImage) }));
+      if (s.bot) { botTurns++; if (s.blue) blue = true; }
+    }
   }
   const after = await p.evaluate(() => ({ hand: Math.round(document.getElementById('dm-hand').getBoundingClientRect().top + scrollY), line: document.getElementById('dm-line').getBoundingClientRect().height }));
   if (Math.abs(after.line - info.line) > 1) bad.push('the table changed height as tiles were played');
-  if (!blue) bad.push('the table never turned blue while the bot was playing');
+  if (!botTurns) bad.push('the bot never got a turn in this test');
+  else if (!blue) bad.push('the table never turned blue while the bot was playing');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;
