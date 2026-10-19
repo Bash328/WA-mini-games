@@ -154,6 +154,16 @@
 
   /* ---------- Grids ---------- */
 
+  // the big grid is the enemy's waters (blue) or your own fleet (orange): the title says which
+  (function () {
+    const t = document.getElementById("bs-main-title"), m = document.getElementById("bs-main");
+    if (!t || !m || typeof MutationObserver === "undefined") return;
+    const sync = () => { m.dataset.who = /enemy/i.test(t.textContent) ? "enemy" : "mine"; };
+    new MutationObserver(sync).observe(t, { childList: true, characterData: true, subtree: true });
+    sync();
+    const sub = document.getElementById("bs-sub"); if (sub) sub.dataset.who = "mine";
+  })();
+
   function buildGrid(el) {
     el.replaceChildren();
     for (let i = 0; i < CELLS; i++) {
@@ -259,7 +269,7 @@
     drawTray();
     const done = plc.p.every(Boolean);
     readyBtn.disabled = !done;
-    rotateBtn.textContent = "⟳ " + (plc.o === "h" ? "across" : "down");
+    rotateBtn.textContent = "Rotate: " + (plc.o === "h" ? "across" : "down");
     noteEl.textContent = plcNote || vm.note || (done
       ? "All ships placed. Lock in your fleet, or tap a ship to move it."
       : "Tap a square to drop the " + SHIPS[plc.sel === -1 ? plc.p.findIndex(p => !p) : plc.sel].name.toLowerCase() + " there.");

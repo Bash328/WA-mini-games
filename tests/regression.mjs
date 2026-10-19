@@ -26,12 +26,12 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
-const MAXTOP = { hangman: 520 };
-const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
+const MAXTOP = { hangman: 520, battleship: 470 };
+const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
 // make a page show its end-of-game text the way the game itself writes it
@@ -49,6 +49,7 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  battleship: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   pig: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   yatzy: "document.getElementById('status').textContent='Game over. Final score: 120. '+Gamekit.taunt('win')",
   hangman: "document.getElementById('status').textContent='Player 1 wins. The word was not guessed in time. '+Gamekit.taunt('loss')",
@@ -600,6 +601,46 @@ check('hub-look', 'the game hub should be the dark page with a top bar (menu, yo
   }
   return bad;
 }, ['hub']);
+
+check('battleship-look', 'battleship should look like the redesign: the enemy waters blue, your fleet orange with the ships shown in red on it, hits red, no glyph symbols on the placement buttons', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(400);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.waitForTimeout(150);
+  const place = await p.evaluate(() => ({ frame: getComputedStyle(document.getElementById('bs-main')).backgroundColor, ship: [...document.querySelectorAll('#bs-main .bs-cell.ship')].length, shipBg: getComputedStyle(document.querySelector('#bs-main .bs-cell.ship')).backgroundColor, btns: ['bs-rotate', 'bs-random', 'bs-clear'].map((i) => document.getElementById(i).textContent), sw: document.documentElement.scrollWidth }));
+  if (!/224, 138, 104/.test(place.frame)) bad.push('your fleet grid is not the orange frame (' + place.frame + ')');
+  if (place.ship < 14) bad.push('ships should show on your grid after Random (saw ' + place.ship + ' cells)');
+  if (!/25[45], 111, 97/.test(place.shipBg)) bad.push('ship cells are not the flat red (' + place.shipBg + ')');
+  if (place.btns.some((t) => /[☀-➿⬀-⯿]/.test(t))) bad.push('symbol characters on the placement buttons');
+  await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+  const play = await p.evaluate(() => ({ enemy: getComputedStyle(document.getElementById('bs-main')).backgroundColor, mine: getComputedStyle(document.getElementById('bs-sub')).backgroundColor }));
+  if (!/63, 127, 181/.test(play.enemy)) bad.push('the enemy waters are not blue (' + play.enemy + ')');
+  if (!/224, 138, 104/.test(play.mine)) bad.push('your small fleet grid is not orange (' + play.mine + ')');
+  if (place.sw > 390) bad.push('page is wider than the phone');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('app-icon-and-launch-images', 'the app icon, the launch images and the link banner must be the redesigned art (four chunky tiles on a dark page), every launch image the exact size its file name says, the manifest dark, and no emoji in the favicon', async () => {
+  const bad = [];
+  const sizes = { 'icon-192.png': [192, 192], 'icon-512.png': [512, 512], 'icon-maskable-512.png': [512, 512], 'apple-touch-icon.png': [180, 180], 'og-image.png': [1200, 300] };
+  const png = (f) => { const b = fs.readFileSync(path.join(ROOT, f)); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+  for (const [f, [w, h]] of Object.entries(sizes)) { const i = png(f); if (i.w !== w || i.h !== h) bad.push(f + ' is ' + i.w + 'x' + i.h + ', wanted ' + w + 'x' + h); }
+  for (const f of fs.readdirSync(path.join(ROOT, 'splash'))) { const m = /^(\d+)x(\d+)\.png$/.exec(f); if (!m) continue; const i = png('splash/' + f); if (i.w !== Number(m[1]) || i.h !== Number(m[2])) bad.push('splash/' + f + ' is ' + i.w + 'x' + i.h); }
+  // the art itself: sample the icon in the browser (the four tile colours are all present)
+  const p = await browser.newPage({ viewport: { width: 600, height: 600 } });
+  await p.goto(base + 'icon-512.png');
+  const c = await p.evaluate(async () => { const img = document.images[0]; await img.decode(); const cv = document.createElement('canvas'); cv.width = cv.height = 512; const x = cv.getContext('2d'); x.drawImage(img, 0, 0); const px = (a, b) => [...x.getImageData(a, b, 1, 1).data]; return { tiles: [px(130, 105), px(333, 105), px(130, 288), px(333, 288)] }; });
+  await p.close();
+  const near = (a, b) => a.slice(0, 3).every((v, i) => Math.abs(v - b[i]) < 40);
+  if (!c.tiles.every((t, i) => near(t, [[255, 122, 122], [63, 208, 192], [255, 191, 46], [167, 139, 250]][i]))) bad.push('the icon does not show the four tile colours: ' + JSON.stringify(c.tiles));
+  const svg = fs.readFileSync(path.join(ROOT, 'favicon.svg'), 'utf8');
+  if (/[\u{1F300}-\u{1FAFF}]/u.test(svg) || /<text/.test(svg)) bad.push('the favicon still uses an emoji or text');
+  const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+  if (man.background_color !== '#171719' || man.theme_color !== '#171719') bad.push('manifest colours should be #171719');
+  return bad;
+}, ['icons']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
