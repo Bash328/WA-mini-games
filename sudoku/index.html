@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>sudoku · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
 <style>
   .sk-grid {
     display: grid;
@@ -120,19 +121,38 @@
   .sk-act:disabled { opacity: 0.35; cursor: default; }
 
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+
+  /* chunky look: deep teal page, a white grid in a heavy black frame, blue digits that are yours. The grid and keys are themed
+     by the --sk-* variables of shared.css, so the new look is just new values for them. */
+  html body.fun.g-sudoku.g-sudoku { --fun-bg: #1f3b3b; --fun-btn: #4f8a86; --fun-chip: rgba(255,255,255,.1);
+    --sk-grid: #fff; --sk-line: #2f3a46; --sk-cell: #fff; --sk-cell-b: #d5dbe3; --sk-digit: #1f6fe0; --sk-given: #f1f4f8; --sk-given-fg: #2f3a46;
+    --sk-peer: #e6f0ff; --sk-given-peer: #dfe9f8; --sk-note: #6b7788; --sk-btn: #fff; --sk-btn-b: transparent; --sk-btn-hover: #f0f3f8; --sk-btn-hover-b: transparent; --sk-act: rgba(255,255,255,.12); }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-cell { font-weight: 400; min-height: 0; font-size: clamp(1.1rem, 5.4vw, 1.6rem); }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-cell.given { font-weight: 400; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-cell.same-num { background: #ffe8a3; color: #2f3a46; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-cell.sel { background: #ffd23f; outline: 0; box-shadow: inset 0 0 0 3px #e0a800; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-cell.conflict { color: #e8353a; }
+  html body.fun.g-sudoku.g-sudoku .sk-pad { width: 100%; gap: 5px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-pad button { min-width: 0; min-height: 52px; border: 0; border-radius: 12px; background: #fff; color: #2f3a46; font-size: 1.5rem; font-weight: 400; box-shadow: 0 4px 0 #b9c2cc; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-pad button.done { opacity: .3; }
+  html body.fun.g-sudoku.g-sudoku .sk-actions { width: 100%; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-act { background: rgba(255,255,255,.12); box-shadow: none; border: 0; border-radius: 16px; font-size: 14px; color: #fff; }
+  html body.fun.g-sudoku.g-sudoku .panel .sk-act[aria-pressed="true"] { background: #ffbf2e; color: #5a3a00; }
+  html body.fun.g-sudoku.g-sudoku .ok { color: #7dffa8; } html body.fun.g-sudoku.g-sudoku .bad { color: #ff8a7a; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-sudoku">
+<body class="g-sudoku fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>sudoku</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Fill each row, column, and 3×3 box with 1–9.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="sudoku" data-man-title="SUDOKU(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -195,9 +215,10 @@
   </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=eeeb2051"></script>
 </body>
 </html>

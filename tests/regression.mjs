@@ -26,7 +26,7 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
@@ -49,6 +49,8 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  'sudoku': "document.getElementById('status').textContent='Solved in 3:21.'",
+  'mini-sudoku': "document.getElementById('status').textContent='Solved in 3:21.'",
   'blokus-duo': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   'onitama': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   'gomoku': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
@@ -672,6 +674,30 @@ check('header-title-fits', 'a long page title (ultimate tic-tac-toe) ran into th
   if (!r) return [];
   return r.textLeft < r.backRight - 1 || r.textRight > r.rightLeft + 1 ? ['the title (' + Math.round(r.textLeft) + '..' + Math.round(r.textRight) + ') runs into the header buttons (' + Math.round(r.backRight) + ' / ' + Math.round(r.rightLeft) + ')'] : [];
 }, ['ultimate-tic-tac-toe']);
+
+check('sudoku-look-and-play', 'sudoku and mini sudoku should be the redesign: the white grid in a heavy black frame edge to edge, thick box lines still visible, the number pad as chunky white keys, Time and Best in the header, and tapping a cell then a key must still write the digit', async (g) => {
+  const p = await open(g);
+  const bad = [];
+  const r = await p.evaluate(() => { const b = document.getElementById('board'); const cs = getComputedStyle(b), rect = b.getBoundingClientRect(); const thick = [...b.children].find((c) => c.dataset.r === (b.children.length === 81 ? '2' : '1')); const thickW = parseFloat(getComputedStyle(thick).borderBottomWidth), thickC = getComputedStyle(thick).borderBottomColor; const thin = getComputedStyle(b.children[0]).borderRightColor; return { frame: parseFloat(cs.borderTopWidth), width: rect.width, thickW, thickC, thin, pills: document.querySelectorAll('.fun-pills b').length, key: getComputedStyle(document.querySelector('.sk-pad button')).backgroundColor, sw: document.documentElement.scrollWidth }; });
+  if (r.frame < 5) bad.push('the grid has no heavy frame');
+  if (r.width < 360) bad.push('the grid is not edge to edge (' + Math.round(r.width) + 'px)');
+  if (r.thickW < 2 || !/47, 58, 70/.test(r.thickC)) bad.push('box lines are lost (' + r.thickW + 'px ' + r.thickC + ')');
+  if (/47, 58, 70/.test(r.thin)) bad.push('thin lines are as heavy as the box lines');
+  if (r.pills !== 2) bad.push('Time and Best belong in the header');
+  if (!/255, 255, 255/.test(r.key)) bad.push('number keys are not the white keys');
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  const sq = await p.evaluate(() => { const b = document.getElementById('board').getBoundingClientRect(); const last = document.getElementById('board').lastElementChild.getBoundingClientRect(); return { w: b.width, h: b.height, bottomVisible: last.bottom <= b.bottom + 1 }; });
+  if (Math.abs(sq.w - sq.h) > 4 || !sq.bottomVisible) bad.push('the grid is not square or its last row is cut off (' + Math.round(sq.w) + 'x' + Math.round(sq.h) + ')');
+  // write a digit: pick an empty cell, press a key
+  const empty = p.locator('#board .sk-cell:not(.given)').first();
+  await empty.click(); await p.waitForTimeout(100);
+  await p.locator('.sk-pad button').first().click(); await p.waitForTimeout(150);
+  const wrote = await p.evaluate(() => [...document.querySelectorAll('#board .sk-cell:not(.given)')].some((c) => /^[1-9]$/.test(c.textContent.trim())));
+  if (!wrote) bad.push('tapping a cell and a key did not write a digit');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['sudoku', 'mini-sudoku']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);
