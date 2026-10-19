@@ -190,7 +190,7 @@
     });
   }
   // The two fleet rows between the grids: a small picture per ship, crossed out once sunk.
-  const fleetsEl = $("bs-fleets");
+  const fleetsEl = $("bs-fleets"), midEl = $("bs-mid"), scoreEl = $("bs-score");
   function drawFleetRows(v) {
     const row = (cls, fleet, shots) => {
       const set = new Set(shots);
@@ -198,6 +198,9 @@
         '<span class="bs-mini' + (fleet && shipSunk(fleet, k, set) ? " sunk" : "") + '" style="width:' + s.len * 9 + 'px" title="' + s.name + '">' + hullSvg(s.len) + "</span>").join("") + "</div>";
     };
     fleetsEl.innerHTML = row("foe", v.enemyFleet, v.myShots) + row("me", v.myFleet, v.theirShots);
+    // the tab on the left: how many of their ships you have sunk (blue) and of yours they have (red)
+    const sunk = (fleet, shots) => { const set = new Set(shots); return fleet ? fleet.filter((_, k) => shipSunk(fleet, k, set)).length : 0; };
+    scoreEl.innerHTML = '<b class="foe">' + sunk(v.enemyFleet, v.myShots) + '</b><i></i><b class="me">' + sunk(v.myFleet, v.theirShots) + "</b>";
   }
 
   function buildGrid(el) {
@@ -323,8 +326,9 @@
     placeActions.hidden = true;
     fireActions.hidden = true;
     trayEl.hidden = true;
-    fleetsEl.hidden = true;
+    midEl.hidden = true;
     fireBtn.hidden = true;
+    document.body.classList.toggle("bs-battle", v.kind === "battle");
     subWrap.hidden = true;
     mainEl.classList.remove("clickable");
     if (v.kind === "cover") {
@@ -355,10 +359,10 @@
       paintWaters(mainEl, v.enemyFleet, v.myShots, v.canFire ? sel : -1, v.lastMine);
       paintFleet(subEl, v.myFleet, v.theirShots, v.lastTheirs);
       mainEl.classList.toggle("clickable", v.canFire);
-      fleetsEl.hidden = false;
+      midEl.hidden = false;
       drawFleetRows(v);
       noteEl.textContent = v.note || "";
-      fireBtn.hidden = !!v.handoff;                      // always there; on a shared device the End turn button replaces it
+      fireBtn.hidden = !v.canFire || !!v.handoff;        // only on your turn; on a shared device the End turn button replaces it
       fireBtn.disabled = !v.canFire || sel < 0 || firing;
       capEl.textContent = v.handoff ? "" : !v.canFire ? "Waiting" : sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
       fireActions.hidden = !v.handoff;
@@ -862,6 +866,6 @@
 
   window.__battleshipTest = {
     fleetToStr, strToFleet, shotsToStr, strToShots, validFleet, shipCells,
-    randomFleet, aiPick, allSunk, shotResult, ownerMap, SHIPS,
+    randomFleet, aiPick, allSunk, shotResult, ownerMap, SHIPS, draw,
   };
 })();

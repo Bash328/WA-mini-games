@@ -173,6 +173,35 @@
   html body.fun.g-battleship .bs-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
   html body.fun.g-battleship #bs-note, html body.fun.g-battleship #bs-hint { color: rgba(255,255,255,.75); font-size: 15px; }
   html body.fun.g-battleship #bs-note strong { color: #fff; font-weight: 400; }
+
+  /* ---- the battle screen, as in the reference: nothing above the boards, the grids edge to edge, the cannon on your waters ---- */
+  html body.fun.g-battleship.bs-battle { --zone: 0px; --fun-bg: #f7977a; }
+  html body.fun.g-battleship.bs-battle:has(.turn.wait) { --fun-bg: #62a8d0; }
+  body.bs-battle .topbar, body.bs-battle .panel > .row, body.bs-battle .gk-optwrap, body.bs-battle .gk-slot, body.bs-battle .toolbar, body.bs-battle .panel > .turn, body.bs-battle #bs-note { display: none !important; }
+  /* the link / room panel is still needed to send a move: it floats over your waters while it has something to press */
+  body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60; padding: 10px; border-radius: 24px; background: rgba(20,18,27,.82); }
+  html body.fun.g-battleship.bs-battle .wrap { padding: 0; max-width: none; }
+  html body.fun.g-battleship.bs-battle .panel { padding: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --g: min(100vw, calc((100svh - 74px) / 2)); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100svh; margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: var(--g); margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-main { border-radius: 22px 22px 0 0; padding: calc(var(--g) * .024); gap: calc(var(--g) * .008); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub { border-radius: 0 0 22px 22px; padding: calc(var(--g) * .024); gap: calc(var(--g) * .008); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-main .bs-cell { border-radius: calc(var(--g) * .016); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell.miss { color: #14304c; font-size: calc(var(--g) * .075); font-weight: 700; background: #2b5b86; }
+  .bs-mid { position: relative; width: 100%; height: 66px; display: flex; align-items: center; justify-content: center; }
+  .bs-mid[hidden] { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { background: none; width: auto; margin: 0; padding: 0; gap: 8px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mini { height: 22px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 12px; height: 24px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { gap: 6px; height: 54px; align-content: center; }
+  .bs-tab { position: absolute; top: 50%; width: 86px; height: 98px; margin-top: -49px; border-radius: 50%; background: #fff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; text-decoration: none; color: #3b4252; }
+  .bs-tab.left { left: -43px; padding-left: 40px; flex-direction: column; gap: 3px; }
+  .bs-tab.right { right: -43px; padding-right: 38px; }
+  .bs-tab.right span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 24px; letter-spacing: .04em; }
+  .bs-tab.left b { font-size: 24px; line-height: 1; font-weight: 400; }
+  .bs-tab.left b.foe { color: #1ea7f5; } .bs-tab.left b.me { color: #ff5a52; } .bs-tab.left i { width: 9px; height: 9px; border-radius: 50%; background: #3b4252; display: block; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(var(--g) * .37); height: calc(var(--g) * .40); bottom: calc(var(--g) * .03); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -209,7 +238,11 @@
         <h3 class="bs-title" id="bs-main-title"></h3>
         <div class="bs-grid" id="bs-main"></div>
       </div>
-      <div class="bs-fleets" id="bs-fleets" hidden></div>
+      <div class="bs-mid" id="bs-mid" hidden>
+        <div class="bs-fleets" id="bs-fleets"></div>
+        <div class="bs-tab left" id="bs-score" aria-label="Ships sunk"></div>
+        <a class="bs-tab right" href="../" aria-label="Exit to all games"><span>EXIT</span></a>
+      </div>
       <div class="bs-wrap small" id="bs-sub-wrap">
         <h3 class="bs-title" id="bs-sub-title"></h3>
         <div class="bs-grid" id="bs-sub"></div>
@@ -272,7 +305,7 @@
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script src="game.js?v=536b5aa6"></script>
+<script src="game.js?v=7cb0fdf6"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

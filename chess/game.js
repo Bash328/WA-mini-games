@@ -496,10 +496,21 @@ const flipBtn = document.getElementById('flip');
 
 // The piece that just moved glides from its old square to its new one (once per move; a re-render of
 // the same position, such as selecting a piece, does not move it again).
-let slidAlready = null;
+let slidAlready = null, activeSlide = null;
 function slideLast(sqs) {
   const lm = lastMove;
-  if (!lm || lm === slidAlready) return;
+  if (!lm) return;
+  // a re-render of the same move (the board is rebuilt each time) must carry the slide on, not wipe it half way
+  if (lm === slidAlready) {
+    const to = sqs[lm.to[0] + ',' + lm.to[1]], glyph = to && to.querySelector('.pc'), el = activeSlide ? performance.now() - activeSlide.start : 1e9;
+    if (glyph && activeSlide && activeSlide.lm === lm && el < 300) {
+      to.style.zIndex = '3'; to.style.position = 'relative';
+      const a = glyph.animate(activeSlide.frames, { duration: 300, easing: 'cubic-bezier(.3,.7,.2,1)' });
+      a.currentTime = el;
+      a.onfinish = a.oncancel = () => { to.style.zIndex = ''; to.style.position = ''; };
+    }
+    return;
+  }
   slidAlready = lm;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const from = sqs[lm.from[0] + ',' + lm.from[1]], to = sqs[lm.to[0] + ',' + lm.to[1]];
@@ -507,7 +518,9 @@ function slideLast(sqs) {
   if (!from || !glyph) return;
   const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
   to.style.zIndex = '3'; to.style.position = 'relative';
-  const run = glyph.animate([{ transform: 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px) scale(1.15)' }, { transform: 'translate(0,0) scale(1)' }], { duration: 300, easing: 'cubic-bezier(.3,.7,.2,1)' });
+  const frames = [{ transform: 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px) scale(1.15)' }, { transform: 'translate(0,0) scale(1)' }];
+  activeSlide = { lm: lm, start: performance.now(), frames: frames };
+  const run = glyph.animate(frames, { duration: 300, easing: 'cubic-bezier(.3,.7,.2,1)' });
   run.onfinish = run.oncancel = () => { to.style.zIndex = ''; to.style.position = ''; };
 }
 

@@ -64,9 +64,10 @@ function render() {
 }
 
 const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-// Tiles glide to their squares (ease in and out); two tiles that meet slide on top of each other, fade out as
-// they arrive and are replaced by the doubled tile, which swells and settles. A new tile grows in just after.
-const SLIDE = 170;
+// Timed against the reference ("smooth 2048", frame by frame): the whole slide takes about 130ms with a quick ease-out and
+// no fading, so two tiles that meet simply overlap and are swapped for the doubled tile, which gives one small pop (about
+// 150ms); the new tile starts to grow the moment the slide ends and is full size 150ms later.
+const SLIDE = 130;
 function animateSlide(el, moves, spawn, merged) {
   const cells = el.children, token = ++animToken;
   if (calm() || !el.animate || cells.length < N * N) return;
@@ -74,30 +75,31 @@ function animateSlide(el, moves, spawn, merged) {
   const moving = moves.filter(m => m.from[0] !== m.to[0] || m.from[1] !== m.to[1]);
   const dests = new Set(moving.map(m => m.to[0] * N + m.to[1]));
   dests.forEach(i => { cells[i].style.visibility = 'hidden'; });
+  const anims = [];
   const ghosts = moving.map(m => {
     const a = cells[m.from[0] * N + m.from[1]].getBoundingClientRect(), b = cells[m.to[0] * N + m.to[1]].getBoundingClientRect();
     const t = document.createElement('div');
     t.className = 'tile ghost t' + m.v;
     t.textContent = m.v;
-    t.style.cssText = 'position:absolute;margin:0;z-index:2;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
+    t.style.cssText = 'position:absolute;margin:0;z-index:2;will-change:transform;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
     el.append(t);
-    const to = 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)';
-    const joins = merged && merged.has(m.to[0] * N + m.to[1]);
-    t.animate(joins
-      ? [{ transform: 'translate(0,0)', opacity: 1 }, { transform: to, opacity: 1, offset: 0.8 }, { transform: to, opacity: 0 }]
-      : [{ transform: 'translate(0,0)' }, { transform: to }],
-      { duration: SLIDE, easing: 'cubic-bezier(.3,.7,.25,1)', fill: 'forwards' });
+    anims.push(t.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)' }], { duration: SLIDE, easing: 'cubic-bezier(.25,.8,.35,1)', fill: 'forwards' }));
     return t;
   });
-  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.7 }, { transform: 'scale(1)', opacity: 1 }], { duration: 240, delay: SLIDE - 20, fill: 'backwards', easing: 'ease-out' });
-  setTimeout(() => {
-    if (token !== animToken) return;
+  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.2)', opacity: 0.4 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 1 }], { duration: 160, delay: SLIDE - 10, fill: 'backwards', easing: 'cubic-bezier(.2,.9,.3,1)' });
+  let done = false;
+  const land = () => {
+    if (done || token !== animToken) return;
+    done = true;
     ghosts.forEach(t => t.remove());
     dests.forEach(i => {
       cells[i].style.visibility = '';
-      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(.88)' }, { transform: 'scale(1.18)', offset: 0.45 }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1.2)' });
+      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(1)' }, { transform: 'scale(1.13)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' });
     });
-  }, SLIDE);
+  };
+  // swap exactly when the slides have finished (not on a timer that a busy phone can run late); the timer is only a backstop
+  Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => requestAnimationFrame(land));
+  setTimeout(land, SLIDE + 60);
 }
 
 // where every tile goes in one row slid towards index 0: dest[i] is the column tile i ends up in (two merging tiles share one)

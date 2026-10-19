@@ -489,12 +489,13 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   const r = await p.evaluate(() => { const b = document.getElementById('board').getBoundingClientRect(), o = document.querySelector('.gk-optbtn').getBoundingClientRect(); const free = innerHeight - o.bottom; return { above: b.top - o.bottom, below: innerHeight - b.bottom, free, over: document.documentElement.scrollHeight - innerHeight }; });
   if (Math.abs(r.above - r.below) > 40) bad.push('the board is not centred in the free space (gap above ' + Math.round(r.above) + ', below ' + Math.round(r.below) + ')');
   if (r.over > 0) bad.push('the page scrolls (' + r.over + 'px)');
-  // force a merge: two 2s side by side, slide left, and watch for the blend animation
+  // force a merge: two 2s side by side, slide left. Timed against the reference video: slide about 130ms, no fading, one small pop on the doubled tile
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); });
   await p.keyboard.press('ArrowLeft');
-  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let fades = 0, grow = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fades++; if (k.some((x) => /scale\(1\.18\)/.test(x.transform || ''))) grow++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ fades, grow }); }; f(); }));
-  if (!seen.fades) bad.push('the two tiles that merge do not fade into the new one');
-  if (!seen.grow) bad.push('the doubled tile does not swell as it appears');
+  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fade++; } if (k.some((x) => /scale\(1\.13\)/.test(x.transform || ''))) pop++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
+  if (!(seen.slide > 0 && seen.slide <= 160)) bad.push('the slide should take about 130ms like the reference (saw ' + seen.slide + 'ms)');
+  if (seen.fade) bad.push('the merging tiles fade; in the reference they just meet and swap');
+  if (!seen.pop) bad.push('the doubled tile does not pop as it appears');
   await p.waitForTimeout(400);
   const v = await p.evaluate(() => [...document.querySelectorAll('#board .tile')].map((t) => t.textContent).filter(Boolean).join(','));
   if (!v.includes('4')) bad.push('the merge did not produce a 4 (' + v + ')');
@@ -631,6 +632,78 @@ check('privacy-look', 'the privacy page was the one page still in the old look; 
   }
   return bad;
 }, ['privacy']);
+
+check('hangman-ghost-clear-of-man', 'hangman: the ghost floated over the stick man arm; it now stays to the right of him', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click()");
+  await p.waitForTimeout(500);
+  for (const c of 'ZXQJVWBD') { await p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c); await p.waitForTimeout(120); }
+  await p.evaluate(() => document.querySelectorAll('.gk-over').forEach((e) => e.remove())); await p.waitForTimeout(500);
+  const r = await p.evaluate(() => { const g = document.querySelector('#ghost .big').getBoundingClientRect(); const man = [...document.querySelectorAll('#gallows .pt')].map((e) => e.getBoundingClientRect()); const right = Math.max(...man.map((m) => m.right)); const b = document.getElementById('bubble').getBoundingClientRect(); return { gl: g.left, gr: g.right, manRight: right, bubbleLeft: b.left }; });
+  await p.close();
+  const bad = [];
+  if (r.gl < r.manRight + 2) bad.push('the ghost (left ' + Math.round(r.gl) + ') overlaps the man (right edge ' + Math.round(r.manRight) + ')');
+  if (r.gr > r.bubbleLeft + 2) bad.push('the ghost runs into the speech bubble');
+  return bad;
+}, ['hangman']);
+
+check('connect-four-no-landing-flash', 'connect four: a small flash when the disc landed (the empty hole showed for a moment as the slot faded its colour in)', async () => {
+  const p = await open('connect-four', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  await p.locator('.c4-col-btn').nth(3).click();
+  const flashes = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let bad = 0, seenFall = false; const f = () => { const fall = document.querySelector('.c4-fall'); if (fall) seenFall = true; else if (seenFall) { const s = document.querySelector('.c4-slot[data-r="5"][data-c="3"]'); if (!/^rgb\(255, (77|201), (70|51)\)$/.test(getComputedStyle(s).backgroundColor)) bad++; } if (performance.now() - t0 < 1500) requestAnimationFrame(f); else res({ bad, seenFall }); }; f(); }));
+  await p.close();
+  const bad = [];
+  if (!flashes.seenFall) bad.push('the falling disc never showed');
+  if (flashes.bad) bad.push('the slot was not the disc colour for ' + flashes.bad + ' frame(s) after the disc landed (a flash)');
+  return bad;
+}, ['connect-four']);
+
+check('checkers-own-move-slides-through-rerender', 'checkers: the computer moves slid smoothly but your own did not (your move is drawn twice in a row, and the second drawing wiped the slide); a re-render during the slide must carry it on', async () => {
+  const p = await open('checkers', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('.ck-cell.selectable').first().click(); await p.waitForTimeout(80);
+  await p.locator('.ck-cell.hint').first().click();
+  // sample the moved piece every frame for 350ms: it must be moving (in a different place each frame) the whole time
+  const xs = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(), out = []; const f = () => { const c = document.querySelector('.ck-cell.last .ck-piece'); if (c) { const r = c.getBoundingClientRect(); out.push(Math.round(r.left * 10) / 10 + ',' + Math.round(r.top * 10) / 10); } if (performance.now() - t0 < 330) requestAnimationFrame(f); else res(out); }; f(); }));
+  const moving = new Set(xs).size;
+  if (moving < 5) bad.push('your piece slid in only ' + moving + ' distinct positions (it jumped)');
+  await p.close();
+  return bad;
+}, ['checkers']);
+
+check('chess-own-move-slides-against-computer', 'chess: your own move against the computer must slide smoothly too (the board is drawn again at once for the computer thinking, which wiped the slide)', async () => {
+  const p = await open('chess', 390, "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(600);
+  const bad = [];
+  await p.locator('#board .sq').nth(52).click(); await p.locator('#board .sq').nth(36).click();
+  const xs = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(), out = []; const f = () => { const g = document.querySelectorAll('#board .sq')[36].querySelector('.pc'); if (g) { const r = g.getBoundingClientRect(); out.push(Math.round(r.left * 10) / 10 + ',' + Math.round(r.top * 10) / 10); } if (performance.now() - t0 < 330) requestAnimationFrame(f); else res(out); }; f(); }));
+  if (new Set(xs).size < 5) bad.push('your pawn slid in only ' + new Set(xs).size + ' distinct positions (it jumped)');
+  await p.close();
+  return bad;
+}, ['chess']);
+
+check('battleship-reference-battle-screen', 'battleship: the battle screen must be the reference screen: nothing above the boards (no header, Options or status), both grids edge to edge, a fleet strip with the score tab and EXIT tab between them, the cannon only on your turn', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(600);
+  const r = await p.evaluate(() => { const q = (s) => document.querySelector(s), vis = (s) => { const e = q(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0; }; const m = q('#bs-main').getBoundingClientRect(), o = q('#bs-sub').getBoundingClientRect(), mid = q('#bs-mid').getBoundingClientRect();
+    return { chrome: ['.topbar', '.gk-optbtn', '.panel > .row'].filter(vis), mainW: Math.round(m.width), subW: Math.round(o.width), top: Math.round(m.top), order: m.bottom <= mid.top + 1 && mid.bottom <= o.top + 1, tabs: !!q('#bs-score') && !!q('a.bs-tab'), cannon: vis('#bs-fire'), over: document.documentElement.scrollHeight - innerHeight, bg: getComputedStyle(document.body).backgroundColor }; });
+  if (r.chrome.length) bad.push('still showing above the boards: ' + r.chrome.join(', '));
+  if (r.mainW < 380 || r.subW < 380) bad.push('the grids are not edge to edge (' + r.mainW + ' and ' + r.subW + 'px wide)');
+  if (!r.order) bad.push('the fleet strip is not between the two grids');
+  if (!r.tabs) bad.push('the score tab or the EXIT tab is missing');
+  if (!r.cannon) bad.push('no cannon on your turn');
+  if (r.over > 0) bad.push('the screen scrolls (' + r.over + 'px)');
+  if (!/247, 151, 122/.test(r.bg)) bad.push('the page is not the salmon of the reference (' + r.bg + ')');
+  // not your turn: no cannon at all
+  const hidden = await p.evaluate(() => { const T = window.__battleshipTest; T.draw({ kind: 'battle', me: 1, myFleet: T.randomFleet(), enemyFleet: T.randomFleet(), myShots: [], theirShots: [], canFire: false, handoff: false, lastMine: -1, lastTheirs: -1, note: '' }); const e = document.getElementById('bs-fire'); return getComputedStyle(e).display === 'none' || e.hidden; });
+  if (!hidden) bad.push('the cannon is showing when it is not your turn');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
 
 check('options-toggle', 'pressing Options while the menus are showing did not hide them', async (g) => {
   const p = await open(g);
@@ -1122,7 +1195,7 @@ check('battleship-look', 'battleship should look like the redesign: the enemy wa
   return bad;
 }, ['battleship']);
 
-check('app-icon-and-launch-images', 'the app icon, the launch images and the link banner must be the redesigned art (four chunky tiles on a dark page), every launch image the exact size its file name says, the manifest dark, and no emoji in the favicon', async () => {
+check('app-icon-and-launch-images', 'the app icon, the launch images and the link banner must be the redesigned art (four tilted chunky tiles on the Sunset gradient), every launch image the exact size its file name says, the manifest in the Sunset colour, and no emoji in the favicon', async () => {
   const bad = [];
   const sizes = { 'icon-192.png': [192, 192], 'icon-512.png': [512, 512], 'icon-maskable-512.png': [512, 512], 'apple-touch-icon.png': [180, 180], 'og-image.png': [1200, 300] };
   const png = (f) => { const b = fs.readFileSync(path.join(ROOT, f)); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
@@ -1131,14 +1204,16 @@ check('app-icon-and-launch-images', 'the app icon, the launch images and the lin
   // the art itself: sample the icon in the browser (the four tile colours are all present)
   const p = await browser.newPage({ viewport: { width: 600, height: 600 } });
   await p.goto(base + 'icon-512.png');
-  const c = await p.evaluate(async () => { const img = document.images[0]; await img.decode(); const cv = document.createElement('canvas'); cv.width = cv.height = 512; const x = cv.getContext('2d'); x.drawImage(img, 0, 0); const px = (a, b) => [...x.getImageData(a, b, 1, 1).data]; return { tiles: [px(130, 105), px(333, 105), px(130, 288), px(333, 288)] }; });
+  // the art itself: count the pixels of each Sunset tile colour (the tiles are tilted, so a fixed spot would miss) and check the coral-to-plum gradient behind them
+  const c = await p.evaluate(async () => { const img = document.images[0]; await img.decode(); const cv = document.createElement('canvas'); cv.width = cv.height = 512; const x = cv.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, 512, 512).data; const want = [[255, 200, 60], [255, 110, 170], [255, 150, 60], [150, 100, 230]]; const counts = want.map((w) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - w[0]) < 18 && Math.abs(d[i + 1] - w[1]) < 18 && Math.abs(d[i + 2] - w[2]) < 18 && d[i + 3] > 250) n++; return n; }); const px = (a, b) => [...x.getImageData(a, b, 1, 1).data]; return { counts, top: px(256, 40), bottom: px(256, 470) }; });
   await p.close();
-  const near = (a, b) => a.slice(0, 3).every((v, i) => Math.abs(v - b[i]) < 40);
-  if (!c.tiles.every((t, i) => near(t, [[255, 122, 122], [63, 208, 192], [255, 191, 46], [167, 139, 250]][i]))) bad.push('the icon does not show the four tile colours: ' + JSON.stringify(c.tiles));
+  if (!c.counts.every((n) => n > 1500)) bad.push('the icon does not show the four Sunset tile colours (pixels per colour: ' + c.counts.join(', ') + ')');
+  const warm = (a) => a[0] > 200 && a[1] > 90 && a[2] < 150, plum = (a) => a[0] > 110 && a[0] < 190 && a[1] < 90 && a[2] > 90;
+  if (!warm(c.top) || !plum(c.bottom)) bad.push('the icon background is not the coral-to-plum Sunset gradient (' + JSON.stringify([c.top, c.bottom]) + ')');
   const svg = fs.readFileSync(path.join(ROOT, 'favicon.svg'), 'utf8');
   if (/[\u{1F300}-\u{1FAFF}]/u.test(svg) || /<text/.test(svg)) bad.push('the favicon still uses an emoji or text');
   const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  if (man.background_color !== '#171719' || man.theme_color !== '#171719') bad.push('manifest colours should be #171719');
+  if (man.background_color !== '#c6566e' || man.theme_color !== '#c6566e') bad.push('manifest colours should be the Sunset #c6566e');
   return bad;
 }, ['icons']);
 

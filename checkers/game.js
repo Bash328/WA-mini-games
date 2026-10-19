@@ -189,11 +189,23 @@
   // The piece that just moved glides from the square it left to the one it reached. A multi-jump follows
   // its real path, hop by hop, and each jumped piece shrinks away as it is passed. Shown once per move:
   // a re-render of the same board does not slide again.
-  let shownBoard = null;
+  let shownBoard = null, activeSlide = null;
   function slidePiece(board, lastIdx) {
     const prev = shownBoard;
     shownBoard = board.slice();
     const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The board is rebuilt on every render, and your own move is drawn twice in a row (the move, then the computer
+    // "thinking"): the second render would wipe the slide half way. Carry the slide on in the new square instead.
+    if (activeSlide && activeSlide.key === board.join("") + "|" + lastIdx) {
+      const el = performance.now() - activeSlide.start, cell = boardEl.querySelector('[data-i="' + lastIdx + '"]'), pc = cell && cell.querySelector(".ck-piece");
+      if (!still && pc && el < activeSlide.duration) {
+        cell.style.zIndex = "3"; cell.style.position = "relative";
+        const a = pc.animate(activeSlide.frames, { duration: activeSlide.duration });
+        a.currentTime = el;
+        a.onfinish = a.oncancel = () => { cell.style.zIndex = ""; cell.style.position = ""; };
+      }
+      return;
+    }
     if (still || !prev || lastIdx < 0 || !board[lastIdx] || prev[lastIdx]) return;
     const mine = colorOf(board[lastIdx]);
     const cellAt = (i) => boardEl.querySelector('[data-i="' + i + '"]');
@@ -235,6 +247,7 @@
     const lifted = [];
     frames.forEach((f, k) => { lifted.push(f); if (k < frames.length - 1) { const a = at[k], b = at[k + 1]; lifted.push({ transform: "translate(" + (a[0] + b[0]) / 2 + "px," + (a[1] + b[1]) / 2 + "px) scale(1.16)", offset: (k + 0.5) / (route.length - 1), easing: "ease-in-out" }); } });
     toCell.style.zIndex = "3"; toCell.style.position = "relative";
+    activeSlide = { key: board.join("") + "|" + lastIdx, start: performance.now(), frames: lifted, duration: hop * (route.length - 1) };
     const run = piece.animate(lifted, { duration: hop * (route.length - 1) });
     run.onfinish = run.oncancel = () => { toCell.style.zIndex = ""; toCell.style.position = ""; };
     // each jumped piece stays put until the jumper passes, then shrinks away

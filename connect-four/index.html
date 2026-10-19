@@ -132,6 +132,8 @@
 
   html body.fun.g-connect-four .panel .c4-board { background: #2f45c4; border: 6px solid #000; border-radius: 18px; gap: 6px; padding: 8px; }
   html body.fun.g-connect-four .c4-slot { background: #1d2a85; border: 0; }
+  /* shared.css fades a slot's colour in over .12s; behind the falling disc that showed the empty hole for a moment (a flash) when the disc landed */
+  html body.fun.g-connect-four .panel .c4-slot { transition: none; }
   /* the fall + bounce is animated by game.js (dropAnim), not by this old short CSS drop */
   html body.fun.g-connect-four .c4-slot.p1:not(.win), html body.fun.g-connect-four .c4-slot.p2:not(.win) { animation: none; }
   html body.fun.g-connect-four .c4-slot.p1 { background: #ff4d46; } html body.fun.g-connect-four .c4-slot.p2 { background: #ffc933; }
