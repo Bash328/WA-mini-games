@@ -26,7 +26,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [gomoku](gomoku/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
-| [pig](pig/) | **2 players · WhatsApp** (default), vs computer at 3 levels, same device |
+| [pig](pig/) | **2 players · WhatsApp** (default), **online** (the server rolls), vs computer at 3 levels, same device |
 | [ultimate-tic-tac-toe](ultimate-tic-tac-toe/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [hex](hex/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [blokus-duo](blokus-duo/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
@@ -409,3 +409,14 @@ Each game folder is self-contained: `index.html` + `game.js`.
 ## License
 
 [MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([vendor/lz-string.LICENSE](vendor/lz-string.LICENSE)). Fira Mono © The Mozilla Corporation and Telefonica S.A., SIL Open Font License 1.1 ([fonts/fira-mono.LICENSE](fonts/fira-mono.LICENSE)).
+
+## The look, the motion and the tests
+
+Every game page uses the chunky look (`fun.css` + `fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page is the one page still in the old look.
+
+- **Steady layout:** pages with `data-fun-zone` have a header, one fixed message zone, an Options bar and then the board. Options opens as a popover over the board, so nothing moves when it opens, a status changes or a mode changes (`data-fun-zone="slim"` / `"mini"` shrink the zone). Choosing from a dropdown inside Options folds it away again.
+- **Motion** is in `gamekit.js`, so a page opts in with one line: `Gamekit.popFilled(boardEl)` pops any square that newly fills (stones, marks, numbers); `Gamekit.glidePieces(boardEl, selector)` glides a piece that has moved. Games with their own motion: Connect Four drops, Reversi flips, Chess/Checkers slides (multi-jumps follow their path), Mancala sows seed by seed, Minesweeper ripples and explodes, Battleship has a cannon, Zip glides a head with a halo, tic-tac-toe draws its win line, 2048 blends merges. Everything is skipped under `prefers-reduced-motion`.
+- **End of game card:** `gamekit.js` builds it when the status line says someone won. `data-next="Next level"` on the body makes puzzle pages offer the next puzzle; `data-over-delay="ms"` holds the card back while a win animation plays.
+- **Shared rules:** a game that is played online keeps its rules in one file the page and the Worker both load (`backgammon/rules.js`, `onitama/rules.js`, `pig/rules.js`), so they cannot disagree. Pig and Backgammon are online with the server rolling (`stamp` hook).
+- **Tests:** `node tests/regression.mjs` drives Chrome at phone widths over every fixed issue and every redesigned page (`--page chess --only steady` narrows it). After changing any script or stylesheet a game loads, run `node tests/cache-bust.mjs` to re-stamp the `?v=` hashes. The Worker has its own tests: `node worker/rules/pig.test.mjs`, `node worker/live-protocol.test.mjs`, and the other `worker/**/*.test.mjs`.
+

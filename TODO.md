@@ -112,6 +112,10 @@ The user's reference screenshots (flat, chunky, Lilita One, round buttons, per-g
 ---
 
 ## What is left
-1. Deploy and switch on pokes (section 7).
-2. Bring the remaining games online (section 6), and the Hangman stickman (section 3).
-3. Crazy 8's look and feel, then the other new games (section 8).
+Done since the last list: the redesign is on every game page and the hub (with its tile art), Battleship was rebuilt (drag and rotate ships, fleet strip, cannon), animations went in across the board games and puzzles, scroll and Options fixes, a shared Undo icon, Pig online. See README ("The look, the motion and the tests").
+
+1. **Merge `claude/live-play` into `main`** (everything is deployed from `claude/live-play`).
+2. **Try Pig online in a real two-phone room** (rooms cannot run on the development machine; only the rules and protocol are tested).
+3. **Real iPhone check:** everything was tested in desktop Chrome at phone size, not Safari. Online and WhatsApp modes were only checked on a few pages; a few pages (Hex, Pentago, Quoridor) were not played to a finish.
+4. **Privacy page** is the one page still in the old look.
+5. Bring the remaining games online (section 6), the Hangman stickman (section 3), and the new games from the screenshots (section 10): Ludo, Word Search, Hearts, Car parking, the block puzzle.
