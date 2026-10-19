@@ -109,7 +109,7 @@
   .bs-hull { position: absolute; z-index: 0; pointer-events: none; filter: drop-shadow(0 3px 0 rgba(0,0,0,.28)); }
   .bs-hull.live { z-index: 2; pointer-events: auto; cursor: grab; touch-action: none; }
   .bs-hull.lift { visibility: hidden; }
-  .bs-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .bs-svg { display: block; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; pointer-events: none; }
   .bs-ghost { position: fixed; z-index: 90; pointer-events: none; filter: drop-shadow(0 8px 0 rgba(0,0,0,.3)); opacity: .95; }
   #bs-tray { gap: 8px; align-items: flex-end; }
   html body.fun.g-battleship #bs-tray .bs-ship { min-height: 0; padding: 8px 10px 6px; border: 0; border-radius: 16px; background: rgba(255,255,255,.12); color: #fff; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 4px; touch-action: none; font-size: 13px; }
@@ -120,9 +120,8 @@
   /* the fleet strip between the grids: your enemy's ships (blue) over yours (coral); a sunk one fades and is crossed out */
   .bs-fleets { display: grid; gap: 4px; margin: 6px auto 0; padding: 5px 12px; width: min(100%, 330px); box-sizing: border-box; border-radius: 16px; background: rgba(0,0,0,.2); }
   .bs-fleets .row { display: flex; gap: 8px; align-items: center; justify-content: center; }
-  .bs-mini { position: relative; height: 9px; }
-  .bs-fleets .row.foe .bs-svg path { fill: #4fd1ff; } .bs-fleets .row.me .bs-svg path { fill: #ff7a6b; }
-  .bs-fleets .row .bs-svg circle { fill: rgba(0,0,0,.35); }
+  .bs-mini { position: relative; height: auto; display: block; }
+  .bs-mini .bs-svg { height: auto; }
   .bs-mini.sunk { opacity: .35; }
   .bs-mini.sunk::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 2px; border-radius: 1px; background: #fff; transform: rotate(-12deg); }
   /* the cannon is the fire button: tap a square to aim, tap the cannon to shoot */
@@ -132,7 +131,7 @@
   .bs-cannon[hidden] { display: none !important; }
   .bs-cannon svg { width: 100%; height: 100%; overflow: visible; }
   .bs-cannon .cap { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); font-size: 13px; color: #fff; background: rgba(0,0,0,.35); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
-  .bs-cannon.recoil .gun { animation: bs-recoil .42s ease-out; }
+  
   @keyframes bs-recoil { 0% { transform: translateY(0); } 22% { transform: translateY(9px); } 100% { transform: translateY(0); } }
   .bs-ball { position: fixed; z-index: 95; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b5f6a, #1b1c21 60%); box-shadow: 0 6px 6px rgba(0,0,0,.25); pointer-events: none; }
   .bs-fx { position: fixed; z-index: 96; pointer-events: none; }
@@ -177,7 +176,7 @@
   /* ---- the battle screen, as in the reference: nothing above the boards, the grids edge to edge, the cannon on your waters ---- */
   html body.fun.g-battleship.bs-battle { --zone: 0px; --fun-bg: #f7977a; }
   html body.fun.g-battleship.bs-battle:has(.turn.wait) { --fun-bg: #62a8d0; }
-  body.bs-battle .topbar, body.bs-battle .panel > .row, body.bs-battle .gk-optwrap, body.bs-battle .gk-slot, body.bs-battle .toolbar, body.bs-battle .panel > .turn, body.bs-battle #bs-note { display: none !important; }
+  body.bs-battle .topbar, body.bs-battle .panel > .row, body.bs-battle .gk-slot, body.bs-battle .toolbar, body.bs-battle .panel > .turn, body.bs-battle #bs-note { display: none !important; }
   /* the link / room panel is still needed to send a move: it floats over your waters while it has something to press */
   body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60; padding: 10px; border-radius: 24px; background: rgba(20,18,27,.82); }
   html body.fun.g-battleship.bs-battle .wrap { padding: 0; max-width: none; }
@@ -202,6 +201,53 @@
   .bs-tab.left b.foe { color: #1ea7f5; } .bs-tab.left b.me { color: #ff5a52; } .bs-tab.left i { width: 9px; height: 9px; border-radius: 50%; background: #3b4252; display: block; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(var(--g) * .37); height: calc(var(--g) * .40); bottom: calc(var(--g) * .03); }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: none; }
+
+  /* ---- v3: sizes and positions measured from the reference screenshot (844px tall: 65 gap, 322 grid, 70 strip, 322 grid, 65 gap) ---- */
+  html:has(body.bs-battle) { overflow-x: hidden; }
+  html body.fun.g-battleship.bs-battle { overflow-x: clip; }
+  body.bs-battle .gk-optwrap { display: block !important; position: fixed; left: 10px; right: 10px; top: 10px; z-index: 80; margin: 0; height: 0; }
+  body.bs-battle .gk-optbtn { display: none !important; }
+  body.bs-battle .gk-menu { top: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --gh: min(calc(100vw * .825), calc((100svh - 90px) / 2)); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: 100vw; margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-grid { height: var(--gh); box-sizing: border-box; grid-template-rows: repeat(10, minmax(0, 1fr)); padding: calc(var(--gh) * .028) calc(100vw * .018); gap: calc(var(--gh) * .012) calc(100vw * .009); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs .bs-cell, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell { aspect-ratio: auto; width: 100%; height: 100%; min-height: 0; border-radius: calc(var(--gh) * .02); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell.miss { font-size: calc(var(--gh) * .075); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mid { height: 70px; overflow-x: clip; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { gap: 14px; height: 60px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 12px; height: auto; align-items: center; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row.me .bs-mini { opacity: .8; }
+  .bs-mid .bs-tab { width: 84px; height: 100px; margin-top: -50px; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+  .bs-tab.left { left: -42px; padding-left: 38px; flex-direction: column; gap: 2px; }
+  .bs-tab.right { right: -42px; padding-right: 36px; }
+  .bs-tab.right span { font-size: 17px; letter-spacing: .03em; }
+  .bs-tab.left b { font-size: 24px; transform: rotate(-90deg); }
+  /* the cannon: it rests on your waters and slides off the top of the screen while the opponent plays */
+  html body.fun.g-battleship .panel .bs-cannon { transform: translate(-50%, 0); transition: transform .65s cubic-bezier(.55, 0, .25, 1), visibility 0s linear 0s; }
+  html body.fun.g-battleship .panel .bs-cannon.away { transform: translate(-50%, calc(-100svh - 80px)); visibility: hidden; pointer-events: none; transition: transform .65s cubic-bezier(.55, 0, .25, 1), visibility 0s linear .65s; }
+  html body.fun.g-battleship .panel .bs-cannon.nomove, html body.fun.g-battleship .panel .bs-cannon.nomove.away { transition: none; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled svg { opacity: 1; }
+  .bs-cannon[hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { html body.fun.g-battleship .panel .bs-cannon, html body.fun.g-battleship .panel .bs-cannon.away { transition: none; } }
+
+  /* v4: the cannon is the picture cut from the reference; the tabs are plain white; strip spacing from the reference */
+  html body.fun.g-battleship .panel .bs-cannon { width: calc(100vw * .37); height: auto; aspect-ratio: 436 / 514; bottom: 4px; }
+  .bs-cannon img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+  .bs-cannon.recoil img { animation: bs-recoil .42s ease-out; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(100vw * .37); height: auto; bottom: 4px; }
+  html body.fun.g-battleship .panel .bs-tab, html body.fun.g-battleship .panel .bs-tab:hover, html body.fun.g-battleship .panel .bs-tab:active { background: #fff; color: #3b4252; box-shadow: none; border: 0; border-radius: 50%; filter: none; transform: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 5px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull { opacity: .62; }
+
+  /* v5: rows and tab text measured against the reference overlay */
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { height: 70px; align-content: start; padding-top: 6px; gap: 13px; box-sizing: border-box; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { height: 22px; align-items: center; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row.me .bs-mini { opacity: .55; }
+  .bs-tab.right span { font-size: 14px; letter-spacing: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull { opacity: .5; filter: saturate(.35) brightness(1.45); }
+
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { padding-top: 7px; gap: 11px; }
+  .bs-tab.right span { font-size: 12px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -241,12 +287,12 @@
       <div class="bs-mid" id="bs-mid" hidden>
         <div class="bs-fleets" id="bs-fleets"></div>
         <div class="bs-tab left" id="bs-score" aria-label="Ships sunk"></div>
-        <a class="bs-tab right" href="../" aria-label="Exit to all games"><span>EXIT</span></a>
+        <button class="bs-tab right" id="bs-opt-tab" type="button" aria-label="Options"><span>OPTIONS</span></button>
       </div>
       <div class="bs-wrap small" id="bs-sub-wrap">
         <h3 class="bs-title" id="bs-sub-title"></h3>
         <div class="bs-grid" id="bs-sub"></div>
-        <button class="bs-cannon" id="bs-fire" type="button" aria-label="Fire"><svg viewBox="0 0 90 96" aria-hidden="true"><ellipse cx="46" cy="88" rx="30" ry="6" fill="rgba(0,0,0,.18)"/><circle cx="45" cy="62" r="30" fill="#16171b"/><circle cx="45" cy="62" r="22" fill="#e5483d"/><circle cx="45" cy="62" r="14" fill="#16171b"/><g class="gun"><rect x="30" y="10" width="30" height="58" rx="14" fill="#16171b"/><rect x="37" y="18" width="7" height="40" rx="3.5" fill="#5b5f6a"/><ellipse cx="45" cy="14" rx="15" ry="6" fill="#0b0b0d"/></g></svg><span class="cap" id="bs-cap">Fire</span></button>
+        <button class="bs-cannon" id="bs-fire" type="button" aria-label="Fire"><img src="ships/cannon.png" alt="" draggable="false"><span class="cap" id="bs-cap">Fire</span></button>
       </div>
       <p id="bs-note"></p>
       <div class="bs-actions" id="bs-place-actions" hidden>
@@ -305,7 +351,7 @@
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script src="game.js?v=7cb0fdf6"></script>
+<script src="game.js?v=5df47591"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

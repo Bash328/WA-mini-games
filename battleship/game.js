@@ -166,11 +166,11 @@
 
   /* ---------- Ship pictures ---------- */
   // A flat grey hull with portholes, one per ship; stretched to the ship's cells (or a small row icon).
-  const hullSvg = (len) => {
-    const W = len * 20;
-    return '<svg class="bs-svg" viewBox="0 0 ' + W + ' 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10Q3 3 9 3H' + (W - 12) + 'L' + (W - 2) + ' 10L' + (W - 12) + ' 17H9Q3 17 3 10Z" fill="#e8eef6" stroke="#2f3a50" stroke-width="2" stroke-linejoin="round"/>' +
-      Array.from({ length: len }, (_, i) => '<circle cx="' + (10 + 20 * i) + '" cy="10" r="2.6" fill="#2f3a50"/>').join("") + '</svg>';
-  };
+  const SLUG = ["carrier", "battleship", "cruiser", "submarine", "destroyer"];     // the order of SHIPS
+  // the picture of ship k, cut out of the reference screenshots (red for yours, blue for the enemy's strip)
+  const shipArt = (k, blue) => '<img class="bs-svg" src="ships/' + SLUG[k] + (blue ? "-blue" : "") + '.png" alt="" draggable="false">';
+  const STRIP_ORDER = [0, 1, 3, 2, 4];       // carrier, battleship, submarine, cruiser, destroyer: the reference's order
+  const STRIP_W = [82, 66, 50, 49, 30];      // css px, from the reference
   // Lay a fleet (array of placements, nulls skipped) over a grid as pictures. `live`: they can be dragged (placement).
   function drawHulls(el, fleet, live, extra) {
     el.querySelectorAll(".bs-hull").forEach((h) => h.remove());
@@ -182,7 +182,7 @@
       const d = document.createElement("div");
       d.className = "bs-hull" + (live ? " live" : "") + (extra ? " " + extra : "");
       d.dataset.k = String(k);
-      d.innerHTML = hullSvg(SHIPS[k].len);
+      d.innerHTML = shipArt(k);
       d.style.cssText = p.o === "h"
         ? "left:" + x + "px;top:" + y + "px;width:" + w + "px;height:" + h + "px"
         : "left:" + (x + w) + "px;top:" + y + "px;width:" + h + "px;height:" + w + "px;transform:rotate(90deg);transform-origin:0 0";
@@ -193,9 +193,9 @@
   const fleetsEl = $("bs-fleets"), midEl = $("bs-mid"), scoreEl = $("bs-score");
   function drawFleetRows(v) {
     const row = (cls, fleet, shots) => {
-      const set = new Set(shots);
-      return '<div class="row ' + cls + '">' + SHIPS.map((s, k) =>
-        '<span class="bs-mini' + (fleet && shipSunk(fleet, k, set) ? " sunk" : "") + '" style="width:' + s.len * 9 + 'px" title="' + s.name + '">' + hullSvg(s.len) + "</span>").join("") + "</div>";
+      const set = new Set(shots), blue = cls === "foe";
+      return '<div class="row ' + cls + '">' + STRIP_ORDER.map((k) =>
+        '<span class="bs-mini' + (fleet && shipSunk(fleet, k, set) ? " sunk" : "") + '" style="width:' + STRIP_W[STRIP_ORDER.indexOf(k)] + 'px" title="' + SHIPS[k].name + '">' + shipArt(k, blue) + "</span>").join("") + "</div>";
     };
     fleetsEl.innerHTML = row("foe", v.enemyFleet, v.myShots) + row("me", v.myFleet, v.theirShots);
     // the tab on the left: how many of their ships you have sunk (blue) and of yours they have (red)
@@ -293,7 +293,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "bs-ship" + (plc.sel === k ? " sel" : "") + (plc.p[k] ? " placed" : "");
-      b.innerHTML = '<span class="bs-pic" style="width:' + s.len * 22 + 'px">' + hullSvg(s.len) + "</span>" + s.name;
+      b.innerHTML = '<span class="bs-pic" style="width:' + s.len * 22 + 'px">' + shipArt(k) + "</span>" + s.name;
       b.addEventListener("click", () => {
         if (plc.p[k]) { plc.o = plc.p[k].o; plc.p[k] = null; }
         plc.sel = k;
@@ -328,6 +328,7 @@
     trayEl.hidden = true;
     midEl.hidden = true;
     fireBtn.hidden = true;
+    if (v.kind !== "battle") fireBtn.classList.remove("away", "settled");
     document.body.classList.toggle("bs-battle", v.kind === "battle");
     subWrap.hidden = true;
     mainEl.classList.remove("clickable");
@@ -362,7 +363,8 @@
       midEl.hidden = false;
       drawFleetRows(v);
       noteEl.textContent = v.note || "";
-      fireBtn.hidden = !v.canFire || !!v.handoff;        // only on your turn; on a shared device the End turn button replaces it
+      fireBtn.hidden = !!v.handoff;                      // on a shared device the End turn button replaces it
+      setCannon(v.canFire);
       fireBtn.disabled = !v.canFire || sel < 0 || firing;
       capEl.textContent = v.handoff ? "" : !v.canFire ? "Waiting" : sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
       fireActions.hidden = !v.handoff;
@@ -430,7 +432,7 @@
       const cell = mainEl.children[0].getBoundingClientRect(), len = SHIPS[drag.k].len;
       const g = document.createElement("div");
       g.className = "bs-ghost";
-      g.innerHTML = hullSvg(len);
+      g.innerHTML = shipArt(drag.k);
       drag.cw = cell.width; drag.ch = cell.height;
       if (drag.o === "h") g.style.cssText = "width:" + len * cell.width + "px;height:" + cell.height + "px";
       else g.style.cssText = "width:" + len * cell.height + "px;height:" + cell.width + "px;transform:rotate(90deg);transform-origin:0 0";
@@ -526,16 +528,28 @@
   });
   // Fire: the cannon kicks back and a ball flies to the aimed square, then the shot is taken.
   let firing = false;
+  // Not your turn: the cannon slides away off the top of the screen (towards the side that is playing) and is out of sight;
+  // on your turn it slides back down onto your waters. The first drawing of a battle puts it where it belongs with no slide.
+  function setCannon(mine) {
+    const away = !mine;
+    if (!fireBtn.classList.contains("settled")) {
+      fireBtn.classList.add("nomove");
+      fireBtn.classList.toggle("away", away);
+      void fireBtn.offsetWidth;
+      fireBtn.classList.remove("nomove");
+      fireBtn.classList.add("settled");
+    } else fireBtn.classList.toggle("away", away);
+  }
   function shootAnim(cell, hit) {
     const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const target = mainEl.children[cell];
     if (still || !target || !target.animate) return Promise.resolve();
     fireBtn.classList.remove("recoil"); void fireBtn.offsetWidth; fireBtn.classList.add("recoil");
-    const mouth = fireBtn.querySelectorAll("ellipse")[1].getBoundingClientRect(), t = target.getBoundingClientRect();
+    const img = fireBtn.querySelector("img").getBoundingClientRect(), t = target.getBoundingClientRect();
     const ball = document.createElement("div");
     ball.className = "bs-ball";
     document.body.appendChild(ball);
-    const x0 = mouth.left + mouth.width / 2, y0 = mouth.top + mouth.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
+    const x0 = img.left + img.width * 0.52, y0 = img.top + img.height * 0.17, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
     const fly = ball.animate([
       { left: x0 + "px", top: y0 + "px", transform: "scale(.8)" },
       { left: (x0 + x1) / 2 + "px", top: (y0 + y1) / 2 - 30 + "px", transform: "scale(1.7)", offset: 0.55 },
@@ -565,6 +579,17 @@
     }
     setTimeout(() => fx.remove(), 900);
   }
+  const optTab = $("bs-opt-tab");
+  if (optTab) optTab.addEventListener("click", (e) => { e.stopPropagation(); document.body.classList.toggle("gk-play"); });
+  (function () {
+    const menu = document.querySelector(".gk-menu");
+    if (!menu || menu.querySelector(".bs-home")) return;
+    const home = document.createElement("a");
+    home.className = "btn ghost bs-home";
+    home.href = "../";
+    home.textContent = "All games";
+    menu.appendChild(home);
+  })();
   fireBtn.addEventListener("click", () => {
     if (firing || sel < 0 || vm.kind !== "battle" || !vm.canFire) return;
     const cell = sel;

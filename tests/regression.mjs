@@ -266,7 +266,7 @@ check('battleship-battle-fits-and-fires', 'battleship: a battle (your shot) did 
   await p.waitForTimeout(400);
   const bad = [];
   await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(600);
-  const r = await p.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); return { over: document.documentElement.scrollHeight - innerHeight, strip: q('#bs-fleets').top > q('#bs-main').bottom && q('#bs-fleets').bottom < q('#bs-sub').top, ships: document.querySelectorAll('#bs-fleets .bs-mini').length, cannon: !!document.querySelector('#bs-fire svg') }; });
+  const r = await p.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); return { over: document.documentElement.scrollHeight - innerHeight, strip: q('#bs-fleets').top >= q('#bs-main').bottom - 1 && q('#bs-fleets').bottom <= q('#bs-sub').top + 1, ships: document.querySelectorAll('#bs-fleets .bs-mini').length, cannon: !!document.querySelector('#bs-fire img') }; });
   if (r.over > 0) bad.push('the battle screen scrolls (' + r.over + 'px too tall)');
   if (!r.strip) bad.push('the fleet strip is not between the two grids');
   if (r.ships !== 10) bad.push('the fleet strip should show 5 ships for each side (saw ' + r.ships + ')');
@@ -689,17 +689,65 @@ check('battleship-reference-battle-screen', 'battleship: the battle screen must 
   const bad = [];
   await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(600);
   const r = await p.evaluate(() => { const q = (s) => document.querySelector(s), vis = (s) => { const e = q(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0; }; const m = q('#bs-main').getBoundingClientRect(), o = q('#bs-sub').getBoundingClientRect(), mid = q('#bs-mid').getBoundingClientRect();
-    return { chrome: ['.topbar', '.gk-optbtn', '.panel > .row'].filter(vis), mainW: Math.round(m.width), subW: Math.round(o.width), top: Math.round(m.top), order: m.bottom <= mid.top + 1 && mid.bottom <= o.top + 1, tabs: !!q('#bs-score') && !!q('a.bs-tab'), cannon: vis('#bs-fire'), over: document.documentElement.scrollHeight - innerHeight, bg: getComputedStyle(document.body).backgroundColor }; });
+    return { chrome: ['.topbar', '.gk-optbtn', '.panel > .row'].filter(vis), mainW: Math.round(m.width), subW: Math.round(o.width), top: Math.round(m.top), order: m.bottom <= mid.top + 1 && mid.bottom <= o.top + 1, tabs: !!q('#bs-score') && !!q('#bs-opt-tab'), noSide: document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth, cannon: vis('#bs-fire'), over: document.documentElement.scrollHeight - innerHeight, bg: getComputedStyle(document.body).backgroundColor }; });
   if (r.chrome.length) bad.push('still showing above the boards: ' + r.chrome.join(', '));
   if (r.mainW < 380 || r.subW < 380) bad.push('the grids are not edge to edge (' + r.mainW + ' and ' + r.subW + 'px wide)');
   if (!r.order) bad.push('the fleet strip is not between the two grids');
-  if (!r.tabs) bad.push('the score tab or the EXIT tab is missing');
+  if (!r.tabs) bad.push('the score tab or the Options tab is missing');
+  if (!r.noSide) bad.push('the page can be dragged sideways (the tabs stick out past the edge)');
   if (!r.cannon) bad.push('no cannon on your turn');
   if (r.over > 0) bad.push('the screen scrolls (' + r.over + 'px)');
   if (!/247, 151, 122/.test(r.bg)) bad.push('the page is not the salmon of the reference (' + r.bg + ')');
   // not your turn: no cannon at all
-  const hidden = await p.evaluate(() => { const T = window.__battleshipTest; T.draw({ kind: 'battle', me: 1, myFleet: T.randomFleet(), enemyFleet: T.randomFleet(), myShots: [], theirShots: [], canFire: false, handoff: false, lastMine: -1, lastTheirs: -1, note: '' }); const e = document.getElementById('bs-fire'); return getComputedStyle(e).display === 'none' || e.hidden; });
+  await p.evaluate(() => { const T = window.__battleshipTest; T.draw({ kind: 'battle', me: 1, myFleet: T.randomFleet(), enemyFleet: T.randomFleet(), myShots: [], theirShots: [], canFire: false, handoff: false, lastMine: -1, lastTheirs: -1, note: '' }); });
+  await p.waitForTimeout(900);
+  const hidden = await p.evaluate(() => { const e = document.getElementById('bs-fire'); return getComputedStyle(e).visibility === 'hidden' || e.getBoundingClientRect().bottom <= 0; });
   if (!hidden) bad.push('the cannon is showing when it is not your turn');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('battleship-cannon-slides-away-and-back', 'battleship: the cannon faded instead of leaving; it now slides off the top of the screen while the opponent plays (fully out of sight) and slides back down on your turn', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+  const state = () => p.evaluate(() => { const e = document.getElementById('bs-fire'), r = e.getBoundingClientRect(), cs = getComputedStyle(e); return { bottom: Math.round(r.bottom), top: Math.round(r.top), vis: cs.visibility, op: cs.opacity, away: e.classList.contains('away') }; });
+  const mine = await state();
+  if (mine.vis !== 'visible' || mine.bottom < 600) bad.push('the cannon is not resting on your waters on your turn (' + JSON.stringify(mine) + ')');
+  const draw = (can) => p.evaluate((can) => { const T = window.__battleshipTest; T.draw({ kind: 'battle', me: 1, myFleet: T.randomFleet(), enemyFleet: T.randomFleet(), myShots: [], theirShots: [], canFire: can, handoff: false, lastMine: -1, lastTheirs: -1, note: '' }); }, can);
+  await draw(false); await p.waitForTimeout(120);
+  const mid = await state();
+  if (!mid.away) bad.push('the cannon does not start to leave when it is not your turn');
+  if (!(mid.bottom < mine.bottom)) bad.push('the cannon did not move up while leaving (' + mine.bottom + ' -> ' + mid.bottom + ')');
+  await p.waitForTimeout(900);
+  const gone = await state();
+  if (gone.bottom > 0 || gone.vis !== 'hidden') bad.push('the cannon is not fully out of sight after leaving (bottom ' + gone.bottom + ', ' + gone.vis + ', opacity ' + gone.op + ')');
+  if (gone.op !== '1') bad.push('the cannon was faded (opacity ' + gone.op + ') instead of slid away');
+  await draw(true); await p.waitForTimeout(950);
+  const back = await state();
+  if (back.away || back.bottom < 600 || back.vis !== 'visible') bad.push('the cannon did not slide back on your turn (' + JSON.stringify(back) + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('battleship-ships-from-the-screenshots', 'battleship: the ship pictures must be the ones cut out of the reference screenshots (images, not drawn shapes), the cannon too, and the right tab must be Options (not Exit) and open the Options menu over the battle', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.waitForTimeout(300);
+  const placed = await p.evaluate(() => [...document.querySelectorAll('#bs-main .bs-hull img')].map((i) => i.getAttribute('src')).sort().join());
+  if (!/ships\/battleship\.png/.test(placed) || !/ships\/carrier\.png/.test(placed)) bad.push('placed ships are not the cut-out pictures (' + placed + ')');
+  await p.locator('#bs-ready').click(); await p.waitForTimeout(700);
+  const r = await p.evaluate(() => ({ strip: [...document.querySelectorAll('#bs-fleets img')].map((i) => i.getAttribute('src')).join(), cannon: (document.querySelector('#bs-fire img') || {}).src || '', tab: (document.getElementById('bs-opt-tab') || {}).textContent || '' }));
+  if (!/carrier-blue\.png/.test(r.strip)) bad.push('the fleet strip is not using the blue cut-outs');
+  if (!/ships\/cannon\.png/.test(r.cannon)) bad.push('the cannon is not the cut-out picture');
+  if (!/options/i.test(r.tab) || /exit/i.test(r.tab)) bad.push('the right tab should say Options (it says "' + r.tab + '")');
+  await p.locator('#bs-opt-tab').click(); await p.waitForTimeout(300);
+  const menuOpen = await p.evaluate(() => { const m = document.querySelector('.gk-menu'); return !document.body.classList.contains('gk-play') && !!m && getComputedStyle(m).display !== 'none' && !!m.querySelector('.bs-home'); });
+  if (!menuOpen) bad.push('tapping the Options tab does not open the Options menu (with an All games link)');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;
