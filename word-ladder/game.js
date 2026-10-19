@@ -92,7 +92,8 @@
       const gap = document.createElement("div"); gap.className = "wl-gap"; gap.textContent = "⋮"; listEl.appendChild(gap);
       listEl.appendChild(row(puzzle.target, "target"));
     }
-    stepsEl.textContent = "Steps: " + (chain.length - 1) + " · Best possible: " + puzzle.par;
+    stepsEl.textContent = String(chain.length - 1);
+    const parEl = document.getElementById("par"); if (parEl) parEl.textContent = String(puzzle.par);
     undoBtn.disabled = done || chain.length < 2;
     hintBtn.disabled = done;
     kbEl.hidden = done;
@@ -124,7 +125,7 @@
     const key = "best:" + diff;
     const best = store.getInt(key, null);
     if (hints === 0 && (best === null || extra < best)) store.set(key, extra);
-    say((extra === 0 ? "Perfect! " : "Solved. ") + steps + " steps" + (extra > 0 ? " (" + extra + " more than the shortest)" : "") + (hints ? ", " + hints + " hint" + (hints > 1 ? "s" : "") : "") + ".");
+    say((extra === 0 ? "Solved. Perfect! " : "Solved. ") + steps + " steps" + (extra > 0 ? " (" + extra + " more than the shortest)" : "") + (hints ? ", " + hints + " hint" + (hints > 1 ? "s" : "") : "") + ".");
     render();
   }
   function undo() { if (done || chain.length < 2) return; chain.pop(); current = ""; say(""); render(); }

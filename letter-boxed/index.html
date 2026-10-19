@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>letter boxed · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,7 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
 <style>
   /* the box: a square with dots on its edges, a letter outside each dot; a swipe draws a line from dot to dot */
   /* the status line changes length as you play and can wrap on a narrow phone: hold two lines so the box never moves */
@@ -63,19 +64,34 @@
   .lb-keys { display: flex; gap: 8px; justify-content: center; margin: 6px 0; }
   .lb-keys .btn { min-height: 46px; flex: 1; max-width: 140px; }
   .lb-hint { text-align: center; font-size: var(--fs-sm); min-height: 1.4em; color: var(--muted); }
+
+  /* chunky look: leather-brown page, a white box with round letters, a yellow line */
+  html body.fun.g-letter-boxed { --fun-bg: #3a2a1a; --fun-btn: #a8814a; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-letter-boxed .lb-sq { fill: #fff; stroke: #000; stroke-width: 1.6; }
+  html body.fun.g-letter-boxed .lb-dot { fill: #2f3a46; } html body.fun.g-letter-boxed .lb-dot.on { fill: #ffbf2e; }
+  html body.fun.g-letter-boxed .lb-now { stroke: #ff7a7a; stroke-width: 2.6; }
+  html body.fun.g-letter-boxed .panel .lb-l { background: #fff; border: 3px solid #000; color: #2f3a46; font-weight: 400; box-shadow: none; opacity: 1; }
+  html body.fun.g-letter-boxed .panel .lb-l.used { background: #ffe8a3; border-color: #000; }
+  html body.fun.g-letter-boxed .panel .lb-l.start { border-color: #000; box-shadow: 0 0 0 4px #ffbf2e; }
+  html body.fun.g-letter-boxed .panel .lb-l.cur { background: #ffbf2e; color: #5a3a00; border-color: #000; }
+  html body.fun.g-letter-boxed .panel .lb-l:disabled { opacity: .35; }
+  html body.fun.g-letter-boxed .lb-word { font-weight: 400; color: #fff; } html body.fun.g-letter-boxed .lb-word .lock { color: #ffbf2e; } html body.fun.g-letter-boxed .lb-word .ph { color: rgba(255,255,255,.55); }
+  html body.fun.g-letter-boxed .lb-msg, html body.fun.g-letter-boxed .lb-hint { color: rgba(255,255,255,.75); } html body.fun.g-letter-boxed .lb-msg.bad { color: #ff8a7a; }
+  html body.fun.g-letter-boxed .lb-chain span { border: 0; background: rgba(255,255,255,.14); color: #fff; font-weight: 400; }
+  html body.fun.g-letter-boxed .lb-keys .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-letter-boxed">
+<body class="g-letter-boxed fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>letter boxed</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Words</small><b id="count">0</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Loading the word list…</p>
-      <p class="status">Words: <span id="count">0</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="letter-boxed" data-man-title="LETTER-BOXED(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -128,10 +144,11 @@
   <p class="muted">About 55,000 words, a trimmed ENABLE list (public domain) keeping the ones people actually use. If a real word is refused, it just isn't in the list.</p>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="puzzle.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="puzzle.js?v=e1fd7ba9"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=f8a5b018"></script>
 </body>
 </html>
