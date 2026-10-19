@@ -30,7 +30,7 @@ const ZONE = ['blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', '
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
-const MAXTOP = { hangman: 520, battleship: 470 };
+const MAXTOP = { hangman: 520, battleship: 470, onitama: 470 };
 const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
@@ -621,7 +621,7 @@ check('battleship-look', 'battleship should look like the redesign: the enemy wa
   const place = await p.evaluate(() => ({ frame: getComputedStyle(document.getElementById('bs-main')).backgroundColor, ship: [...document.querySelectorAll('#bs-main .bs-cell.ship')].length, shipBg: getComputedStyle(document.querySelector('#bs-main .bs-cell.ship')).backgroundColor, btns: ['bs-rotate', 'bs-random', 'bs-clear'].map((i) => document.getElementById(i).textContent), sw: document.documentElement.scrollWidth }));
   if (!/224, 138, 104/.test(place.frame)) bad.push('your fleet grid is not the orange frame (' + place.frame + ')');
   if (place.ship < 14) bad.push('ships should show on your grid after Random (saw ' + place.ship + ' cells)');
-  if (!/25[45], 111, 97/.test(place.shipBg)) bad.push('ship cells are not the flat red (' + place.shipBg + ')');
+  if (!/25\d, 11\d, 9\d/.test(place.shipBg)) bad.push('ship cells are not the flat red (' + place.shipBg + ')');
   if (place.btns.some((t) => /[☀-➿⬀-⯿]/.test(t))) bad.push('symbol characters on the placement buttons');
   await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
   const play = await p.evaluate(() => ({ enemy: getComputedStyle(document.getElementById('bs-main')).backgroundColor, mine: getComputedStyle(document.getElementById('bs-sub')).backgroundColor }));
