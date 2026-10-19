@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>blokus duo · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -38,8 +38,9 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .bk-wrap { width: min(520px, 100%); margin: 8px auto 0; }
   .bk-board { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); grid-template-rows: repeat(14, minmax(0, 1fr)); aspect-ratio: 1; gap: 1px; padding: 2px; background: var(--border-hi); border: 1px solid var(--border-hi); border-radius: 6px; touch-action: manipulation; }
@@ -72,10 +73,31 @@
   .bk-actions .primary:disabled { background: var(--bg-2); color: var(--dim); border-color: var(--border); }
   .sc.p1 { color: #ff9f43; }
   .sc.p2 { color: #8f74f5; }
+
+  html body.fun.g-blokus-duo { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); --vs-bg: #1c2038; transition: background-color .35s; }
+  html body.fun.g-blokus-duo:has(.turn.wait) { --fun-bg: #3d2d4f; }
+  html body.fun.g-blokus-duo .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+
+  html body.fun.g-blokus-duo { --vs-l: #ff9f43; --vs-r: #a78bfa; }
+  html body.fun.g-blokus-duo .bk-wrap { width: 100%; margin: 8px 0 0; }
+  html body.fun.g-blokus-duo .panel .bk-board { width: calc(100% + 22px); margin: 0 -11px; box-sizing: border-box; max-width: none; padding: 6px; gap: 2px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
+  html body.fun.g-blokus-duo .bk-cell { background: #3d4470; border-radius: 3px; }
+  html body.fun.g-blokus-duo .bk-cell.p1 { background: #ff9f43; } html body.fun.g-blokus-duo .bk-cell.p2 { background: #a78bfa; }
+  html body.fun.g-blokus-duo .bk-cell.go { background: #55608f; }
+  html body.fun.g-blokus-duo .bk-cell.last { box-shadow: inset 0 0 0 2px #fff; }
+  html body.fun.g-blokus-duo .bk-cell.s1::after { border-color: #ff9f43; } html body.fun.g-blokus-duo .bk-cell.s2::after { border-color: #a78bfa; }
+  html body.fun.g-blokus-duo .bk-cell.hint::after { background: #fff; opacity: .6; }
+  html body.fun.g-blokus-duo #tray .bk-piece { background: rgba(255,255,255,.1); border: 0; border-radius: 12px; box-shadow: none; opacity: 1; }
+  html body.fun.g-blokus-duo #tray .bk-piece.sel { background: #ffbf2e; }
+  html body.fun.g-blokus-duo #tray .bk-piece.sel .bk-mini i.on { background: #5a3a00; }
+  html body.fun.g-blokus-duo #tray .bk-piece.used { opacity: .2; }
+  html body.fun.g-blokus-duo .bk-mini i.on { background: #ff9f43; } html body.fun.g-blokus-duo #tray[data-p="2"] .bk-mini i.on { background: #a78bfa; }
+  html body.fun.g-blokus-duo .bk-actions .primary { background: #2fb44a; color: #fff; border: 0; box-shadow: 0 5px 0 #1c7a31; }
+  html body.fun.g-blokus-duo .bk-actions .primary:disabled { background: rgba(255,255,255,.1); box-shadow: none; color: rgba(255,255,255,.4); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-blokus-duo">
+<body class="g-blokus-duo fun" data-fun-zone data-fun-reset data-fun-vs="ORANGE,PURPLE">
 <main class="wrap">
   <div class="topbar">
     <h1>blokus duo</h1>
@@ -154,14 +176,15 @@
   </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="../vendor/lz-string.min.js"></script>
-<script defer src="../async-share.js"></script>
-<script defer src="../account.js"></script>
-<script defer src="../live-share.js"></script>
-<script defer src="rules.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="rules.js?v=25e9dcd3"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=9f300876"></script>
 </body>
 </html>

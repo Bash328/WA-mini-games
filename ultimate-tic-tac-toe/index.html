@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>ultimate tic-tac-toe · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -38,8 +38,9 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .ut-wrap { width: min(520px, 100%); margin: 8px auto 0; }
   .ut-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px; aspect-ratio: 1; }
@@ -71,10 +72,25 @@
   .ut-small.o .ut-mark { color: var(--accent-2); }
   .ut-small.tie .ut-mark { display: flex; font-size: 1.4rem; color: var(--dim); }
   .ut-small.tie .ut-mark::after { content: "tie"; }
+
+  html body.fun.g-ultimate-tic-tac-toe { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); transition: background-color .35s; }
+  html body.fun.g-ultimate-tic-tac-toe:has(.turn.wait) { --fun-bg: #3d2d4f; }
+  html body.fun.g-ultimate-tic-tac-toe .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+
+  html body.fun.g-ultimate-tic-tac-toe .topbar h1 { font-size: 17px; line-height: 1.05; text-wrap: balance; padding: 0 4px; }
+  html body.fun.g-ultimate-tic-tac-toe .ut-wrap { width: 100%; margin: 8px 0 0; }
+  html body.fun.g-ultimate-tic-tac-toe .ut-board { width: calc(100% + 22px); margin: 0 -11px; gap: 10px; padding: 12px; box-sizing: border-box; background: #e9e6f2; border-radius: 28px; }
+  html body.fun.g-ultimate-tic-tac-toe .ut-small { background: #fff; border: 3px solid #cfc9e4; border-radius: 12px; gap: 3px; padding: 4px; }
+  html body.fun.g-ultimate-tic-tac-toe .ut-small.target { border-color: #ffbf2e; background: #fff6d6; }
+  html body.fun.g-ultimate-tic-tac-toe #board .ut-cell { background: #eeeaf8; border-radius: 6px; opacity: 1; box-shadow: none; color: #2f3555; font-weight: 400; }
+  html body.fun.g-ultimate-tic-tac-toe #board .ut-cell:not(:disabled):hover { background: #ddd6f1; }
+  html body.fun.g-ultimate-tic-tac-toe #board .ut-cell.x, html body.fun.g-ultimate-tic-tac-toe .ut-small.x .ut-mark { color: #ff4d46; }
+  html body.fun.g-ultimate-tic-tac-toe #board .ut-cell.o, html body.fun.g-ultimate-tic-tac-toe .ut-small.o .ut-mark { color: #0aa5ea; }
+  html body.fun.g-ultimate-tic-tac-toe .ut-mark { background: rgba(255,255,255,.88); font-weight: 400; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-ultimate-tic-tac-toe">
+<body class="g-ultimate-tic-tac-toe fun" data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>ultimate tic-tac-toe</h1>
@@ -145,13 +161,14 @@
   </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="../vendor/lz-string.min.js"></script>
-<script defer src="../async-share.js"></script>
-<script defer src="../account.js"></script>
-<script defer src="../live-share.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=ec55d4b3"></script>
 </body>
 </html>

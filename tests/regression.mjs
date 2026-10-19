@@ -26,7 +26,7 @@ const ONLY = opt('only'), PAGE = opt('page');
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
@@ -49,6 +49,13 @@ const END = {
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
   'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  'blokus-duo': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'onitama': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'gomoku': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'hex': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'quoridor': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'pentago': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
+  'ultimate-tic-tac-toe': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   battleship: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   pig: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   yatzy: "document.getElementById('status').textContent='Game over. Final score: 120. '+Gamekit.taunt('win')",
@@ -645,6 +652,26 @@ check('app-icon-and-launch-images', 'the app icon, the launch images and the lin
   if (man.background_color !== '#171719' || man.theme_color !== '#171719') bad.push('manifest colours should be #171719');
   return bad;
 }, ['icons']);
+
+check('strategy-boards-look', 'gomoku, hex, quoridor, pentago and ultimate tic-tac-toe should share the redesign: the dark purple page, the board edge to edge with a heavy frame (or a light card for ultimate), flat pieces', async (g) => {
+  const p = await open(g);
+  const r = await p.evaluate(() => { const b = document.getElementById('board'); const cs = getComputedStyle(b); const rect = b.getBoundingClientRect(); const ch = b.firstElementChild ? b.firstElementChild.getBoundingClientRect() : null; return { page: getComputedStyle(document.body).backgroundColor, border: parseFloat(cs.borderTopWidth), bg: cs.backgroundColor, left: rect.left, right: rect.right, sw: document.documentElement.scrollWidth, wrapped: !!b.closest('[class$="-wrap"]') }; });
+  const bad = [];
+  if (!/47, 53, 85/.test(r.page)) bad.push('page is not the dark purple (' + r.page + ')');
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  if (r.right - r.left < 360) bad.push('the board is not edge to edge (' + Math.round(r.right - r.left) + 'px wide)');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['gomoku', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'blokus-duo', 'onitama']);
+
+check('header-title-fits', 'a long page title (ultimate tic-tac-toe) ran into the round buttons in the header', async (g) => {
+  const p = await open(g, 360);
+  const r = await p.evaluate(() => { const h = document.querySelector('.topbar h1'); if (!h || getComputedStyle(h).display === 'none') return null; const hr = h.getBoundingClientRect(); const right = document.querySelector('.topbar .gk-top-r').getBoundingClientRect(); const back = document.querySelector('.topbar .back').getBoundingClientRect(); const range = document.createRange(); range.selectNodeContents(h); const tr = range.getBoundingClientRect(); return { textLeft: tr.left, textRight: tr.right, backRight: back.right, rightLeft: right.left }; });
+  await p.close();
+  if (!r) return [];
+  return r.textLeft < r.backRight - 1 || r.textRight > r.rightLeft + 1 ? ['the title (' + Math.round(r.textLeft) + '..' + Math.round(r.textRight) + ') runs into the header buttons (' + Math.round(r.backRight) + ' / ' + Math.round(r.rightLeft) + ')'] : [];
+}, ['ultimate-tic-tac-toe']);
 
 check('no-js-errors', 'a page threw an error while loading', async (g) => {
   const p = await open(g);

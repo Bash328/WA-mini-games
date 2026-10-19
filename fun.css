@@ -245,7 +245,7 @@ html body.fun[data-fun-zone] .panel > .turn {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%); margin: 0; height: 68px; min-height: 0; box-sizing: border-box;
   max-width: 100%; white-space: nowrap;
 }
-html body.fun[data-fun-zone] .panel:has(> .row .status:not(.dup):not(:empty)) > .turn { visibility: hidden; }
+html body.fun[data-fun-zone] .panel:has(> .row .status:not(.dup):not(:empty):not(#score)) > .turn { visibility: hidden; }
 html body.fun[data-fun-zone] .panel .gk-slot, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] {
   position: static; height: 58px; min-height: 0; margin: 0 0 6px; display: block;
 }
