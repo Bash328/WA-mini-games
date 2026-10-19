@@ -117,5 +117,5 @@ Done since the last list: the redesign is on every game page and the hub (with i
 1. **Merge `claude/live-play` into `main`** (everything is deployed from `claude/live-play`).
 2. **Try Pig online in a real two-phone room** (rooms cannot run on the development machine; only the rules and protocol are tested).
 3. **Real iPhone check:** everything was tested in desktop Chrome at phone size, not Safari. Online and WhatsApp modes were only checked on a few pages; a few pages (Hex, Pentago, Quoridor) were not played to a finish.
-4. **Privacy page** is the one page still in the old look.
+4. **Home-screen icon:** four alternatives were drawn for you to pick from (`tools/gen-icons.py` regenerates the chosen one).
 5. Bring the remaining games online (section 6), the Hangman stickman (section 3), and the new games from the screenshots (section 10): Ludo, Word Search, Hearts, Car parking, the block puzzle.

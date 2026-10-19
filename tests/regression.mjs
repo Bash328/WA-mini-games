@@ -614,6 +614,24 @@ check('pawns-glide', 'quoridor: a pawn jumped to its new square; it now glides t
   return bad;
 }, ['quoridor']);
 
+check('privacy-look', 'the privacy page was the one page still in the old look; it is now the chunky look (violet page, round back button, a rounded card), readable on a phone', async () => {
+  const bad = [];
+  for (const w of [320, 390]) {
+    const p = await browser.newPage({ viewport: { width: w, height: 844 } });
+    const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+    await p.goto(base + 'privacy/'); await p.waitForTimeout(600);
+    const r = await p.evaluate(() => { const b = document.querySelector('.topbar .back'), cs = getComputedStyle(b), panel = getComputedStyle(document.querySelector('.panel')); return { fun: document.body.classList.contains('fun'), bg: getComputedStyle(document.body).backgroundColor, round: parseFloat(cs.borderTopLeftRadius) >= 20 && b.getBoundingClientRect().width >= 44, card: parseFloat(panel.borderTopLeftRadius) >= 20, sw: document.documentElement.scrollWidth, ink: getComputedStyle(document.querySelector('.doc p')).color }; });
+    if (!r.fun) bad.push(w + 'px: not the chunky look');
+    if (!/47, 53, 85/.test(r.bg)) bad.push(w + 'px: page is not the violet (' + r.bg + ')');
+    if (!r.round) bad.push(w + 'px: the back button is not the round one');
+    if (!r.card) bad.push(w + 'px: the policy is not in a rounded card');
+    if (r.sw > w) bad.push(w + 'px: page is ' + r.sw + 'px wide');
+    if (errs.length) bad.push('errors: ' + errs.join(';'));
+    await p.close();
+  }
+  return bad;
+}, ['privacy']);
+
 check('options-toggle', 'pressing Options while the menus are showing did not hide them', async (g) => {
   const p = await open(g);
   const vis = () => p.evaluate(() => !document.body.classList.contains('gk-play'));

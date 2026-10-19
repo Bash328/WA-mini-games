@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../ga.js"></script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>Privacy · WA mini-games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#2f3555">
 <meta name="description" content="Privacy policy for WA mini-games.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
@@ -33,18 +33,22 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <style>
+  /* the chunky look: the violet page, the round back button and a big rounded card holding the policy */
+  html body.fun.g-privacy { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); }
   .doc { max-width: 720px; }
-  .doc h2 { font-size: var(--fs-lg); margin: 28px 0 8px; }
-  .doc h2:first-child { margin-top: 0; }
-  .doc p, .doc li { color: var(--muted); font-size: var(--fs-md); line-height: 1.6; }
-  .doc ul { margin: 8px 0; padding-left: 20px; }
-  .doc strong { color: var(--fg); }
-  .doc .updated { color: var(--dim); font-size: var(--fs-sm); margin-bottom: 24px; }
+  html body.fun.g-privacy .panel { margin-top: 10px; padding: 22px 20px 26px; border-radius: 28px; background: rgba(255,255,255,.08); box-shadow: 0 8px 0 rgba(0,0,0,.18); }
+  html body.fun.g-privacy .doc h2 { margin: 26px 0 8px; font-size: 24px; font-weight: 400; color: #fff; letter-spacing: .01em; }
+  html body.fun.g-privacy .doc h2:first-of-type { margin-top: 6px; }
+  html body.fun.g-privacy .doc p, html body.fun.g-privacy .doc li { color: rgba(255,255,255,.84); font-size: 16px; line-height: 1.6; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; }
+  html body.fun.g-privacy .doc strong { color: #fff; }
+  html body.fun.g-privacy .doc a { color: #ffbf2e; text-decoration: underline; text-underline-offset: 3px; }
+  html body.fun.g-privacy .doc .updated { display: inline-block; margin: 0 0 6px; padding: 4px 14px; border-radius: 999px; background: rgba(0,0,0,.25); color: rgba(255,255,255,.8); font-size: 14px; }
 </style>
 </head>
-<body>
+<body class="g-privacy fun">
 <main class="wrap doc">
   <div class="topbar">
     <h1>privacy</h1>

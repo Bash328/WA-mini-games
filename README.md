@@ -412,7 +412,7 @@ Each game folder is self-contained: `index.html` + `game.js`.
 
 ## The look, the motion and the tests
 
-Every game page uses the chunky look (`fun.css` + `fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page is the one page still in the old look.
+Every game page uses the chunky look (`fun.css` + `fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page uses the same chunky look (violet page, round back button, one rounded card). `art-*.html` are unlinked previews of the hub tile art, not part of the site.
 
 - **Steady layout:** pages with `data-fun-zone` have a header, one fixed message zone, an Options bar and then the board. Options opens as a popover over the board, so nothing moves when it opens, a status changes or a mode changes (`data-fun-zone="slim"` / `"mini"` shrink the zone). Choosing from a dropdown inside Options folds it away again.
 - **Motion** is in `gamekit.js`, so a page opts in with one line: `Gamekit.popFilled(boardEl)` pops any square that newly fills (stones, marks, numbers); `Gamekit.glidePieces(boardEl, selector)` glides a piece that has moved. Games with their own motion: Connect Four drops, Reversi flips, Chess/Checkers slides (multi-jumps follow their path), Mancala sows seed by seed, Minesweeper ripples and explodes, Battleship has a cannon, Zip glides a head with a halo, tic-tac-toe draws its win line, 2048 blends merges. Everything is skipped under `prefers-reduced-motion`.
