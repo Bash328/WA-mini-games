@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .c4-wrap {
@@ -132,6 +132,8 @@
 
   html body.fun.g-connect-four .panel .c4-board { background: #2f45c4; border: 6px solid #000; border-radius: 18px; gap: 6px; padding: 8px; }
   html body.fun.g-connect-four .c4-slot { background: #1d2a85; border: 0; }
+  /* the fall + bounce is animated by game.js (dropAnim), not by this old short CSS drop */
+  html body.fun.g-connect-four .c4-slot.p1:not(.win), html body.fun.g-connect-four .c4-slot.p2:not(.win) { animation: none; }
   html body.fun.g-connect-four .c4-slot.p1 { background: #ff4d46; } html body.fun.g-connect-four .c4-slot.p2 { background: #ffc933; }
   html body.fun.g-connect-four .panel .c4-col-btn { background: none; box-shadow: none; color: #fff; min-height: 40px; padding: 0; opacity: .9; }
 </style>
@@ -221,12 +223,12 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script defer src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../account.js?v=160336a8"></script>
 <script defer src="../live-share.js?v=78191825"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=5e6452b7"></script>
+<script defer src="game.js?v=82672962"></script>
 </body>
 </html>

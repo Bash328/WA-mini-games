@@ -275,8 +275,8 @@
     for (const e of edges) {
       const a = cellEls[e.a].getBoundingClientRect();
       const b = cellEls[e.b].getBoundingClientRect();
-      const cx = (a.left + a.right + b.left + b.right) / 4 - boardRect.left;
-      const cy = (a.top + a.bottom + b.top + b.bottom) / 4 - boardRect.top;
+      const cx = (a.left + a.right + b.left + b.right) / 4 - boardRect.left - boardEl.clientLeft;
+      const cy = (a.top + a.bottom + b.top + b.bottom) / 4 - boardRect.top - boardEl.clientTop;
       const badge = document.createElement("div");
       badge.className = "tg-edge " + (e.type === "eq" ? "eq" : "neq");
       badge.textContent = e.type === "eq" ? "=" : "×";
@@ -287,11 +287,8 @@
       edgeEls.push(badge);
     }
   }
-  let resizeTimer = null;
-  window.addEventListener("resize", () => {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { resizeTimer = null; positionEdges(); }, 100);
-  });
+  // the board's size settles after fonts / the fun layout load, so follow it (the badges only sit right on the final size)
+  new ResizeObserver(() => positionEdges()).observe(boardEl);
 
   function renderAll() {
     for (let i = 0; i < N * N; i++) {

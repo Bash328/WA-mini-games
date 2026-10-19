@@ -85,6 +85,33 @@
     }
     const cnt = counts(board);
     scoreEl.textContent = `Black: ${cnt[BLACK]} · White: ${cnt[WHITE]}`;
+    animateMove(board);
+  }
+
+  // After one move: the new disc pops in and the flipped ones turn over in a wave out from it.
+  // (Not on a new game, a refresh or an undo: those change many discs at once.)
+  let shownBoard = null;
+  function animateMove(board) {
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (still || !prev || prev.length !== board.length) return;
+    const fresh = [], flipped = [];
+    for (let i = 0; i < board.length; i++) {
+      if (!prev[i] && board[i]) fresh.push(i);
+      else if (prev[i] && board[i] && prev[i] !== board[i]) flipped.push(i);
+    }
+    if (fresh.length !== 1 || !flipped.length) return;
+    const at = fresh[0], dist = (i) => Math.max(Math.abs(Math.floor(i / N) - Math.floor(at / N)), Math.abs(i % N - at % N));
+    const disc = (i) => boardEl.children[i].querySelector(".rv-disc");
+    disc(at).animate([{ transform: "scale(.2)" }, { transform: "scale(1.18)", offset: 0.6 }, { transform: "scale(1)" }], { duration: 260, easing: "ease-out" });
+    for (const i of flipped) {
+      const d = disc(i), now = board[i] === BLACK ? "black" : "white", was = board[i] === BLACK ? "white" : "black";
+      const delay = 120 + 90 * (dist(i) - 1), dur = 380;
+      d.classList.remove(now); d.classList.add(was);                                  // keep showing the old colour until half way
+      d.animate([{ transform: "scaleX(1)" }, { transform: "scaleX(0.04)", offset: 0.5 }, { transform: "scaleX(1)" }], { duration: dur, delay: delay, easing: "ease-in-out", fill: "backwards" });
+      setTimeout(() => { d.classList.remove(was); d.classList.add(now); }, delay + dur / 2);
+    }
   }
 
   // ---------- 2 players over WhatsApp ----------

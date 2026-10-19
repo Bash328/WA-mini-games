@@ -12,7 +12,7 @@
   const chipsEl = document.getElementById("chips");
   const newBtn = document.getElementById("new-btn");
   const undoBtn = document.getElementById("undo-btn");
-  const hintBtn = document.getElementById("hint-btn");
+  const hintBtn = document.getElementById("hint-btn"), submitBtn = document.getElementById("submit-btn");
   const resetBtn = document.getElementById("reset-btn");
   const store = Gamekit.storage("word-ladder:");
 
@@ -96,6 +96,7 @@
     const parEl = document.getElementById("par"); if (parEl) parEl.textContent = String(puzzle.par);
     undoBtn.disabled = done || chain.length < 2;
     hintBtn.disabled = done;
+    submitBtn.disabled = done || current.length < LEN;
     kbEl.hidden = done;
   }
   const say = (t) => { statusEl.textContent = t; };
@@ -129,6 +130,7 @@
     render();
   }
   function undo() { if (done || chain.length < 2) return; chain.pop(); current = ""; say(""); render(); }
+  submitBtn.addEventListener("click", () => press("enter"));
   hintBtn.addEventListener("click", () => {
     if (done) return;
     // the next word on a shortest way from where you are to the target
@@ -138,7 +140,7 @@
     if (next < 0) return;
     hints++;
     current = ALL[next];
-    say("Hint used. Press Enter to take that step.");
+    say("Hint used. Press Submit to take that step.");
     render();
   });
   undoBtn.addEventListener("click", undo);
@@ -150,7 +152,6 @@
     KEYS.forEach((letters, ri) => {
       const r = document.createElement("div"); r.className = "wl-kbrow";
       const mk = (label, value, wide) => { const b = document.createElement("button"); b.type = "button"; b.className = "wl-key" + (wide ? " wide" : ""); b.textContent = label; b.dataset.k = value; b.setAttribute("aria-label", value === "back" ? "Delete" : value === "enter" ? "Enter" : label); b.addEventListener("click", () => press(value)); return b; };
-      if (ri === 2) r.appendChild(mk("Enter", "enter", true));
       for (const ch of letters) r.appendChild(mk(ch, ch));
       if (ri === 2) r.appendChild(mk("⌫", "back", true));
       kbEl.appendChild(r);

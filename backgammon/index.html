@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .bg-wrap { width: min(560px, 100%); margin: 8px auto 0; }
@@ -94,8 +94,8 @@
 
   /* ---- the redesign: peach board in a rust frame, black outline, flat checkers, trays above and below, ROLL button ---- */
   html body.fun.g-backgammon .bg-wrap { position: relative; width: 100%; margin: 0; }
-  html body.fun.g-backgammon .bg-info { min-height: 68px; width: 56%; margin: 0; text-align: left; display: flex; align-items: flex-end; font-size: 15px; color: var(--muted); padding-bottom: 8px; box-sizing: border-box; }
-  html body.fun.g-backgammon .panel .bg-board { position: relative; width: calc(100% + 22px); margin: 0 -11px; padding: 12px; grid-template-columns: repeat(6, 1fr) .55fr repeat(6, 1fr); aspect-ratio: 1.05;
+  html body.fun.g-backgammon .bg-info { min-height: 40px; width: 56%; margin: 0; text-align: left; display: flex; align-items: flex-end; font-size: 15px; color: var(--muted); padding-bottom: 8px; box-sizing: border-box; }
+  html body.fun.g-backgammon .panel .bg-board { position: relative; width: calc(100% + 22px); margin: 0 -11px; padding: 12px; grid-template-columns: repeat(6, 1fr) .55fr repeat(6, 1fr); aspect-ratio: 1.17;
     background: #93311a; border: 6px solid #000; border-radius: 24px; box-sizing: border-box; max-width: none; }
   html body.fun.g-backgammon #board .bg-pt { background: #fdbf8c; --tri: #f0a070; }
   html body.fun.g-backgammon #board .bg-pt.alt { --tri: #ffdcbb; }
@@ -123,8 +123,8 @@
   html body.fun.g-backgammon .bg-tray .bg-ch.p1 { background: #3b4252; } html body.fun.g-backgammon .bg-tray .bg-ch.p2 { background: #fff; }
   /* dice sit on the board, in the open middle of the right-hand half */
   /* an overlay the size of the board (same width and ratio), dice centred in its right half */
-  html body.fun.g-backgammon .bg-dice-on { position: absolute; left: -11px; width: calc(100% + 22px); top: 68px; aspect-ratio: 1.05; box-sizing: border-box; padding: 0 4% 0 54%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: center; pointer-events: none; }
-  html body.fun.g-backgammon .bg-die { width: 38px; height: 38px; padding: 4px; border-radius: 9px; background: #fff; border: 3px solid #3b4252; box-shadow: none; }
+  html body.fun.g-backgammon .bg-dice-on { position: absolute; left: -11px; width: calc(100% + 22px); top: 40px; aspect-ratio: 1.17; box-sizing: border-box; padding: 0 4% 0 54%; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: center; pointer-events: none; }
+  html body.fun.g-backgammon .bg-die { width: 32px; height: 32px; padding: 3px; border-radius: 9px; background: #fff; border: 3px solid #3b4252; box-shadow: none; }
   html body.fun.g-backgammon .bg-die i.on { background: #3b4252; }
   html body.fun.g-backgammon .bg-die.used { opacity: .35; }
   html body.fun.g-backgammon .bg-dice { margin: 72px 0 0; min-height: 64px; }
@@ -220,7 +220,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script defer src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../account.js?v=160336a8"></script>

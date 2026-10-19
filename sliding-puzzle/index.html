@@ -33,7 +33,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <style>
   .sp-board { --n: 4; position: relative; width: min(420px, 100%); aspect-ratio: 1; margin: 10px auto; background: #3a342a; border-radius: var(--r-md); padding: 6px; box-sizing: border-box; user-select: none; touch-action: manipulation; }
   .sp-inner { position: relative; width: 100%; height: 100%; font-size: calc(min(100vw - 52px, 408px) / var(--n) * 0.42); }
@@ -46,14 +46,16 @@
   /* chunky look: wood-brown page, a heavy frame, flat white tiles that turn green when home */
   html body.fun.g-sliding-puzzle { --fun-bg: #4a3a24; --fun-btn: #a8814a; --fun-chip: rgba(255,255,255,.1); }
   html body.fun.g-sliding-puzzle .panel .sp-board { width: calc(100% + 22px); margin: 10px -11px; box-sizing: border-box; max-width: none; padding: 10px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
-  html body.fun.g-sliding-puzzle .sp-t span { background: #fff; color: #2f3a46; font-weight: 400; box-shadow: none; border-radius: 14px; }
-  html body.fun.g-sliding-puzzle .sp-t.home span { background: #c9f2d6; } html body.fun.g-sliding-puzzle .sp-t.done span { background: #7dffa8; }
+  /* the tile is ONE chunky shape: fun.css gives every button a fill and a shadow, which showed as a brown tile behind the white one */
+  html body.fun.g-sliding-puzzle .panel .sp-t { background: transparent; box-shadow: none; border: 0; border-radius: 0; padding: 4px; }
+  html body.fun.g-sliding-puzzle .sp-t span { background: #ffcf33; color: #14172b; font-weight: 400; box-shadow: 0 5px 0 #d99a00; border-radius: 14px; height: calc(100% - 5px); }
+  html body.fun.g-sliding-puzzle .sp-t.home span { background: #7be0a4; box-shadow: 0 5px 0 #34a766; } html body.fun.g-sliding-puzzle .sp-t.done span { background: #3ddc84; box-shadow: 0 5px 0 #1f9e58; }
   html body.fun.g-sliding-puzzle .sp-inner { font-size: calc(min(100vw - 52px, 408px) / var(--n) * 0.46); }
   html body.fun.g-sliding-puzzle .sp-hint { color: rgba(255,255,255,.75); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-sliding-puzzle fun" data-fun-zone="mini" data-fun-reset>
+<body class="g-sliding-puzzle fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>sliding puzzle</h1>
@@ -109,7 +111,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="puzzle.js?v=dc1e5cde"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
 <script defer src="game.js?v=8ffec768"></script>

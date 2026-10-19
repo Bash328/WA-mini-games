@@ -141,7 +141,7 @@ body.fun[class*="g-"] .panel .btn.ghost {
 }
 body.fun[class*="g-"] .panel button.ghost:hover { background: var(--fun-chip); color: var(--fun-ink); filter: brightness(1.2); }
 body.fun[class*="g-"] .panel .tool-btn .glyph, body.fun[class*="g-"] .man-trigger .q { color: var(--accent); }
-body.fun[class*="g-"] .toolbar { border: 0; padding-top: 10px; }
+body.fun[class*="g-"] .toolbar { border: 0; padding-top: 6px; margin-top: 6px; }
 
 /* menus */
 body.fun[class*="g-"] .panel select,
@@ -233,7 +233,7 @@ body.fun[class*="g-"] .turn[hidden] { display: flex !important; visibility: hidd
    sits in the same place in every mode and state. The turn pill, the status line and a taunt all
    draw in that one zone (a taunt or status covers the pill while it is there), and the Options
    menus open as a popover over the board instead of pushing it down. */
-body.fun[data-fun-zone] { --zone: 84px; }
+body.fun[data-fun-zone] { --zone: 66px; }
 html body.fun[data-fun-zone] .panel { position: relative; padding-top: var(--zone); }
 html body.fun[data-fun-zone] .panel > .row {
   position: absolute; top: 0; left: 0; right: 0; height: var(--zone); margin: 0; padding: 0 6px; box-sizing: border-box;
@@ -242,12 +242,12 @@ html body.fun[data-fun-zone] .panel > .row {
 html body.fun[data-fun-zone] .panel > .row .status { margin: 0; font-size: 21px; line-height: 1.15; text-wrap: balance; }
 html body.fun[data-fun-zone] .panel > .row .status.dup, html body.fun[data-fun-zone] .panel > .row .status:empty { display: none; }
 html body.fun[data-fun-zone] .panel > .turn {
-  position: absolute; top: 0; left: 50%; transform: translateX(-50%); margin: 0; height: 68px; min-height: 0; box-sizing: border-box;
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); margin: 0; height: 60px; min-height: 0; box-sizing: border-box;
   max-width: 100%; white-space: nowrap;
 }
 html body.fun[data-fun-zone] .panel:has(> .row .status:not(.dup):not(:empty):not(#score)) > .turn { visibility: hidden; }
 html body.fun[data-fun-zone] .panel .gk-slot, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] {
-  position: static; height: 58px; min-height: 0; margin: 0 0 6px; display: block;
+  position: static; height: 46px; min-height: 0; margin: 0 0 6px; display: block;
 }
 html body.fun[data-fun-zone] .panel .gk-slot .gk-msg, html body.fun[data-fun-zone] .panel .gk-slot[data-reserve] .gk-msg {
   min-height: 0; height: 100%; margin: 0; padding: 4px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
@@ -257,7 +257,7 @@ html body.fun[data-fun-zone] .panel .gk-slot .gk-msg[hidden] { display: none; }
 html body.fun[data-fun-zone] #legend { display: none; }
 html body.fun[data-fun-zone] .panel .gk-say { margin: 0; text-align: center; }
 html body.fun[data-fun-zone] .gk-optwrap { position: relative; z-index: 30; }
-html body.fun[data-fun-zone] .gk-optbtn { margin: 0 0 12px; }
+html body.fun[data-fun-zone] .gk-optbtn { margin: 0 0 8px; }
 html body.fun[data-fun-zone] .gk-menu {
   position: absolute; left: 0; right: 0; top: calc(100% - 6px); padding: 12px; border-radius: 28px; display: flex; flex-direction: column; gap: 8px;
   background: color-mix(in srgb, var(--fun-bg) 60%, #000); box-shadow: 0 14px 0 rgba(0,0,0,.22), 0 24px 40px rgba(0,0,0,.4);
@@ -313,3 +313,16 @@ body.fun[class*="g-"] .panel .chip.active, body.fun[class*="g-"] .panel .chip.ac
 body.fun[class*="g-"] .panel .chip[aria-selected="true"], body.fun[class*="g-"] .panel .chip[aria-selected="true"]:hover {
   background: #fff; color: var(--fun-bg); box-shadow: none; filter: none;
 }
+
+/* three pills (Moves, Time, Best) share the same width: a smaller number so "0:07" is not cut to "0:..." */
+body.fun[class*="g-"] .fun-pills:has(div:nth-child(3)) b { font-size: 17px; }
+body.fun[class*="g-"] .fun-pills:has(div:nth-child(3)) div { padding: 0 2px; }
+
+/* a win: confetti bursts from behind the headline, which pops in */
+.gk-over.win h2 { animation: gk-pop .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.gk-over .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.gk-over .confetti i { position: absolute; left: 50%; top: 34%; width: 10px; height: 10px; border-radius: 50%; background: var(--c); opacity: 0; animation: gk-conf 1.5s ease-out var(--d) forwards; }
+.gk-over .confetti i:nth-child(3n) { border-radius: 2px; width: 8px; height: 14px; }
+@keyframes gk-conf { 0% { transform: translate(0, 0) scale(.3); opacity: 1; } 100% { transform: translate(var(--x), calc(var(--y) + 90px)) rotate(240deg) scale(1); opacity: 0; } }
+@keyframes gk-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gk-over.win h2 { animation: none; } }

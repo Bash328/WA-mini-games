@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .on-wrap { width: min(440px, 100%); margin: 8px auto 0; }
@@ -48,7 +48,7 @@
   .on-sidebox { width: 21%; min-width: 66px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; color: var(--muted); font-size: var(--fs-sm); }
   /* the five cards: name over a 5x5 picture of where the piece can go */
   body.g-onitama .panel .on-card {
-    flex: 1 1 0; max-width: 128px; min-height: 0; padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    flex: 1 1 0; max-width: 84px; min-height: 0; padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px;
     background: var(--panel-2); border: 1px solid var(--border-hi); border-radius: var(--r-md); color: var(--fg); cursor: default;
   }
   body.g-onitama .panel .on-card.mine { cursor: pointer; }
@@ -57,7 +57,7 @@
   body.g-onitama .panel .on-card.cand { outline: 2px dashed var(--pc, #ff6b6b); outline-offset: 1px; }
   body.g-onitama .panel .on-card.side { flex: 0 0 auto; width: 100%; opacity: .92; }
   .on-card .nm { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
-  .on-mini { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 1px; width: 70px; aspect-ratio: 1; }
+  .on-mini { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 1px; width: 54px; aspect-ratio: 1; }
   .on-mini i { background: color-mix(in srgb, var(--fg) 9%, transparent); border-radius: 1px; }
   .on-mini i.c { background: var(--fg); opacity: .7; }
   .on-mini i.m { background: var(--pc, #ff6b6b); }
@@ -86,6 +86,8 @@
   html body.fun.g-onitama .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
 
   html body.fun.g-onitama .on-wrap { width: 100%; margin: 8px 0 0; }
+  html body.fun.g-onitama .on-hand { align-items: flex-start; min-height: 0; }
+  html body.fun.g-onitama .on-sidebox { align-self: stretch; }
   html body.fun.g-onitama .on-sidebox { color: rgba(255,255,255,.75); font-size: 14px; }
   html body.fun.g-onitama .panel .on-card { background: #fff; border: 0; border-radius: 14px; color: #2f3a46; box-shadow: 0 4px 0 #b9c2cc; opacity: 1; }
   html body.fun.g-onitama .panel .on-card.sel { outline: 0; box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; transform: translateY(-3px); }
@@ -93,7 +95,7 @@
   html body.fun.g-onitama .on-card .nm { font-size: 13px; color: #2f3a46; }
   html body.fun.g-onitama .on-mini i { background: #e5e8ee; border-radius: 3px; } html body.fun.g-onitama .on-mini i.c { background: #2f3a46; opacity: 1; }
   html body.fun.g-onitama .on-mini i.m { background: var(--pc, #ff7a7a); }
-  html body.fun.g-onitama .panel .on-board { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; padding: 8px; gap: 4px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
+  html body.fun.g-onitama .panel .on-board { width: clamp(276px, min(calc(100% + 22px), calc(100svh - 580px)), calc(100% + 22px)); margin: 8px auto; box-sizing: border-box; max-width: none; padding: 8px; gap: 4px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
   html body.fun.g-onitama #board .on-cell { background: #f1dcb4; border-radius: 8px; opacity: 1; box-shadow: none; }
   html body.fun.g-onitama #board .on-cell:nth-child(even) { background: #e6c999; }
   html body.fun.g-onitama #board .on-cell.from { background: #d8b878; }
@@ -189,7 +191,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script defer src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../account.js?v=160336a8"></script>

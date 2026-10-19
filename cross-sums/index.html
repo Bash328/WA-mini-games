@@ -33,9 +33,9 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <style>
-  .cs-grid { --n: 8; display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(480px, 100%); aspect-ratio: 1; margin: 8px auto; border: 2px solid var(--fg); background: #1d1a16; font-size: calc(min(100vw - 40px, 480px) / var(--n) * 0.5); user-select: none; }
+  .cs-grid { --n: 8; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-template-rows: repeat(var(--n), minmax(0, 1fr)); width: min(480px, 100%); aspect-ratio: 1; margin: 8px auto; border: 2px solid var(--fg); background: #1d1a16; font-size: calc(min(100vw - 40px, 480px) / var(--n) * 0.5); user-select: none; }
   .cs-b { background: #1d1a16; border: 1px solid #3a342a; position: relative; color: #e8e2d4; box-sizing: border-box; min-width: 0; min-height: 0; }
   .cs-b .a, .cs-b .d { position: absolute; font-size: .66em; font-weight: 700; line-height: 1; }
   .cs-b .a { right: 8%; top: 9%; }
@@ -77,7 +77,7 @@
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-cross-sums fun" data-fun-zone="mini" data-fun-reset>
+<body class="g-cross-sums fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>cross sums</h1>
@@ -140,7 +140,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="puzzle.js?v=d6fa6f7e"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
 <script defer src="game.js?v=f43d9519"></script>

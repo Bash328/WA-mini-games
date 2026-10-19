@@ -77,7 +77,36 @@
     }
   }
 
+  // A disc that has just landed falls from above its column and bounces (skipped when many discs
+  // appear at once: a refresh, an undo, a new game).
+  let shown = new Uint8Array(ROWS * COLS);
+  function dropAnim(fresh) {
+    const noMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (noMotion || fresh.length === 0 || fresh.length > 2) return;
+    const step = boardEl.children[COLS].getBoundingClientRect().top - boardEl.children[0].getBoundingClientRect().top;
+    for (const i of fresh) {
+      const el = boardEl.children[i], r = Math.floor(i / COLS), d = (r + 1) * step;
+      el.style.position = "relative"; el.style.zIndex = "3";
+      const a = el.animate([
+        { transform: "translateY(" + -d + "px)", offset: 0, easing: "cubic-bezier(.5,0,1,.6)" },
+        { transform: "translateY(0)", offset: 0.62, easing: "ease-out" },
+        { transform: "translateY(" + -d * 0.07 + "px)", offset: 0.78, easing: "ease-in" },
+        { transform: "translateY(0)", offset: 0.9, easing: "ease-out" },
+        { transform: "translateY(" + -d * 0.02 + "px)", offset: 0.95, easing: "ease-in" },
+        { transform: "translateY(0)", offset: 1 },
+      ], { duration: 420 + r * 70 });
+      a.onfinish = a.oncancel = () => { el.style.position = ""; el.style.zIndex = ""; };
+    }
+  }
+
   function renderBoard() {
+    const fresh = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      if (grid[r][c] !== EMPTY && shown[i] === EMPTY) fresh.push(i);
+      shown[i] = grid[r][c];
+    }
+    dropAnim(fresh);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const i = r * COLS + c;

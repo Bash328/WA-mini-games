@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <script>window.c8Theme = function (pref) { return pref === "classic" || pref === "halloween" ? pref : new Date().getMonth() === 9 ? "halloween" : "classic"; };
 try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || localStorage.getItem("crazy-8:theme"); document.documentElement.setAttribute("data-c8theme", window.c8Theme(p)); } catch (e) { document.documentElement.setAttribute("data-c8theme", window.c8Theme()); }</script>
@@ -72,6 +72,8 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
   /* ---------- the table: players round a felt circle ---------- */
   #c8 { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
+  /* the table scales with its width (cqw), so on a short phone narrow it until the whole page fits without scrolling */
+  html body.fun.g-crazy-8 #c8 { width: clamp(300px, calc((100svh - 430px) / 1.36 + 22px), 100%); margin-inline: auto; box-sizing: border-box; }
   #c8.on { display: block; }
   .c8-stage { position: relative; height: 136cqw; }
   .c8-stage.no-top { margin-top: -34cqw; }
@@ -414,7 +416,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../account.js?v=160336a8"></script>
 <script defer src="../live-share.js?v=78191825"></script>
 <script defer src="engine.js?v=a774e3a3"></script>

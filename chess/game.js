@@ -494,17 +494,39 @@ const sideSel = document.getElementById('side');
 const levelSel = document.getElementById('level');
 const flipBtn = document.getElementById('flip');
 
+// The piece that just moved glides from its old square to its new one (once per move; a re-render of
+// the same position, such as selecting a piece, does not move it again).
+let slidAlready = null;
+function slideLast(sqs) {
+  const lm = lastMove;
+  if (!lm || lm === slidAlready) return;
+  slidAlready = lm;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const from = sqs[lm.from[0] + ',' + lm.from[1]], to = sqs[lm.to[0] + ',' + lm.to[1]];
+  const glyph = to && to.querySelector('.pc');
+  if (!from || !glyph) return;
+  const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+  to.style.zIndex = '3'; to.style.position = 'relative';
+  const run = glyph.animate([{ transform: 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px) scale(1.15)' }, { transform: 'translate(0,0) scale(1)' }], { duration: 300, easing: 'cubic-bezier(.3,.7,.2,1)' });
+  run.onfinish = run.oncancel = () => { to.style.zIndex = ''; to.style.position = ''; };
+}
+
 function renderBoard() {
   const el = document.getElementById('board');
   el.innerHTML = '';
+  const sqs = {};
   const rowsOrder = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   const colsOrder = flipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
   for (const r of rowsOrder) for (const c of colsOrder) {
     const d = document.createElement('div');
     d.className = 'sq ' + ((r+c)%2===0 ? 'light':'dark');
     const p = state.board[r][c];
+    sqs[r + ',' + c] = d;
     if (p) {
-      d.textContent = GLYPH[p.color][p.type];
+      const g = document.createElement('span');
+      g.className = 'pc';
+      g.textContent = GLYPH[p.color][p.type];
+      d.appendChild(g);
       d.classList.add(p.color);
     }
     if (selected && selected[0]===r && selected[1]===c) d.classList.add('sel');
@@ -515,6 +537,7 @@ function renderBoard() {
     d.addEventListener('click', () => onSquare(r,c));
     el.appendChild(d);
   }
+  slideLast(sqs);
   // the VS bar counts pieces: you (or White) on the left
   const sc = document.getElementById('score');
   if (sc) {

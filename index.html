@@ -42,7 +42,7 @@
 <link rel="apple-touch-startup-image" href="splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="shared.css?v=5db52064">
-<link rel="stylesheet" href="fun.css?v=a814c40f">
+<link rel="stylesheet" href="fun.css?v=a83d4623">
 <style>
   /* ---- the hub, redesigned: a dark page, a top bar (menu, your name, invite) and big rounded game tiles ---- */
   html body.g-hub {
@@ -52,17 +52,10 @@
   }
   .wrap { max-width: 1000px; padding: max(18px, env(safe-area-inset-top)) 16px 64px; }
   .hub-top { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; }
-  .menu-btn { flex: none; width: 52px; height: 52px; padding: 0; display: grid; place-content: center; gap: 7px; background: none; border: 0; cursor: pointer; }
-  .menu-btn i { display: block; width: 36px; height: 6px; border-radius: 3px; background: #fff; }
-  .menu-btn i:nth-child(2) { width: 24px; } .menu-btn i:nth-child(3) { width: 30px; }
   .name-btn { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 18px; box-sizing: border-box; border-radius: 16px; background: #ffe9c4; color: #3b2d17; font-size: 24px; text-decoration: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
   .name-btn.has { color: #3b2d17; }
   .invite-btn { flex: none; height: 54px; padding: 0 20px; border: 0; border-radius: 16px; background: #915b9e; color: #fff; font-family: inherit; font-size: 22px; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 0 #5f3868; }
   .invite-btn:active, .name-btn:active { transform: translateY(3px); box-shadow: none; }
-  .menu { position: absolute; z-index: 30; left: 16px; top: 78px; min-width: 220px; padding: 8px; border-radius: 20px; background: #2b2b30; box-shadow: 0 14px 0 rgba(0,0,0,.25), 0 20px 40px rgba(0,0,0,.5); }
-  .menu a { display: block; padding: 12px 16px; border-radius: 12px; color: #fff; font-size: 20px; text-decoration: none; }
-  .menu a:hover { background: rgba(255,255,255,.08); color: #fff; }
-  .menu[hidden] { display: none; }
   .brand { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
   .lede { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 0 8px; line-height: 1.4; }
   .lede b { color: #fff; font-weight: 400; }
@@ -141,15 +134,9 @@
 <body class="g-hub">
 <main class="wrap">
   <header class="hub-top">
-    <button class="menu-btn" id="menu-btn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu"><i></i><i></i><i></i></button>
     <a class="name-btn" id="name-btn" href="#account">Create username</a>
     <button class="invite-btn" id="invite-btn" type="button">Invite</button>
   </header>
-  <nav class="menu" id="menu" aria-label="Menu" hidden>
-    <a href="#account">Your name</a>
-    <a href="privacy/">Privacy</a>
-    <a href="https://github.com/Bash328/WA-mini-games">Source</a>
-  </nav>
   <h1 class="brand">WA Mini Games</h1>
   <p class="lede"><b>Play a friend over WhatsApp.</b> One link per move. No logins, no ads.</p>
 
@@ -492,7 +479,6 @@
     <div>Based on <a href="https://github.com/wavde/games">wavde/games</a> &copy; Tejas Wavde · MIT</div>
     <div class="links">
       <a href="privacy/">privacy</a>
-      <a href="https://github.com/Bash328/WA-mini-games">source</a>
     </div>
   </footer>
 </main>
@@ -510,13 +496,9 @@
   })();
 </script>
 <script>
-  // Menu and invite button in the top bar
+  // Invite button in the top bar
   (function () {
-    const mb = document.getElementById("menu-btn"), menu = document.getElementById("menu"), inv = document.getElementById("invite-btn");
-    function show(on) { menu.hidden = !on; mb.setAttribute("aria-expanded", String(on)); }
-    mb.addEventListener("click", (e) => { e.stopPropagation(); show(menu.hidden); });
-    document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) show(false); });
-    menu.addEventListener("click", () => show(false));
+    const inv = document.getElementById("invite-btn");
     inv.addEventListener("click", async () => {
       const url = location.origin + "/", text = "Play mini-games with me over WhatsApp: no logins, one link per move.";
       try {

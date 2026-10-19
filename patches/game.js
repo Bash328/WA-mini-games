@@ -285,8 +285,8 @@
       const area = (r1 - r0 + 1) * (c1 - c0 + 1);
       const ok = cluesInside.length === 1 && cluesInside[0].v === area;
       if (!ok) div.classList.add("bad");
-      div.style.left = (a.left - brect.left) + "px";
-      div.style.top = (a.top - brect.top) + "px";
+      div.style.left = (a.left - brect.left - boardEl.clientLeft) + "px";
+      div.style.top = (a.top - brect.top - boardEl.clientTop) + "px";
       div.style.width = (b.right - a.left) + "px";
       div.style.height = (b.bottom - a.top) + "px";
       div.dataset.i = String(i);
@@ -324,7 +324,7 @@
       store.set("best:" + diff, s);
       bestEl.textContent = Gamekit.fmtTime(s);
     }
-    statusEl.innerHTML = '<span class="ok">Sewn up in ' + Gamekit.fmtTime(s) + '.</span>';
+    statusEl.innerHTML = '<span class="ok">Solved in ' + Gamekit.fmtTime(s) + '.</span>';
   }
 
   function startTimer() {

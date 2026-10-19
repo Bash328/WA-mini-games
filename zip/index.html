@@ -33,7 +33,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <style>
   .zp-grid {
     position: relative;
@@ -78,18 +78,28 @@
   }
   .zp-cell.invalid { animation: zp-shake 0.3s ease; background: rgba(255,107,107,0.15); }
 
-  html body.fun.g-zip { --fun-bg: #1f3b4d; --fun-btn: #4a7ea0; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-zip { --accent: #ff9500; --fun-bg: #1f3b4d; --fun-btn: #4a7ea0; --fun-chip: rgba(255,255,255,.1); }
 
   /* chunky look: sea page, a white grid in a heavy frame, round numbered stops */
   html body.fun.g-zip .panel .zp-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; background: #fff; }
   html body.fun.g-zip .zp-cell { border-color: #d5dbe3; color: #2f3a46; font-weight: 400; }
-  html body.fun.g-zip .zp-cell.on { background: rgba(255,191,46,.35); }
-  html body.fun.g-zip .zp-cell .wp { background: #2f3a46; color: #fff; }
-  html body.fun.g-zip .zp-cell.start .wp { background: #ff7a7a; } html body.fun.g-zip .zp-cell.end .wp { background: #3fd0c0; color: #14172b; }
+  html body.fun.g-zip .zp-cell.on { background: rgba(255,176,0,.5); }
+  html body.fun.g-zip .zp-cell .wp { background: #5b3df5; color: #fff; }
+  html body.fun.g-zip .zp-cell.start .wp { background: #ff3d5a; } html body.fun.g-zip .zp-cell.end .wp { background: #00d4a8; color: #06231d; }
+  html body.fun.g-zip .zp-wall-h, html body.fun.g-zip .zp-wall-v { background: #ff1f4b; box-shadow: 0 0 0 1px #fff; }
+  /* the path glides (zip/game.js animates the head); cells fill softly as it passes, and the whole line pulses when you finish */
+  .zp-cell { transition: background-color .2s ease; }
+  html body.fun.g-zip .zp-svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); }
+  .zp-svg.win polyline { animation: zp-pulse .8s ease; }
+  @keyframes zp-pulse { 0% { stroke-width: 10; } 40% { stroke-width: 19; } 100% { stroke-width: 10; } }
+  @media (prefers-reduced-motion: reduce) { .zp-svg.win polyline { animation: none; } }
+  .zp-halo { animation: zp-halo .9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes zp-halo { 50% { transform: scale(1.15); opacity: .7; } }
+  @media (prefers-reduced-motion: reduce) { .zp-halo { animation: none; } }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-zip fun" data-fun-zone="mini" data-fun-reset>
+<body class="g-zip fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>zip</h1>
@@ -144,8 +154,8 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=55b85f36"></script>
+<script defer src="game.js?v=e3767aac"></script>
 </body>
 </html>

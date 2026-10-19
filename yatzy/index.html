@@ -33,7 +33,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <style>
   .yz-dice { display: flex; justify-content: center; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
   body.g-yatzy .panel .yz-die { position: relative; width: 56px; height: 56px; min-height: 0; min-width: 0; padding: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; border-radius: 12px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer; transition: transform .1s; }
@@ -68,25 +68,25 @@
   html body.fun.g-yatzy .yz-die.blank::after { content: ""; position: absolute; inset: 28%; background: #c9d1d9; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); }
   html body.fun.g-yatzy .panel .yz-die.held, html body.fun.g-yatzy .panel .yz-die.held:active { outline: 0; transform: translateY(-8px); box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; }
   html body.fun.g-yatzy .yz-die .tag { bottom: -22px; color: #ffbf2e; font-size: 11px; }
-  html body.fun.g-yatzy .yz-roll { margin: 26px 0 6px; }
+  html body.fun.g-yatzy .yz-roll { margin: 14px 0 4px; }
   html body.fun.g-yatzy .panel .yz-roll .btn { width: 100%; min-width: 0; height: 60px; min-height: 0; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 30px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; }
   html body.fun.g-yatzy .panel .yz-roll .btn:disabled { opacity: .55; }
   html body.fun.g-yatzy .yz-roll .btn i { font-style: normal; width: 28px; height: 28px; border-radius: 9px; border: 3px solid #fff; background: transparent; color: #fff; font-size: 16px; line-height: 22px; text-align: center; }
   html body.fun.g-yatzy .yz-roll .btn i.used { background: #fff; color: #d95a4e; }
-  html body.fun.g-yatzy .yz-hint { font-size: 15px; color: var(--muted); min-height: 2.6em; }
+  html body.fun.g-yatzy .yz-hint { font-size: 15px; color: var(--muted); min-height: 2.2em; }
   /* the scorecard: two columns, an icon box and a score cell on every row */
-  html body.fun.g-yatzy .yz-card { grid-template-columns: 1fr 1fr; gap: 0; margin: 14px 0 0; padding: 12px 10px 14px; background: #fdf3e3; border: 4px solid #3b4252; border-radius: 24px; color: #3b4252; }
-  html body.fun.g-yatzy .yz-col { display: grid; gap: 8px; align-content: start; padding: 0 6px; }
+  html body.fun.g-yatzy .yz-card { grid-template-columns: 1fr 1fr; gap: 0; margin: 8px 0 0; padding: 8px 10px 10px; background: #fdf3e3; border: 4px solid #3b4252; border-radius: 24px; color: #3b4252; }
+  html body.fun.g-yatzy .yz-col { display: grid; gap: 6px; align-content: start; padding: 0 6px; }
   html body.fun.g-yatzy .yz-col + .yz-col { border-left: 3px solid #e9d9bd; }
-  html body.fun.g-yatzy .panel .yz-row { display: grid; grid-template-columns: 42px 1fr; gap: 6px; align-items: center; width: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; opacity: 1; color: #3b4252; text-transform: none; }
+  html body.fun.g-yatzy .panel .yz-row { display: grid; grid-template-columns: 36px 1fr; gap: 6px; align-items: center; width: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; opacity: 1; color: #3b4252; text-transform: none; }
   html body.fun.g-yatzy .panel .yz-row:active { transform: none; }
-  html body.fun.g-yatzy .yz-ic { width: 42px; height: 42px; box-sizing: border-box; border: 3px solid #3b4252; border-radius: 9px; background: #fff; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 4px; color: #3b4252; font-size: 15px; line-height: 1; place-items: center; }
+  html body.fun.g-yatzy .yz-ic { width: 36px; height: 36px; box-sizing: border-box; border: 3px solid #3b4252; border-radius: 9px; background: #fff; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 4px; color: #3b4252; font-size: 15px; line-height: 1; place-items: center; }
   html body.fun.g-yatzy .yz-ic i { width: 70%; height: 70%; border-radius: 50%; }
   html body.fun.g-yatzy .yz-ic i.on { background: #3b4252; }
   html body.fun.g-yatzy .yz-ic.txt { display: flex; align-items: center; justify-content: center; }
   html body.fun.g-yatzy .yz-ic.txt svg { width: 24px; height: 24px; fill: #3b4252; }
   html body.fun.g-yatzy .yz-ic.y { background: #ffd23f; font-size: 10px; letter-spacing: 0; }
-  html body.fun.g-yatzy .yz-row .v { height: 42px; box-sizing: border-box; min-width: 0; border: 3px solid #f26b5b; border-radius: 9px; background: #fde4dc; color: #b9473a; font-size: 22px; display: flex; align-items: center; justify-content: center; font-weight: 400; }
+  html body.fun.g-yatzy .yz-row .v { height: 36px; box-sizing: border-box; min-width: 0; border: 3px solid #f26b5b; border-radius: 9px; background: #fde4dc; color: #b9473a; font-size: 22px; display: flex; align-items: center; justify-content: center; font-weight: 400; }
   html body.fun.g-yatzy .yz-row .v.pot { color: #b9473a; opacity: .8; }
   html body.fun.g-yatzy .yz-row .v:not(.pot) { background: #f26b5b; color: #fff; opacity: 1; }
   html body.fun.g-yatzy .panel .yz-row.can .v { border-color: #2fb44a; background: #e3f6e6; color: #1c7a31; opacity: 1; }
@@ -151,7 +151,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="rules.js?v=19a4e9fe"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
 <script defer src="game.js?v=e3d7bf6d"></script>

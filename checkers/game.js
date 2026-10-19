@@ -186,6 +186,28 @@
     return bestTurn;
   }
 
+  // The piece that just moved slides from the square it left to the one it reached (and a jumped piece
+  // is simply gone). Shown once per move: a re-render of the same board does not slide again.
+  let shownBoard = null;
+  function slidePiece(board, lastIdx) {
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (still || !prev || lastIdx < 0 || !board[lastIdx] || prev[lastIdx]) return;
+    const mine = colorOf(board[lastIdx]);
+    let from = -1;
+    for (let i = 0; i < N * N; i++) if (i !== lastIdx && prev[i] && prev[i] !== "0" && !board[i] && colorOf(prev[i]) === mine) { from = i; if (Math.abs(i - lastIdx) === 9 || Math.abs(i - lastIdx) === 7) break; }
+    const toCell = [...boardEl.children].find((b) => b.getAttribute("aria-label") && b.dataset.i === String(lastIdx));
+    const fromCell = [...boardEl.children].find((b) => b.dataset.i === String(from));
+    if (!toCell || !fromCell) return;
+    const piece = toCell.querySelector(".ck-piece");
+    if (!piece) return;
+    const a = fromCell.getBoundingClientRect(), b = toCell.getBoundingClientRect();
+    toCell.style.zIndex = "3"; toCell.style.position = "relative";
+    const run = piece.animate([{ transform: "translate(" + (a.left - b.left) + "px," + (a.top - b.top) + "px) scale(1.12)" }, { transform: "translate(0,0) scale(1)" }], { duration: 300, easing: "cubic-bezier(.3,.7,.2,1)" });
+    run.onfinish = run.oncancel = () => { toCell.style.zIndex = ""; toCell.style.position = ""; };
+  }
+
   function renderBoard(board, selectable, selected, targets, canClick, onClick, lastIdx) {
     boardEl.innerHTML = "";
     const targetSet = new Map(targets.map(m => [m.to, m]));
@@ -196,6 +218,7 @@
       const cell = document.createElement("button");
       cell.type = "button";
       cell.className = "ck-cell " + (dark ? "dark" : "light");
+      cell.dataset.i = String(i);
       const v = board[i];
       if (v) {
         const p = document.createElement("span");
@@ -211,6 +234,7 @@
       cell.addEventListener("click", () => onClick(i));
       boardEl.appendChild(cell);
     }
+    slidePiece(board, lastIdx);
     // the VS bar counts pieces: you (or Black) on the left
     const n = { [P1]: 0, [P2]: 0 };
     for (let i = 0; i < N * N; i++) if (board[i] && board[i] !== "0") n[colorOf(board[i])]++;

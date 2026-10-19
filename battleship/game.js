@@ -23,7 +23,7 @@
   const noteEl = $("bs-note"), hintEl = $("bs-hint");
   const placeActions = $("bs-place-actions"), fireActions = $("bs-fire-actions");
   const rotateBtn = $("bs-rotate"), randomBtn = $("bs-random"), clearBtn = $("bs-clear"), readyBtn = $("bs-ready");
-  const fireBtn = $("bs-fire"), endBtn = $("bs-end");
+  const fireBtn = $("bs-fire"), endBtn = $("bs-end"), capEl = $("bs-cap");
 
   /* ---------- Rules ---------- */
   // A placement is { r, c, o } (top-left cell + "h" across / "v" down).
@@ -164,6 +164,42 @@
     const sub = document.getElementById("bs-sub"); if (sub) sub.dataset.who = "mine";
   })();
 
+  /* ---------- Ship pictures ---------- */
+  // A flat grey hull with portholes, one per ship; stretched to the ship's cells (or a small row icon).
+  const hullSvg = (len) => {
+    const W = len * 20;
+    return '<svg class="bs-svg" viewBox="0 0 ' + W + ' 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10Q3 3 9 3H' + (W - 12) + 'L' + (W - 2) + ' 10L' + (W - 12) + ' 17H9Q3 17 3 10Z" fill="#e8eef6" stroke="#2f3a50" stroke-width="2" stroke-linejoin="round"/>' +
+      Array.from({ length: len }, (_, i) => '<circle cx="' + (10 + 20 * i) + '" cy="10" r="2.6" fill="#2f3a50"/>').join("") + '</svg>';
+  };
+  // Lay a fleet (array of placements, nulls skipped) over a grid as pictures. `live`: they can be dragged (placement).
+  function drawHulls(el, fleet, live, extra) {
+    el.querySelectorAll(".bs-hull").forEach((h) => h.remove());
+    if (!fleet) return;
+    fleet.forEach((p, k) => {
+      if (!p) return;
+      const cs = shipCells(SHIPS[k].len, p), a = el.children[cs[0]], z = el.children[cs[cs.length - 1]];
+      const x = a.offsetLeft, y = a.offsetTop, w = z.offsetLeft + z.offsetWidth - x, h = z.offsetTop + z.offsetHeight - y;
+      const d = document.createElement("div");
+      d.className = "bs-hull" + (live ? " live" : "") + (extra ? " " + extra : "");
+      d.dataset.k = String(k);
+      d.innerHTML = hullSvg(SHIPS[k].len);
+      d.style.cssText = p.o === "h"
+        ? "left:" + x + "px;top:" + y + "px;width:" + w + "px;height:" + h + "px"
+        : "left:" + (x + w) + "px;top:" + y + "px;width:" + h + "px;height:" + w + "px;transform:rotate(90deg);transform-origin:0 0";
+      el.appendChild(d);
+    });
+  }
+  // The two fleet rows between the grids: a small picture per ship, crossed out once sunk.
+  const fleetsEl = $("bs-fleets");
+  function drawFleetRows(v) {
+    const row = (cls, fleet, shots) => {
+      const set = new Set(shots);
+      return '<div class="row ' + cls + '">' + SHIPS.map((s, k) =>
+        '<span class="bs-mini' + (fleet && shipSunk(fleet, k, set) ? " sunk" : "") + '" style="width:' + s.len * 9 + 'px" title="' + s.name + '">' + hullSvg(s.len) + "</span>").join("") + "</div>";
+    };
+    fleetsEl.innerHTML = row("foe", v.enemyFleet, v.myShots) + row("me", v.myFleet, v.theirShots);
+  }
+
   function buildGrid(el) {
     el.replaceChildren();
     for (let i = 0; i < CELLS; i++) {
@@ -194,12 +230,13 @@
       let text = "";
       if (k >= 0) cls.push("ship");
       if (set.has(i)) {
-        if (k >= 0) { cls.push(shipSunk(fleet, k, set) ? "sunk" : "hit"); text = "✕"; }
-        else { cls.push("miss"); text = "•"; }
+        if (k >= 0) { cls.push(shipSunk(fleet, k, set) ? "sunk" : "hit"); }
+        else { cls.push("miss"); text = "✕"; }
       }
       if (i === last) cls.push("last");
       return { cls: cls.join(" "), text: text };
     });
+    drawHulls(el, fleet, false);
   }
   // The enemy's water: only the results of your own shots are visible.
   function paintWaters(el, fleet, shots, sel, last) {
@@ -210,13 +247,14 @@
       let text = "";
       if (set.has(i)) {
         const k = own ? own[i] : -1;
-        if (k >= 0) { cls.push(shipSunk(fleet, k, set) ? "sunk" : "hit"); text = "✕"; }
-        else { cls.push("miss"); text = "•"; }
+        if (k >= 0) { cls.push(shipSunk(fleet, k, set) ? "sunk" : "hit"); }
+        else { cls.push("miss"); text = "✕"; }
       }
       if (i === sel) cls.push("sel");
       if (i === last) cls.push("last");
       return { cls: cls.join(" "), text: text };
     });
+    drawHulls(el, fleet ? fleet.map((p, k) => (p && shipSunk(fleet, k, set)) ? p : null) : null, false, "sunk");
   }
 
   buildGrid(mainEl);
@@ -252,13 +290,14 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "bs-ship" + (plc.sel === k ? " sel" : "") + (plc.p[k] ? " placed" : "");
-      b.textContent = s.name + " · " + s.len;
+      b.innerHTML = '<span class="bs-pic" style="width:' + s.len * 22 + 'px">' + hullSvg(s.len) + "</span>" + s.name;
       b.addEventListener("click", () => {
         if (plc.p[k]) { plc.o = plc.p[k].o; plc.p[k] = null; }
         plc.sel = k;
         plcNote = "";
         draw(vm);
       });
+      b.addEventListener("pointerdown", (e) => startDrag(e, k, null));
       trayEl.appendChild(b);
     });
   }
@@ -266,22 +305,25 @@
   function drawPlace() {
     const own = placedCells(-1);
     paintGrid(mainEl, (i) => own.has(i) ? { cls: "ship" } : { cls: "" });
+    drawHulls(mainEl, plc.p, true);
     drawTray();
     const done = plc.p.every(Boolean);
     readyBtn.disabled = !done;
     rotateBtn.textContent = "Rotate: " + (plc.o === "h" ? "across" : "down");
     noteEl.textContent = plcNote || vm.note || (done
-      ? "All ships placed. Lock in your fleet, or tap a ship to move it."
-      : "Tap a square to drop the " + SHIPS[plc.sel === -1 ? plc.p.findIndex(p => !p) : plc.sel].name.toLowerCase() + " there.");
+      ? "All ships placed. Lock in your fleet, or drag a ship to move it, tap it to turn it."
+      : "Drag a ship onto the grid, or pick one and tap a square. Tap a placed ship to turn it.");
   }
 
   function draw(v) {
     vm = v;
+    boardEl.dataset.phase = v.kind === "place" ? "place" : v.kind === "battle" ? "battle" : "over";
     coverEl.hidden = v.kind !== "cover";
     boardEl.hidden = v.kind === "cover" || v.kind === "none";
     placeActions.hidden = true;
     fireActions.hidden = true;
     trayEl.hidden = true;
+    fleetsEl.hidden = true;
     subWrap.hidden = true;
     mainEl.classList.remove("clickable");
     if (v.kind === "cover") {
@@ -312,14 +354,16 @@
       paintWaters(mainEl, v.enemyFleet, v.myShots, v.canFire ? sel : -1, v.lastMine);
       paintFleet(subEl, v.myFleet, v.theirShots, v.lastTheirs);
       mainEl.classList.toggle("clickable", v.canFire);
+      fleetsEl.hidden = false;
+      drawFleetRows(v);
       noteEl.textContent = v.note || "";
       if (v.canFire || v.handoff) {
         fireActions.hidden = false;
         fireBtn.hidden = !!v.handoff;
         endBtn.hidden = !v.handoff;
-        fireBtn.disabled = sel < 0;
-        fireBtn.textContent = sel < 0 ? "Fire!" : "Fire at " + cellName(sel) + "!";
-        hintEl.textContent = v.handoff ? "" : "Tap a square on the enemy grid to aim.";
+        fireBtn.disabled = sel < 0 || firing;
+        capEl.textContent = sel < 0 ? "Tap a square" : "Fire at " + cellName(sel);
+        hintEl.textContent = "";
       } else {
         hintEl.textContent = "";
       }
@@ -349,6 +393,84 @@
       draw(vm);
     }
   });
+
+
+  /* ---------- Dragging ships (placement) ---------- */
+  // Drag a ship from the tray (or a placed one) onto the grid; tap a placed ship to turn it.
+  let drag = null;
+  function dragTarget(e) {                       // the ship's top-left cell under the pointer, clamped, and whether it is free
+    const c = document.elementFromPoint(e.clientX, e.clientY), cell = c && c.closest && c.closest(".bs-cell");
+    if (!cell || !mainEl.contains(cell)) return null;
+    const i = parseInt(cell.dataset.i, 10), len = SHIPS[drag.k].len;
+    let r = Math.floor(i / N) - (drag.o === "v" ? drag.grab : 0), cc = i % N - (drag.o === "h" ? drag.grab : 0);
+    r = Math.max(0, Math.min(r, drag.o === "v" ? N - len : N - 1));
+    cc = Math.max(0, Math.min(cc, drag.o === "h" ? N - len : N - 1));
+    const cand = { r: r, c: cc, o: drag.o }, taken = placedCells(drag.k);
+    return { cand: cand, ok: !shipCells(len, cand).some((x) => taken.has(x)) };
+  }
+  function startDrag(e, k, hull) {
+    if (vm.kind !== "place" || !plc || (e.button !== undefined && e.button > 0)) return;
+    const p0 = plc.p[k], len = SHIPS[k].len, o = p0 ? p0.o : plc.o;
+    let grab = 0;
+    if (hull) {
+      const r = hull.getBoundingClientRect();
+      grab = Math.max(0, Math.min(len - 1, Math.floor((o === "h" ? e.clientX - r.left : e.clientY - r.top) / ((o === "h" ? r.width : r.height) / len))));
+    }
+    drag = { k: k, o: o, grab: grab, sx: e.clientX, sy: e.clientY, moved: false, hull: hull, ghost: null, tgt: null };
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+  }
+  function onDragMove(e) {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      const cell = mainEl.children[0].getBoundingClientRect(), len = SHIPS[drag.k].len;
+      const g = document.createElement("div");
+      g.className = "bs-ghost";
+      g.innerHTML = hullSvg(len);
+      drag.cw = cell.width; drag.ch = cell.height;
+      if (drag.o === "h") g.style.cssText = "width:" + len * cell.width + "px;height:" + cell.height + "px";
+      else g.style.cssText = "width:" + len * cell.height + "px;height:" + cell.width + "px;transform:rotate(90deg);transform-origin:0 0";
+      document.body.appendChild(g);
+      drag.ghost = g;
+      if (drag.hull) drag.hull.classList.add("lift");
+    }
+    const g = drag.ghost;
+    if (drag.o === "h") { g.style.left = e.clientX - (drag.grab + 0.5) * drag.cw + "px"; g.style.top = e.clientY - 0.5 * drag.ch + "px"; }
+    else { g.style.left = e.clientX + 0.5 * drag.cw + "px"; g.style.top = e.clientY - (drag.grab + 0.5) * drag.ch + "px"; }
+    mainEl.querySelectorAll(".pv-ok, .pv-bad").forEach((c) => c.classList.remove("pv-ok", "pv-bad"));
+    drag.tgt = dragTarget(e);
+    if (drag.tgt) shipCells(SHIPS[drag.k].len, drag.tgt.cand).forEach((c) => mainEl.children[c].classList.add(drag.tgt.ok ? "pv-ok" : "pv-bad"));
+  }
+  function endDrag() {
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    const d = drag;
+    drag = null;
+    if (!d || !plc) return;
+    if (d.ghost) d.ghost.remove();
+    mainEl.querySelectorAll(".pv-ok, .pv-bad").forEach((c) => c.classList.remove("pv-ok", "pv-bad"));
+    const k = d.k, len = SHIPS[k].len;
+    if (!d.moved) {
+      if (d.hull) {                              // a tap on a placed ship turns it where it lies
+        const p = plc.p[k], o = p.o === "h" ? "v" : "h";
+        const cand = { r: Math.min(p.r, o === "v" ? N - len : N - 1), c: Math.min(p.c, o === "h" ? N - len : N - 1), o: o }, taken = placedCells(k);
+        if (shipCells(len, cand).some((x) => taken.has(x))) plcNote = "No room to turn it there.";
+        else { plc.p[k] = cand; plcNote = ""; }
+        draw(vm);
+      }
+      return;
+    }
+    if (d.tgt && d.tgt.ok) { plc.p[k] = d.tgt.cand; plcNote = ""; plc.sel = plc.p.findIndex((p) => !p); }
+    else if (d.tgt) plcNote = "Ships can't overlap. Try another spot.";
+    else if (d.hull) { plc.p[k] = null; plc.sel = k; plcNote = ""; }   // dragged off the grid: back to the tray
+    draw(vm);
+  }
+  mainEl.addEventListener("pointerdown", (e) => { const h = e.target.closest && e.target.closest(".bs-hull.live"); if (h) startDrag(e, parseInt(h.dataset.k, 10), h); });
+  window.addEventListener("resize", () => { if (vm.kind !== "none" && vm.kind !== "cover") draw(vm); });
 
   function placeClick(i) {
     const at = placedCells(-1);
@@ -401,11 +523,58 @@
     sel = -1;
     handlers.place(fleet);
   });
+  // Fire: the cannon kicks back and a ball flies to the aimed square, then the shot is taken.
+  let firing = false;
+  function shootAnim(cell, hit) {
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const target = mainEl.children[cell];
+    if (still || !target || !target.animate) return Promise.resolve();
+    fireBtn.classList.remove("recoil"); void fireBtn.offsetWidth; fireBtn.classList.add("recoil");
+    const mouth = fireBtn.querySelectorAll("ellipse")[1].getBoundingClientRect(), t = target.getBoundingClientRect();
+    const ball = document.createElement("div");
+    ball.className = "bs-ball";
+    document.body.appendChild(ball);
+    const x0 = mouth.left + mouth.width / 2, y0 = mouth.top + mouth.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
+    const fly = ball.animate([
+      { left: x0 + "px", top: y0 + "px", transform: "scale(.8)" },
+      { left: (x0 + x1) / 2 + "px", top: (y0 + y1) / 2 - 30 + "px", transform: "scale(1.7)", offset: 0.55 },
+      { left: x1 + "px", top: y1 + "px", transform: "scale(.9)" },
+    ], { duration: 560, easing: "ease-in" });
+    return fly.finished.catch(() => {}).then(() => { ball.remove(); burst(x1, y1, hit); });
+  }
+  // sparkles and smoke where the ball lands (a splash of smaller white puffs on a miss)
+  function burst(x, y, hit) {
+    const fx = document.createElement("div");
+    fx.className = "bs-fx";
+    fx.style.left = x + "px"; fx.style.top = y + "px";
+    document.body.appendChild(fx);
+    const parts = [];
+    for (let i = 0; i < (hit ? 5 : 3); i++) {
+      const a = (i / (hit ? 5 : 3)) * Math.PI * 2 + 0.4, d = hit ? 24 : 14, s = document.createElement("span");
+      s.className = hit ? "bs-spark" : "bs-puff";
+      fx.appendChild(s);
+      parts.push(s.animate([{ transform: "translate(0,0) scale(.4)", opacity: 1 }, { transform: "translate(" + Math.cos(a) * d + "px," + Math.sin(a) * d + "px) scale(" + (hit ? 1.3 : 1) + ")", opacity: 0 }], { duration: 520, easing: "ease-out", fill: "forwards" }));
+    }
+    if (hit) for (let i = 0; i < 3; i++) {
+      const p = document.createElement("span");
+      p.className = "bs-puff";
+      p.style.left = (i - 1) * 12 + "px"; p.style.top = -6 - i * 4 + "px";
+      fx.appendChild(p);
+      parts.push(p.animate([{ transform: "scale(.5)", opacity: .7 }, { transform: "scale(2) translateY(-14px)", opacity: 0 }], { duration: 700, delay: i * 70, easing: "ease-out", fill: "forwards" }));
+    }
+    setTimeout(() => fx.remove(), 900);
+  }
   fireBtn.addEventListener("click", () => {
-    if (sel < 0 || vm.kind !== "battle" || !vm.canFire) return;
+    if (firing || sel < 0 || vm.kind !== "battle" || !vm.canFire) return;
     const cell = sel;
-    sel = -1;
-    handlers.fire(cell);
+    firing = true;
+    fireBtn.disabled = true;
+    const hitNow = !!(vm.enemyFleet && ownerMap(vm.enemyFleet)[cell] >= 0);
+    shootAnim(cell, hitNow).then(() => {
+      firing = false;
+      sel = -1;
+      handlers.fire(cell);
+    });
   });
   endBtn.addEventListener("click", () => handlers.end());
   coverBtn.addEventListener("click", () => handlers.cover());

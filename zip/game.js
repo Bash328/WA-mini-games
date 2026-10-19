@@ -221,6 +221,8 @@
     path = [];
     onPath = new Set();
     won = false;
+    svgEl.classList.remove("win");
+    vcells = []; vpending = null; vh = 0; vtarget = 0;
     timerStart = Date.now();
     startTimer();
     renderShell();
@@ -266,7 +268,7 @@
 
   function renderWalls() {
     Array.from(boardEl.querySelectorAll(".zp-wall-h, .zp-wall-v")).forEach(w => w.remove());
-    const brect = boardEl.getBoundingClientRect();
+    const bb = boardEl.getBoundingClientRect(), brect = { left: bb.left + boardEl.clientLeft, top: bb.top + boardEl.clientTop, width: boardEl.clientWidth, height: boardEl.clientHeight };   // the inside of the frame: absolute children measure from there, not from the border
     for (const w of walls) {
       const [a, b] = w.split("-").map(Number);
       const ra = Math.floor(a / N), ca = a % N;
@@ -293,28 +295,92 @@
     }
   }
 
-  function renderPath() {
-    for (let i = 0; i < cellEls.length; i++) cellEls[i].classList.toggle("on", onPath.has(i));
-    // Redraw SVG polyline
-    const brect = boardEl.getBoundingClientRect();
+  /* ---------- Drawing the path ----------
+     The line is not redrawn in jumps: `vcells` is the path as drawn, `vh` how far along it the glowing
+     head has got (a fractional index). The head glides to the end of the real path; when the path gets
+     shorter the head glides back and only then drops the tail. Cells fill as the head passes them. */
+  let vcells = [], vh = 0, vtarget = 0, vpending = null, raf = 0, lastT = 0;
+  const still = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function insideFrame() {
+    const bb = boardEl.getBoundingClientRect();
+    return { left: bb.left + boardEl.clientLeft, top: bb.top + boardEl.clientTop, width: boardEl.clientWidth, height: boardEl.clientHeight };   // the inside of the frame: absolute children measure from there, not from the border
+  }
+  function centreOf(i, brect) {
+    const r = cellEls[i].getBoundingClientRect();
+    return [r.left - brect.left + r.width / 2, r.top - brect.top + r.height / 2];
+  }
+
+  function drawPath() {
+    const brect = insideFrame();
     svgEl.setAttribute("viewBox", "0 0 " + brect.width + " " + brect.height);
-    svgEl.innerHTML = "";
-    if (path.length >= 2) {
-      const ns = "http://www.w3.org/2000/svg";
-      const pts = path.map(i => {
-        const r = cellEls[i].getBoundingClientRect();
-        return (r.left - brect.left + r.width / 2) + "," + (r.top - brect.top + r.height / 2);
-      }).join(" ");
+    svgEl.replaceChildren();
+    const whole = Math.min(Math.floor(vh + 1e-6), vcells.length - 1);
+    for (let i = 0; i < cellEls.length; i++) cellEls[i].classList.remove("on");
+    for (let k = 0; k < vcells.length; k++) if (k <= vh + 0.5) cellEls[vcells[k]].classList.add("on");
+    if (whole < 0) return;
+    const pts = [];
+    for (let k = 0; k <= whole; k++) pts.push(centreOf(vcells[k], brect));
+    const frac = vh - whole;
+    if (frac > 1e-3 && whole + 1 < vcells.length) {
+      const a = pts[whole], c = centreOf(vcells[whole + 1], brect);
+      pts.push([a[0] + (c[0] - a[0]) * frac, a[1] + (c[1] - a[1]) * frac]);
+    }
+    const ns = "http://www.w3.org/2000/svg";
+    if (pts.length >= 2) {
       const line = document.createElementNS(ns, "polyline");
-      line.setAttribute("points", pts);
+      line.setAttribute("points", pts.map((q) => q[0] + "," + q[1]).join(" "));
       line.setAttribute("fill", "none");
       line.setAttribute("stroke", "var(--accent)");
-      line.setAttribute("stroke-width", "6");
+      line.setAttribute("stroke-width", "10");
       line.setAttribute("stroke-linecap", "round");
       line.setAttribute("stroke-linejoin", "round");
-      line.setAttribute("opacity", "0.85");
       svgEl.appendChild(line);
     }
+    const h = pts[pts.length - 1];
+    if (dragging && !won) {                       // a soft halo under the finger, like a touch indicator
+      const halo = document.createElementNS(ns, "circle");
+      halo.setAttribute("cx", h[0]); halo.setAttribute("cy", h[1]); halo.setAttribute("r", String(cellEls[0].getBoundingClientRect().width * 0.62));
+      halo.setAttribute("fill", "rgba(255,255,255,.32)"); halo.setAttribute("class", "zp-halo");
+      svgEl.appendChild(halo);
+    }
+    const head = document.createElementNS(ns, "circle");
+    head.setAttribute("cx", h[0]); head.setAttribute("cy", h[1]); head.setAttribute("r", "9");
+    head.setAttribute("fill", "var(--accent)"); head.setAttribute("stroke", "#fff"); head.setAttribute("stroke-width", "3");
+    svgEl.appendChild(head);
+  }
+
+  function tick(t) {
+    raf = 0;
+    const dt = Math.min(0.05, (t - lastT) / 1000 || 0.016);
+    lastT = t;
+    const diff = vtarget - vh;
+    if (Math.abs(diff) < 0.004) {
+      vh = vtarget;
+      if (vpending) { vcells = vpending; vpending = null; }
+      drawPath();
+      return;
+    }
+    // ease towards the target, but never crawl: at least ~9 squares a second
+    const step = Math.max(Math.abs(diff) * (1 - Math.exp(-dt * 24)), Math.min(Math.abs(diff), 9 * dt));
+    vh += Math.sign(diff) * step;
+    drawPath();
+    raf = requestAnimationFrame(tick);
+  }
+
+  function renderPath() {
+    const n = path.length, o = vcells.length;
+    let common = 0;
+    while (common < n && common < o && path[common] === vcells[common]) common++;
+    if (n === 0) { vcells = []; vpending = null; vh = 0; vtarget = 0; }
+    else if (common === o) { vcells = path.slice(); vpending = null; vtarget = n - 1; }        // grew (or unchanged)
+    else if (common === n) { vpending = path.slice(); vtarget = n - 1; }                         // shrank: glide back, then drop the tail
+    else { vcells = path.slice(); vpending = null; vh = Math.min(vh, common - 1); vtarget = n - 1; }   // a different track from the fork on
+    if (still()) { vh = vtarget; if (vpending) { vcells = vpending; vpending = null; } }
+    if (raf) return;
+    if (vh === vtarget && !vpending) { drawPath(); return; }
+    lastT = performance.now();
+    raf = requestAnimationFrame(tick);
   }
 
   function cellFromEvent(e) {
@@ -374,14 +440,35 @@
     boardEl.setPointerCapture(e.pointerId);
     tryExtend(t);
   }
+  // a fast finger can skip squares between two samples: walk through the free ones towards the target
+  const dist = (a, b) => Math.abs(Math.floor(a / N) - Math.floor(b / N)) + Math.abs(a % N - b % N);
+  function reach(t) {
+    for (let guard = 0; guard < 4 && path.length && !won; guard++) {
+      const last = path[path.length - 1];
+      if (t === last || onPath.has(t) || neighbors(last).includes(t)) break;
+      let best = -1, bd = dist(last, t);
+      for (const x of neighbors(last)) {
+        if (onPath.has(x) || blocked(last, x) || (waypoints.includes(x) && x !== t)) continue;
+        if (dist(x, t) < bd) { bd = dist(x, t); best = x; }
+      }
+      if (best < 0) break;
+      const before = path.length;
+      tryExtend(best);
+      if (path.length === before) break;
+    }
+    tryExtend(t);
+  }
   function onPointerMove(e) {
     if (!dragging) return;
-    const t = cellFromEvent(e);
-    if (t < 0) return;
-    tryExtend(t);
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    for (const ev of evs.length ? evs : [e]) {
+      const t = cellFromEvent(ev);
+      if (t >= 0) reach(t);
+    }
   }
   function onPointerUp(e) {
     dragging = false;
+    drawPath();
     try { boardEl.releasePointerCapture(e.pointerId); } catch (_) {}
   }
 
@@ -390,13 +477,14 @@
     // Must end at last waypoint; must have visited waypoints in order (already enforced).
     if (path[path.length - 1] !== waypoints[K - 1]) return;
     won = true;
+    svgEl.classList.add("win");
     const s = Math.floor((Date.now() - timerStart) / 1000);
     const best = store.getInt("best:" + diff, null);
     if (best === null || s < best) {
       store.set("best:" + diff, s);
       bestEl.textContent = Gamekit.fmtTime(s);
     }
-    statusEl.innerHTML = '<span class="ok">Zipped in ' + Gamekit.fmtTime(s) + '.</span>';
+    statusEl.innerHTML = '<span class="ok">Solved in ' + Gamekit.fmtTime(s) + '.</span>';
   }
 
   function startTimer() {
@@ -423,6 +511,7 @@
   });
   resetBtn.addEventListener("click", () => {
     path = []; onPath = new Set(); won = false;
+    svgEl.classList.remove("win");
     timerStart = Date.now(); startTimer();
     statusEl.textContent = "Connect 1 → 2 → 3 → … filling every cell.";
     renderPath();
@@ -463,5 +552,8 @@
   window.addEventListener("load", () => Manpage.autoOpen("zip"));
 
   // Exposed only so the generator can be timed and checked in tests.
-  window.__zipTest = { buildPuzzle, countSolutions, makeAdjacency, DIFFS };
+  window.__zipTest = {
+    buildPuzzle, countSolutions, makeAdjacency, DIFFS,
+    autoSolve: () => { path = solutionPath.slice(); onPath = new Set(path); renderPath(); checkWin(); },   // the reference answer, for the end-of-game check
+  };
 })();

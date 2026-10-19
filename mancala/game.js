@@ -96,29 +96,54 @@
     return d;
   }
 
+  // Sowing is shown seed by seed: the pit you played is lifted, then each pit along the way gets its seed
+  // (a small pop) every ~170ms, and then the real position, with any capture, is drawn. A second
+  // render (or a new game) cancels a sowing in progress and shows its board at once.
+  let shownBoard = null, sowTimers = [];
   function renderBoard(board, current, canClick, onClick, lastPit) {
+    sowTimers.forEach(clearTimeout); sowTimers = [];
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!still && prev && Number.isInteger(lastPit) && lastPit !== P1_STORE && lastPit !== P2_STORE && prev[lastPit] > 0 && board[lastPit] === 0) {
+      const skip = storeOf(other(lastPit < P1_STORE ? P1 : P2)), b = prev.slice(), frames = [];
+      let seeds = b[lastPit], i = lastPit;
+      b[lastPit] = 0; frames.push({ board: b.slice(), at: -1 });
+      while (seeds > 0) { i = (i + 1) % 14; if (i === skip) continue; b[i]++; seeds--; frames.push({ board: b.slice(), at: i }); }
+      frames.forEach((f, k) => sowTimers.push(setTimeout(() => paint(f.board, current, false, onClick, lastPit, f.at), k * 170)));
+      sowTimers.push(setTimeout(() => paint(board, current, canClick, onClick, lastPit, -1), frames.length * 170 + 40));
+      return;
+    }
+    paint(board, current, canClick, onClick, lastPit, -1);
+  }
+
+  function paint(board, current, canClick, onClick, lastPit, dropAt) {
     boardEl.innerHTML = "";
+    const els = [];
     const p2 = makePit(P2_STORE, board[P2_STORE], false, "p2");
-    boardEl.appendChild(p2);
+    boardEl.appendChild(p2); els[P2_STORE] = p2;
 
     [12,11,10,9,8,7].forEach((pit, i) => {
       const clickable = canClick && current === P2 && board[pit] > 0;
       const el = makePit(pit, board[pit], clickable, "p2" + (pit === lastPit ? " last" : ""));
       el.style.gridColumn = "2"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
-      boardEl.appendChild(el);
+      boardEl.appendChild(el); els[pit] = el;
     });
     [0,1,2,3,4,5].forEach((pit, i) => {
       const clickable = canClick && current === P1 && board[pit] > 0;
       const el = makePit(pit, board[pit], clickable, "p1" + (pit === lastPit ? " last" : ""));
       el.style.gridColumn = "1"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
-      boardEl.appendChild(el);
+      boardEl.appendChild(el); els[pit] = el;
     });
 
     const p1 = makePit(P1_STORE, board[P1_STORE], false, "p1");
-    boardEl.appendChild(p1);
+    boardEl.appendChild(p1); els[P1_STORE] = p1;
 
+    if (dropAt >= 0 && els[dropAt] && els[dropAt].firstElementChild) {
+      els[dropAt].firstElementChild.animate([{ transform: "scale(1.22)" }, { transform: "scale(.95)", offset: 0.55 }, { transform: "scale(1)" }], { duration: 220, easing: "ease-out" });
+    }
     scoreEl.textContent = `Player 1: ${board[P1_STORE]} · Player 2: ${board[P2_STORE]}`;
   }
 

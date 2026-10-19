@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=a814c40f">
+<link rel="stylesheet" href="../fun.css?v=a83d4623">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .bk-wrap { width: min(520px, 100%); margin: 8px auto 0; }
@@ -80,7 +80,7 @@
 
   html body.fun.g-blokus-duo { --vs-l: #ff9f43; --vs-r: #a78bfa; }
   html body.fun.g-blokus-duo .bk-wrap { width: 100%; margin: 8px 0 0; }
-  html body.fun.g-blokus-duo .panel .bk-board { width: calc(100% + 22px); margin: 0 -11px; box-sizing: border-box; max-width: none; padding: 6px; gap: 2px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
+  html body.fun.g-blokus-duo .panel .bk-board { --bw: clamp(296px, min(calc(100% + 22px), calc(100svh - 526px)), calc(100% + 22px)); width: var(--bw); margin: 0 calc((100% - var(--bw)) / 2); box-sizing: border-box; max-width: none; padding: 6px; gap: 2px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
   html body.fun.g-blokus-duo .bk-cell { background: #3d4470; border-radius: 3px; }
   html body.fun.g-blokus-duo .bk-cell.p1 { background: #ff9f43; } html body.fun.g-blokus-duo .bk-cell.p2 { background: #a78bfa; }
   html body.fun.g-blokus-duo .bk-cell.go { background: #55608f; }
@@ -180,7 +180,7 @@
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=dce7779b"></script>
+<script defer src="../gamekit.js?v=f5fe6255"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
 <script defer src="../async-share.js?v=a4bdc418"></script>
 <script defer src="../account.js?v=160336a8"></script>

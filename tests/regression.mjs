@@ -158,6 +158,247 @@ check('board-steady', 'the board jumped down when Options opened, or sat far dow
   return bad;
 }, ZONE);
 
+check('taunt-not-cut', 'a long taunt ("Hard to see how this doesn\'t go your way... The crowd goes quiet") was cut off at the bottom of the message strip in rock paper scissors', async (g) => {
+  const p = await open(g, 320, SOLO[g]);
+  await p.evaluate(END[g]); await p.waitForTimeout(500);
+  await p.evaluate(() => { const t = [1, 2, 3, 4, 5, 6].map(() => Gamekit.taunt('loss')).sort((x, y) => y.length - x.length)[0]; document.getElementById('status').textContent = 'Player 2 took it. Player 1 — ' + t; });
+  await p.waitForTimeout(500);
+  const r = await p.evaluate(() => { const m = document.querySelector('.gk-msg:not([hidden])'); return m ? { s: m.scrollHeight, c: m.clientHeight } : null; });
+  await p.close();
+  return r && r.s > r.c + 1 ? ['message strip is ' + r.c + 'px but its text needs ' + r.s + 'px'] : [];
+}, ['rock-paper-scissors']);
+
+check('zip-walls-visible', 'zip walls were white on the white grid, so they could not be seen before you played', async (g) => {
+  const p = await open(g);
+  const r = await p.evaluate(() => [...document.querySelectorAll('.zp-wall-h, .zp-wall-v')].map((w) => getComputedStyle(w).backgroundColor));
+  await p.close();
+  const bad = r.filter((c) => /^rgb\(2[3-5]\d, 2[3-5]\d, 2[3-5]\d\)$/.test(c) || c === 'rgba(0, 0, 0, 0)');
+  return !r.length ? ['no walls found on the start puzzle'] : bad.length ? ['wall colour is ' + bad[0]] : [];
+}, ['zip']);
+
+check('tango-badges-aligned', 'tango: the = and x badges sat a few pixels off the line between the two cells they describe, clipped by the board edge', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => {
+    const cells = [...document.querySelectorAll('.tg-cell')].map((c) => c.getBoundingClientRect());
+    return [...document.querySelectorAll('.tg-edge')].map((e) => { const b = e.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      // the centre must lie in the gap between two cells (not inside one)
+      const inside = cells.some((c) => cx > c.left + 1 && cx < c.right - 1 && cy > c.top + 1 && cy < c.bottom - 1);
+      return inside; });
+  });
+  await p.close();
+  return !r.length ? ['no badges on the start puzzle'] : r.some(Boolean) ? [r.filter(Boolean).length + ' badge(s) are not centred on the line between their cells'] : [];
+}, ['tango']);
+
+check('patches-overlay-aligned', 'patches: a drawn rectangle was shifted by the width of the board frame, so its edges missed the grid lines and ran off the right edge', async (g) => {
+  const p = await open(g, 390); await p.waitForTimeout(500);
+  const b = await p.evaluate(() => { const c = [...document.querySelectorAll('.pt-cell')]; const a = c[c.length - 7].getBoundingClientRect(), z = c[c.length - 1].getBoundingClientRect(); return { x1: a.left + 5, y1: a.top + 5, x2: z.left + 5, y2: z.top + 5 }; });
+  await p.mouse.move(b.x1, b.y1); await p.mouse.down(); await p.mouse.move(b.x2, b.y2, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(300);
+  const r = await p.evaluate(() => { const o = document.querySelector('.pt-rect-overlay'); if (!o) return null; const cells = [...document.querySelectorAll('.pt-cell')], a = cells[cells.length - 7].getBoundingClientRect(), z = cells[cells.length - 1].getBoundingClientRect(), r = o.getBoundingClientRect(); return { dl: r.left - a.left, dt: r.top - a.top, dr: r.right - z.right, db: r.bottom - z.bottom }; });
+  const dbg = await p.evaluate(() => document.querySelectorAll('.pt-rect-overlay').length + '|' + (document.elementFromPoint(323, 500) || {}).className + '|' + document.querySelectorAll('.pt-cell.drag').length);
+  await p.close();
+  if (!r) return ['dragging across cells drew no rectangle ' + dbg];
+  return Object.values(r).some((v) => Math.abs(v) > 1.5) ? ['rectangle is off the cells it covers by ' + JSON.stringify(r)] : [];
+}, ['patches']);
+
+check('sliding-puzzle-tiles', 'sliding puzzle: each tile showed as a narrow white card on a brown tile, and the clock in the header was cut to "0:..."', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => { const b = document.querySelector('.sp-board').getBoundingClientRect(), t = document.querySelector('.sp-t span').getBoundingClientRect(), o = document.querySelector('.sp-t').getBoundingClientRect(), n = Number(getComputedStyle(document.querySelector('.sp-board')).getPropertyValue('--n')) || 4, bg = getComputedStyle(document.querySelector('.sp-t')).backgroundColor, bs = getComputedStyle(document.querySelector('.sp-t')).boxShadow; const clock = [...document.querySelectorAll('.fun-pills b')].map((e) => e.scrollWidth > e.clientWidth + 1); return { share: t.width / (b.width / n), bg, bs, clock }; });
+  await p.close();
+  const bad = [];
+  if (r.share < 0.8) bad.push('tile fills only ' + Math.round(r.share * 100) + '% of its cell width');
+  if (r.bg !== 'rgba(0, 0, 0, 0)' || r.bs !== 'none') bad.push('the tile button still draws its own fill/shadow behind the tile (' + r.bg + ', ' + r.bs + ')');
+  if (r.clock.some(Boolean)) bad.push('a header pill is cut off');
+  return bad;
+}, ['sliding-puzzle']);
+
+check('cross-sums-not-cut', 'cross sums: the top row of the grid was cut off because the rows grew taller than the square frame', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => { const b = document.querySelector('.cs-grid'), kids = [...b.children].map((c) => c.getBoundingClientRect()), br = b.getBoundingClientRect(); return { top: Math.min(...kids.map((k) => k.top)) - br.top - b.clientTop, bottom: br.bottom - b.clientTop - Math.max(...kids.map((k) => k.bottom)) }; });
+  await p.close();
+  return r.top < -1 || r.bottom < -1 ? ['cells stick out of the frame (top ' + Math.round(r.top) + ', bottom ' + Math.round(r.bottom) + ')'] : [];
+}, ['cross-sums']);
+
+check('tango-badges-clear-of-suns', 'tango: the = and x circles were big enough to overlap the sun or moon in the neighbouring cells', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => {
+    const shapes = [...document.querySelectorAll('.tg-cell.sun, .tg-cell.moon')].map((c) => { const k = c.getBoundingClientRect(), d = Math.min(k.width, k.height) * 0.5 + 6; return { x: k.left + k.width / 2, y: k.top + k.height / 2, r: d / 2 }; });
+    // give every cell a sun so the check does not depend on the puzzle: use every cell centre
+    const cells = [...document.querySelectorAll('.tg-cell')].map((c) => { const k = c.getBoundingClientRect(); return { x: k.left + k.width / 2, y: k.top + k.height / 2, r: (Math.min(k.width, k.height) * 0.5 + 6) / 2 }; });
+    let worst = 0;
+    for (const e of document.querySelectorAll('.tg-edge')) { const b = e.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2, br = b.width / 2; for (const s of cells) worst = Math.max(worst, s.r + br - Math.hypot(s.x - cx, s.y - cy)); }
+    return { worst: Math.round(worst * 10) / 10 };
+  });
+  await p.close();
+  return r.worst > 0 ? ['a badge overlaps a sun by ' + r.worst + 'px'] : [];
+}, ['tango']);
+
+check('zip-win-card-and-next', 'zip had no end-of-game card (its win text was "Zipped in", which the card did not recognise) and nothing to take you to the next puzzle', async (g) => {
+  const p = await open(g, 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.evaluate(() => window.__zipTest.autoSolve()); await p.waitForTimeout(900);
+  if (!(await p.locator('.gk-over').count())) bad.push('no end-of-game card after solving the puzzle');
+  else {
+    const label = (await p.locator('.gk-over .again').textContent()).trim();
+    if (label !== 'Next level') bad.push('the card button says "' + label + '", not "Next level"');
+    await p.locator('.gk-over .again').click(); await p.waitForTimeout(600);
+    const after = await p.evaluate(() => ({ on: document.querySelectorAll('.zp-cell.on').length, card: !!document.querySelector('.gk-over') }));
+    if (after.card) bad.push('the card is still there after Next level');
+    if (after.on) bad.push('the new puzzle starts with ' + after.on + ' filled squares');
+  }
+  await p.close();
+  return bad;
+}, ['zip']);
+
+check('zip-path-glides', 'zip: the line and the filled squares jumped to each new square; the head now glides and the squares fill as it passes', async (g) => {
+  const p = await open(g, 390); await p.waitForTimeout(400);
+  const start = await p.evaluate(() => { const c = document.querySelector('.zp-cell.start').getBoundingClientRect(); return { x: c.left + c.width / 2, y: c.top + c.height / 2, w: c.width }; });
+  await p.mouse.move(start.x, start.y); await p.mouse.down();
+  await p.mouse.move(start.x + start.w * 0.6, start.y, { steps: 2 });
+  // sample the head while it travels: it must be seen between two squares at least once
+  const seen = await p.evaluate(() => new Promise((res) => { const xs = []; const t0 = performance.now(); const f = () => { const c = document.querySelector('#svg circle'); if (c) xs.push(+c.getAttribute('cx')); if (performance.now() - t0 < 260) requestAnimationFrame(f); else res(xs); }; f(); }));
+  await p.mouse.up(); await p.close();
+  const distinct = new Set(seen.map((v) => Math.round(v))).size;
+  return distinct < 3 ? ['the head jumped (saw ' + distinct + ' positions while moving one square)'] : [];
+}, ['zip']);
+
+check('battleship-battle-fits-and-fires', 'battleship: a battle (your shot) did not fit on one screen, had no fleet strip between the grids, and had no cannon to tap to fire', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(400);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(600);
+  const r = await p.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); return { over: document.documentElement.scrollHeight - innerHeight, strip: q('#bs-fleets').top > q('#bs-main').bottom && q('#bs-fleets').bottom < q('#bs-sub').top, ships: document.querySelectorAll('#bs-fleets .bs-mini').length, cannon: !!document.querySelector('#bs-fire svg') }; });
+  if (r.over > 0) bad.push('the battle screen scrolls (' + r.over + 'px too tall)');
+  if (!r.strip) bad.push('the fleet strip is not between the two grids');
+  if (r.ships !== 10) bad.push('the fleet strip should show 5 ships for each side (saw ' + r.ships + ')');
+  if (!r.cannon) bad.push('no cannon to fire with');
+  await p.locator('#bs-main .bs-cell').nth(44).click();
+  if (!(await p.evaluate(() => !document.getElementById('bs-fire').disabled))) bad.push('the cannon stays disabled after aiming');
+  await p.locator('#bs-fire').click(); await p.waitForTimeout(1500);
+  const shot = await p.evaluate(() => document.querySelectorAll('#bs-main .bs-cell.hit, #bs-main .bs-cell.miss, #bs-main .bs-cell.sunk').length);
+  if (shot !== 1) bad.push('firing the cannon should mark exactly one square (saw ' + shot + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('battleship-drag-ship', 'battleship: ships could only be dropped by tapping; they can now be dragged from the tray onto the grid, and tapped to turn', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  const tray = await p.locator('#bs-tray .bs-ship').first().boundingBox(), cell = await p.locator('#bs-main .bs-cell').nth(23).boundingBox();
+  await p.mouse.move(tray.x + tray.width / 2, tray.y + tray.height / 2); await p.mouse.down();
+  await p.mouse.move(cell.x + 10, cell.y + 10, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(250);
+  const hull = async () => p.evaluate(() => { const h = document.querySelector('#bs-main .bs-hull'); if (!h) return null; const r = h.getBoundingClientRect(); return { w: r.width, h: r.height }; });
+  const a = await hull();
+  if (!a) bad.push('dragging a ship from the tray onto the grid placed nothing');
+  else {
+    await p.mouse.click(cell.x + 10, cell.y + 10); await p.waitForTimeout(250);
+    const b = await hull();
+    if (!b || !(a.w > a.h) || !(b.h > b.w)) bad.push('tapping a placed ship should turn it from across to down');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
+check('connect-four-drop-animates', 'connect four: a disc used to just appear in its slot; it now falls from the top of its column, bounces, and lands in the lowest free square', async () => {
+  const p = await open('connect-four', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(400);
+  const bad = [];
+  const btn = p.locator('.c4-col-btn').nth(3);
+  await btn.click();
+  const mid = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(), ys = []; const f = () => { const el = [...document.querySelectorAll('.c4-slot.p1, .c4-slot.p2')][0]; if (el) ys.push(el.getBoundingClientRect().top); if (performance.now() - t0 < 700) requestAnimationFrame(f); else res({ ys: ys, end: ys[ys.length - 1] }); }; f(); }));
+  const travelled = Math.max(...mid.ys) - Math.min(...mid.ys);
+  if (travelled < 60) bad.push('the disc did not fall (it moved only ' + Math.round(travelled) + 'px)');
+  const landed = await p.evaluate(() => { const el = document.querySelector('.c4-slot.p1, .c4-slot.p2'); return el ? +el.dataset.r : -1; });
+  if (landed !== 5) bad.push('the disc should land in the bottom row (row ' + landed + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['connect-four']);
+
+check('reversi-flip-animates', 'reversi: flipped discs used to change colour instantly; they now turn over in a wave, and end up the right colour', async () => {
+  const p = await open('reversi', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('.rv-cell.hint').first().click();
+  const during = await p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale/.test(k.transform || ''))).length);
+  if (during < 2) bad.push('no flip animation after a move (saw ' + during + ' animations)');
+  await p.waitForTimeout(1200);
+  const n = await p.evaluate(() => ({ b: document.querySelectorAll('.rv-disc.black').length, w: document.querySelectorAll('.rv-disc.white').length }));
+  if (n.b !== 4 || n.w !== 1) bad.push('after the first move black should have 4 discs and white 1 (saw ' + n.b + ' and ' + n.w + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['reversi']);
+
+const sliding = () => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /translate/.test(k.transform || ''))).length;
+check('chess-piece-slides', 'chess: a moved piece used to just appear on its new square; it now glides there from the old one', async () => {
+  const p = await open('chess', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#board .sq').nth(52).click(); await p.locator('#board .sq').nth(36).click();
+  const n = await p.evaluate(sliding);
+  if (n < 1) bad.push('no slide animation after moving e2-e4');
+  await p.waitForTimeout(500);
+  const there = await p.evaluate(() => document.querySelectorAll('#board .sq')[36].textContent.trim().length);
+  if (!there) bad.push('the pawn is not on e4 after the move');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['chess']);
+
+check('checkers-piece-slides', 'checkers: a moved piece used to just appear on its new square; it now glides there', async () => {
+  const p = await open('checkers', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('.ck-cell.selectable').first().click(); await p.waitForTimeout(100);
+  await p.locator('.ck-cell.hint').first().click();
+  const n = await p.evaluate(sliding);
+  if (n < 1) bad.push('no slide animation after a checkers move');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['checkers']);
+
+check('mancala-sows-seed-by-seed', 'mancala: the seeds used to jump to their final pits; they are now dropped one pit at a time, and the final position is still exact', async () => {
+  const p = await open('mancala', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
+  await p.waitForTimeout(500);
+  const bad = [];
+  const store = () => p.evaluate(() => (document.querySelector('.mk-store.p1 .store-n') || { textContent: '0' }).textContent);
+  await p.locator('.mk-pit.p1').nth(2).click();
+  await p.waitForTimeout(250);
+  const early = await store();
+  if (early !== '0') bad.push('the store already holds ' + early + ' a quarter second in: the seeds were not dropped one by one');
+  await p.waitForTimeout(1400);
+  const end = await p.evaluate(() => ({ s: (document.querySelector('.mk-store.p1 .store-n') || { textContent: '0' }).textContent, clickable: [...document.querySelectorAll('.mk-pit.p1')].some((b) => !b.disabled), seeds: [...document.querySelectorAll('.mk-pit.p1 .num')].map((n) => n.textContent).join('') }));
+  if (end.s !== '1') bad.push('after sowing 4 seeds from the third pit the store should hold 1 (saw ' + end.s + ')');
+  if (!end.clickable) bad.push('the pits are still locked after the sowing finished');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['mancala']);
+
+check('word-ladder-submit-button', 'word ladder: guesses were sent with a small Enter key inside the keyboard; there is now a clear Submit button (greyed until four letters are typed), like Word Guess', async () => {
+  const p = await open('word-ladder', 390); await p.waitForTimeout(400);
+  const bad = [];
+  if (!(await p.locator('#submit-btn').count())) bad.push('no Submit button');
+  else {
+    if (!(await p.locator('#submit-btn').isDisabled())) bad.push('Submit is enabled before any letters are typed');
+    for (const c of 'zzzz') await p.locator('#kb .wl-key', { hasText: new RegExp('^' + c + '$', 'i') }).first().click();
+    if (await p.locator('#submit-btn').isDisabled()) bad.push('Submit stays disabled after four letters');
+    await p.locator('#submit-btn').click(); await p.waitForTimeout(300);
+    const msg = (await p.locator('#status').textContent()).trim();
+    if (!/word list|not a word|neighbo|one letter/i.test(msg)) bad.push('Submit did nothing visible (status: "' + msg + '")');
+    if (await p.locator('#kb .wl-key[data-k="enter"]').count()) bad.push('the small Enter key is still in the keyboard');
+  }
+  const over = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  if (over > 0) bad.push('the page scrolls (' + over + 'px too tall)');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['word-ladder']);
+
 check('options-toggle', 'pressing Options while the menus are showing did not hide them', async (g) => {
   const p = await open(g);
   const vis = () => p.evaluate(() => !document.body.classList.contains('gk-play'));
@@ -287,8 +528,8 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
   const e = await state();
   if (e.hidden || !e.text) bad.push('nothing says the last line when the game ends');
-  const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), b = document.getElementById('bubble'), gr = g.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
-  if (!ghost.shown) bad.push('no ghost appears when he runs out of chances');
+  const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), big = g.querySelector('.big'), b = document.getElementById('bubble'), gr = big.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0 && g.querySelectorAll('.hm-g').length >= 3, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
+  if (!ghost.shown) bad.push('no ghost (with more spirits rising from the man) appears when he runs out of chances');
   if (!ghost.bubbleGhost) bad.push('the last line is not spoken from the ghost');
   if (!ghost.nextToBubble) bad.push('the ghost is not beside its speech bubble');
   if (!ghost.besideMan) bad.push('the ghost is not next to the man');
@@ -530,10 +771,10 @@ check('dominoes-look-and-play', 'dominoes should match the reference: a header w
   const info = await p.evaluate(() => ({ tab: document.querySelector('.fun-vs .tab')?.textContent, left: document.querySelector('.fun-vs .l')?.textContent, back: getComputedStyle(document.querySelector('.dm.back')).backgroundColor, line: document.getElementById('dm-line').getBoundingClientRect().height, hand: getComputedStyle(document.getElementById('dm-hand')).backgroundColor, boxed: getComputedStyle(document.querySelector('.dm-tile')).backgroundColor, sw: document.documentElement.scrollWidth }));
   if (!/GOAL \d+/.test(info.tab || '')) bad.push('the header tab should read GOAL <points>, saw "' + info.tab + '"');
   if (!/^YOU/.test(info.left || '')) bad.push('the header should show YOU on the left');
-  if (!/133, 124, 110/.test(info.back)) bad.push('the bot tile backs should be the grey-brown tiles');
-  if (!/143, 46, 46/.test(info.hand)) bad.push('your hand should sit on the red floor');
+  if (!/179, 168, 153/.test(info.back)) bad.push('the bot tile backs should be the grey-brown tiles');
+  if (!/196, 80, 63/.test(info.hand)) bad.push('your hand should sit on the red floor');
   if (info.boxed !== 'rgba(0, 0, 0, 0)') bad.push('hand tiles are boxed in a button background (' + info.boxed + ')');
-  if (info.line < 230) bad.push('the table is too short (' + Math.round(info.line) + 'px)');
+  if (info.line < 180) bad.push('the table is too short (' + Math.round(info.line) + 'px)');
   if (info.sw > 390) bad.push('page is wider than the phone');
   // play some turns; the hand must stay where it is and the line must keep its height
   const hand0 = await p.evaluate(() => Math.round(document.getElementById('dm-hand').getBoundingClientRect().top + scrollY));
@@ -595,26 +836,24 @@ check('liars-dice-look-and-fit', 'the liars dice page should have the green felt
   return bad;
 }, ['liars-dice']);
 
-check('hub-look', 'the game hub should be the dark page with a top bar (menu, your name, invite) and big rounded game tiles in two columns, every tile leading to a real page, nothing wider than the phone, and its scripts and styles stamped', async () => {
+check('hub-look', 'the game hub should be the dark page with a top bar (your name, invite) and big rounded game tiles in two columns, every tile leading to a real page, nothing wider than the phone, and its scripts and styles stamped', async () => {
   const bad = [];
   for (const w of [320, 390]) {
     const p = await browser.newPage({ viewport: { width: w, height: 844 } });
     const errs = [];
     p.on('pageerror', (e) => errs.push(e.message));
     await p.goto(base); await p.waitForTimeout(700);
-    const r = await p.evaluate(() => { const cards = [...document.querySelectorAll('a.card')]; const first = cards[0].getBoundingClientRect(), second = cards[1].getBoundingClientRect(); return { n: cards.length, hrefs: cards.map((c) => c.getAttribute('href')), bg: getComputedStyle(document.body).backgroundColor, sw: document.documentElement.scrollWidth, sameRow: Math.abs(first.top - second.top) < 4, topbar: !!document.getElementById('menu-btn') && !!document.getElementById('name-btn') && !!document.getElementById('invite-btn'), radius: parseFloat(getComputedStyle(cards[0]).borderTopLeftRadius), title: !!cards[0].querySelector('h3') }; });
+    const r = await p.evaluate(() => { const cards = [...document.querySelectorAll('a.card')]; const first = cards[0].getBoundingClientRect(), second = cards[1].getBoundingClientRect(); return { n: cards.length, hrefs: cards.map((c) => c.getAttribute('href')), bg: getComputedStyle(document.body).backgroundColor, sw: document.documentElement.scrollWidth, sameRow: Math.abs(first.top - second.top) < 4, topbar: !!document.getElementById('name-btn') && !!document.getElementById('invite-btn'), radius: parseFloat(getComputedStyle(cards[0]).borderTopLeftRadius), title: !!cards[0].querySelector('h3') }; });
     if (r.n < 40) bad.push(w + 'px: only ' + r.n + ' game tiles');
     if (!/23, 23, 25/.test(r.bg)) bad.push(w + 'px: page is not the dark background (' + r.bg + ')');
     if (r.sw > w) bad.push(w + 'px: page is ' + r.sw + 'px wide');
     if (!r.sameRow) bad.push(w + 'px: tiles are not in two columns');
-    if (!r.topbar) bad.push('top bar is missing the menu, name or invite button');
+    if (!r.topbar) bad.push('top bar is missing the name or invite button');
     if (r.radius < 20) bad.push('tiles are not rounded');
     if (w === 390) {
       for (const h of r.hrefs) if (!fs.existsSync(path.join(ROOT, h.replace(/\/$/, ''), 'index.html'))) bad.push('tile links to a missing page: ' + h);
-      await p.locator('#menu-btn').click(); await p.waitForTimeout(150);
-      if (await p.locator('#menu').isHidden()) bad.push('the menu does not open');
-      await p.locator('body').click({ position: { x: 380, y: 600 } }); await p.waitForTimeout(150);
-      if (!(await p.locator('#menu').isHidden())) bad.push('tapping outside does not close the menu');
+      if (await p.locator('#menu-btn, #menu').count()) bad.push('the hub top-bar menu (your name, privacy, source) is back; it was removed on purpose');
+      if (await p.locator('a[href*="github.com/Bash328"]').count()) bad.push('the hub shows a Source link again; it was removed on purpose');
     }
     if (errs.length) bad.push('errors: ' + errs.join(';'));
     await p.close();
@@ -629,7 +868,7 @@ check('hub-look', 'the game hub should be the dark page with a top bar (menu, yo
   return bad;
 }, ['hub']);
 
-check('battleship-look', 'battleship should look like the redesign: the enemy waters blue, your fleet orange with the ships shown in red on it, hits red, no glyph symbols on the placement buttons', async () => {
+check('battleship-look', 'battleship should look like the redesign: the enemy waters blue, your fleet orange with the ships drawn as pictures on it, hits red, no glyph symbols on the placement buttons', async () => {
   const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
   await p.waitForTimeout(400);
   const bad = [];
@@ -637,7 +876,8 @@ check('battleship-look', 'battleship should look like the redesign: the enemy wa
   const place = await p.evaluate(() => ({ frame: getComputedStyle(document.getElementById('bs-main')).backgroundColor, ship: [...document.querySelectorAll('#bs-main .bs-cell.ship')].length, shipBg: getComputedStyle(document.querySelector('#bs-main .bs-cell.ship')).backgroundColor, btns: ['bs-rotate', 'bs-random', 'bs-clear'].map((i) => document.getElementById(i).textContent), sw: document.documentElement.scrollWidth }));
   if (!/224, 138, 104/.test(place.frame)) bad.push('your fleet grid is not the orange frame (' + place.frame + ')');
   if (place.ship < 14) bad.push('ships should show on your grid after Random (saw ' + place.ship + ' cells)');
-  if (!/25\d, 11\d, 9\d/.test(place.shipBg)) bad.push('ship cells are not the flat red (' + place.shipBg + ')');
+  const hulls = await p.locator('#bs-main .bs-hull').count();
+  if (hulls !== 5) bad.push('the five ships should be drawn as ship pictures on the grid after Random (saw ' + hulls + ')');
   if (place.btns.some((t) => /[☀-➿⬀-⯿]/.test(t))) bad.push('symbol characters on the placement buttons');
   await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
   const play = await p.evaluate(() => ({ enemy: getComputedStyle(document.getElementById('bs-main')).backgroundColor, mine: getComputedStyle(document.getElementById('bs-sub')).backgroundColor }));
@@ -675,7 +915,7 @@ check('strategy-boards-look', 'gomoku, hex, quoridor, pentago and ultimate tic-t
   const bad = [];
   if (!/47, 53, 85/.test(r.page)) bad.push('page is not the dark purple (' + r.page + ')');
   if (r.sw > 390) bad.push('page is wider than the phone');
-  if (r.right - r.left < 360) bad.push('the board is not edge to edge (' + Math.round(r.right - r.left) + 'px wide)');
+  if (r.right - r.left < (g === 'blokus-duo' || g === 'onitama' ? 270 : 360)) bad.push('the board is not edge to edge (' + Math.round(r.right - r.left) + 'px wide)');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;

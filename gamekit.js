@@ -402,6 +402,19 @@
     }
     msg.hidden = !text;
     msg.className = "gk-msg" + (tone ? " " + tone : "");
+    // the steady layout gives the message a fixed-height box: shrink a long taunt until it fits instead of cutting it off
+    const tail = msg.querySelector(".gk-tail");
+    if (tail && !msg.hidden) {
+      tail.style.fontSize = "";
+      const fit = () => { for (let em = 1.25; em > 0.7 && msg.scrollHeight > msg.clientHeight + 1; em -= 0.05) tail.style.fontSize = em.toFixed(2) + "em"; };
+      const hd = msg.querySelector(".gk-head");
+      if (hd) hd.style.display = "";
+      fit();
+      if (hd && msg.scrollHeight > msg.clientHeight + 1) { hd.style.display = "none"; tail.style.fontSize = ""; fit(); }   // still too long: drop the small line above
+      const to = msg.querySelector(".gk-to");
+      if (to) to.style.display = "";
+      if (to && msg.scrollHeight > msg.clientHeight + 1) { to.style.display = "none"; tail.style.fontSize = ""; fit(); }   // and, last resort, the "For Player 1" label
+    }
   }
   /* ---------- Game over card (fun pages) ---------- */
   let overEl = null, overKey = "";
@@ -441,16 +454,28 @@
     if (!document.body.hasAttribute("data-no-wins")) card.append(stats);
     const acts = mk("div", "acts");
     const home = mk("a", "home"); home.href = "../"; home.setAttribute("aria-label", "All games"); home.innerHTML = ICON_HOME;
-    const again = mk("button", "again"); again.type = "button"; again.textContent = "Play again";
+    // puzzle pages say data-next="Next level": the card then offers the next puzzle (their New button) instead of a replay
+    const nextLabel = document.body.dataset.next;
+    const again = mk("button", "again"); again.type = "button"; again.textContent = nextLabel || "Play again";
     again.addEventListener("click", () => {
       hideOver();
-      const n = document.querySelector(".gk-new, #reset-btn, #new-btn, #reset");
+      const n = (nextLabel && document.getElementById("new-btn")) || document.querySelector(".gk-new, #reset-btn, #new-btn, #reset");
       if (n) n.click();
     });
     acts.append(home, again);
     const view = mk("button", "view"); view.type = "button"; view.textContent = "View board";
     view.addEventListener("click", () => { if (overEl) { overEl.remove(); overEl = null; } });
     overEl.append(card, acts, view);
+    // a win gets a burst of confetti and a pop on the headline
+    if (tone === "win" && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      const conf = mk("div", "confetti"), cols = ["#ffbf2e", "#ff5a52", "#2fe3b9", "#5b3df5", "#ff7ab8", "#fff"];
+      for (let i = 0; i < 30; i++) {
+        const dot = mk("i"), a = (i / 30) * Math.PI * 2 + Math.random() * 0.4, d = 110 + Math.random() * 170;
+        dot.style.cssText = "--x:" + Math.round(Math.cos(a) * d) + "px;--y:" + Math.round(Math.sin(a) * d - 40) + "px;--c:" + cols[i % cols.length] + ";--d:" + Math.round(Math.random() * 160) + "ms";
+        conf.appendChild(dot);
+      }
+      overEl.append(conf);
+    }
     document.body.appendChild(overEl);
   }
   function queueScan() {
