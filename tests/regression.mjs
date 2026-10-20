@@ -493,7 +493,7 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); });
   await p.keyboard.press('ArrowLeft');
   const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fade++; } if (k.some((x) => /scale\(1\.12\)/.test(x.transform || ''))) pop++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
-  if (!(seen.slide >= 160 && seen.slide <= 220)) bad.push('the slide should take about 175ms for a smooth swipe (saw ' + seen.slide + 'ms)');
+  if (!(seen.slide >= 170 && seen.slide <= 220)) bad.push('the slide should take about 190ms for a smooth swipe (saw ' + seen.slide + 'ms)');
   if (seen.fade) bad.push('the merging tiles fade; in the reference they just meet and swap');
   if (!seen.pop) bad.push('the doubled tile does not pop as it appears');
   await p.waitForTimeout(400);
@@ -504,28 +504,31 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   return bad;
 }, ['2048']);
 
-check('2048-merge-lands-smoothly', '2048: the incoming pair used to stop abruptly and the doubled tile popped from a different scale; a merge now settles at the same scale before it expands', async () => {
+check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 then pop from that scale; they now stay full size while they overlap, and the doubled tile bulges from scale 1', async () => {
   const p = await open('2048', 390);
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); move('left'); });
   const seen = await p.evaluate(() => new Promise((res) => {
-    let settle = false, popStartsSettled = false, popExpands = false;
+    let squash = false, popFromOne = false, popExpands = false, slideEase = '';
     const t0 = performance.now();
     const sample = () => {
       document.querySelectorAll('#board .tile').forEach((tile) => tile.getAnimations().forEach((animation) => {
         const frames = animation.effect.getKeyframes().map((frame) => frame.transform || '');
-        if (tile.classList.contains('ghost') && frames.some((transform) => transform.includes('scale(0.92)'))) settle = true;
-        if (!tile.classList.contains('ghost') && frames[0].includes('scale(0.92)')) popStartsSettled = true;
+        const joined = frames.join(' ');
+        if (joined.includes('scale(0.92)')) squash = true;
+        if (tile.classList.contains('ghost')) slideEase = animation.effect.getTiming().easing || '';
+        if (!tile.classList.contains('ghost') && frames[0].includes('scale(1)')) popFromOne = true;
         if (!tile.classList.contains('ghost') && frames.some((transform) => transform.includes('scale(1.12)'))) popExpands = true;
       }));
       if (performance.now() - t0 < 480) requestAnimationFrame(sample);
-      else res({ settle, popStartsSettled, popExpands });
+      else res({ squash, popFromOne, popExpands, slideEase });
     };
     sample();
   }));
   await p.close();
   const bad = [];
-  if (!seen.settle) bad.push('the incoming tiles do not settle together before the merge');
-  if (!seen.popStartsSettled || !seen.popExpands) bad.push('the doubled tile does not continue from the settle into its expansion');
+  if (seen.squash) bad.push('tiles still squash before they merge');
+  if (!seen.popFromOne || !seen.popExpands) bad.push('the doubled tile does not bulge from full size after they meet');
+  if (!/0\.215/.test(seen.slideEase)) bad.push('the slide does not ease-out (saw ' + seen.slideEase + ')');
   return bad;
 }, ['2048']);
 

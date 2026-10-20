@@ -64,11 +64,13 @@ function render() {
 }
 
 const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-// A merge lands in two stages: both incoming tiles gently settle together,
-// then the doubled tile grows from that exact scale. Keeping those two frames
-// continuous makes swipes feel fluid instead of looking like a quick swap.
-const SLIDE = 175;
-const MERGE = 190;
+// Same three-beat as the smooth phone 2048: tiles ease-out at full size and overlap
+// where they meet, the doubled tile bulges after they land, then the new piece grows in.
+const SLIDE = 190;
+const MERGE = 180;
+const SPAWN = 220;
+const SLIDE_EASE = 'cubic-bezier(0.215, 0.61, 0.355, 1)';
+const POP_EASE = 'cubic-bezier(0.22, 0.9, 0.32, 1)';
 function animateSlide(el, moves, spawn, merged) {
   const cells = el.children, token = ++animToken;
   if (calm() || !el.animate || cells.length < N * N) return;
@@ -85,15 +87,11 @@ function animateSlide(el, moves, spawn, merged) {
     t.style.cssText = 'position:absolute;margin:0;z-index:2;will-change:transform;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
     el.append(t);
     const dx = b.left - a.left, dy = b.top - a.top;
-    const joining = merged && merged.has(m.to[0] * N + m.to[1]);
     const travel = 'translate(' + dx + 'px,' + dy + 'px)';
-    const frames = joining
-      ? [{ transform: 'translate(0,0) scale(1)' }, { transform: travel + ' scale(1)', offset: 0.8 }, { transform: travel + ' scale(.92)' }]
-      : [{ transform: 'translate(0,0)' }, { transform: travel }];
-    anims.push(t.animate(frames, { duration: SLIDE, easing: 'cubic-bezier(.16,.82,.25,1)', fill: 'forwards' }));
+    anims.push(t.animate([{ transform: 'translate(0,0)' }, { transform: travel }], { duration: SLIDE, easing: SLIDE_EASE, fill: 'forwards' }));
     return t;
   });
-  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.2)', opacity: 0.4 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 1 }], { duration: 160, delay: SLIDE - 10, fill: 'backwards', easing: 'cubic-bezier(.2,.9,.3,1)' });
+  if (spawn) cells[spawn[0] * N + spawn[1]].style.visibility = 'hidden';
   let done = false;
   const land = () => {
     if (done || token !== animToken) return;
@@ -101,8 +99,19 @@ function animateSlide(el, moves, spawn, merged) {
     ghosts.forEach(t => t.remove());
     dests.forEach(i => {
       cells[i].style.visibility = '';
-      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(.92)' }, { transform: 'scale(1.12)', offset: 0.45 }, { transform: 'scale(1)' }], { duration: MERGE, easing: 'cubic-bezier(.16,.82,.25,1)' });
+      if (merged && merged.has(i)) cells[i].animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.12)', offset: 0.4 }, { transform: 'scale(1)' }],
+        { duration: MERGE, easing: POP_EASE }
+      );
     });
+    if (spawn) {
+      const born = cells[spawn[0] * N + spawn[1]];
+      born.style.visibility = '';
+      born.animate(
+        [{ transform: 'scale(.45)' }, { transform: 'scale(1.1)', offset: 0.7 }, { transform: 'scale(1)' }],
+        { duration: SPAWN, easing: POP_EASE }
+      );
+    }
   };
   // swap exactly when the slides have finished (not on a timer that a busy phone can run late); the timer is only a backstop
   Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => requestAnimationFrame(land));
