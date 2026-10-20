@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\candidate.json",
+    "sha256": "421e75f8037e8f9832777a14154bc96d768da65875a05e241094344e22226c62",
+    "bytes": 3019
+  },
+  "artifact": {
+    "path": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\site.html",
+    "sha256": "4e7da6f9a399d366e00eda8ed6f1d4cf3ed4189c42b86b8950c92166e042968d",
+    "bytes": 821478
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\site.finalize.json",
+    "summaryReceipt": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\site.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\site.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-16T14:25:56.064Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4943
+}

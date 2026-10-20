@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f9e4f6f6-bd3e-442e-9ae3-227779f37809",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\candidate.json",
+  "output": "C:\\Users\\Bash\\Documents\\GitHub\\WA-mini-games\\.archify\\architecture-site-20261016-162555\\site.html",
+  "specification": {
+    "sha256": "421e75f8037e8f9832777a14154bc96d768da65875a05e241094344e22226c62",
+    "bytes": 3019
+  },
+  "artifact": {
+    "sha256": "4e7da6f9a399d366e00eda8ed6f1d4cf3ed4189c42b86b8950c92166e042968d",
+    "bytes": 821478
+  }
+}

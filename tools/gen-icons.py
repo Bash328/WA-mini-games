@@ -1,12 +1,11 @@
-"""Draws the app icon, the launch images and the link-preview banner: the Sunset look (a coral-to-plum gradient)
-   with four chunky tiles knocked slightly crooked.
+"""Draws the app icon, the launch images and the link-preview banner: the flat cream look (four flat tiles on cream).
 
    python tools/gen-icons.py   (needs Pillow and fonttools+brotli; rewrites icon-*.png, apple-touch-icon.png,
    splash/*.png, og-image.png and favicon.svg)
 """
-import os, glob, math, random
+import os, glob
 from fontTools.ttLib import TTFont
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,78 +18,57 @@ if not os.path.exists(ttf):
     f.flavor = None
     f.save(ttf)
 
-INK = (20, 18, 27)
-SUN_TOP, SUN_BOTTOM = (255, 128, 96), (140, 44, 124)      # the Sunset gradient
-CREAM = (255, 244, 224)
-TILES = [  # colour, lip, picture
-    ((255, 200, 60), (200, 140, 0), 'ring'),
-    ((255, 110, 170), (190, 60, 110), 'cross'),
-    ((255, 150, 60), (190, 90, 10), 'dice'),
-    ((150, 100, 230), (100, 60, 180), 'piece'),
+CREAM = (243, 238, 230)
+INK = (42, 34, 48)
+MUTED = (122, 112, 128)
+TILES = [  # colour, picture
+    ((244, 183, 64), 'ring'),
+    ((229, 88, 122), 'cross'),
+    ((224, 133, 65), 'dice'),
+    ((139, 111, 214), 'target'),
 ]
-TILT = 7     # degrees: tiles 1 and 4 lean one way, 2 and 3 the other
 
 
-def gradient(w, h, top=SUN_TOP, bottom=SUN_BOTTOM):
-    im = Image.new('RGB', (w, h), top)
-    d = ImageDraw.Draw(im)
-    for y in range(h):
-        t = y / max(1, h - 1)
-        d.line((0, y, w, y), fill=tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
-    return im.convert('RGBA')
-
-
-def tile_img(s, color, lip, pic):
-    """One chunky game tile (dark outline, a lip underneath, a picture) on its own transparent canvas."""
-    s = int(s)
-    pad = int(s * 0.2)
-    im = Image.new('RGBA', (s + pad * 2, s + pad * 2), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    r, ow, lipH = int(s * 0.24), max(2, int(s * 0.075)), int(s * 0.07)
-    x, y = pad, pad
-    d.rounded_rectangle((x, y + lipH, x + s, y + s + lipH), r, fill=INK)
-    d.rounded_rectangle((x + ow, y + ow + lipH, x + s - ow, y + s - ow + lipH), r - ow // 2, fill=lip)
-    d.rounded_rectangle((x + ow, y + ow, x + s - ow, y + s - ow), r - ow // 2, fill=color)
-    cx, cy, u = x + s / 2, y + s / 2 - s * 0.01, s / 100
-    W = (255, 255, 255)
+def tile(d, x, y, s, color, pic):
+    """One flat tile (no outline, no lip) with a cream picture. All sizes are fractions of the tile size s."""
+    d.rounded_rectangle((x, y, x + s, y + s), int(s * 0.25), fill=color)
+    cx, cy = x + s / 2, y + s / 2
+    u = s / 100
     if pic == 'ring':
-        d.ellipse((cx - 27 * u, cy - 27 * u, cx + 27 * u, cy + 27 * u), outline=W, width=int(12 * u))
+        d.ellipse((cx - 33 * u, cy - 33 * u, cx + 33 * u, cy + 33 * u), fill=CREAM)
+        d.ellipse((cx - 21 * u, cy - 21 * u, cx + 21 * u, cy + 21 * u), fill=color)
     elif pic == 'cross':
-        w = int(13 * u)
-        d.line((cx - 24 * u, cy - 24 * u, cx + 24 * u, cy + 24 * u), fill=W, width=w)
-        d.line((cx - 24 * u, cy + 24 * u, cx + 24 * u, cy - 24 * u), fill=W, width=w)
+        w = int(12.5 * u)
+        for sy in (1, -1):
+            d.line((cx - 25 * u, cy - sy * 25 * u, cx + 25 * u, cy + sy * 25 * u), fill=CREAM, width=w)
         for sx in (-1, 1):
             for sy in (-1, 1):
-                d.ellipse((cx + sx * 24 * u - w / 2, cy + sy * 24 * u - w / 2, cx + sx * 24 * u + w / 2, cy + sy * 24 * u + w / 2), fill=W)
+                d.ellipse((cx + sx * 25 * u - w / 2, cy + sy * 25 * u - w / 2, cx + sx * 25 * u + w / 2, cy + sy * 25 * u + w / 2), fill=CREAM)
     elif pic == 'dice':
-        for px, py in ((-22, -22), (22, -22), (0, 0), (-22, 22), (22, 22)):
-            d.ellipse((cx + px * u - 8.5 * u, cy + py * u - 8.5 * u, cx + px * u + 8.5 * u, cy + py * u + 8.5 * u), fill=INK)
-    elif pic == 'piece':
-        d.ellipse((cx - 28 * u, cy - 28 * u, cx + 28 * u, cy + 28 * u), fill=W)
-        d.ellipse((cx - 15 * u, cy - 15 * u, cx + 15 * u, cy + 15 * u), outline=lip, width=int(8 * u))
-    return im
+        for px, py in ((-23, -23), (23, -23), (0, 0), (-23, 23), (23, 23)):
+            d.ellipse((cx + px * u - 11.5 * u, cy + py * u - 11.5 * u, cx + px * u + 11.5 * u, cy + py * u + 11.5 * u), fill=CREAM)
+    elif pic == 'target':
+        d.ellipse((cx - 33 * u, cy - 33 * u, cx + 33 * u, cy + 33 * u), fill=CREAM)
+        d.ellipse((cx - 21 * u, cy - 21 * u, cx + 21 * u, cy + 21 * u), fill=color)
+        d.ellipse((cx - 7.5 * u, cy - 7.5 * u, cx + 7.5 * u, cy + 7.5 * u), fill=CREAM)
 
 
-def mark(size, scale=0.74, tilt=TILT):
-    """The four tilted tiles on a transparent square canvas."""
-    S = size * 3
+def mark(size, scale=0.78):
+    """The four flat tiles on a transparent square canvas."""
+    S = size * 4
     im = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
     box = S * scale
-    gap = box * 0.075
+    gap = box * 0.107
     s = (box - gap) / 2
-    ox = (S - box) / 2
-    oy = (S - box) / 2 - S * 0.012
-    for i, (c, l, p) in enumerate(TILES):
-        t = tile_img(s, c, l, p)
-        if tilt:
-            t = t.rotate(tilt if i in (1, 2) else -tilt, resample=Image.BICUBIC)
-        pad = int(int(s) * 0.2)
-        im.alpha_composite(t, (int(ox + (i % 2) * (s + gap) - pad), int(oy + (i // 2) * (s + gap) - pad)))
+    ox = oy = (S - box) / 2
+    for i, (c, p) in enumerate(TILES):
+        tile(d, ox + (i % 2) * (s + gap), oy + (i // 2) * (s + gap), s, c, p)
     return im.resize((size, size), Image.LANCZOS)
 
 
-def icon(size, rounded, scale=0.74):
-    im = gradient(size, size)
+def icon(size, rounded, scale=0.78):
+    im = Image.new('RGBA', (size, size), CREAM + (255,))
     im.alpha_composite(mark(size, scale))
     if rounded:
         m = Image.new('L', (size * 4, size * 4), 0)
@@ -112,45 +90,24 @@ save_png(icon(512, False, 0.62), 'icon-maskable-512.png', 'RGB')    # the mark s
 
 
 # ---------- launch images ----------
-def glow(im, cx, cy, r, col, alpha):
-    g = Image.new('RGBA', im.size, (0, 0, 0, 0))
-    ImageDraw.Draw(g).ellipse((cx - r, cy - r, cx + r, cy + r), fill=col + (alpha,))
-    im.alpha_composite(g.filter(ImageFilter.GaussianBlur(r * 0.42)))
-
-
-def sparkle(d, cx, cy, r, col):
-    d.polygon([(cx, cy - r), (cx + r * 0.26, cy - r * 0.26), (cx + r, cy), (cx + r * 0.26, cy + r * 0.26),
-               (cx, cy + r), (cx - r * 0.26, cy + r * 0.26), (cx - r, cy), (cx - r * 0.26, cy - r * 0.26)], fill=col)
-
-
 def splash(w, h):
-    """The Sunset gradient edge to edge, a sun glowing behind the tilted tiles, the name and a few sparkles."""
-    im = gradient(w, h)
+    """Flat cream, the four tiles, the name in ink and a quiet line under it."""
+    im = Image.new('RGBA', (w, h), CREAM + (255,))
     short = min(w, h)
-    size = int(short * 0.80)
-    cx, cy = w // 2, int(h * 0.42)
-    glow(im, cx, cy, size * 0.6, (255, 214, 110), 150)
-    m = mark(size, 0.82)
-    # a soft shadow, then the tiles
-    im.alpha_composite(m, (cx - size // 2, cy - size // 2))
+    size = int(short * 0.62)
+    cx, cy = w // 2, int(h * 0.43)
+    im.alpha_composite(mark(size, 0.9), (cx - size // 2, cy - size // 2))
     d = ImageDraw.Draw(im)
-    rnd = random.Random(7)
-    for _ in range(14):                                   # sparkles, kept clear of the tiles
-        sx, sy = rnd.randint(int(w * 0.08), int(w * 0.92)), rnd.randint(int(h * 0.06), int(h * 0.94))
-        if abs(sx - cx) < size * 0.56 and abs(sy - cy) < size * 0.56:
-            continue
-        sparkle(d, sx, sy, rnd.choice((short * 0.012, short * 0.018, short * 0.026)), (255, 244, 224, 200))
-    fs = int(short * 0.105)
+    fs = int(short * 0.09)
     f = ImageFont.truetype(ttf, fs)
     text = 'WA MINI GAMES'
     tw = d.textlength(text, font=f)
-    ty = cy + size // 2 + int(short * 0.07)
-    d.text(((w - tw) / 2 + short * 0.006, ty + short * 0.008), text, font=f, fill=INK)        # a hard shadow, like the tiles
-    d.text(((w - tw) / 2, ty), text, font=f, fill=CREAM)
+    ty = cy + size // 2 + int(short * 0.06)
+    d.text(((w - tw) / 2, ty), text, font=f, fill=INK)
     f2 = ImageFont.truetype(ttf, int(fs * 0.5))
     sub = 'Play a friend over WhatsApp'
     sw = d.textlength(sub, font=f2)
-    d.text(((w - sw) / 2, ty + fs * 1.3), sub, font=f2, fill=(255, 226, 214))
+    d.text(((w - sw) / 2, ty + fs * 1.3), sub, font=f2, fill=MUTED)
     return im.convert('RGB')
 
 
@@ -162,21 +119,17 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'splash', '*.png'))):
 
 # ---------- the link preview banner (1200x300) ----------
 W, H = 1200, 300
-ban = gradient(W, H)
-glow(ban, 330, 150, 240, (255, 214, 110), 90)
-row = Image.new('RGBA', (W * 2, H * 2), (0, 0, 0, 0))
-ts = 140 * 2
-for i, (c, l, p) in enumerate(TILES):
-    t = tile_img(ts, c, l, p).rotate(TILT if i % 2 == 0 else -TILT, resample=Image.BICUBIC)
-    pad = int(ts * 0.2)
-    row.alpha_composite(t, (40 * 2 + i * (ts + 26) - pad, 75 * 2 - pad))
+ban = Image.new('RGBA', (W, H), CREAM + (255,))
+row = Image.new('RGBA', (W * 4, H * 4), (0, 0, 0, 0))
+rd = ImageDraw.Draw(row)
+ts = 150 * 4
+for i, (c, p) in enumerate(TILES):
+    tile(rd, 60 * 4 + i * (ts + 30 * 4), 75 * 4, ts, c, p)
 ban.alpha_composite(row.resize((W, H), Image.LANCZOS))
 bd = ImageDraw.Draw(ban)
 f = ImageFont.truetype(ttf, 92)
-for dx, dy, col in ((5, 5, INK), (0, 0, CREAM)):
-    bd.text((730 + dx, 70 + dy), 'WA MINI', font=f, fill=col)
-for dx, dy, col in ((5, 5, INK), (0, 0, (255, 200, 60))):
-    bd.text((730 + dx, 162 + dy), 'GAMES', font=f, fill=col)
+bd.text((790, 66), 'WA MINI', font=f, fill=INK)
+bd.text((790, 158), 'GAMES', font=f, fill=TILES[2][0])
 ban.convert('RGB').save(os.path.join(ROOT, 'og-image.png'), optimize=True)
 print('og-image')
 
@@ -186,30 +139,24 @@ def hexc(c):
     return '#%02x%02x%02x' % c
 
 
-parts = []
-tsz, g0 = 25, 4
+cream, parts = hexc(CREAM), []
+tsz, g0 = 22.4, 6.8
 x0 = (64 - (2 * tsz + g0)) / 2
-for i, (c, l, p) in enumerate(TILES):
+for i, (c, p) in enumerate(TILES):
     x = x0 + (i % 2) * (tsz + g0)
-    y = x0 - 1 + (i // 2) * (tsz + g0)
-    cx, cy = x + tsz / 2, y + tsz / 2
-    ang = (-6 if i in (0, 3) else 6)
-    parts.append(f'<g transform="rotate({ang} {cx:.1f} {cy:.1f})">')
-    parts.append(f'<rect x="{x:.1f}" y="{y + 1.5:.1f}" width="{tsz}" height="{tsz}" rx="6" fill="#14121b"/>')
-    parts.append(f'<rect x="{x + 1.8:.1f}" y="{y + 1.8:.1f}" width="{tsz - 3.6}" height="{tsz - 3.6}" rx="4.6" fill="{hexc(c)}"/>')
+    y = x0 + (i // 2) * (tsz + g0)
+    cx, cy, u = x + tsz / 2, y + tsz / 2, tsz / 100
+    parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{tsz}" height="{tsz}" rx="{tsz * 0.25:.1f}" fill="{hexc(c)}"/>')
     if p == 'ring':
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6" fill="none" stroke="#fff" stroke-width="3"/>')
+        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{27 * u:.1f}" fill="none" stroke="{cream}" stroke-width="{12 * u:.1f}"/>')
     elif p == 'cross':
-        parts.append(f'<path d="M{cx - 5.5:.1f} {cy - 5.5:.1f}L{cx + 5.5:.1f} {cy + 5.5:.1f}M{cx - 5.5:.1f} {cy + 5.5:.1f}L{cx + 5.5:.1f} {cy - 5.5:.1f}" stroke="#fff" stroke-width="3" stroke-linecap="round"/>')
+        parts.append(f'<path d="M{cx - 25 * u:.1f} {cy - 25 * u:.1f}L{cx + 25 * u:.1f} {cy + 25 * u:.1f}M{cx - 25 * u:.1f} {cy + 25 * u:.1f}L{cx + 25 * u:.1f} {cy - 25 * u:.1f}" stroke="{cream}" stroke-width="{12.5 * u:.1f}" stroke-linecap="round"/>')
     elif p == 'dice':
-        for dx, dy in ((-5, -5), (5, -5), (0, 0), (-5, 5), (5, 5)):
-            parts.append(f'<circle cx="{cx + dx:.1f}" cy="{cy + dy:.1f}" r="2" fill="#14121b"/>')
+        for dx, dy in ((-23, -23), (23, -23), (0, 0), (-23, 23), (23, 23)):
+            parts.append(f'<circle cx="{cx + dx * u:.1f}" cy="{cy + dy * u:.1f}" r="{11.5 * u:.1f}" fill="{cream}"/>')
     else:
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6.5" fill="#fff"/><circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.4" fill="none" stroke="{hexc(l)}" stroke-width="2"/>')
-    parts.append('</g>')
-svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'
-       f'<stop offset="0" stop-color="{hexc(SUN_TOP)}"/><stop offset="1" stop-color="{hexc(SUN_BOTTOM)}"/></linearGradient></defs>'
-       '<rect width="64" height="64" rx="14" fill="url(#g)"/>' + ''.join(parts) + '</svg>\n')
+        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{27 * u:.1f}" fill="none" stroke="{cream}" stroke-width="{12 * u:.1f}"/><circle cx="{cx:.1f}" cy="{cy:.1f}" r="{7.5 * u:.1f}" fill="{cream}"/>')
+svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="' + cream + '"/>' + ''.join(parts) + '</svg>\n')
 open(os.path.join(ROOT, 'favicon.svg'), 'w', encoding='utf-8').write(svg)
 print('favicon.svg')
 
