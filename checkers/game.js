@@ -5,7 +5,7 @@
   const P1 = 1, P2 = 2;                 // colors
   const MAN = { [P1]: 1, [P2]: 2 };     // piece values
   const KING = { [P1]: 3, [P2]: 4 };
-  const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
+  const NAMES = { [P1]: "Black", [P2]: "White" };
   const ALL4 = [[-1,-1],[-1,1],[1,-1],[1,1]];
   const FORWARD = { [P1]: [[1,-1],[1,1]], [P2]: [[-1,-1],[-1,1]] };
 
@@ -13,6 +13,10 @@
   const statusEl = document.getElementById("status");
   const modeSel = document.getElementById("mode");
   const resetBtn = document.getElementById("reset-btn");
+  const sideSel = document.getElementById("side");
+  // Whose pieces sit at the bottom of the screen. Black (Player 1) starts on the top three rows of the board data, so the
+  // board is drawn turned half a circle whenever Black is the one looking at it.
+  let viewer = P1;
 
   const idx = (r, c) => r * N + c;
   const inB = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
@@ -182,15 +186,97 @@
     return bestTurn;
   }
 
+  // The piece that just moved glides from the square it left to the one it reached. A multi-jump follows
+  // its real path, hop by hop, and each jumped piece shrinks away as it is passed. Shown once per move:
+  // a re-render of the same board does not slide again.
+  let shownBoard = null, activeSlide = null;
+  function slidePiece(board, lastIdx) {
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The board is rebuilt on every render, and your own move is drawn twice in a row (the move, then the computer
+    // "thinking"): the second render would wipe the slide half way. Carry the slide on in the new square instead.
+    if (activeSlide && activeSlide.key === board.join("") + "|" + lastIdx) {
+      const el = performance.now() - activeSlide.start, cell = boardEl.querySelector('[data-i="' + lastIdx + '"]'), pc = cell && cell.querySelector(".ck-piece");
+      if (!still && pc && el < activeSlide.duration) {
+        cell.style.zIndex = "3"; cell.style.position = "relative";
+        const a = pc.animate(activeSlide.frames, { duration: activeSlide.duration });
+        a.currentTime = el;
+        a.onfinish = a.oncancel = () => { cell.style.zIndex = ""; cell.style.position = ""; };
+      }
+      return;
+    }
+    if (still || !prev || lastIdx < 0 || !board[lastIdx] || prev[lastIdx]) return;
+    const mine = colorOf(board[lastIdx]);
+    const cellAt = (i) => boardEl.querySelector('[data-i="' + i + '"]');
+    const gone = new Map();                                       // jumped pieces: square -> what stood there
+    let from = -1;
+    for (let i = 0; i < N * N; i++) {
+      if (i === lastIdx || !prev[i] || prev[i] === "0" || board[i]) continue;
+      if (colorOf(prev[i]) === mine) { if (from < 0 || Math.abs(i - lastIdx) < Math.abs(from - lastIdx)) from = i; }
+      else gone.set(i, prev[i]);
+    }
+    const toCell = cellAt(lastIdx), piece = toCell && toCell.querySelector(".ck-piece");
+    if (from < 0 || !piece) return;
+    // the squares it landed on, in order: search the diagonal jumps that use up every jumped piece
+    let route = [from, lastIdx];
+    if (gone.size) {
+      const used = new Set(), path = [from];
+      const rc = (i) => [Math.floor(i / N), i % N];
+      const walk = (pos) => {
+        if (used.size === gone.size) return pos === lastIdx;
+        const [r, c] = rc(pos);
+        for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+          const mr = r + dr, mc = c + dc, lr = r + 2 * dr, lc = c + 2 * dc;
+          if (lr < 0 || lr >= N || lc < 0 || lc >= N) continue;
+          const mid = mr * N + mc, land = lr * N + lc;
+          if (!gone.has(mid) || used.has(mid)) continue;
+          used.add(mid); path.push(land);
+          if (walk(land)) return true;
+          used.delete(mid); path.pop();
+        }
+        return false;
+      };
+      if (walk(from)) route = path;
+    }
+    const to = toCell.getBoundingClientRect();
+    const at = route.map((i) => { const r = cellAt(i).getBoundingClientRect(); return [r.left - to.left, r.top - to.top]; });
+    const hop = route.length > 2 ? 260 : 340, frames = [];
+    route.forEach((_, k) => frames.push({ transform: "translate(" + at[k][0] + "px," + at[k][1] + "px) scale(" + (k === 0 ? 1 : 1) + ")", offset: k / (route.length - 1), easing: "ease-in-out" }));
+    // lift the piece a little while it is in the air between squares
+    const lifted = [];
+    frames.forEach((f, k) => { lifted.push(f); if (k < frames.length - 1) { const a = at[k], b = at[k + 1]; lifted.push({ transform: "translate(" + (a[0] + b[0]) / 2 + "px," + (a[1] + b[1]) / 2 + "px) scale(1.16)", offset: (k + 0.5) / (route.length - 1), easing: "ease-in-out" }); } });
+    toCell.style.zIndex = "3"; toCell.style.position = "relative";
+    activeSlide = { key: board.join("") + "|" + lastIdx, start: performance.now(), frames: lifted, duration: hop * (route.length - 1) };
+    const run = piece.animate(lifted, { duration: hop * (route.length - 1) });
+    run.onfinish = run.oncancel = () => { toCell.style.zIndex = ""; toCell.style.position = ""; };
+    // each jumped piece stays put until the jumper passes, then shrinks away
+    let n = 0;
+    route.slice(0, -1).forEach((sq, k) => {
+      const [r0, c0] = [Math.floor(sq / N), sq % N], [r1, c1] = [Math.floor(route[k + 1] / N), route[k + 1] % N];
+      const mid = ((r0 + r1) / 2) * N + (c0 + c1) / 2;
+      if (!gone.has(mid)) return;
+      const cell = cellAt(mid), v = gone.get(mid);
+      if (!cell) return;
+      const ghost = document.createElement("span");
+      ghost.className = "ck-piece " + (colorOf(v) === P1 ? "p1" : "p2") + (isKingV(v) ? " king" : "");
+      cell.appendChild(ghost);
+      ghost.animate([{ transform: "scale(1)", opacity: 1, offset: 0 }, { transform: "scale(1)", opacity: 1, offset: 0.55 }, { transform: "scale(.2)", opacity: 0 }], { duration: hop * (k + 1) + 120, fill: "forwards" }).onfinish = () => ghost.remove();
+      n++;
+    });
+  }
+
   function renderBoard(board, selectable, selected, targets, canClick, onClick, lastIdx) {
     boardEl.innerHTML = "";
     const targetSet = new Map(targets.map(m => [m.to, m]));
-    for (let i = 0; i < N * N; i++) {
+    for (let d = 0; d < N * N; d++) {
+      const i = viewer === P1 ? N * N - 1 - d : d;
       const r = Math.floor(i / N), c = i % N;
       const dark = (r + c) % 2 === 1;
       const cell = document.createElement("button");
       cell.type = "button";
       cell.className = "ck-cell " + (dark ? "dark" : "light");
+      cell.dataset.i = String(i);
       const v = board[i];
       if (v) {
         const p = document.createElement("span");
@@ -205,6 +291,16 @@
       cell.setAttribute("aria-label", "Row " + (r + 1) + " col " + (c + 1));
       cell.addEventListener("click", () => onClick(i));
       boardEl.appendChild(cell);
+    }
+    slidePiece(board, lastIdx);
+    // the VS bar counts pieces: you (or Black) on the left
+    const n = { [P1]: 0, [P2]: 0 };
+    for (let i = 0; i < N * N; i++) if (board[i] && board[i] !== "0") n[colorOf(board[i])]++;
+    const sc = document.getElementById("score");
+    if (sc) {
+      const me = aiColor !== null ? humanColor() : P1;
+      sc.dataset.l = aiColor !== null ? "YOU" : "BLACK"; sc.dataset.r = aiColor !== null ? "BOT" : "WHITE";
+      sc.textContent = "A: " + n[me] + " B: " + n[other(me)];
     }
   }
 
@@ -240,7 +336,8 @@
   let waLast = null;
   let waCanMove = false;
 
-  function loadLink(s, canMove) {
+  function loadLink(s, canMove, info) {
+    viewer = info && info.me ? info.me : P1;
     waBoard = s ? s.board.split("").map(Number) : initialBoard();
     waCurrent = s ? s.turn : P1;
     waLast = s ? s.last : null;
@@ -279,10 +376,9 @@
     link.commit({ board: waBoard.join(""), status, winner, last: waLast });
   }
 
-  // ---------- 2 players same device, or 1 vs AI ----------
+  // ---------- 2 players same device, or 1 vs computer ----------
   // Shared state for both sub-modes; aiColor is null for local pass-and-play,
-  // or the color the AI plays (always P2 - the human is always P1) when
-  // modeSel is "ai".
+  // or the color the AI plays (the one the person did not pick) when modeSel is "ai".
   let localBoard, localCurrent, localSelected, localChain, localLast, localOver;
   let aiColor = null;
   let aiThinking = false;
@@ -323,6 +419,7 @@
     aiThinking = false;
   }
 
+  const humanColor = () => (sideSel.value === "2" ? P2 : P1);
   function resetLocal() {
     cancelAI();
     localBoard = initialBoard();
@@ -345,19 +442,19 @@
       const reversed = confidenceGivenTo === loserColor;
       statusEl.textContent = aiColor === null
         ? `${NAMES[winnerColor]} wins.` + (reversed ? " " + Gamekit.taunt("reversal") : "")
-        : (winnerColor === aiColor ? "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
+        : (winnerColor === aiColor ? "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
     } else if (aiThinking) {
-      statusEl.textContent = "AI thinking…";
-      Gamekit.turn(aiColor, "AI thinking…", true);
+      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(aiColor, "Computer thinking…", true);
     } else {
       // one-shot: kept through the AI's turn, cleared once shown
       const aiTurnNow = aiColor !== null && localCurrent === aiColor;
       const note = aiTurnNow ? "" : confidenceNote;
       if (note) confidenceNote = "";
-      const base = aiColor !== null ? (localCurrent === aiColor ? "AI thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
+      const base = aiColor !== null ? (localCurrent === aiColor ? "Computer thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
       const aiTurn = aiColor !== null && localCurrent === aiColor;
-      Gamekit.turn(localCurrent, aiTurn ? "AI thinking…" : aiColor !== null ? "Your move" : `${NAMES[localCurrent]}'s move`, aiTurn);
+      Gamekit.turn(localCurrent, aiTurn ? "Computer thinking…" : aiColor !== null ? "Your move · you're " + NAMES[localCurrent] : `${NAMES[localCurrent]}'s move`, aiTurn);
     }
   }
 
@@ -408,10 +505,10 @@
       localCurrent = opp;
       checkConfidence();
       renderLocal();
-    }, 300);
+    }, 900);
   }
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: Object.keys(AI_DEPTHS),
     storage: aiStore,
@@ -425,16 +522,42 @@
     const wa = val === "whatsapp";
     resetBtn.hidden = wa;
     chipsEl.hidden = val !== "ai";
+    sideSel.hidden = val !== "ai";
     cancelAI();
     if (wa) { link.show(); return; }
     link.hide();
-    aiColor = val === "ai" ? P2 : null;
+    aiColor = val === "ai" ? other(humanColor()) : null;
+    viewer = val === "ai" ? humanColor() : P1;                 // pass-and-play: Black at the bottom
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  sideSel.value = aiStore.get("side", "1") === "2" ? "2" : "1";
+  sideSel.addEventListener("change", () => { aiStore.set("side", sideSel.value); applyMode(); });
   applyMode();
+
+  // A refresh keeps a game against the computer or on one device. Link games live in the URL.
+  const resumer = Gamekit.resume("checkers", () => (modeSel.value === "whatsapp" || localOver || localLast === null) ? null : {
+    mode: modeSel.value, diff: aiDiff, human: humanColor(), board: localBoard, current: localCurrent, chain: localChain, last: localLast,
+  }, (s) => {
+    if (!["ai", "local"].includes(s.mode) || !AI_DEPTHS[s.diff]) return false;
+    if (!Array.isArray(s.board) || s.board.length !== N * N || !s.board.every(v => Number.isInteger(v) && v >= 0 && v <= 4)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    if (s.chain !== null && !(Number.isInteger(s.chain) && s.chain >= 0 && s.chain < N * N)) return false;
+    modeSel.value = s.mode;
+    if (s.human === P1 || s.human === P2) sideSel.value = String(s.human);
+    aiDiff = s.diff; chips.show(aiDiff);
+    applyMode();                       // computer / same-device setup, fresh board
+    cancelAI();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localChain = s.chain; localSelected = s.chain; localLast = Number.isInteger(s.last) ? s.last : null;
+    localOver = false;
+    renderLocal();
+    maybeAITurn();
+    return true;
+  });
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("checkers"));
 
   window.__checkersTest = { initialBoard, captureMovesFor, simpleMovesFor, anyCapture, hasAnyMove, step, colorOf, P1, P2, allTurns, pickAITurn, AI_DEPTHS, evaluate };

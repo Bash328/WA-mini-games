@@ -2,61 +2,78 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>Privacy · WA mini-games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#2f3555">
 <meta name="description" content="Privacy policy for WA mini-games.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <style>
+  /* the chunky look: the violet page, the round back button and a big rounded card holding the policy */
+  html body.fun.g-privacy { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); }
   .doc { max-width: 720px; }
-  .doc h2 { font-size: var(--fs-lg); margin: 28px 0 8px; }
-  .doc h2:first-child { margin-top: 0; }
-  .doc p, .doc li { color: var(--muted); font-size: var(--fs-md); line-height: 1.6; }
-  .doc ul { margin: 8px 0; padding-left: 20px; }
-  .doc strong { color: var(--fg); }
-  .doc .updated { color: var(--dim); font-size: var(--fs-sm); margin-bottom: 24px; }
+  html body.fun.g-privacy .panel { margin-top: 10px; padding: 22px 20px 26px; border-radius: 28px; background: rgba(255,255,255,.08); box-shadow: 0 8px 0 rgba(0,0,0,.18); }
+  html body.fun.g-privacy .doc h2 { margin: 26px 0 8px; font-size: 24px; font-weight: 400; color: #fff; letter-spacing: .01em; }
+  html body.fun.g-privacy .doc h2:first-of-type { margin-top: 6px; }
+  html body.fun.g-privacy .doc p, html body.fun.g-privacy .doc li { color: rgba(255,255,255,.84); font-size: 16px; line-height: 1.6; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; }
+  html body.fun.g-privacy .doc strong { color: #fff; }
+  html body.fun.g-privacy .doc a { color: #ffbf2e; text-decoration: underline; text-underline-offset: 3px; }
+  html body.fun.g-privacy .doc .updated { display: inline-block; margin: 0 0 6px; padding: 4px 14px; border-radius: 999px; background: rgba(0,0,0,.25); color: rgba(255,255,255,.8); font-size: 14px; }
 </style>
 </head>
-<body>
+<body class="g-privacy fun">
 <main class="wrap doc">
   <div class="topbar">
     <h1>privacy</h1>
     <a class="back" href="../">← all games</a>
   </div>
   <div class="panel">
-    <p class="updated">Last updated: 2026-09-12</p>
+    <p class="updated">Last updated: 2026-10-16</p>
 
     <h2>Summary</h2>
-    <p>WA mini-games has no accounts, no sign-in, and no server. There's nothing to log in to and nothing stored about you on our end, because we don't run a backend at all — the site is static files.</p>
+    <p>WA mini-games has no passwords and no email sign-in. You can optionally pick a <strong>username</strong> (see below). Playing by link needs no server at all: the site is static files and nothing about your games is stored on our end. The optional <strong>live online</strong> mode (see below) does use a small relay server so two people can play in real time.</p>
 
     <h2>How the games work</h2>
     <p>Each game's state (the board, whose turn it is, and so on) is encoded into the page's URL. When you send a move to a friend, you're sending them a link — nothing is transmitted to us or stored on a server. Who you send that link to, and how (WhatsApp, or any other way), is entirely up to you and happens outside this site.</p>
 
+    <h2>Live online play (optional)</h2>
+    <p>If you choose a game's "online" mode, creating a game opens a short-lived room on a relay run on Cloudflare. The relay receives the moves and board state you send, passes them to your opponent, and keeps the room only while you play: up to 24 hours if left idle, or 1 hour after the game finishes, after which it is deleted. There are no names or accounts. A random token kept in your browser's local storage identifies your seat so you can reconnect. Anyone who has a room's link or code can take the open seat, so share it only with the person you want to play. Cloudflare processes connection details such as IP addresses to operate the service; we don't store them.</p>
+
+    <h2>Username, notifications and pokes (optional)</h2>
+    <p>On the home page you can pick a username so a friend can "poke" you into a live game. There is no password and no email: the name is kept by a relay run on Cloudflare, together with a secret code that stays in your browser and proves the name is yours. If you clear your browser's site data you lose the name, and we cannot recover it.</p>
+    <p><strong>What is stored:</strong> the username; a hash of the secret code (not the code itself); the time you last used the site (a name unused for 90 days is deleted); if you turn notifications on, your browser's push subscription (an address at Google's, Mozilla's, Apple's or Microsoft's push service and the keys to encrypt messages for it); your mute setting and the usernames you block; and a few timestamps used to limit how many pokes can be sent and received. Usernames are visible to other players only as the name on a poke.</p>
+    <p><strong>What a poke does:</strong> when someone pokes you, we send an encrypted message through your browser's push service saying who poked you and linking to their live room. Only your browser can read it. Someone you have blocked, or who has been poking too often, will not get through; they are not told which.</p>
+    <p><strong>Deleting it:</strong> use "Release this name" on the home page and the record, including your push subscription, is deleted straight away. Turning notifications off removes just the subscription. You can also mute pokes or block a name there.</p>
+
     <h2>What's stored on your device</h2>
-    <p>The site uses your browser's local storage to remember things like your theme preference, difficulty settings, and which games you've already seen the moves for — so a stale link can be recognized. None of this is sent anywhere; it stays on your device and you can clear it at any time by clearing your browser's site data for this domain.</p>
+    <p>The site uses your browser's local storage to remember things like your username and its secret code, your theme preference, difficulty settings, and which games you've already seen the moves for — so a stale link can be recognized. None of this is sent anywhere; it stays on your device and you can clear it at any time by clearing your browser's site data for this domain.</p>
 
     <h2>Advertising</h2>
     <p>We intend to show ads on this site through Google AdSense. When active, Google and its partners may use cookies and similar technology to serve ads and measure their performance, which can include using data about your visits to this and other sites to personalize the ads you see. You can review or opt out of personalized advertising through <a href="https://adssettings.google.com/" target="_blank" rel="noopener">Google's Ads Settings</a>, and learn more about how Google uses data at <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">How Google uses information from sites that use its services</a>.</p>

@@ -10,12 +10,14 @@
 .git/
 .wrangler/
 node_modules/
+.archify/
 
 wrangler.toml
 .assetsignore
 worker/
-taunts.test.mjs
+*.test.mjs
 README.md
+TODO.md
 LICENSE
 .gitattributes
 .gitignore
@@ -24,3 +26,7 @@ LICENSE
 # in the repo so switching back is a DNS change and nothing more.
 CNAME
 .nojekyll
+
+tests/
+CLAUDE.md
+tools/

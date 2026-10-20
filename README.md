@@ -10,10 +10,10 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 | Game | Modes |
 |---|---|
-| [tic-tac-toe](tic-tac-toe/) | **2 players · WhatsApp** (default), vs AI |
-| [connect-four](connect-four/) | **2 players · WhatsApp** (default), vs AI at 3 depths, local 2 players |
+| [tic-tac-toe](tic-tac-toe/) | **2 players · WhatsApp** (default), vs computer |
+| [connect-four](connect-four/) | **2 players · WhatsApp** (default), vs computer at 3 depths, local 2 players |
 | [minesweeper](minesweeper/) | **2 players · WhatsApp** (default), solo |
-| [chess](chess/) | **2 players · WhatsApp** (default), vs AI at 3 depths |
+| [chess](chess/) | **2 players · WhatsApp** (default), vs computer at 3 depths |
 | [memory](memory/) | **2 players · WhatsApp** (default), solo (race the clock) |
 | [lights-out](lights-out/) | **2 players · WhatsApp** (default), solo |
 | [reversi](reversi/) | **2 players · WhatsApp** (default), local 2 players |
@@ -23,8 +23,34 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [pentago](pentago/) | **2 players · WhatsApp** (default), local 2 players |
 | [rock-paper-scissors](rock-paper-scissors/) | **2 players · WhatsApp** (default), local 2 players |
 | [hangman](hangman/) | **2 players · WhatsApp** (default), local 2 players |
+| [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
+| [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
+| [gomoku](gomoku/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [pig](pig/) | **2 players · WhatsApp** (default), **online** (the server rolls), vs computer at 3 levels, same device |
+| [ultimate-tic-tac-toe](ultimate-tic-tac-toe/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [hex](hex/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
+| [blokus-duo](blokus-duo/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 
-Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip an AI mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
+**[crazy-8](crazy-8/)**: cards for 1 to 4 (online rooms with a server-held deck, or against 1 to 3 computers); see below.
+
+**Solo puzzles added:** [sudoku](sudoku/) (9×9), [nonogram](nonogram/) (5×5, 8×8, 10×10, every puzzle solvable by line logic), [word-guess](word-guess/) (five-letter words, daily or random, shareable result) and [word-ladder](word-ladder/) (change one letter at a time).
+
+Opening a shared link always switches the page to WhatsApp mode. The last seven games above are built from scratch for this project (not adapted from wavde/games) and skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
+
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo, Onitama, Quoridor, Backgammon, Pig)
+
+An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
+
+- **Server:** one Durable Object per room (`worker/live-room.mjs`) holds the authoritative state and relays moves over a hibernating WebSocket. All room logic is pure and unit-tested in `worker/live-protocol.mjs`; each game's server-side move rules live in `worker/rules/<game>.mjs` and are registered in `worker/live-games.mjs`. A game without a rules module can't be played live.
+- **Client:** `live-share.js` mirrors `AsyncShare`'s controller (`show / hide / commit / newGame / canMove`), so a game adds live mode by pointing its existing link code at it. It waits for the server's echo instead of applying moves optimistically, and on every reconnect the server replays the whole state.
+- **API** (same origin only): `GET /api/live/status`, `GET /api/live/exists?room=`, `POST /api/live/create {game}`, `GET /api/live/ws?room=` (WebSocket).
+- **Limits:** 2 seats, 2 KB messages, a per-socket rate limit, 20 new rooms per minute per IP, rooms deleted after 24 h idle / 1 h after finishing.
+- **Kill switch:** set `LIVE_ENABLED = "0"` in `wrangler.toml` and deploy: the API answers 503, open rooms close, and games hide the option.
+- **Hidden-information games** (Hangman, Battleship, Mastermind, Rock Paper Scissors) are intentionally not live-enabled: their secrets would be visible in the socket traffic.
+
+Tests: `node worker/rules/tic-tac-toe.test.mjs`, `node worker/rules/wave1.test.mjs` (thousands of random legal games for the other four, pushed through the real room protocol), `node worker/live-protocol.test.mjs`, and, against a running `wrangler dev`, `node worker/live.integration.mjs`.
+
+To add a game: write `worker/rules/<game>.mjs` exporting `validateTransition(prev, next, mover)` (return `{ ok, nextTurn? }`), register it in `worker/live-games.mjs`, then in the game's `game.js` create a `LiveShare` next to its `AsyncShare` with the same `validateBoard`/`onState` and route `commit` through whichever is active (see `reversi/game.js`).
 
 ## How play-by-link works
 
@@ -91,6 +117,8 @@ Board formats:
 - **pentago**: 36 characters, one char per cell (`0`/`1`/`2`). A turn is place-then-rotate-a-quadrant, resolved locally before one commit — nothing is sent until the rotation is chosen. 5 in a row after the rotation wins; both players getting 5 at once is a draw.
 - **rock-paper-scissors**: a 6-digit string (best-of, both scores, Player 1's pending hidden pick, and the last completed round's two picks). Player 1's pick genuinely rides along in the link — same tradeoff as Minesweeper's mines — the UI just never renders it until Player 2 has also picked. A tie replays the round.
 - **hangman**: word length + the word + the guessed-letters bitmask in base36. The wrong-guess count isn't stored — it's derived from (word, mask). Player 1 sets the word once; every guess after that is Player 2's (`nextTurn` keeps giving it back to them).
+- **battleship**: a JSON array of four strings `[fleet1, fleet2, shots1, shots2]`. A fleet is 5 ships × (2-digit start cell + `h`/`v`); shots are 2-digit cells in firing order. Player 1 places (move 1), Player 2 places (move 2), then Player 1 fires first and turns alternate (no extra turn on a hit). Hit/miss/sunk are derived from (fleet, shots), never stored. Both fleets ride along in the link, the same tradeoff as Hangman's word.
+- **mastermind**: the secret (4 digits `0`–`5`) followed by each guess (4 digits). Feedback is derived from (secret, guess). Like Hangman, the Codemaker sets the code once and every guess is the Codebreaker's (`nextTurn` keeps it with them until the game ends).
 
 Typical link lengths: ~140–150 for tic-tac-toe and Connect Four, ~150–190 for Memory and Lights Out, ~210–245 for chess, up to ~380 for a busy hard Minesweeper board, and ~110–130 for each of the seven newer games above — they use the same compact-string-board approach from the start, so there was nothing left to shrink.
 
@@ -139,8 +167,75 @@ These play by the same standard rules as the real games — no reinterpretation 
 - No legal move on your turn loses immediately.
 
 **Dots and Boxes**
-- 5×5 dot grid (16 boxes). Draw one line per turn; completing a box (or two at once) claims it and grants another turn.
+- A grid from 3×3 up to 6×6 boxes (4×4 by default, chosen by whoever makes the first move). Draw one line per turn; completing a box (or two at once) claims it and grants another turn.
 - Most boxes when every line is drawn wins.
+
+**Gomoku**
+- 15×15 board, Black opens, five or more in a row (any direction) wins; a full board is a draw. On a touchscreen the first tap previews a stone and the second tap places it. Computer: a pattern-scoring heuristic (hard also looks one reply ahead). Link, live and same-device play.
+
+**Pig**
+- Roll as often as you like adding to a turn total; a 1 loses the turn, "hold" banks it. First to 100. A whole turn is one link. The roller's browser makes the dice, so over WhatsApp it runs on trust (like Minesweeper's mines); for the same reason Pig has no live mode.
+
+**Ultimate Tic-Tac-Toe**
+- Nine small boards in a 3×3. The cell you take picks the small board your opponent must play in (anywhere open if that board is already decided). Win three small boards in a line to win. Wire board is 91 characters: 81 cells, 9 board results, the forced board.
+
+**Hex**
+- 11×11 hexagons. Red connects top to bottom, Blue left to right; there are no draws. The computer scores positions by each side's shortest-path distance (a 0-1 breadth-first search), and hard also weighs the opponent's best reply.
+
+**Blokus Duo**
+- 14×14, 21 pieces each, start on the ringed squares, later pieces touch your own only at corners. A player with no move is skipped (the link says so); fewest squares left wins (−15 for placing all, −20 if the last was the single square). **The rules are one file, `blokus-duo/rules.js`**, loaded by the page and imported by the Worker, so the browser and server cannot disagree. Wire board is 238 characters: 196 cells and two 21-bit used-piece masks.
+
+**Onitama**
+- 5×5, four pawns and a master each, five of the 16 move cards in play (two per hand, one beside the board). Play a card, move a piece by one of its steps, then swap that card with the side card. Capture the enemy master or walk yours onto their temple to win. A player with no legal move must pass one card.
+- Red deals and opens; over WhatsApp the opener's deal is just a choice of cards (nothing is hidden). **The rules and the computer are one file, `onitama/rules.js`**, loaded by the page and imported by the Worker. Wire board is 30 characters: 25 cells, then the two hands and the side card as hex digits. The computer is a depth-limited negamax (1, 3 or 5 plies) with a node cap, so a move takes about the same time on any phone.
+
+**Quoridor**
+- 9×9, one pawn each, 10 walls each. A turn is one pawn step (jumping a pawn that is next to you, or stepping diagonally past it when a wall or the edge is behind it) or one two-square wall. Walls may not cross or overlap, and a wall that would shut either pawn off from its goal row is refused (checked with a breadth-first search). First to the far row wins; a player with no pawn move and no wall to place makes it a draw.
+- On a phone you tap **Wall**, then the spot where four squares meet; tapping it again (or **Rotate**) turns the ghost wall, and **Place** puts it down. Blue sees the board turned half a circle so their pawn starts at the bottom. **Rules and computer are one file, `quoridor/rules.js`**, shared with the Worker. Wire board: both pawns (2 digits each), walls left (hex), then the placed walls as sorted two-digit hex ids. The computer ranks every pawn step and every wall that slows the opponent by the change in shortest-path lengths (hard also weighs the reply).
+
+**Liar's Dice (Perudo)**
+- 2 to 4 players, 5 dice each, ones wild. A bid is "at least Q dice show F" over everyone's dice and must go up (more dice, or the same number of a higher face; to 1s you may halve the number, from 1s you must double and add one; no opening on 1s). **Dudo** reveals everything: a true bid costs the caller a die, a lie costs the bidder one. The loser opens the next round; no dice means out; the last player with dice wins.
+- **Online rooms and vs computer only.** Same room server as Crazy 8 (`worker/card-protocol.mjs` now takes a game and its engine): the dice are rolled and kept in the Durable Object, each person is sent only their own, and everyone's dice are revealed only after a dudo. Rooms of 2 to 4 seats with 0 to 3 computer players, a computer fills in for someone offline 90 seconds, an idle turn is played for you. The rules and the computers are one file, `liars-dice/engine.js` (the computers count the odds with a binomial tail from their own dice). The room screens (landing, lobby, rematch, taunts, reconnect) are the shared `multiseat.js`.
+- There is no link or same-device mode: a link or one shared screen cannot keep the dice secret.
+
+**Letter Boxed**
+- Twelve letters on the four sides of a box, three a side. Spell words by moving between letters (never two in a row from the same side); each word starts with the last letter of the one before; 3+ letters, no repeats; use all twelve to win, in as few words as you can (there is always a way in two). Solo only, with a daily puzzle per level, ↻ new for a random one, a hint (one word of a solution at a time), a best (fewest words) per level, and refresh resume.
+- **Word list:** `letter-boxed/words.txt` is about 55,000 words: the public-domain ENABLE list, kept to words 3 to 12 letters long that appear among the most common words of Peter Norvig's web word counts (MIT), minus a short list of slurs and vulgar words. Each line is `<tier><shared-prefix-length><rest>` (tier 0 common to 2 rare), so it is 296 KB and about 115 KB gzipped, and it is fetched only on this page and cached by the browser. Rebuilding it is a two-minute script (intersect, rank, sort, prefix-compress).
+- Puzzles are built from a seed and step counts only (never the clock), so the daily box is the same on every device: pick two words that chain and together use twelve different letters, place the letters on the sides by a bounded backtracking search so both words obey the side rule, then list every word the box accepts. Easy boxes accept 500+ words and use common solution words; medium 250 to 500; hard needs at least one rare word. `letter-boxed/puzzle.js` has the rules and the generator and is tested in node (`node letter-boxed/puzzle.test.mjs`).
+
+**Backgammon**
+- Standard single games, no doubling cube, no gammons: 15 checkers each, two dice (doubles play four), hit a lone enemy checker, enter from the bar first, blocked points, play as many dice as you can (the larger one if only one can be played), bear off only with everyone home, exact die or the furthest-back point for a bigger one. Red goes first. You tap a checker (or the bar), then a highlighted point or the tray; **undo move** works within a turn; a whole turn is one link.
+- **Over WhatsApp the roller's browser makes the dice** (so it runs on trust, like Pig; the roll is remembered so a refresh can't re-roll it). **Online the server rolls**: after every accepted turn `stamp` in `backgammon/rules.js` writes the next player's roll into the board (and passes the turn on, showing the roll, if that player has no legal move), and `check` accepts only a board some full legal turn with those dice can reach. The very first roll is derived from the room id (the page and the server both compute it). To support this `live-protocol.mjs` got one hook: a rules module may export `stamp(prev, next, mover, rand)`.
+- Wire board (33 characters): 24 points (`a..o` Red, `A..O` White), bar and borne-off counts, the dice to play, the roll before it, and a forced-pass flag. Rules and the computer are one file, `backgammon/rules.js`. The computer lists every position a full turn can reach and scores them (pip count, borne off, blots, made points and primes, the bar); hard also averages the opponent's best reply over all 21 rolls. A refresh keeps a game against the computer or on one device even in the middle of a turn.
+
+**Dominoes**
+- The classic draw game, double-six (28 tiles): 7 each for 2 or 3 players, 5 each for 4; the highest double (else the highest tile) leads the first round and the winner leads after that. Play a tile that matches an end of the line; if you can't, draw until you can; with the boneyard empty, pass. Going out scores the pips left in everyone else's hands; a block (everyone passes) goes to the fewest pips, scoring the others' pips minus their own, and a tie scores nothing. First to 100 wins.
+- **Online rooms and vs computer only** (hidden hands can't live in a link or on one shared screen). Same room server and shared room screens as Liar's Dice: the server shuffles, deals and holds every hand and is sent to each person only as their own tiles and a boneyard count; everyone's tiles are revealed at the end of a round. Rooms of 2 to 4 seats with 0 to 3 computer players; offline 90 seconds means a computer plays; an idle turn is played for you. Rules and computers are one file, `dominoes/engine.js` (easy plays any legal tile; medium dumps heavy tiles and doubles; hard also keeps the ends it can follow up on).
+
+**Yatzy (Yahtzee scoring)**
+- 13 turns: roll five dice, re-roll up to twice keeping any you like, then fill one of 13 boxes (Ones to Sixes with a 35 bonus at 63; three and four of a kind and chance score all five dice; full house 25, small straight 30, large straight 40, Yatzy 50; a crossed-out box scores 0). A second Yatzy over a 50 earns +100 and plays as a joker (its own upper box if open, else any open lower box scoring in full, else any upper box). Solo only: two-tap scoring (pick a box, tap again), a best score, and refresh resume.
+- **The daily game is a dice table, not a stream**: the face of die *i* on roll *r* of turn *t* is a pure function of the seed, so everyone on the day's seed is dealt the same dice and re-rolling the same die in the same spot always shows the same number (holding differently can't fish for a better one). `today's game` uses the day's seed, `new random game` a random one, `replay this game` the same seed again. `yatzy/rules.js` has the rules and is tested in node (`node yatzy/rules.test.mjs`).
+
+**Cross Sums (Kakuro)**
+- Fill the white squares with 1 to 9 so each unbroken run adds up to its clue (top right of the black square: across; bottom left: down) with no digit repeated in a run. Three levels (5×5, 7×7, 9×9 of playable squares), a daily puzzle per level, `↻ new` for a random one, a timer and a best time per level, pencil **Notes**, **Check** (shades runs that already break a rule), undo, keyboard entry, and refresh resume. Tapping a square lists the ways each of its runs can still be made.
+- **Every puzzle has exactly one solution.** `cross-sums/puzzle.js` lays out a pattern (no run of 1, none over 9), fills it with a random valid solution and reads the clues off, then asks a bounded solver for a *different* solution; where it finds one, a square where the two disagree is shown as a given, repeated until no other exists. A few candidates are built (within a fixed solver-step budget, never the clock) and the one needing the fewest givens is kept, so the daily puzzle is the same on every device. Typical givens: about 30% of the white squares (more on easy, which also shows a few extra). The page shows "Building the puzzle…" first: hard takes about a third of a second on a laptop and rarely over a second. Tested in node (`node cross-sums/puzzle.test.mjs`): every puzzle valid and unique across levels and many seeds.
+
+**Sliding Puzzle**
+- The 15-puzzle in three sizes (3×3, 4×4, 5×5): slide a tile next to the gap into it, or tap further along the row or column to slide the whole line (each tile moved counts as a move), until the numbers read in order with the gap last. Daily puzzle per size, `↻ new` for a random one, moves, time (it starts at your first move) and a best (fewest moves) per size, undo, restart, arrow keys, and refresh resume; tiles in the right place tint green and slide with a short animation.
+- A puzzle is the solved tray shuffled by a seeded random walk of legal moves that never just undoes the last one (90, 240 or 520 steps), so it is always solvable and identical on every device. `sliding-puzzle/puzzle.js` has the moves and the generator and is tested in node (`node sliding-puzzle/puzzle.test.mjs`); a saved game is checked with the inversion-parity test before it is accepted.
+
+**Water Sort**
+- Tubes hold up to four layers of coloured water; pour one into another when its top colour matches the other's top (or the other is empty) and there is room, and every layer of that colour on top pours at once as far as it fits. Sort until each tube is empty or four of one colour. Three levels (5, 8 or 12 colours, always two empty tubes), a daily puzzle per level, `↻ new` for a random one, a move count and best per level, undo, restart, a **hint** (green: pour from, yellow: into; it follows one stored solution as long as you do, so hints never go in circles) and **Show letters** for anyone who can't tell the colours apart. Refresh resume replays the pours from the puzzle's seed.
+- A puzzle is a seeded random deal that a bounded depth-first search (node-capped, ordered to prefer pours onto the same colour and finishing tubes) has proved solvable, so every puzzle can be solved and it is identical on every device; the same search gives the hints. `water-sort/puzzle.js` is tested in node (`node water-sort/puzzle.test.mjs`): each stored solution is replayed to a sorted board.
+
+**Chess puzzles (a mode of the Chess page)**
+- Pick `chess puzzles` in Chess's mode menu. The computer plays the opponent's last move, you find the continuation. 200 bundled puzzles from the **Lichess puzzle database (CC0)**, credited in the page's how-to: 28 mates in 1, 70 in 2, 14 in 3 and about 90 short tactics (forks, pins, skewers, hanging pieces, discovered attacks, trapped pieces, deflection, attraction), rated about 500 to 1500, popular, with a solution of at most four of your moves. A wrong move is refused (try again); a right one is answered; in a mating puzzle **any** move that checkmates counts. `Today's puzzle` is the same for everyone each day (picked by date), `Another puzzle` a different one, `Hint` highlights the piece and then the square, `Show solution` plays it out, and the page counts how many of the 200 you have solved.
+- `chess/puzzles.js` holds the data (`[id, FEN, moves, rating, theme]`). **`chess/puzzles.test.mjs` plays every one against the Chess page's own move generator** (the engine half of `chess/game.js`, which gained `stateFromFEN` and `uciToMove`): every move legal, every mate puzzle the right length and ending in checkmate, no under-promotions (the page only promotes to a queen). Rebuilding the set: take the first slice of `lichess_db_puzzle.csv.zst`, filter by theme, rating, popularity and length, and run the same verification before keeping each puzzle.
+
+**Crazy 8**
+- One deck of 54 (two jokers), 8 cards each every round. 2 = pick up 2, joker = pick up 5, both chain; an Ace blocks a pick-up and frees the next player to play any card; J skips; 7 reverses (with two players left, J and 7 mean you play again); an 8 goes on its own suit or another 8 and names the suit, but can't dodge a pick-up. A "Last card!" button must be pressed before you play your second-to-last card (miss it: pick up 2). You may pick up one card on purpose. Normal mode (first out wins, Rematch and a win tally) or Tournament (the last player holding cards is out each round, down to one).
+- **Online rooms hold 2 to 4 seats.** The host sets the mode and 0 to 3 computer players (one difficulty); the game starts when the host taps Start, or by itself when all 4 seats fill; nobody can join after that. The deck and hands live only in the Durable Object (`worker/card-room.mjs`); each person is sent their own hand and everyone else's card count. A person offline for 90 seconds is replaced by a computer (everyone is told), and an online person who doesn't move for 90 seconds has one turn played for them.
+- The rules and the computer players are one file, `crazy-8/engine.js`, loaded by the page and imported by the Worker (like Blokus Duo), so the browser and the server cannot disagree. Tapping a card shows what it does and why it can or can't be played.
 
 **Mancala (Kalah)**
 - Standard Kalah: sow counter-clockwise skipping the opponent's store, land in your own store for another turn, capture an opposite pit by landing your last seed in your own empty one.
@@ -155,6 +250,49 @@ These play by the same standard rules as the real games — no reinterpretation 
 **Hangman**
 - Player 1 sets a secret word (3–20 letters) once. Every guess after that belongs to Player 2, who keeps guessing link after link — 6 wrong guesses and Player 1 wins, complete the word first and Player 2 does.
 - The word isn't shown to Player 2 before the game ends, the same tradeoff as Rock Paper Scissors' hidden pick.
+
+**Battleship**
+- Both players secretly place 5 ships (5, 4, 3, 3, 2) on a 10×10 grid, then take turns firing. First to sink the whole enemy fleet wins. Also vs a computer (hunt/target AI) and on one device with a cover screen between turns.
+
+**Mastermind**
+- The Codemaker picks a 4-peg code from 6 colours; the Codebreaker has 10 guesses, with exact/colour-only feedback after each. Also vs a computer-chosen code and on one device.
+
+## Usernames, notifications and the installable app
+
+Optional and separate from the games: none of it is needed to play.
+
+- **Username.** The home page's "Your name" panel lets a player pick a name (3 to 16 letters, digits and `_`, case-insensitive, a blocklist for offensive and reserved names). One Durable Object, `UserRegistry` (`worker/user-registry.mjs`), holds every name, so it is unique by construction. The server mints a secret token, keeps only its hash, and the browser keeps the token: whoever holds it owns the name. There is no recovery; lose the token and the name is gone. Unused for 90 days a name is freed. Rules and limits are pure functions in `worker/users.mjs`.
+- **Poke a friend.** In a live room's waiting screen a signed-in player can type a friend's username and "Poke". The server checks the room is real and open, then sends a Web Push (RFC 8291 encryption, RFC 8292 VAPID, written with WebCrypto in `worker/webpush.mjs`, no library) that opens the room when tapped. Limits: 10 pokes an hour per sender, 20 an hour per receiver, one per two minutes per pair. A muted person or someone who blocked the sender is never reached, and the sender is not told.
+- **Install.** `manifest.json` plus PNG icons make the site installable; the home page offers "Install the app" where the browser allows it and explains Add to Home Screen on iPhone (where notifications work from the installed app). The service worker (`sw.js`) does only push and notification clicks; it caches nothing.
+- **API** (same origin only): `GET /api/user/status`; `POST /api/user/{check,claim,ping,push,settings,release,poke}`.
+
+### Switching pokes on
+
+Usernames work as soon as the Worker is deployed (the `UserRegistry` migration is in `wrangler.toml`). Pokes need a push key pair:
+
+```
+node worker/vapid-keys.mjs                    # prints a public and a private key
+# put the public key in wrangler.toml:  VAPID_PUBLIC_KEY = "..."   (and set VAPID_SUBJECT to your mailto:)
+npx wrangler secret put VAPID_PRIVATE_KEY     # paste the private key
+npx wrangler deploy
+```
+
+With `VAPID_PUBLIC_KEY` empty the site simply hides every notification control. Keep the private key: replacing it makes saved subscriptions stop working until people turn notifications on again.
+
+## Tests
+
+| Command | Covers |
+|---|---|
+| `node taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
+| `node worker/live-protocol.test.mjs` | the live-room rules, including taunt validation |
+| `node worker/rules/wave1.test.mjs` | thousands of random games per live game, Dots and Boxes at every size |
+| `node worker/rules/crazy-8.test.mjs`, `node worker/card-protocol.test.mjs` | the Crazy 8 engine (every rule, 720 computer games, cards never lost or duplicated) and the room rules with a fake clock |
+| `node worker/rules/gomoku.test.mjs`, `ultimate-tic-tac-toe.test.mjs`, `hex.test.mjs`, `blokus-duo.test.mjs` | each game's rules through the real room protocol (thousands of random games) |
+| `node worker/webpush.test.mjs` | push encryption against the RFC 8291 worked example, VAPID signature, allowed endpoints |
+| `node worker/users.test.mjs` | username and poke rules |
+| `node worker/live.integration.mjs`, `node worker/users.integration.mjs`, `node worker/card.integration.mjs` | against a running `wrangler dev` (the second uses a fake push service and decrypts what it receives) |
+
+For the integration tests start `npx wrangler dev --persist-to ../.wrangler-state --port 8788 --var VAPID_PUBLIC_KEY:<pub> --var VAPID_PRIVATE_KEY:<priv> --var PUSH_ALLOW_LOCAL:1 --var LIVE_ALLOW_NO_ORIGIN:1` and run them with `BASE=http://localhost:8788`.
 
 ## Run locally
 
@@ -234,18 +372,20 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── async-share.css     share panel styles (shared tokens)
 ├── vendor/             lz-string 1.5.0 + its MIT license
 ├── fonts/              self-hosted Fira Mono (woff2) + its OFL license
-├── shared.css          design tokens, @font-face, buttons, panels, light mode
-├── soft.css            warm dark theme for game pages
-├── manpage.css/.js     "? man" help overlay
-├── gamekit.js          shared helpers (PRNG, storage, chips, etc.)
-├── manifest.json       PWA manifest
-├── worker/             Cloudflare Worker: per-state link previews, + its node test
+├── shared.css          design tokens, @font-face, buttons, panels, light mode, game-page theme, help overlay
+├── manpage.js          "? man" help overlay
+├── gamekit.js          shared helpers (PRNG, storage, chips) AND the standard page layout, taunt strip, custom select, theme toggle
+├── manifest.json       PWA manifest (+ icon-*.png, apple-touch-icon.png)
+├── live-share.js       live online play client (WebSocket rooms, online taunts, poke a friend)
+├── account.js, account-ui.js, sw.js   username, notifications, install (see above)
+├── taunts.js           every taunt line, including the computer-only pool and the online angel/devil lines
+├── worker/             Cloudflare Worker: link previews, live rooms (Durable Object), + node tests
 ├── wrangler.toml       Workers config (the assets directory is the repo root)
 ├── _headers            Cache-Control for static assets
 ├── .assetsignore       repo files that are not part of the published site
 ├── tic-tac-toe/        ┐
 ├── connect-four/       │
-├── minesweeper/        ├ WhatsApp two-player + solo/AI modes (adapted from wavde/games)
+├── minesweeper/        ├ WhatsApp two-player + solo/computer modes (adapted from wavde/games)
 ├── chess/              │
 ├── memory/             │
 ├── lights-out/         ┘
@@ -255,7 +395,12 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ├── mancala/            │
 ├── pentago/            │
 ├── rock-paper-scissors/│
-├── hangman/            ┘
+├── hangman/            │
+├── battleship/         │
+├── mastermind/         ┘
+├── gomoku/ pig/ ultimate-tic-tac-toe/ hex/ blokus-duo/   ← WhatsApp + computer + local (all but Pig also live)
+├── crazy-8/                                              ← engine.js (shared rules and computer players), page, rooms
+├── sudoku/ nonogram/ word-guess/ word-ladder/            ← solo puzzles (word lists come from MIT / Unlicense sources)
 └── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
 ```
 
@@ -264,3 +409,14 @@ Each game folder is self-contained: `index.html` + `game.js`.
 ## License
 
 [MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([vendor/lz-string.LICENSE](vendor/lz-string.LICENSE)). Fira Mono © The Mozilla Corporation and Telefonica S.A., SIL Open Font License 1.1 ([fonts/fira-mono.LICENSE](fonts/fira-mono.LICENSE)).
+
+## The look, the motion and the tests
+
+Every game page uses the chunky look (`fun.css` + `fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page uses the same chunky look (violet page, round back button, one rounded card). `art-*.html` are unlinked previews of the hub tile art, not part of the site.
+
+- **Steady layout:** pages with `data-fun-zone` have a header, one fixed message zone, an Options bar and then the board. Options opens as a popover over the board, so nothing moves when it opens, a status changes or a mode changes (`data-fun-zone="slim"` / `"mini"` shrink the zone). Choosing from a dropdown inside Options folds it away again.
+- **Motion** is in `gamekit.js`, so a page opts in with one line: `Gamekit.popFilled(boardEl)` pops any square that newly fills (stones, marks, numbers); `Gamekit.glidePieces(boardEl, selector)` glides a piece that has moved. Games with their own motion: Connect Four drops, Reversi flips, Chess/Checkers slides (multi-jumps follow their path), Mancala sows seed by seed, Minesweeper ripples and explodes, Battleship has a cannon, Zip glides a head with a halo, tic-tac-toe draws its win line, 2048 blends merges. Everything is skipped under `prefers-reduced-motion`.
+- **End of game card:** `gamekit.js` builds it when the status line says someone won. `data-next="Next level"` on the body makes puzzle pages offer the next puzzle; `data-over-delay="ms"` holds the card back while a win animation plays.
+- **Shared rules:** a game that is played online keeps its rules in one file the page and the Worker both load (`backgammon/rules.js`, `onitama/rules.js`, `pig/rules.js`), so they cannot disagree. Pig and Backgammon are online with the server rolling (`stamp` hook).
+- **Tests:** `node tests/regression.mjs` drives Chrome at phone widths over every fixed issue and every redesigned page (`--page chess --only steady` narrows it). After changing any script or stylesheet a game loads, run `node tests/cache-bust.mjs` to re-stamp the `?v=` hashes. The Worker has its own tests: `node worker/rules/pig.test.mjs`, `node worker/live-protocol.test.mjs`, and the other `worker/**/*.test.mjs`.
+

@@ -23,6 +23,7 @@
   let timerStart = 0;
   let timerInterval = null;
   let cellEls = [];
+  let curSeed = 0;       // the puzzle on screen can be rebuilt from this + diff
 
   // Drag state
   let dragStart = null; // [r,c]
@@ -172,6 +173,7 @@
 
   function newPuzzle(seedOverride) {
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("patches", diff);
+    curSeed = seed;
     generate(seed);
     userRects = [];
     won = false;
@@ -283,8 +285,8 @@
       const area = (r1 - r0 + 1) * (c1 - c0 + 1);
       const ok = cluesInside.length === 1 && cluesInside[0].v === area;
       if (!ok) div.classList.add("bad");
-      div.style.left = (a.left - brect.left) + "px";
-      div.style.top = (a.top - brect.top) + "px";
+      div.style.left = (a.left - brect.left - boardEl.clientLeft) + "px";
+      div.style.top = (a.top - brect.top - boardEl.clientTop) + "px";
       div.style.width = (b.right - a.left) + "px";
       div.style.height = (b.bottom - a.top) + "px";
       div.dataset.i = String(i);
@@ -322,7 +324,7 @@
       store.set("best:" + diff, s);
       bestEl.textContent = Gamekit.fmtTime(s);
     }
-    statusEl.innerHTML = '<span class="ok">Sewn up in ' + Gamekit.fmtTime(s) + '.</span>';
+    statusEl.innerHTML = '<span class="ok">Solved in ' + Gamekit.fmtTime(s) + '.</span>';
   }
 
   function startTimer() {
@@ -354,7 +356,7 @@
   });
   newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -368,5 +370,20 @@
   window.addEventListener("resize", () => renderRects());
   newPuzzle();
   updateStatus();
+
+  // A refresh keeps the puzzle, the rectangles you drew and the clock.
+  const resumer = Gamekit.resume("patches", () => won ? null : {
+    diff: diff, seed: curSeed, rects: userRects, elapsed: Math.floor((Date.now() - timerStart) / 1000),
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.rects)) return false;
+    diff = s.diff; chips.show(diff);
+    newPuzzle(s.seed);
+    userRects = s.rects.filter(r => r && [r.r0, r.c0, r.r1, r.c1].every(v => Number.isInteger(v) && v >= 0 && v < N) && r.r0 <= r.r1 && r.c0 <= r.c1);
+    timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
+    timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
+    renderRects(); updateStatus();
+    return true;
+  });
+  resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("patches"));
 })();

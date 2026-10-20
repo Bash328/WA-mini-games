@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>yatzy · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Yatzy (Yahtzee) — roll five dice up to three times, keep the good ones and fill the scorecard. A daily game everyone plays with the same dice, or a random one.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<style>
+  .yz-dice { display: flex; justify-content: center; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
+  body.g-yatzy .panel .yz-die { position: relative; width: 56px; height: 56px; min-height: 0; min-width: 0; padding: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; border-radius: 12px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer; transition: transform .1s; }
+  body.g-yatzy .panel .yz-die:disabled { opacity: 1; cursor: default; }
+  body.g-yatzy .panel .yz-die.blank { background: color-mix(in srgb, var(--fg) 8%, transparent); border-style: dashed; box-shadow: none; }
+  body.g-yatzy .panel .yz-die.held, body.g-yatzy .panel .yz-die.held:active { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-6px); }
+  .yz-die i { border-radius: 50%; margin: 8%; }
+  .yz-die i.on { background: #1d1a16; }
+  .yz-die .tag { position: absolute; left: 0; right: 0; bottom: -17px; text-align: center; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .yz-roll { display: flex; justify-content: center; margin: 22px 0 8px; }
+  .yz-roll .btn { min-width: 220px; min-height: 48px; }
+  .yz-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.6em; }
+  .yz-card { display: grid; gap: 4px; margin: 10px 0; }
+  .yz-sec { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 8px 0 2px; }
+  body.g-yatzy .panel .yz-row { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 38px; padding: 6px 12px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--border); color: var(--fg); font-size: var(--fs-md); cursor: default; text-align: left; }
+  body.g-yatzy .panel .yz-row.can { cursor: pointer; border-color: var(--border-hi); }
+  body.g-yatzy .panel .yz-row.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg-2)); }
+  body.g-yatzy .panel .yz-row.done { background: transparent; }
+  .yz-row .v { font-weight: 700; min-width: 2.5em; text-align: right; }
+  .yz-row .v.pot { font-weight: 400; color: var(--muted); }
+  .yz-row.can .v.pot { color: var(--accent); font-weight: 700; }
+  .yz-line { display: flex; justify-content: space-between; padding: 4px 12px; font-size: var(--fs-sm); color: var(--muted); }
+  .yz-line b { color: var(--fg); }
+  .yz-total { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--border-hi); font-size: var(--fs-lg); font-weight: 700; }
+
+  /* chunky look: deep sea page, a cream scorecard with peach cells, a tray of five dice, a red ROLL button with its 1 2 3 */
+  html body.fun.g-yatzy { --fun-bg: #1f3b4d; --fun-btn: #5a7fa0; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-yatzy .yz-dice { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 6px 0 0; }
+  html body.fun.g-yatzy .panel .yz-die { width: 100%; height: auto; aspect-ratio: 1; padding: 11%; border-radius: 14px; background: #fff; border: 0; box-shadow: 0 4px 0 #b9c2cc; }
+  html body.fun.g-yatzy .yz-die i.on { background: #2f3a46; }
+  html body.fun.g-yatzy .panel .yz-die.blank { background: #4d5a66; box-shadow: 0 4px 0 #36414b; position: relative; }
+  html body.fun.g-yatzy .yz-die.blank::after { content: ""; position: absolute; inset: 28%; background: #c9d1d9; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); }
+  html body.fun.g-yatzy .panel .yz-die.held, html body.fun.g-yatzy .panel .yz-die.held:active { outline: 0; transform: translateY(-8px); box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; }
+  html body.fun.g-yatzy .yz-die .tag { bottom: -22px; color: #ffbf2e; font-size: 11px; }
+  html body.fun.g-yatzy .yz-roll { margin: 14px 0 4px; }
+  html body.fun.g-yatzy .panel .yz-roll .btn { width: 100%; min-width: 0; height: 60px; min-height: 0; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 30px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; }
+  html body.fun.g-yatzy .panel .yz-roll .btn:disabled { opacity: .55; }
+  html body.fun.g-yatzy .yz-roll .btn i { font-style: normal; width: 28px; height: 28px; border-radius: 9px; border: 3px solid #fff; background: transparent; color: #fff; font-size: 16px; line-height: 22px; text-align: center; }
+  html body.fun.g-yatzy .yz-roll .btn i.used { background: #fff; color: #d95a4e; }
+  html body.fun.g-yatzy .yz-hint { font-size: 15px; color: var(--muted); min-height: 2.2em; }
+  /* the scorecard: two columns, an icon box and a score cell on every row */
+  html body.fun.g-yatzy .yz-card { grid-template-columns: 1fr 1fr; gap: 0; margin: 8px 0 0; padding: 8px 10px 10px; background: #fdf3e3; border: 4px solid #3b4252; border-radius: 24px; color: #3b4252; }
+  html body.fun.g-yatzy .yz-col { display: grid; gap: 6px; align-content: start; padding: 0 6px; }
+  html body.fun.g-yatzy .yz-col + .yz-col { border-left: 3px solid #e9d9bd; }
+  html body.fun.g-yatzy .panel .yz-row { display: grid; grid-template-columns: 36px 1fr; gap: 6px; align-items: center; width: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; opacity: 1; color: #3b4252; text-transform: none; }
+  html body.fun.g-yatzy .panel .yz-row:active { transform: none; }
+  html body.fun.g-yatzy .yz-ic { width: 36px; height: 36px; box-sizing: border-box; border: 3px solid #3b4252; border-radius: 9px; background: #fff; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 4px; color: #3b4252; font-size: 15px; line-height: 1; place-items: center; }
+  html body.fun.g-yatzy .yz-ic i { width: 70%; height: 70%; border-radius: 50%; }
+  html body.fun.g-yatzy .yz-ic i.on { background: #3b4252; }
+  html body.fun.g-yatzy .yz-ic.txt { display: flex; align-items: center; justify-content: center; }
+  html body.fun.g-yatzy .yz-ic.txt svg { width: 24px; height: 24px; fill: #3b4252; }
+  html body.fun.g-yatzy .yz-ic.y { background: #ffd23f; font-size: 10px; letter-spacing: 0; }
+  html body.fun.g-yatzy .yz-row .v { height: 36px; box-sizing: border-box; min-width: 0; border: 3px solid #f26b5b; border-radius: 9px; background: #fde4dc; color: #b9473a; font-size: 22px; display: flex; align-items: center; justify-content: center; font-weight: 400; }
+  html body.fun.g-yatzy .yz-row .v.pot { color: #b9473a; opacity: .8; }
+  html body.fun.g-yatzy .yz-row .v:not(.pot) { background: #f26b5b; color: #fff; opacity: 1; }
+  html body.fun.g-yatzy .panel .yz-row.can .v { border-color: #2fb44a; background: #e3f6e6; color: #1c7a31; opacity: 1; }
+  html body.fun.g-yatzy .panel .yz-row.sel .v { border-color: #ffbf2e; background: #fff3c4; color: #8a5a00; }
+  html body.fun.g-yatzy .yz-bonus { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; color: #3b4252; }
+  html body.fun.g-yatzy .yz-bonus b { font-weight: 400; text-transform: uppercase; letter-spacing: .02em; } html body.fun.g-yatzy .yz-bonus span { color: #7a3fb5; font-size: 18px; }
+  html body.fun.g-yatzy .yz-bonus i { font-style: normal; border: 3px solid #f0c9a0; border-radius: 999px; padding: 2px 8px; background: #fff7ea; }
+  html body.fun.g-yatzy .yz-line { grid-column: 1 / -1; padding: 8px 6px 0; color: #3b4252; } html body.fun.g-yatzy .yz-line b { color: #3b4252; font-weight: 400; }
+  html body.fun.g-yatzy .yz-total { grid-column: 1 / -1; border-top: 3px solid #e9d9bd; margin-top: 10px; padding: 8px 6px 0; color: #3b4252; font-size: 22px; font-weight: 400; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-yatzy fun" data-fun-zone="mini" data-no-wins data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>yatzy</h1>
+    <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Score</small><b id="score">0</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Roll the dice.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="yatzy" data-man-title="YATZY(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <button class="btn ghost tool-btn" id="daily-btn" type="button"><span class="glyph">☀</span> today's game</button>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new random game</button>
+    </div>
+    <div class="yz-dice" id="dice" data-board></div>
+    <div class="yz-roll"><button class="btn primary" id="roll-btn" type="button">Roll the dice</button></div>
+    <div class="yz-hint" id="hint"></div>
+    <div class="yz-card" id="card"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> replay this game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-yatzy">
+  <h2>Name</h2>
+  <p>yatzy — the dice game, scored the Yahtzee way. 13 turns, 13 boxes.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each turn, roll five dice, then roll again up to <strong>twice</strong> more, keeping any dice you like and re-rolling the rest. Then write the result in <strong>one box</strong> you haven't used. If nothing fits, you have to cross a box out for 0.</li>
+    <li><strong>Ones to Sixes:</strong> the sum of the dice showing that number. Score <strong>63 or more</strong> in these six and you get a <strong>35 bonus</strong>.</li>
+    <li><strong>Three / four of a kind:</strong> that many alike, and you score the total of all five dice. <strong>Full house</strong> (three of one, two of another): 25. <strong>Small straight</strong> (four in a row): 30. <strong>Large straight</strong> (five in a row): 40. <strong>Yatzy</strong> (all five alike): 50. <strong>Chance:</strong> the total, any dice.</li>
+    <li>A second Yatzy when the Yatzy box already holds 50 earns <strong>+100</strong>, and it's a <strong>joker</strong>: it goes in its own number's box if that's free; otherwise any free lower box (a full house or straight scores in full); otherwise any free upper box.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap <code>Roll the dice</code>. Tap a die to <strong>keep</strong> it (it lifts up); tap it again to let it go. Then tap a box to pick it, and tap it again to score.</li>
+    <li>Boxes show what your dice would score there. The game is <strong>13 turns</strong>; your final total is shown at the end.</li>
+  </ul>
+
+  <h2>Daily game</h2>
+  <p class="muted"><code>today's game</code> deals the same dice to everyone for the day: the face of each die at each roll is fixed in advance, so rolling the same die in the same place always shows the same number. <code>new random game</code> is a fresh one. <code>replay this game</code> starts the same dice again.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="rules.js?v=19a4e9fe"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=e3d7bf6d"></script>
+</body>
+</html>

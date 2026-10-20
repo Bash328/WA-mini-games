@@ -2,35 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>mini-sudoku · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="description" content="Mini Sudoku — 6×6 grid with 2×3 boxes. Three difficulties, daily puzzle, pencil marks.">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <style>
   .sk-grid {
     display: grid;
@@ -118,18 +121,38 @@
   .sk-act:disabled { opacity: 0.35; cursor: default; }
 
   .game-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+
+  /* chunky look: deep teal page, a white grid in a heavy black frame, blue digits that are yours. The grid and keys are themed
+     by the --sk-* variables of shared.css, so the new look is just new values for them. */
+  html body.fun.g-mini-sudoku.g-mini-sudoku { --fun-bg: #1f3b3b; --fun-btn: #4f8a86; --fun-chip: rgba(255,255,255,.1);
+    --sk-grid: #fff; --sk-line: #2f3a46; --sk-cell: #fff; --sk-cell-b: #d5dbe3; --sk-digit: #1f6fe0; --sk-given: #f1f4f8; --sk-given-fg: #2f3a46;
+    --sk-peer: #e6f0ff; --sk-given-peer: #dfe9f8; --sk-note: #6b7788; --sk-btn: #fff; --sk-btn-b: transparent; --sk-btn-hover: #f0f3f8; --sk-btn-hover-b: transparent; --sk-act: rgba(255,255,255,.12); }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-cell { font-weight: 400; min-height: 0; font-size: clamp(1.4rem, 7vw, 2rem); }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-cell.given { font-weight: 400; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-cell.same-num { background: #ffe8a3; color: #2f3a46; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-cell.sel { background: #ffd23f; outline: 0; box-shadow: inset 0 0 0 3px #e0a800; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-cell.conflict { color: #e8353a; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .sk-pad { width: 100%; gap: 5px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-pad button { min-width: 0; min-height: 52px; border: 0; border-radius: 12px; background: #fff; color: #2f3a46; font-size: 1.5rem; font-weight: 400; box-shadow: 0 4px 0 #b9c2cc; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-pad button.done { opacity: .3; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .sk-actions { width: 100%; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-act { background: rgba(255,255,255,.12); box-shadow: none; border: 0; border-radius: 16px; font-size: 14px; color: #fff; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .panel .sk-act[aria-pressed="true"] { background: #ffbf2e; color: #5a3a00; }
+  html body.fun.g-mini-sudoku.g-mini-sudoku .ok { color: #7dffa8; } html body.fun.g-mini-sudoku.g-mini-sudoku .bad { color: #ff8a7a; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-mini-sudoku">
+<body class="g-mini-sudoku fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>mini-sudoku</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Fill each row, column, and 2×3 box with 1–6.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="mini-sudoku" data-man-title="MINI-SUDOKU(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -192,9 +215,10 @@
   </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=e8e6c116"></script>
 </body>
 </html>

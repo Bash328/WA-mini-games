@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "WA Mini-Games: how the site runs",
+    "output": ".archify/architecture-site-20261016-162555/site.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "whatsapp", "type": "external", "label": "WhatsApp", "sublabel": "link preview", "pos": [40, 40], "size": [130, 60] },
+    { "id": "players", "type": "frontend", "label": "Players", "sublabel": "browser / installed app", "pos": [40, 205], "size": [130, 60] },
+    { "id": "worker", "type": "backend", "label": "Worker", "sublabel": "runs first on every request", "pos": [330, 190], "size": [150, 90], "tag": "Origin check + rate limits" },
+    { "id": "assets", "type": "cloud", "label": "Static pages", "sublabel": "hub, games, rules JS", "pos": [330, 370], "size": [150, 60] },
+    { "id": "live", "type": "backend", "label": "LiveRoom", "sublabel": "2-player online games", "pos": [660, 60], "size": [140, 60], "tag": "Durable Object" },
+    { "id": "cards", "type": "backend", "label": "CardRoom", "sublabel": "Crazy 8, 2-4 seats", "pos": [660, 205], "size": [140, 60], "tag": "Durable Object" },
+    { "id": "users", "type": "database", "label": "UserRegistry", "sublabel": "names, push subscriptions", "pos": [660, 350], "size": [140, 60], "tag": "Durable Object" },
+    { "id": "push", "type": "external", "label": "Push services", "sublabel": "browser vendors", "pos": [940, 350], "size": [130, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cloudflare (one Worker, three Durable Object classes)", "wraps": ["worker", "assets", "live", "cards", "users"] }
+  ],
+  "connections": [
+    { "id": "players-to-worker", "from": "players", "to": "worker", "label": "HTTPS + WebSocket", "variant": "emphasis" },
+    { "id": "whatsapp-to-worker", "from": "whatsapp", "to": "worker", "label": "fetches shared link", "fromSide": "right", "toSide": "top" },
+    { "id": "worker-to-assets", "from": "worker", "to": "assets", "label": "static files" },
+    { "id": "worker-to-live", "from": "worker", "to": "live", "label": "/api/live" },
+    { "id": "worker-to-cards", "from": "worker", "to": "cards", "label": "/api/card" },
+    { "id": "worker-to-users", "from": "worker", "to": "users", "label": "/api/user" },
+    { "id": "users-to-push", "from": "users", "to": "push", "label": "Web Push", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Edge", "items": ["The Worker sees every request before static files", "Link-preview text is rewritten for shared game links", "Non-HTML responses pass straight through"] },
+    { "dot": "emerald", "title": "Rooms", "items": ["One Durable Object per room code", "Game rules are shared files used by both the page and the Worker", "Card decks and hands stay inside CardRoom"] },
+    { "dot": "rose", "title": "Guards", "items": ["Create and claim calls are rate limited", "Room timers (offline takeover, idle turns) use alarms", "Push signing key lives in a Cloudflare secret"] }
+  ]
+}

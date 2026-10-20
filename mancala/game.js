@@ -71,42 +71,79 @@
   function boardToStr(b) { return b.map(v => String(v).padStart(2, "0")).join(""); }
   function strToBoard(s) { const out = []; for (let i = 0; i < 14; i++) out.push(parseInt(s.slice(i*2, i*2+2), 10)); return out; }
 
+  // seed positions (% of the pit) for 1-4 seeds; more are scattered in a spiral
+  const SEED_AT = [[], [[50, 50]], [[33, 50], [67, 50]], [[50, 31], [32, 66], [68, 66]], [[34, 34], [66, 34], [34, 66], [66, 66]]];
+  function seedSpots(n) {
+    if (n < SEED_AT.length) return SEED_AT[n];
+    const out = [];
+    for (let k = 0; k < Math.min(n, 40); k++) { const r = 11 * Math.sqrt(k + 0.5), a = k * 2.4; out.push([50 + r * Math.cos(a), 50 + r * Math.sin(a)]); }
+    return out;
+  }
   function makePit(i, count, clickable, extraClass) {
     const d = document.createElement("button");
     d.type = "button";
     const isStore = i === P1_STORE || i === P2_STORE;
     d.className = "mk-cell " + (isStore ? "mk-store" : "mk-pit") + (extraClass ? " " + extraClass : "");
     d.disabled = !clickable;
-    d.textContent = String(count);
+    if (isStore) d.innerHTML = count ? '<span class="store-n">' + count + "</span>" : "";
+    else {
+      const pit = document.createElement("span"); pit.className = "pit";
+      seedSpots(count).forEach(([x, y]) => { const s = document.createElement("span"); s.className = "seed"; s.style.left = x + "%"; s.style.top = y + "%"; pit.appendChild(s); });
+      const num = document.createElement("span"); num.className = "num"; num.textContent = count;
+      d.append(pit, num);
+    }
     d.setAttribute("aria-label", (i === P1_STORE ? "Player 1 store" : i === P2_STORE ? "Player 2 store" : "Pit " + i) + ": " + count + " seeds");
     return d;
   }
 
+  // Sowing is shown seed by seed: the pit you played is lifted, then each pit along the way gets its seed
+  // (a small pop) every ~170ms, and then the real position, with any capture, is drawn. A second
+  // render (or a new game) cancels a sowing in progress and shows its board at once.
+  let shownBoard = null, sowTimers = [];
   function renderBoard(board, current, canClick, onClick, lastPit) {
+    sowTimers.forEach(clearTimeout); sowTimers = [];
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!still && prev && Number.isInteger(lastPit) && lastPit !== P1_STORE && lastPit !== P2_STORE && prev[lastPit] > 0 && board[lastPit] === 0) {
+      const skip = storeOf(other(lastPit < P1_STORE ? P1 : P2)), b = prev.slice(), frames = [];
+      let seeds = b[lastPit], i = lastPit;
+      b[lastPit] = 0; frames.push({ board: b.slice(), at: -1 });
+      while (seeds > 0) { i = (i + 1) % 14; if (i === skip) continue; b[i]++; seeds--; frames.push({ board: b.slice(), at: i }); }
+      frames.forEach((f, k) => sowTimers.push(setTimeout(() => paint(f.board, current, false, onClick, lastPit, f.at), k * 170)));
+      sowTimers.push(setTimeout(() => paint(board, current, canClick, onClick, lastPit, -1), frames.length * 170 + 40));
+      return;
+    }
+    paint(board, current, canClick, onClick, lastPit, -1);
+  }
+
+  function paint(board, current, canClick, onClick, lastPit, dropAt) {
     boardEl.innerHTML = "";
+    const els = [];
     const p2 = makePit(P2_STORE, board[P2_STORE], false, "p2");
-    p2.style.gridColumn = "1"; p2.style.gridRow = "1 / span 2";
-    boardEl.appendChild(p2);
+    boardEl.appendChild(p2); els[P2_STORE] = p2;
 
     [12,11,10,9,8,7].forEach((pit, i) => {
       const clickable = canClick && current === P2 && board[pit] > 0;
-      const el = makePit(pit, board[pit], clickable, (pit === lastPit ? "last" : ""));
-      el.style.gridColumn = String(2 + i); el.style.gridRow = "1";
+      const el = makePit(pit, board[pit], clickable, "p2" + (pit === lastPit ? " last" : ""));
+      el.style.gridColumn = "2"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
-      boardEl.appendChild(el);
+      boardEl.appendChild(el); els[pit] = el;
     });
     [0,1,2,3,4,5].forEach((pit, i) => {
       const clickable = canClick && current === P1 && board[pit] > 0;
-      const el = makePit(pit, board[pit], clickable, (pit === lastPit ? "last" : ""));
-      el.style.gridColumn = String(2 + i); el.style.gridRow = "2";
+      const el = makePit(pit, board[pit], clickable, "p1" + (pit === lastPit ? " last" : ""));
+      el.style.gridColumn = "1"; el.style.gridRow = String(2 + i);
       if (clickable) el.addEventListener("click", () => onClick(pit));
-      boardEl.appendChild(el);
+      boardEl.appendChild(el); els[pit] = el;
     });
 
     const p1 = makePit(P1_STORE, board[P1_STORE], false, "p1");
-    p1.style.gridColumn = "8"; p1.style.gridRow = "1 / span 2";
-    boardEl.appendChild(p1);
+    boardEl.appendChild(p1); els[P1_STORE] = p1;
 
+    if (dropAt >= 0 && els[dropAt] && els[dropAt].firstElementChild) {
+      els[dropAt].firstElementChild.animate([{ transform: "scale(1.22)" }, { transform: "scale(.95)", offset: 0.55 }, { transform: "scale(1)" }], { duration: 220, easing: "ease-out" });
+    }
     scoreEl.textContent = `Player 1: ${board[P1_STORE]} · Player 2: ${board[P2_STORE]}`;
   }
 
@@ -228,7 +265,21 @@
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("mancala", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    board: localBoard, current: localCurrent, last: localLast,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== 14 || !s.board.every(v => Number.isInteger(v) && v >= 0)) return false;
+    if (s.current !== P1 && s.current !== P2) return false;
+    modeSel.value = "local"; applyMode();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
+    renderLocal();
+    return true;
+  });
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("mancala"));
 
   window.__mancalaTest = { initialBoard, sow, endgame, rowIndices, storeOf, other, P1, P2 };

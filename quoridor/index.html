@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>quoridor · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Quoridor — race your pawn across the board while building walls to slow your opponent down. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Quoridor · two players over WhatsApp">
+<meta property="og:description" content="Step or build a wall, then send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
+<style>
+  .qd-wrap { width: min(520px, 100%); margin: 8px auto 0; }
+  .qd-counts { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 8px; font-size: var(--fs-sm); color: var(--muted); min-height: 1.6em; }
+  .qd-counts b { color: var(--fg); font-weight: 600; }
+  .qd-counts .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .qd-board { position: relative; display: grid; grid-template-columns: repeat(8, 6fr 1fr) 6fr; grid-template-rows: repeat(8, 6fr 1fr) 6fr; aspect-ratio: 1; padding: 2%; background: #5a4a34; border-radius: var(--r-md); box-sizing: border-box; }
+  #board .qd-cell { position: relative; min-height: 0; min-width: 0; padding: 0; border: 0; border-radius: 3px; background: #e6d3a8; cursor: default; }
+  #board .qd-cell.goal1 { background: #efc6bd; }
+  #board .qd-cell.goal2 { background: #bfd3ee; }
+  #board .qd-cell.dest { cursor: pointer; }
+  #board .qd-cell.dest::after { content: ""; position: absolute; inset: 34%; border-radius: 50%; background: rgba(29,26,22,.5); }
+  #board .qd-cell.last { box-shadow: inset 0 0 0 3px rgba(40,30,10,.45); }
+  #board .qd-cell:disabled { opacity: 1; }
+  .qd-pawn { position: absolute; inset: 14%; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.5); pointer-events: none; z-index: 1; }
+  .qd-pawn.p1 { background: radial-gradient(circle at 35% 30%, #ff8a85, #c0392b 75%); }
+  .qd-pawn.p2 { background: radial-gradient(circle at 35% 30%, #86b4f2, #2f63b5 75%); }
+  .qd-wall { background: #f1b052; border-radius: 2px; box-shadow: 0 0 0 1px #8a5a1c; z-index: 2; pointer-events: none; }
+  .qd-wall.lastw { background: #ffd27d; box-shadow: 0 0 0 2px #1d1a16; }
+  .qd-wall.ghost { background: rgba(255,210,125,.75); box-shadow: 0 0 0 2px #1d1a16; }
+  .qd-wall.ghost.bad { background: rgba(217,83,79,.6); box-shadow: 0 0 0 2px #7a1d18; }
+  .qd-hits { position: absolute; inset: 2%; display: none; z-index: 3; }
+  .qd-board.walling .qd-hits { display: block; }
+  #board .qd-hit { position: absolute; width: 11.29%; height: 11.29%; min-height: 0; min-width: 0; padding: 0; border: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+  #board .qd-hit:hover { background: rgba(255,255,255,.18); }
+  .qd-tools { display: flex; gap: 8px; margin: 10px 0 0; justify-content: center; flex-wrap: wrap; min-height: 44px; }
+  .qd-tools .btn.on { background: var(--fg); color: var(--bg); }
+  .qd-hint { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; }
+
+  html body.fun.g-quoridor { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); transition: background-color .35s; }
+  html body.fun.g-quoridor:has(.turn.wait) { --fun-bg: #3d2d4f; }
+  html body.fun.g-quoridor .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+
+  html body.fun.g-quoridor .qd-wrap { width: 100%; margin: 8px 0 0; }
+  html body.fun.g-quoridor .qd-counts { font-size: 15px; color: rgba(255,255,255,.8); }
+  html body.fun.g-quoridor .qd-counts b { font-weight: 400; color: #fff; }
+  html body.fun.g-quoridor .panel .qd-board { width: calc(100% + 22px); margin: 0 -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; background: #a9754a; box-shadow: none; }
+  html body.fun.g-quoridor #board .qd-cell { background: #f1dcb4; opacity: 1; box-shadow: none; }
+  html body.fun.g-quoridor #board .qd-cell.goal1 { background: #ffc4bb; } html body.fun.g-quoridor #board .qd-cell.goal2 { background: #b5e8e2; }
+  html body.fun.g-quoridor .qd-pawn { box-shadow: none; border: 3px solid #000; box-sizing: border-box; }
+  html body.fun.g-quoridor .qd-pawn.p1 { background: #ff7a7a; } html body.fun.g-quoridor .qd-pawn.p2 { background: #3fd0c0; }
+  html body.fun.g-quoridor .qd-wall { background: #2f3555; box-shadow: none; border-radius: 3px; }
+  html body.fun.g-quoridor .qd-wall.lastw { background: #5a63b8; box-shadow: 0 0 0 2px #ffbf2e; }
+  html body.fun.g-quoridor .qd-wall.ghost { background: rgba(47,53,85,.6); box-shadow: 0 0 0 2px #ffbf2e; }
+  html body.fun.g-quoridor .qd-hint { color: rgba(255,255,255,.7); }
+  /* the 64 invisible wall-spot buttons must stay invisible: fun.css gives every button a fill and a chunky bottom shadow, which showed as rows of arcs over the board in Wall mode */
+  html body.fun.g-quoridor #board .qd-hit { background: transparent; box-shadow: none; opacity: 1; transform: none; }
+  html body.fun.g-quoridor #board .qd-hit:hover { background: rgba(255,255,255,.18); }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-quoridor fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>quoridor</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="quoridor" data-man-title="QUORIDOR(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Blue" value="2">Play Blue</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="qd-wrap">
+      <div class="qd-counts" id="counts"></div>
+      <div class="qd-board" id="board" role="grid" aria-label="Quoridor board, 9 by 9"></div>
+      <div class="qd-tools" id="tools">
+        <button class="btn ghost tool-btn" id="mode-move" type="button">Move</button>
+        <button class="btn ghost tool-btn" id="mode-wall" type="button">Wall</button>
+        <button class="btn ghost tool-btn" id="rotate-btn" type="button">Rotate</button>
+        <button class="btn primary tool-btn" id="place-btn" type="button">Place</button>
+      </div>
+    </div>
+    <p class="qd-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-quoridor">
+  <h2>Name</h2>
+  <p>quoridor — race to the far side, and build walls to slow the other pawn down.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>A 9×9 board. <strong>Red</strong> starts at the bottom and goes first, <strong>Blue</strong> at the top. The first pawn to reach the far row wins.</li>
+    <li>Each turn you do <strong>one</strong> of two things: step your pawn one square (up, down, left or right), or place one of your <strong>10 walls</strong>.</li>
+    <li>A wall is two squares long and lies in the groove between squares. Pawns can't pass through walls.</li>
+    <li>Walls can't cross or overlap another wall, and you may <strong>never block a pawn completely</strong>: there always has to be a way through to its goal.</li>
+    <li>If the other pawn is right next to yours, you <strong>jump over it</strong>. If there is a wall (or the edge) behind it, you step diagonally past it instead.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Move:</strong> tap a dotted square to step there.</li>
+    <li><strong>Wall:</strong> tap <code>Wall</code>, then tap a spot where four squares meet. The wall shows lying along the groove. Tap the same spot again, or <code>Rotate</code>, to turn it; the ghost turns red when the spot isn't allowed. Then tap <code>Place</code>.</li>
+    <li>Use the mode menu to play the computer or share one device. <code>↶ undo</code> is there in those modes.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Red</strong>; your friend is <strong>Blue</strong> and sees the board turned so that their pawn starts at the bottom.</li>
+    <li>After your move, tap <code>Send on WhatsApp</code>. Your friend opens the link, sees your last move marked, moves and sends one back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Count the steps each pawn needs. A wall is worth placing when it costs your opponent more steps than it costs you. Don't spend all your walls early: late in the race one well-placed wall can decide it.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You play in real time, with no link-passing. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="rules.js?v=168bdf80"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=1d262ead"></script>
+</body>
+</html>

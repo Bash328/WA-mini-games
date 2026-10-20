@@ -3,7 +3,7 @@
 
    Usage (per-game):
 
-     <link rel="stylesheet" href="../manpage.css">
+     <link rel="stylesheet" href="../shared.css">
      <script defer src="../manpage.js"></script>
 
      <button class="btn ghost tool-btn man-trigger"
@@ -139,7 +139,10 @@
     // pure friction. Skip without marking it seen — they still get the
     // manual the first time they open the game fresh.
     try {
-      if (new URLSearchParams(location.search).has("s")) return;
+      const q = new URLSearchParams(location.search);
+      // a shared move link (?s=) or a live-room invite (?live=): the board is
+      // already waiting on this player, so don't drop the manual over it
+      if (q.has("s") || q.has("live")) return;
     } catch (e) { /* no URLSearchParams → fall through and open as usual */ }
     const key = LS_PREFIX + id;
     try {

@@ -22,6 +22,19 @@
 # revalidation every ten minutes, and stale-while-revalidate means no page
 # load ever waits for it. Worth more than a header nobody can predict.
 
+# The link-preview image. WhatsApp and friends fetch it every time a link is
+# shared; letting repeat fetches be answered from cache shaves a round trip
+# off the preview card. A day is short enough that a changed image still
+# propagates promptly (the file name carries no hash).
+/og-image.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# Letter Boxed's word list (about 115 KB gzipped, fetched only on that page). A day
+# is short enough for a changed list to propagate; stale-while-revalidate keeps
+# repeat visits from ever waiting on it.
+/letter-boxed/words.txt
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
 # The site's own CSS and JS carry no content hash in their filenames, so
 # they can't be immutable — a stale game.js would strand players on a bug
 # that was already fixed. But leaving them on the Workers default of

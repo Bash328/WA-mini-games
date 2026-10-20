@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>reversi · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .rv-board {
     display: grid;
@@ -85,19 +88,22 @@
   .rv-disc.black { background: #111; }
   .rv-disc.white { background: #f4f4f4; }
 
-  select {
-    background: var(--panel-2);
-    color: var(--fg);
-    border: 1px solid var(--border-hi);
-    border-radius: var(--r-md);
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: var(--fs-sm);
-    min-height: var(--tap);
-  }
+
+  /* chunky look: the page turns blue while the bot thinks */
+  html body.fun.g-reversi { --fun-bg: #2f3555; --fun-btn: #5a63b8; --vs-bg: #1c2038; --vs-l: #ff7a7a; --vs-r: #3fd0c0; transition: background-color .35s; }
+  html body.fun.g-reversi .turn { width: fit-content; max-width: 100%; box-sizing: border-box; min-height: 0; margin: 14px auto 18px; padding: 14px 20px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-reversi .turn .turn-dot { display: none; }
+
+  html body.fun.g-reversi .panel .rv-board { width: calc(100% + 22px); margin: 8px -11px; gap: 0; padding: 0; border: 6px solid #000; border-radius: 0; box-sizing: border-box; max-width: none; background: #000; }
+  html body.fun.g-reversi .panel #board .rv-cell { background: #2fb34f; border: 0; border-radius: 0; box-shadow: 0 0 0 1px #000; min-height: 0; padding: 0; opacity: 1; transform: none; font-size: 0; }
+  html body.fun.g-reversi .panel #board .rv-cell:nth-child(odd) { background: #2fb34f; }
+  html body.fun.g-reversi .panel #board .rv-cell.last { box-shadow: inset 0 0 0 4px #ffbf2e, 0 0 0 1px #000; }
+  .rv-disc { box-shadow: none; border: 0.9vw solid #000; box-sizing: border-box; width: 78%; height: 78%; }
+  .rv-disc.black { background: #3b3b3b; } .rv-disc.white { background: #fff; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-reversi">
+<body class="g-reversi fun" data-fun-zone data-fun-vs="BLACK,WHITE" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>reversi</h1>
@@ -113,8 +119,9 @@
     </div>
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="local">2 players · same device</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Local" value="local">2 players · same device</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
@@ -150,13 +157,22 @@
   <ul>
     <li><strong>Tap</strong> a highlighted square to place your disc there. Only legal moves are tappable.</li>
   </ul>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
+    <li>If someone drops out they can rejoin with the same link. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
 </template>
 
-<script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
-<script src="../vendor/lz-string.min.js"></script>
-<script src="../async-share.js"></script>
-<script src="game.js"></script>
-<script defer src="../manpage.js"></script>
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script src="../account.js?v=160336a8"></script>
+<script src="../live-share.js?v=78191825"></script>
+<script src="game.js?v=6c739c1f"></script>
+<script src="../fun.js?v=0db388a6"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

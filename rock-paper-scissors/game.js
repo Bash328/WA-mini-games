@@ -4,7 +4,15 @@
   const P1 = 1, P2 = 2;
   const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
   const CHOICE_NAME = { 1: "Rock", 2: "Paper", 3: "Scissors" };
-  const CHOICE_EMOJI = { 1: "🪨", 2: "📄", 3: "✂️" };
+  const HAND_SVG = {
+    1: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-15" y="-12" width="30" height="30" rx="11" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="-10.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="-3.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="3.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10.5" cy="-10" r="6.3" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><line x1="-7" y1="-7" x2="-7" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><line x1="0" y1="-7" x2="0" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><line x1="7" y1="-7" x2="7" y2="5" stroke="#d9784f" stroke-width="1.3" stroke-linecap="round" /><ellipse cx="-3" cy="9.5" rx="13" ry="6" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round" transform="rotate(-10 -3 9.5)"/></g></svg>',
+    2: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-13.5" y="-4" width="27" height="28" rx="10" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-12.899999999999999" y="-29" width="6.6" height="35" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-6.5" y="-35" width="6.6" height="41" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="-0.09999999999999964" y="-33" width="6.6" height="39" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><rect x="6.3" y="-26" width="6.6" height="32" rx="3.3" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><g transform="rotate(-38 -13 12)"><rect x="-27" y="4" width="9" height="20" rx="4.5" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><rect x="-13.5" y="8" width="27" height="16" rx="8" fill="#f4a27a" /></g></svg>',
+    3: '<svg viewBox="-32 -40 64 90" aria-hidden="true"><g><path d="M-11 14L-13 46L13 46L11 14Z" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><g transform="rotate(-15 -4 4)"><rect x="-8" y="-32" width="7.4" height="40" rx="3.7" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><g transform="rotate(13 5 4)"><rect x="1.5" y="-36" width="7.4" height="44" rx="3.7" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/></g><rect x="-13" y="2" width="26" height="22" rx="9" fill="#f4a27a" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="5.5" cy="4" r="5" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="11" cy="7" r="4.4" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round"/><ellipse cx="-2" cy="13" rx="9.5" ry="5.2" fill="#fbc7a4" stroke="#d9784f" stroke-width="1.2" stroke-linejoin="round" transform="rotate(-22 -2 13)"/></g></svg>',
+  };
+
+  // The same hand drawings as the hub card, in place of emoji.
+  const hand = (c, cls) => '<span class="rps-hand' + (cls ? " " + cls : "") + '">' + HAND_SVG[c] + "</span>";
+  const esc = (t) => String(t).replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
 
   const statusEl = document.getElementById("status");
   const scoreEl = document.getElementById("score");
@@ -21,11 +29,26 @@
   function boardToStr(o) { return "" + o.n + o.p1Wins + o.p2Wins + o.pending + o.lastP1 + o.lastP2; }
   function strToBoard(s) { return { n: +s[0], p1Wins: +s[1], p2Wins: +s[2], pending: +s[3], lastP1: +s[4], lastP2: +s[5] }; }
 
-  function updateScore(p1, p2, n) { scoreEl.textContent = `Player 1: ${p1} · Player 2: ${p2} (best of ${n})`; }
-  function updateLast(lp1, lp2) {
-    lastEl.textContent = (lp1 && lp2)
-      ? `Last round: Player 1 ${CHOICE_EMOJI[lp1]} ${CHOICE_NAME[lp1]} · Player 2 ${CHOICE_EMOJI[lp2]} ${CHOICE_NAME[lp2]}`
-      : "";
+  // The score: one big number per side, with how many wins the match needs.
+  function setScore(aName, a, bName, b, n) {
+    scoreEl.innerHTML =
+      '<div class="rps-side"><span class="rps-name">' + esc(aName) + '</span><span class="rps-num">' + a + "</span></div>" +
+      '<div class="rps-mid">first to ' + roundsToWin(n) + "<small>best of " + n + "</small></div>" +
+      '<div class="rps-side"><span class="rps-name">' + esc(bName) + '</span><span class="rps-num">' + b + "</span></div>";
+  }
+  function updateScore(p1, p2, n) { setScore("Player 1", p1, "Player 2", p2, n); }
+
+  // The last round: both hands face to face, with who took it.
+  function faceoff(aName, a, bName, b, verdict, note) {
+    return (note ? '<p class="rps-note">' + esc(note) + "</p>" : "") + (a && b
+      ? '<div class="rps-faceoff"><div class="rps-fighter">' + hand(a) + "<span>" + esc(aName) + " · " + CHOICE_NAME[a] + "</span></div>" +
+        '<div class="rps-vs">vs</div><div class="rps-fighter">' + hand(b, "flip") + "<span>" + esc(bName) + " · " + CHOICE_NAME[b] + "</span></div></div>" +
+        '<p class="rps-verdict">' + esc(verdict) + "</p>"
+      : "");
+  }
+  function updateLast(lp1, lp2, note) {
+    const verdict = lp1 === lp2 ? "A tie. Go again." : beats(lp1, lp2) ? "Player 1 took it." : "Player 2 took it.";
+    lastEl.innerHTML = faceoff("Player 1", lp1, "Player 2", lp2, verdict, note);
   }
   function renderChoiceButtons(show, onPick) {
     choicesEl.hidden = !show;
@@ -35,7 +58,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "rps-choice";
-      b.innerHTML = `<span class="rps-emoji">${CHOICE_EMOJI[c]}</span><span>${CHOICE_NAME[c]}</span>`;
+      b.innerHTML = hand(c) + `<span>${CHOICE_NAME[c]}</span>`;
       b.addEventListener("click", () => onPick(c));
       choicesEl.appendChild(b);
     });
@@ -51,6 +74,22 @@
   // Player 1 always makes the hidden pick that opens a round; Player 2
   // always makes the pick that resolves it — turn alternates normally
   // (no nextTurn override needed), a tie just replays the same round.
+  function validateRps(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== 6 || !/^[0-9]{6}$/.test(b)) return false;
+    const o = strToBoard(b);
+    if (![3, 5, 7].includes(o.n)) return false;
+    const rtw = roundsToWin(o.n);
+    if (o.p1Wins < 0 || o.p1Wins > rtw || o.p2Wins < 0 || o.p2Wins > rtw) return false;
+    if (o.pending < 0 || o.pending > 3) return false;
+    if (o.lastP1 < 0 || o.lastP1 > 3 || o.lastP2 < 0 || o.lastP2 > 3) return false;
+    return Number.isInteger(s.last) && s.last >= 1 && s.last <= 3;
+  }
+  function finalScore(s) {
+    const o = strToBoard(s.board);
+    return `Final score: Player 1 ${o.p1Wins} · Player 2 ${o.p2Wins} (best of ${o.n}).`;
+  }
+
   const link = AsyncShare.start({
     game: "rock-paper-scissors",
     version: 1,
@@ -59,23 +98,48 @@
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== 6 || !/^[0-9]{6}$/.test(b)) return false;
-      const o = strToBoard(b);
-      if (![3, 5, 7].includes(o.n)) return false;
-      const rtw = roundsToWin(o.n);
-      if (o.p1Wins < 0 || o.p1Wins > rtw || o.p2Wins < 0 || o.p2Wins > rtw) return false;
-      if (o.pending < 0 || o.pending > 3) return false;
-      if (o.lastP1 < 0 || o.lastP1 > 3 || o.lastP2 < 0 || o.lastP2 > 3) return false;
-      return Number.isInteger(s.last) && s.last >= 1 && s.last <= 3;
-    },
+    validateBoard: validateRps,
     onState: loadLink,
-    detail: (s) => {
-      const o = strToBoard(s.board);
-      return `Final score: Player 1 ${o.p1Wins} · Player 2 ${o.p2Wins} (best of ${o.n}).`;
-    },
+    detail: finalScore,
   });
+
+  // Live online play. Unlike link play, both players pick at the same time:
+  // each locks a secret pick and the server reveals them together, so
+  // nothing about a pick is ever sent to the opponent early.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "rock-paper-scissors",
+    version: 1,
+    players: [P1, P2],
+    simultaneous: true,
+    roomOptions: () => ({ bestOf: bestofSel.value }),
+    label: (p) => NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateRps,
+    onState: loadLive,
+    detail: finalScore,
+  });
+
+  function loadLive(s, canPick, info) {
+    const inRoom = info.phase === "room";
+    const me = info.me === P2 ? P2 : P1;
+    const b = s ? strToBoard(s.board)
+      : { n: Number(info.config ? info.config.bestOf : bestofSel.value) || 3, p1Wins: 0, p2Wins: 0, pending: 0, lastP1: 0, lastP2: 0 };
+    if (info.config && inRoom) bestofSel.value = String(info.config.bestOf);   // a joiner sees the host's choice
+    bestofSel.disabled = inRoom;
+    const mine = me === P2 ? b.p2Wins : b.p1Wins, theirs = me === P2 ? b.p1Wins : b.p2Wins;
+    setScore("You", mine, "Opponent", theirs, b.n);
+
+    const myLast = me === P2 ? b.lastP2 : b.lastP1, theirLast = me === P2 ? b.lastP1 : b.lastP2;
+    const oppSeat = info.seat === 1 ? 2 : 1;
+    const over = !!s && s.status !== "in_progress";
+    let note = "";
+    if (inRoom && !over && info.myPick) note = `You picked ${CHOICE_NAME[info.myPick]}. Waiting for your opponent…`;
+    else if (inRoom && !over && info.picked && info.picked[oppSeat] && !info.myPick) note = "Your opponent has picked. Your move!";
+    const verdict = myLast === theirLast ? "A tie. Go again." : beats(myLast, theirLast) ? "You took it." : "They took it.";
+    lastEl.innerHTML = faceoff("You", inRoom ? myLast : 0, "Opponent", inRoom ? theirLast : 0, verdict, note);
+    renderChoiceButtons(inRoom && canPick, (c) => live.pick(c));
+  }
 
   let wa = null, waCanMove = false, waInGame = false;
 
@@ -89,7 +153,7 @@
     // helpful) to remind them what THEY picked — that's their own info, not
     // a leak to the opponent, who sees their own pending flag as 0 instead.
     if (!canMove && wa.pending !== 0 && s && s.status === "in_progress") {
-      lastEl.textContent = `You picked ${CHOICE_EMOJI[wa.pending]} ${CHOICE_NAME[wa.pending]} — waiting for Player 2.`;
+      lastEl.innerHTML = '<p class="rps-note">' + esc(`You picked ${CHOICE_NAME[wa.pending]} — waiting for Player 2.`) + "</p>";
     } else {
       updateLast(wa.lastP1, wa.lastP2);
     }
@@ -187,18 +251,54 @@
   }
 
   function applyMode() {
-    const isWA = modeSel.value === "whatsapp";
-    resetBtn.hidden = isWA;
-    if (isWA) { link.show(); return; }
+    const m = modeSel.value;
+    resetBtn.hidden = m === "whatsapp" || m === "live";
+    if (m === "live" && live) { link.hide(); live.show(); return; }
+    if (m === "whatsapp") { if (live) live.hide(); bestofSel.disabled = false; link.show(); return; }
     link.hide();
+    if (live) live.hide();
+    bestofSel.disabled = false;
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
-  bestofSel.addEventListener("change", () => { if (modeSel.value === "local") resetLocal(); });
+  // A refresh keeps a same-device match: the score, the last round and a pick already made.
+  // (Link and online games are not saved here.)
+  const resumer = Gamekit.resume("rock-paper-scissors", () => (modeSel.value !== "local" || loOver || !lo ||
+      (lo.p1Wins + lo.p2Wins + lo.pending + lo.lastP1) === 0) ? null : { lo: lo }, (s) => {
+    const o = s.lo;
+    if (!o || ![3, 5, 7].includes(o.n)) return false;
+    const rtw = roundsToWin(o.n);
+    const ok = [o.p1Wins, o.p2Wins].every(v => Number.isInteger(v) && v >= 0 && v < rtw) &&
+      [o.pending, o.lastP1, o.lastP2].every(v => Number.isInteger(v) && v >= 0 && v <= 3);
+    if (!ok) return false;
+    modeSel.value = "local"; bestofSel.value = String(o.n);
+    applyMode();
+    lo = { n: o.n, p1Wins: o.p1Wins, p2Wins: o.p2Wins, pending: o.pending, lastP1: o.lastP1, lastP2: o.lastP2 };
+    loOver = false;
+    renderLocal();
+    return true;
+  });
+
+  bestofSel.addEventListener("change", () => {
+    if (modeSel.value === "local") resetLocal();
+    if (modeSel.value === "live" && live) live.rewarm();   // the spare room has the old best-of
+  });
+
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+  } else if (live) {
+    LiveShare.enable(modeSel, "rock-paper-scissors");
+  }
   applyMode();
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("rock-paper-scissors"));
 
-  window.__rpsTest = { beats, roundsToWin, boardToStr, strToBoard };
 })();

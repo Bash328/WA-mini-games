@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>rock paper scissors · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .rps-choices {
     display: flex;
@@ -73,22 +76,43 @@
     #choices .rps-choice:hover { background: var(--panel); border-color: var(--accent); }
   }
   #choices .rps-choice:active { border-color: var(--accent); }
-  .rps-emoji { font-size: 2.4rem; line-height: 1; }
-  #last-round { color: var(--muted); font-size: var(--fs-sm); text-align: center; margin: 4px 0; }
+  .rps-hand { display: inline-block; line-height: 0; }
+  .rps-hand svg { width: 44px; height: 62px; }
+  .rps-hand.flip svg { transform: scaleX(-1); }
 
-  select {
-    background: var(--panel-2);
-    color: var(--fg);
-    border: 1px solid var(--border-hi);
-    border-radius: var(--r-md);
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: var(--fs-sm);
-    min-height: var(--tap);
-  }
+  /* The score: one big number a side. The last round sits under it in a
+     fixed-height box so the buttons below never move when it fills in. */
+  .rps-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 4px 0 8px; text-align: center; }
+  .rps-side { display: flex; flex-direction: column; gap: 2px; }
+  .rps-name { font-size: var(--fs-sm); color: var(--muted); }
+  .rps-num { font-size: 52px; font-weight: 700; line-height: 1; color: var(--accent); }
+  .rps-mid { font-size: var(--fs-sm); color: var(--muted); display: flex; flex-direction: column; }
+  .rps-last { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+  .rps-faceoff { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .rps-faceoff .rps-hand svg { width: 64px; height: 90px; }
+  .rps-fighter { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: var(--fs-xs); color: var(--muted); }
+  .rps-vs { color: var(--dim); font-size: var(--fs-sm); }
+  .rps-verdict { margin: 0; font-weight: 700; font-size: var(--fs-md); }
+  .rps-note { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+
+
+  /* chunky look: ocean page, big score numbers, white choice cards */
+  html body.fun.g-rock-paper-scissors { --fun-bg: #20405a; --fun-btn: #5a8fb8; --fun-chip: rgba(255,255,255,.1); transition: background-color .35s; }
+  html body.fun.g-rock-paper-scissors:has(.turn.wait) { --fun-bg: #2b3350; }
+  html body.fun.g-rock-paper-scissors .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+  html body.fun.g-rock-paper-scissors .topbar h1 { font-size: 17px; line-height: 1.05; text-wrap: balance; padding: 0 4px; }
+  /* fun.css styles any #score as a small dark pill; here #score is the real scoreboard */
+  html body.fun.g-rock-paper-scissors .panel #score { display: grid; padding: 0; background: none; border-radius: 0; font-size: inherit; text-transform: none; margin: 8px 0; }
+  html body.fun.g-rock-paper-scissors .rps-name { color: rgba(255,255,255,.75); font-size: 16px; }
+  html body.fun.g-rock-paper-scissors .rps-num { font-size: 64px; font-weight: 400; color: #ffbf2e; }
+  html body.fun.g-rock-paper-scissors .rps-last { color: rgba(255,255,255,.75); }
+  html body.fun.g-rock-paper-scissors #choices .rps-choice { background: #fff; color: #2f3a46; border: 0; border-radius: 22px; box-shadow: 0 5px 0 #b9c2cc; padding: 18px 22px; font-size: 18px; opacity: 1; }
+  @media (hover: hover) and (pointer: fine) { html body.fun.g-rock-paper-scissors #choices .rps-choice:hover { background: #f1f4f8; border: 0; } }
+  html body.fun.g-rock-paper-scissors #choices .rps-choice:active { border: 0; transform: translateY(3px); box-shadow: none; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-rock-paper-scissors">
+<body class="g-rock-paper-scissors fun" data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>rock paper scissors</h1>
@@ -97,15 +121,15 @@
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Your move.</p>
-      <p class="status" id="score">Player 1: 0 · Player 2: 0 (best of 3)</p>
       <button class="btn ghost tool-btn man-trigger" data-man="rock-paper-scissors" data-man-title="ROCK-PAPER-SCISSORS(1)" type="button">
         how to <span class="q">?</span>
       </button>
     </div>
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="local">2 players · same device</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Local" value="local">2 players · same device</option>
       </select>
       <select id="bestof" aria-label="Match length">
         <option value="3" selected>Best of 3</option>
@@ -114,7 +138,8 @@
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
-    <p id="last-round"></p>
+    <div id="score" class="rps-score" aria-live="polite"></div>
+    <div id="last-round" class="rps-last"></div>
     <div class="rps-choices" id="choices"></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new match</button>
@@ -141,13 +166,22 @@
 
   <h2>Same device</h2>
   <p class="muted">Player 1 picks, then looks away (or hands off the device) before Player 2 picks — the app doesn't show Player 1's pick until both are in.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You both pick <em>at the same time</em>: your choice stays secret on the server until your opponent has picked too, then both are revealed together.</li>
+    <li>The host chooses best of 3, 5 or 7 before creating the room. A tie just replays the round.</li>
+  </ul>
 </template>
 
-<script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
-<script src="../vendor/lz-string.min.js"></script>
-<script src="../async-share.js"></script>
-<script src="game.js"></script>
-<script defer src="../manpage.js"></script>
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script src="../account.js?v=160336a8"></script>
+<script src="../live-share.js?v=78191825"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script src="game.js?v=6f9f719d"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

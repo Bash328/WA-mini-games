@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>gomoku · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Gomoku — five in a row. Play a friend over WhatsApp or live online, take on the computer, or pass and play on one device.">
+<meta property="og:title" content="Gomoku · five in a row, two players over WhatsApp">
+<meta property="og:description" content="Open the board, place a stone, and send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
+<style>
+  .gm-wrap { width: min(560px, 100%); margin: 8px auto 0; }
+  /* The board: a wooden grid, one button per crossing. #board-prefixed to beat the
+     shared "body[class*='g-'] .panel button" rule (background, radius, 40px min-height). */
+  .gm-board {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(0, 1fr)); grid-template-rows: repeat(15, minmax(0, 1fr));
+    aspect-ratio: 1;
+    padding: 2.2%;
+    background: #d9b062;
+    border: 1px solid #a07c3a;
+    border-radius: var(--r-md);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  }
+  #board .gm-cell {
+    position: relative; background: transparent; border: 0; border-radius: 0; padding: 0;
+    min-height: 0; min-width: 0; cursor: pointer;
+  }
+  #board .gm-cell:hover { background: transparent; border: 0; }
+  #board .gm-cell::before, #board .gm-cell::after { content: ""; position: absolute; background: #5b4524; pointer-events: none; }
+  #board .gm-cell::before { left: 0; right: 0; top: 50%; height: 1px; }
+  #board .gm-cell::after  { top: 0; bottom: 0; left: 50%; width: 1px; }
+  #board .gm-cell.lft::before { left: 50%; }
+  #board .gm-cell.rgt::before { right: 50%; }
+  #board .gm-cell.top::after  { top: 50%; }
+  #board .gm-cell.bot::after  { bottom: 50%; }
+  .gm-stone { position: absolute; inset: 9%; border-radius: 50%; z-index: 1; pointer-events: none; }
+  /* the five star points */
+  #board .gm-cell.star:not(.b):not(.w) .gm-stone { inset: 38%; background: #5b4524; }
+  #board .gm-cell.b .gm-stone { background: radial-gradient(circle at 35% 30%, #6b6b6b, #121212 70%); box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  #board .gm-cell.w .gm-stone { background: radial-gradient(circle at 35% 30%, #ffffff, #d4cfc2 80%); border: 1px solid #8f8777; box-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+  /* a faint stone where a click or a first tap would land */
+  #board[data-turn="b"] .gm-cell:not(.b):not(.w):not(:disabled):hover .gm-stone,
+  #board[data-turn="b"] .gm-cell.sel .gm-stone { inset: 9%; background: #121212; opacity: 0.4; }
+  #board[data-turn="w"] .gm-cell:not(.b):not(.w):not(:disabled):hover .gm-stone,
+  #board[data-turn="w"] .gm-cell.sel .gm-stone { inset: 9%; background: #ffffff; opacity: 0.6; }
+  #board .gm-cell.sel .gm-stone { opacity: 0.75; outline: 2px dashed #5b4524; outline-offset: 2px; }
+  #board .gm-cell.last .gm-stone { box-shadow: 0 0 0 2px #e8453c; }
+  #board .gm-cell.win .gm-stone { box-shadow: 0 0 0 3px #2fbf7f, 0 0 10px #2fbf7f; }
+  #board .gm-cell:disabled { cursor: default; }
+  .gm-hint { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+
+  html body.fun.g-gomoku { --fun-bg: #2f3555; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1); transition: background-color .35s; }
+  html body.fun.g-gomoku:has(.turn.wait) { --fun-bg: #3d2d4f; }
+  html body.fun.g-gomoku .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+
+  html body.fun.g-gomoku .gm-wrap { width: 100%; margin: 8px 0 0; }
+  html body.fun.g-gomoku .panel .gm-board { width: calc(100% + 22px); margin: 0 -11px; box-sizing: border-box; max-width: none; padding: 3%; background: #e3b765; border: 6px solid #000; border-radius: 22px; box-shadow: none; }
+  html body.fun.g-gomoku #board .gm-cell::before, html body.fun.g-gomoku #board .gm-cell::after { background: #4a3a1c; }
+  html body.fun.g-gomoku #board .gm-cell { opacity: 1; box-shadow: none; }
+  html body.fun.g-gomoku #board .gm-cell.b .gm-stone { background: #2f3a46; border: 2px solid #000; box-shadow: none; }
+  html body.fun.g-gomoku #board .gm-cell.w .gm-stone { background: #fff; border: 2px solid #000; box-shadow: none; }
+  html body.fun.g-gomoku #board .gm-cell.last .gm-stone { box-shadow: 0 0 0 3px #ff5a52; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-gomoku fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>gomoku</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="gomoku" data-man-title="GOMOKU(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Black" value="1" selected>Play Black (first)</option>
+        <option data-short="Play White" value="2">Play White</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="gm-wrap">
+      <div class="gm-board" id="board" role="grid" aria-label="Gomoku board, 15 by 15"></div>
+    </div>
+    <p class="gm-hint" id="tap-hint" hidden>Tap a spot to preview your stone, tap it again to place it.</p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-gomoku">
+  <h2>Name</h2>
+  <p>gomoku — be first to line up five stones.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>A 15×15 board. <strong>Black</strong> goes first; players take turns placing one stone on any empty crossing.</li>
+    <li>The first to get <strong>five or more in a row</strong> — across, down or diagonally — wins.</li>
+    <li>If the board fills with no five, it's a draw. Stones never move or get captured.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Black</strong> and places first; your friend is <strong>White</strong>.</li>
+    <li>After each stone, tap <code>Send on WhatsApp</code>. Your friend opens the link, sees your last stone ringed in red, places theirs and sends a link back.</li>
+    <li><code>Copy link</code> works for any other messenger.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>On a computer, click a crossing. On a phone, <strong>tap once to preview</strong> the stone and <strong>tap again to place it</strong>, so a fat finger never misplaces one.</li>
+    <li>Use the mode menu to play the computer or share one device. <code>↶ undo</code> is there in those modes (against the computer it takes back your move and its reply).</li>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and whether you play Black or White.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Black has the edge in this free-style version, so White must defend early. Build an <em>open three</em> (three in a row with both ends free): the opponent has to block at once, and two at the same time can't both be blocked.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
+    <li>If someone drops out they can rejoin with the same link. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=605e0731"></script>
+</body>
+</html>

@@ -187,20 +187,13 @@
     const label = opts.label || String;
     let view = null;   // { kind, state, enc, viewer, latest }
 
-    // Resign gets its own row below the board, just above whatever "New
-    // game" controls the page already has — keeps it out of the busier
-    // wa-ui panel above the board. Every WhatsApp game has either
-    // .toolbar (undo/new-game) or .controls (new-game/mode select), so
-    // this needs no per-game markup.
-    const resignRow = document.createElement("div");
-    resignRow.className = "wa-actions wa-resign-row";
-    resignRow.hidden = true;
-    const bottomBar = document.querySelector(".toolbar, .controls");
-    if (bottomBar && bottomBar.parentNode) {
-      bottomBar.parentNode.insertBefore(resignRow, bottomBar);
-    } else {
-      ui.parentNode.insertBefore(resignRow, ui.nextSibling);
-    }
+    // "Admit defeat" lives in one fixed slot BELOW the board (shared with the
+    // live-play controller). It used to sit above the board and appear only on
+    // your turn, so the board jumped down and up on every move. Now the slot
+    // is always there during a game; only the button inside it comes and goes.
+    const resignRow = ensureResignRow(ui);
+    const resignOff = () => { resignRow.style.display = "none"; resignRow.replaceChildren(); };
+    const resignSlot = (visible) => { resignRow.style.display = ""; resignRow.style.visibility = visible ? "visible" : "hidden"; };
 
     function other(p) { return p === opts.players[0] ? opts.players[1] : opts.players[0]; }
 
@@ -303,6 +296,7 @@
       const row = el("div", "wa-actions");
       buttons.forEach(b => row.appendChild(b));
       ui.appendChild(row);
+      return row;
     }
     function button(text, cls, onClick) {
       const b = el("button", "btn " + cls, text);
@@ -310,6 +304,9 @@
       b.addEventListener("click", onClick);
       return b;
     }
+    // The big turn badge already says whose move it is, so while it is showing
+    // the small status line stays empty instead of repeating it.
+    function clearStatus() { statusEl.replaceChildren(); }
     function setStatus(bold, rest) {
       statusEl.replaceChildren(el("strong", "", bold));
       if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
@@ -394,11 +391,10 @@
     function paint() {
       const v = view;
       const s = v.state;
-      opts.onState(s, canMove());
+      opts.onState(s, canMove(), { me: v.viewer });
       ui.hidden = false;
       ui.replaceChildren();
-      resignRow.hidden = true;
-      resignRow.replaceChildren();
+      resignOff();
 
       const slotOf = (p) => opts.players.indexOf(p) + 1;
       Gamekit.turn(null);
@@ -422,7 +418,7 @@
       }
 
       if (v.kind === "new") {
-        setStatus("Your move", "you're " + label(v.viewer));
+        clearStatus();
         Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
         note("Make the first move, then send the link to a friend on WhatsApp.");
         return;
@@ -432,14 +428,15 @@
         // True even for kind "sent" when a rule (commit()'s nextTurn) just
         // granted the same player another turn — see canMove() above.
         if (v.kind === "received" || s.turn === v.viewer) {
-          setStatus("Your move", "you're " + label(v.viewer));
+          clearStatus();
           Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
           note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
-          resignRow.hidden = false;
           resignRow.appendChild(button("Admit defeat (coward)", "ghost wa-small", resign));
+          resignSlot(true);
           return;
         }
-        setStatus("Waiting for " + label(s.turn));
+        clearStatus();
+        resignSlot(false);                      // keep the slot so nothing below moves
         Gamekit.turn(slotOf(s.turn), "Waiting for " + label(s.turn), true);
         banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
         actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc, false, s.moveCount));
@@ -454,14 +451,15 @@
       setStatus("Game over");
       banner(r.cls, r.text);
       // loser gets a roast, winner a gloat (gentler if the loser quit), a draw a shrug
-      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? "loss" : s.resigned ? "forfeit" : "win"));
+      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? (s.resigned ? "resigned" : "loss") : s.resigned ? "forfeit" : "win"));
       const extra = opts.detail ? opts.detail(s, v.viewer) : "";
       if (extra) note(extra);
       if (v.kind === "sent") {
         note(s.resigned ? "Let them know you threw in the towel." : "Send the final board so your opponent sees how it ended.");
-        actions(sendButton(v.enc, true, undefined, s.resigned), copyButton(v.enc, true, undefined, s.resigned));
-      }
-      actions(button("New game", v.kind === "sent" ? "ghost" : "primary", newGame));
+        // Send on its own line; "Copy link" and "New game" side by side under it
+        actions(sendButton(v.enc, true, undefined, s.resigned));
+        actions(copyButton(v.enc, true, undefined, s.resigned), button("New game", "ghost", newGame)).classList.add("wa-pair");
+      } else actions(button("New game", "primary", newGame));
     }
 
     return {
@@ -473,8 +471,7 @@
         Gamekit.turn(null);
         ui.hidden = true;
         ui.replaceChildren();
-        resignRow.hidden = true;
-        resignRow.replaceChildren();
+        resignOff();
       },
       canMove: canMove,
       commit: commit,
@@ -482,5 +479,22 @@
     };
   }
 
-  global.AsyncShare = { start: start, encode: encode, decode: decode, validate: validate };
+  /* The one "Admit defeat" slot, shared by AsyncShare and LiveShare. Placed
+     below the board: before the page's .toolbar if it has one, otherwise
+     right after #board, otherwise after the share panel. */
+  function ensureResignRow(ui) {
+    let row = document.querySelector(".wa-resign-row");
+    if (row) return row;
+    row = document.createElement("div");
+    row.className = "wa-actions wa-resign-row";
+    row.style.display = "none";
+    const toolbar = document.querySelector(".toolbar");
+    const board = document.getElementById("board");
+    if (toolbar && toolbar.parentNode) toolbar.parentNode.insertBefore(row, toolbar);
+    else if (board && board.parentNode) board.parentNode.insertBefore(row, board.nextSibling);
+    else ui.parentNode.insertBefore(row, ui.nextSibling);
+    return row;
+  }
+
+  global.AsyncShare = { start: start, encode: encode, decode: decode, validate: validate, resignRow: ensureResignRow };
 })(window);

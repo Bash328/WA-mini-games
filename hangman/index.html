@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>hangman · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   #word {
     font-size: clamp(1.6rem, 7vw, 2.6rem);
@@ -90,19 +93,49 @@
   #keyboard .hm-key.hit { background: rgba(60,180,100,0.3); border-color: rgba(60,180,100,0.6); }
   #keyboard .hm-key.miss { background: rgba(200,60,60,0.25); border-color: rgba(200,60,60,0.55); opacity: 0.7; }
 
-  select {
-    background: var(--panel-2);
-    color: var(--fg);
-    border: 1px solid var(--border-hi);
-    border-radius: var(--r-md);
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: var(--fs-sm);
-    min-height: var(--tap);
-  }
+
+  /* chunky look: charcoal page, red gallows that fills in with every miss, grey keys */
+  html body.fun.g-hangman { --fun-bg: #1c1d20; --fun-btn: #9a938e; --fun-chip: rgba(255,255,255,.09); }
+  /* the stick man is the only one who taunts: no taunt strip on this page */
+  html body.fun[data-fun-zone].g-hangman .panel .gk-slot { display: none !important; }
+  /* when the man runs out of chances, his ghost floats up beside him and says the last line */
+  html body.fun.g-hangman .hm-stage { position: relative; }
+  /* the man's ghost (a round head, a wavy tail) leaves his body, and more spirits keep rising out of him */
+  html body.fun.g-hangman .hm-ghosts { position: absolute; left: 0; top: 0; width: min(190px, 46%); aspect-ratio: 1; z-index: 2; pointer-events: none; }
+  html body.fun.g-hangman .hm-ghosts[hidden] { display: none; }
+  html body.fun.g-hangman .hm-g { position: absolute; transform: translateX(-50%); overflow: visible; filter: drop-shadow(0 0 7px rgba(255,255,255,.5)); }
+  html body.fun.g-hangman .hm-g.big { left: 93%; top: 6%; width: 32px; height: 78px; transform: translateX(-50%); animation: hm-drift 2.6s ease-in-out infinite; }
+  /* he floats beside the man, upright */
+  @keyframes hm-drift { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { html body.fun.g-hangman .hm-g { animation: none !important; } }
+  html body.fun.g-hangman .hm-bubble.ghost { background: #e9e4f7; }
+  html body.fun.g-hangman .hm-bubble.ghost::before { border-right-color: #e9e4f7; }
+  @keyframes hm-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  html body.fun.g-hangman .hm-stage { display: flex; align-items: flex-start; gap: 6px; margin: 2px 0 0; }
+  html body.fun.g-hangman .hm-gallows { display: block; flex: 0 0 auto; width: min(190px, 46%); aspect-ratio: 1; margin: 0; }
+  /* the hanged man talks: a speech bubble to the right of the gallows, tail pointing at his head */
+  html body.fun.g-hangman .hm-bubble { position: relative; flex: 1 1 0; min-width: 0; align-self: flex-start; margin: 4% 0 0 14px; padding: 12px 14px; border-radius: 20px; background: #fff; color: #2b2d33; font-size: 18px; line-height: 1.25; text-wrap: balance; animation: hm-pop .22s ease-out; }
+  html body.fun.g-hangman .hm-bubble::before { content: ""; position: absolute; left: -12px; top: 22px; border: 8px solid transparent; border-right: 14px solid #fff; border-left: 0; }
+  html body.fun.g-hangman .hm-bubble[hidden] { display: none; }
+  html body.fun.g-hangman .hm-bubble.beg { background: #ffe9a8; } html body.fun.g-hangman .hm-bubble.beg::before { border-right-color: #ffe9a8; }
+  @keyframes hm-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .hm-gallows .fr { stroke: #e2403a; stroke-width: 7; stroke-linecap: round; fill: none; }
+  .hm-gallows .ground { stroke: #8a5a3c; stroke-width: 7; stroke-linecap: round; }
+  .hm-gallows .pt { stroke: #fff; stroke-width: 6; stroke-linecap: round; fill: none; display: none; }
+  .hm-gallows .pt.on { display: inline; }
+  html body.fun.g-hangman #word { font-size: clamp(1.8rem, 9vw, 2.8rem); font-weight: 400; color: #fff; margin: 14px 0 4px; letter-spacing: .12em; }
+  html body.fun.g-hangman #misses { color: rgba(255,255,255,.7); font-size: 16px; min-height: 1.4em; margin-bottom: 6px; }
+  html body.fun.g-hangman .hm-keyboard { width: 100%; gap: 6px; grid-template-columns: repeat(7, 1fr); }
+  html body.fun.g-hangman #keyboard .hm-key { background: #9a938e; color: #fff; border: 0; border-radius: 8px; min-height: 46px; padding: 0; font-size: 22px; font-weight: 400; box-shadow: none; opacity: 1; }
+  html body.fun.g-hangman #keyboard .hm-key.hit { background: #6ac43a; }
+  html body.fun.g-hangman #keyboard .hm-key.miss { background: #2a2b2e; color: #6d6d70; }
+  html body.fun.g-hangman #keyboard .hm-key:disabled:not(.hit):not(.miss) { opacity: .55; }
+  html body.fun.g-hangman #setup { margin: 8px 0; }
+  html body.fun.g-hangman #setup-error { color: #ff8a7a; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-hangman">
+<body class="g-hangman fun" data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>hangman</h1>
@@ -117,8 +150,8 @@
     </div>
     <div class="controls" style="justify-content:center">
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="local">2 players · same device</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Local" value="local">2 players · same device</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
@@ -127,6 +160,7 @@
       <button class="btn primary" id="setup-btn" type="button">Set word</button>
       <p id="setup-error"></p>
     </div>
+    <div class="hm-stage"><svg class="hm-gallows" id="gallows" viewBox="0 0 200 200" aria-hidden="true"><line class="ground" x1="20" y1="186" x2="180" y2="186"/><path class="fr" d="M50 186 V18 H128 M50 62 L92 18 M128 18 V40"/><circle class="pt" cx="128" cy="56" r="16"/><line class="pt" x1="128" y1="72" x2="128" y2="124"/><line class="pt" x1="128" y1="84" x2="106" y2="106"/><line class="pt" x1="128" y1="84" x2="150" y2="106"/><line class="pt" x1="128" y1="124" x2="110" y2="156"/><line class="pt" x1="128" y1="124" x2="146" y2="156"/></svg><div class="hm-ghosts" id="ghost" aria-hidden="true" hidden><svg class="hm-g big" viewBox="0 0 30 72" aria-hidden="true"><path d="M7 17C7 31 7 36 11 42C15 48 8 53 12 59C14.5 63 15.5 66 18 70C20.5 66 21 62 21.5 57C22.5 50 17 48 20 42C23 36 23 31 23 17Z" fill="#fff" stroke="#2b2d33" stroke-width="1.6" stroke-linejoin="round"/><circle cx="15" cy="11" r="9.5" fill="#fff" stroke="#2b2d33" stroke-width="1.6"/><circle cx="11.6" cy="11" r="1.5" fill="#2b2d33"/><circle cx="18.4" cy="11" r="1.5" fill="#2b2d33"/></svg></div><div class="hm-bubble" id="bubble" role="status" aria-live="polite" hidden></div></div>
     <p id="word"></p>
     <p id="misses"></p>
     <div class="hm-keyboard" id="keyboard" hidden></div>
@@ -162,11 +196,12 @@
   </ul>
 </template>
 
-<script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
-<script src="../vendor/lz-string.min.js"></script>
-<script src="../async-share.js"></script>
-<script src="game.js"></script>
-<script defer src="../manpage.js"></script>
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script src="game.js?v=34de3da8"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

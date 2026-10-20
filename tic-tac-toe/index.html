@@ -2,29 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>tic-tac-toe · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Tic-Tac-Toe — play a friend by sending moves over WhatsApp, or take on an unbeatable minimax AI.">
+<meta name="description" content="Tic-Tac-Toe — play a friend by sending moves over WhatsApp, or take on an unbeatable minimax computer.">
 <meta property="og:title" content="Tic-Tac-Toe · two players over WhatsApp">
 <meta property="og:description" content="Open the board, make your move, and send the link back.">
 <meta property="og:type" content="website">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .board {
     display: grid;
@@ -76,9 +79,26 @@
     outline: 2px dashed var(--muted);
     outline-offset: -6px;
   }
+
+  /* chunky look: a fat black # on the colour, red crosses and blue rings; the page turns blue while the bot thinks */
+  html body.fun.g-tic-tac-toe { --fun-bg: #2f3555; --fun-btn: #5a63b8; transition: background-color .35s; }
+  html body.fun.g-tic-tac-toe:has(.turn.wait) { --fun-bg: #3d2d4f; }
+  html body.fun.g-tic-tac-toe .turn { width: fit-content; max-width: 100%; box-sizing: border-box; min-height: 0; margin: 14px auto 18px; padding: 14px 20px; border-radius: 14px; font-size: 26px; }
+  html body.fun.g-tic-tac-toe .turn .turn-dot { display: none; }
+  html body.fun.g-tic-tac-toe .panel .board { gap: 0; background: #e9e6f2; border: 0; box-shadow: none; border-radius: 36px; padding: 18px; box-sizing: border-box; width: calc(100% + 22px); margin: 18px -11px; }
+  html body.fun.g-tic-tac-toe .panel .cell { background: none; border: 0; border-radius: 0; box-shadow: none; opacity: 1; transform: none; padding: 0; min-height: 0; font-size: 0; position: relative; outline: 0; }
+  html body.fun.g-tic-tac-toe .panel .cell:not(:nth-child(3n)) { border-right: 13px solid #000; }
+  html body.fun.g-tic-tac-toe .panel .cell:nth-child(-n+6) { border-bottom: 13px solid #000; }
+  html body.fun.g-tic-tac-toe .panel .cell.win { background: rgba(255,255,255,.4); }
+  html body.fun.g-tic-tac-toe .panel .board { position: relative; }
+  .ttt-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
+  .cell.x::before, .cell.x::after { content: ""; position: absolute; left: 20%; right: 20%; top: calc(50% - 6px); height: 13px; border-radius: 7px; background: #ff4d46; transform: rotate(45deg); }
+  .cell.x::after { transform: rotate(-45deg); }
+  .cell.o::before { content: ""; width: 52%; aspect-ratio: 1; box-sizing: border-box; border: 12px solid #0aa5ea; border-radius: 50%; background: radial-gradient(circle, #0a3d91 0 26%, transparent 28%); }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-tic-tac-toe">
+<body class="g-tic-tac-toe fun" data-fun-zone data-fun-reset data-over-delay="1100">
 <main class="wrap">
   <div class="topbar">
     <h1>tic-tac-toe</h1>
@@ -96,8 +116,9 @@
     <div class="controls center" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="ai">vs AI</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
       </select>
       <button id="toggle" hidden>Play as O</button>
     </div>
@@ -106,7 +127,7 @@
 
 <template id="man-tic-tac-toe">
   <h2>Name</h2>
-  <p>tic-tac-toe — three in a row, against a friend over WhatsApp or an unbeatable AI.</p>
+  <p>tic-tac-toe — three in a row, against a friend over WhatsApp or an unbeatable computer.</p>
 
   <h2>Synopsis</h2>
   <p>Take turns marking cells on a 3×3 grid. First to line up three wins.</p>
@@ -128,19 +149,28 @@
   <h2>Controls</h2>
   <ul>
     <li><strong>Tap / click</strong> any empty cell to place your mark.</li>
-    <li><code>New game</code> starts over. Switch the mode to <code>vs AI</code> to play solo; <code>Play as O</code> lets the AI open.</li>
+    <li><code>New game</code> starts over. Switch the mode to <code>vs computer</code> to play solo; <code>Play as O</code> lets the computer open.</li>
   </ul>
 
   <h2>Notes</h2>
-  <p class="muted">The AI uses full-tree minimax, so perfect play will always draw. Aim for a tie.</p>
+  <p class="muted">The computer uses full-tree minimax, so perfect play will always draw. Aim for a tie.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
+    <li>If someone drops out they can rejoin with the same link. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="../vendor/lz-string.min.js"></script>
-<script defer src="../async-share.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=f98d4af6"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("tic-tac-toe"));</script>
 </body>
 </html>

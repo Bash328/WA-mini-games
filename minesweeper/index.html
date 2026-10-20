@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>minesweeper · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .ms {
     display: grid;
@@ -94,23 +97,31 @@
   .ms-key1 { color: var(--coral); }
   .ms-key2 { color: var(--teal); }
 
-  select {
-    background: var(--panel-2);
-    color: var(--fg);
-    border: 1px solid var(--border-hi);
-    border-radius: var(--r-md);
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: var(--fs-sm);
-    min-height: var(--tap);
-  }
+
+  /* chunky look: charcoal page, white tiles, coloured numbers */
+  html body.fun.g-minesweeper { --fun-bg: #1b2022; --fun-btn: #5f6b70; --fun-chip: rgba(255,255,255,.09); }
+  html body.fun.g-minesweeper .panel .ms { gap: 3px; padding: 0; border: 0; background: none; border-radius: 0; margin: 10px auto 0; overflow: visible; }
+  html body.fun.g-minesweeper .panel .c { background: #fff; border: 0; border-radius: 7px; color: #1b2022; box-shadow: none; font-weight: 400; }
+  html body.fun.g-minesweeper .panel .c.open { background: transparent; }
+  html body.fun.g-minesweeper .panel .c.flag { background: #ffbf2e; color: #7a3d00; }
+  html body.fun.g-minesweeper .panel .c.mine { background: #ff5a52; color: #fff; }
+  /* the numbers: these have to out-rank the dark text colour the tiles themselves carry, or they vanish on the dark page */
+  html body.fun.g-minesweeper .panel .c.n1 { color: #4fc3f7; } html body.fun.g-minesweeper .panel .c.n2 { color: #3fd04a; } html body.fun.g-minesweeper .panel .c.n3 { color: #ff6b6b; }
+  html body.fun.g-minesweeper .panel .c.n4 { color: #b388ff; } html body.fun.g-minesweeper .panel .c.n5 { color: #ffb74d; } html body.fun.g-minesweeper .panel .c.n6 { color: #26c6da; }
+  html body.fun.g-minesweeper .panel .c.n7 { color: #fff; } html body.fun.g-minesweeper .panel .c.n8 { color: #bbb; }
+  html body.fun.g-minesweeper .panel .c.open.by1 { box-shadow: inset 0 -3px 0 #ff7a7a; } html body.fun.g-minesweeper .panel .c.open.by2 { box-shadow: inset 0 -3px 0 #3fd0c0; }
+  html body.fun.g-minesweeper .kbd { display: none; }
+  html body.fun.g-minesweeper .fun-pills b .ms-key1, html body.fun.g-minesweeper .fun-pills b .ms-key2 { font-size: .7em; }
+  html body.fun.g-minesweeper .fun-pills #score { font-size: 14px; }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-minesweeper">
+<body class="g-minesweeper fun" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>minesweeper</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Mines</small><b id="mines">0</b></div><div><small>Time</small><b id="time">0s</b></div><div hidden><small>Tiles</small><b id="score"></b></div></div>
   </div>
   <div class="panel">
     <div class="row">
@@ -124,17 +135,14 @@
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="solo">Solo</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Solo" value="solo">Solo</option>
       </select>
       <select id="diff" aria-label="Difficulty">
         <option value="easy">Easy · 9×9 · 10 mines</option>
         <option value="medium" selected>Medium · 16×16 · 40</option>
         <option value="hard">Hard · 20×20 · 80</option>
       </select>
-      <span id="mines" class="kbd">0 mines</span>
-      <span id="score" class="kbd" hidden></span>
-      <span id="time" class="kbd">0s</span>
     </div>
   </div>
 </main>
@@ -176,12 +184,13 @@
   <p class="muted">If a number equals the count of flagged neighbors, all remaining neighbors are safe. If a number equals the count of unknown neighbors, they're all mines.</p>
 </template>
 
-<script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
-<script src="../vendor/lz-string.min.js"></script>
-<script src="../async-share.js"></script>
-<script src="game.js"></script>
-<script defer src="../manpage.js"></script>
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script src="game.js?v=8ee260e5"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("minesweeper"));</script>
 </body>
 </html>

@@ -12,6 +12,8 @@
    ============================================================ */
 
 import LZString from "../vendor/lz-string.min.js";
+import { liveGame } from "./live-games.mjs";
+import { CARD_GAMES } from "./card-protocol.mjs";
 
 /* Mirrors each game's AsyncShare.start({ title, players, label }). Kept
    here rather than imported because game.js files are browser scripts,
@@ -22,7 +24,7 @@ const GAMES = {
   "connect-four":       { title: "connect-four",       labels: { 1: "Red", 2: "Yellow" } },
   "chess":              { title: "chess",              labels: { w: "White", b: "Black" } },
   "reversi":            { title: "reversi",            labels: { 1: "Black", 2: "White" } },
-  "checkers":           { title: "checkers",           labels: { 1: "Player 1", 2: "Player 2" } },
+  "checkers":           { title: "checkers",           labels: { 1: "Black", 2: "White" } },
   "dots-and-boxes":     { title: "dots and boxes",     labels: { 1: "Player 1", 2: "Player 2" } },
   "mancala":            { title: "mancala",            labels: { 1: "Player 1", 2: "Player 2" } },
   "pentago":            { title: "pentago",            labels: { 1: "Player 1", 2: "Player 2" } },
@@ -31,6 +33,19 @@ const GAMES = {
   "memory":             { title: "memory",             labels: { 1: "Player 1", 2: "Player 2" } },
   "minesweeper":        { title: "minesweeper",        labels: { 1: "Player 1", 2: "Player 2" } },
   "lights-out":         { title: "lights-out",         labels: { 1: "Player 1", 2: "Player 2" } },
+  "battleship":          { title: "battleship",          labels: { 1: "Player 1", 2: "Player 2" } },
+  "ultimate-tic-tac-toe": { title: "ultimate tic-tac-toe", labels: { 1: "X", 2: "O" } },
+  "blokus-duo":         { title: "blokus duo",         labels: { 1: "Orange", 2: "Violet" } },
+  "hex":                { title: "hex",                labels: { 1: "Red", 2: "Blue" } },
+  "onitama":            { title: "onitama",            labels: { 1: "Red", 2: "Blue" } },
+  "quoridor":           { title: "quoridor",           labels: { 1: "Red", 2: "Blue" } },
+  "backgammon":         { title: "backgammon",         labels: { 1: "Black", 2: "White" } },
+  "crazy-8":            { title: "crazy 8",            labels: { 1: "Player 1", 2: "Player 2" } },
+  "liars-dice":         { title: "liar's dice",        labels: { 1: "Player 1", 2: "Player 2" } },
+  "dominoes":           { title: "dominoes",           labels: { 1: "Player 1", 2: "Player 2" } },
+  "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
+  "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
+  "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },
 };
 
 const STATUS = { p: "in_progress", w: "won", d: "draw" };
@@ -108,3 +123,20 @@ export function ogFor(pathname, stateParam) {
 }
 
 export const SUPPORTED_GAMES = Object.keys(GAMES);
+
+/* A "?live=CODE" invite link. Only a well-formed code for a game that can
+   be played live gets custom text; the code itself is never echoed into
+   the page (the preview just invites). Returns { title, description } or
+   null. */
+export const LIVE_CODE = /^[A-HJ-NP-Z2-9]{6}$/;
+export function ogForLive(pathname, code) {
+  const slug = slugFor(pathname);
+  if ((!liveGame(slug) && !CARD_GAMES.includes(slug)) || typeof code !== "string" || !LIVE_CODE.test(code)) return null;
+  const meta = Object.prototype.hasOwnProperty.call(GAMES, slug) ? GAMES[slug] : null;
+  if (!meta) return null;
+  return {
+    title: "Join a live game · " + meta.title,
+    description: "You've been invited to play " + meta.title + " in real time. Tap to join, no sign-up.",
+  };
+}
+

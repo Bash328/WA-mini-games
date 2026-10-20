@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>battleship · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1715">
+<meta name="description" content="Battleship — hide your fleet, then sink your friend's, one link at a time over WhatsApp. Also vs the computer or on one device.">
+<meta property="og:title" content="Battleship · two players over WhatsApp">
+<meta property="og:description" content="Hide your fleet, then take turns firing. First to sink all five ships wins.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
+<style>
+  /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
+     shared "body[class*='g-'] .panel button" rule. */
+  .bs-wrap { width: min(380px, 100%); margin: 14px auto 0; }
+  .bs-wrap.small { width: min(250px, 70%); }
+  .bs-title { font-size: var(--fs-sm); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin: 0 0 6px; font-weight: 500; }
+  .bs-grid {
+    display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 4px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  #bs .bs-cell {
+    aspect-ratio: 1; width: 100%; min-height: 0; padding: 0; border-radius: 4px;
+    border: 1px solid var(--border); background: #1d3a4a; color: var(--fg);
+    font-family: inherit; font-weight: 700; font-size: 13px; line-height: 1; cursor: default;
+    display: grid; place-items: center;
+  }
+  .bs-wrap.small #bs .bs-cell, #bs-sub .bs-cell { font-size: 10px; }
+  #bs-main.clickable .bs-cell { cursor: pointer; }
+  #bs .bs-cell.ship { background: #8fa3bf; border-color: #c0cde0; }
+  #bs .bs-cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; background: #2d5a73; }
+  #bs .bs-cell.hit { background: #c23b3b; border-color: #ff8a8a; color: #fff; }
+  #bs .bs-cell.sunk { background: #6b1f1f; border-color: #c23b3b; color: #ffb0b0; }
+  #bs .bs-cell.miss { background: #243b47; color: #7fb4cc; }
+  #bs .bs-cell.last { box-shadow: inset 0 0 0 2px var(--accent); }
+  #bs .bs-cell.dim { background: #4b5668; border-color: #6b778c; }
+  #bs .bs-cell.sel-ship { background: #4dd9ac; border-color: #bff5e3; }
+  #bs .bs-cell.bad { background: #8a2b2b; }
+
+  #bs-tray { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
+  #bs-tray .bs-ship {
+    min-height: 34px; padding: 4px 10px; font-size: var(--fs-xs); border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg-2); color: var(--fg); cursor: pointer;
+  }
+  #bs-tray .bs-ship.sel { border-color: var(--accent); color: var(--accent); }
+  #bs-tray .bs-ship.placed { opacity: 0.6; }
+  #bs-tray .bs-ship.placed::after { content: " ✓"; color: var(--accent-2); }
+  .bs-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 0; }
+  #bs-note, #bs-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); margin: 10px 0 0; min-height: 1.2em; }
+  #bs-note strong { color: var(--fg); font-weight: 600; }
+  #bs-cover { text-align: center; padding: 30px 10px; }
+  #bs-cover p { color: var(--muted); margin: 0 0 14px; }
+
+
+  /* chunky look: a navy page, the enemy's waters in blue, your fleet in warm orange, flat red hits */
+  html body.fun.g-battleship { --fun-bg: #25324a; --fun-btn: #4a6a9a; --fun-chip: rgba(255,255,255,.1); transition: background-color .35s; }
+  html body.fun.g-battleship:has(.turn.wait) { --fun-bg: #2f3552; }
+  html body.fun.g-battleship .bs-wrap { width: 100%; margin: 10px 0 0; }
+  html body.fun.g-battleship .bs-wrap.small { width: min(260px, 72%); }
+  html body.fun.g-battleship .bs-title { font-size: 18px; letter-spacing: .06em; color: #fff; font-weight: 400; margin: 0 0 8px; }
+  html body.fun.g-battleship .bs-grid { position: relative; gap: 3px; padding: 8px; border: 0; border-radius: 20px; background: #3f7fb5; transition: background .2s; }
+  html body.fun.g-battleship .bs-grid[data-who="mine"] { background: #e08a68; }
+  html body.fun.g-battleship #bs .bs-cell { position: relative; z-index: 1; border: 0; border-radius: 6px; background: #27506f; box-shadow: none; opacity: 1; transform: none; color: #fff; font-weight: 400; }
+  html body.fun.g-battleship #bs .bs-grid[data-who="mine"] .bs-cell { background: #8c5a45; }
+  /* a cell under a ship picture lets the picture show through; hits and sinks tint it */
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.ship { background: rgba(0,0,0,.12); }
+  html body.fun.g-battleship #bs .bs-cell.sel { outline: 3px solid #ffbf2e; outline-offset: -3px; background: #3d78a0; }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.hit { background: rgba(255,60,50,.62); color: #fff; }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.sunk { background: rgba(110,18,12,.78); color: #ffb0a8; }
+  html body.fun.g-battleship #bs .bs-cell.miss { background: #1c3a52; color: #8fc4e6; }
+  html body.fun.g-battleship #bs .bs-grid[data-who="mine"] .bs-cell.miss { background: #744a38; color: #ffd9c8; }
+  html body.fun.g-battleship #bs .bs-cell.last { box-shadow: inset 0 0 0 3px #ffbf2e; }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.pv-ok { background: rgba(93,242,154,.55); }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.pv-bad { background: rgba(255,60,50,.55); }
+  /* ship pictures: flat grey hulls with portholes, laid over the grid */
+  .bs-hull { position: absolute; z-index: 0; pointer-events: none; filter: drop-shadow(0 3px 0 rgba(0,0,0,.28)); }
+  .bs-hull.live { z-index: 2; pointer-events: auto; cursor: grab; touch-action: none; }
+  .bs-hull.lift { visibility: hidden; }
+  .bs-svg { display: block; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .bs-ghost { position: fixed; z-index: 90; pointer-events: none; filter: drop-shadow(0 8px 0 rgba(0,0,0,.3)); opacity: .95; }
+  #bs-tray { gap: 8px; align-items: flex-end; }
+  html body.fun.g-battleship #bs-tray .bs-ship { min-height: 0; padding: 8px 10px 6px; border: 0; border-radius: 16px; background: rgba(255,255,255,.12); color: #fff; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 4px; touch-action: none; font-size: 13px; }
+  html body.fun.g-battleship #bs-tray .bs-ship.sel { background: #ffbf2e; color: #5a3a00; }
+  #bs-tray .bs-ship .bs-pic { height: 22px; }
+  html body.fun.g-battleship #bs-tray .bs-ship.placed { opacity: .45; }
+  html body.fun.g-battleship #bs-tray .bs-ship.placed::after { content: ""; }
+  /* the fleet strip between the grids: your enemy's ships (blue) over yours (coral); a sunk one fades and is crossed out */
+  .bs-fleets { display: grid; gap: 4px; margin: 6px auto 0; padding: 5px 12px; width: min(100%, 330px); box-sizing: border-box; border-radius: 16px; background: rgba(0,0,0,.2); }
+  .bs-fleets .row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+  .bs-mini { position: relative; height: auto; display: block; }
+  .bs-mini .bs-svg { height: auto; }
+  .bs-mini.sunk { opacity: .35; }
+  .bs-mini.sunk::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 2px; border-radius: 1px; background: #fff; transform: rotate(-12deg); }
+  /* the cannon is the fire button: tap a square to aim, tap the cannon to shoot */
+  html body.fun.g-battleship .panel .bs-cannon { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 4; width: 118px; min-height: 0; height: 124px; padding: 0; margin: 0; border: 0; background: none; box-shadow: none; display: block; cursor: pointer; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled { opacity: 1; cursor: default; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled svg { opacity: .8; }
+  .bs-cannon[hidden] { display: none !important; }
+  .bs-cannon svg { width: 100%; height: 100%; overflow: visible; }
+  .bs-cannon .cap { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); font-size: 13px; color: #fff; background: rgba(0,0,0,.35); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  
+  @keyframes bs-recoil { 0% { transform: translateY(0); } 22% { transform: translateY(9px); } 100% { transform: translateY(0); } }
+  .bs-ball { position: fixed; z-index: 95; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b5f6a, #1b1c21 60%); box-shadow: 0 6px 6px rgba(0,0,0,.25); pointer-events: none; }
+  .bs-fx { position: fixed; z-index: 96; pointer-events: none; }
+  .bs-spark { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .bs-puff { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgba(255,255,255,.5); }
+  /* aim: a crosshair on the chosen square; results: an orange diamond for a hit, a cross for a miss */
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.sel { outline: 0; background: #3d78a0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='6.5'/%3E%3Cpath d='M12 1.5v6M12 16.5v6M1.5 12h6M16.5 12h6'/%3E%3C/svg%3E") center / 88% no-repeat; animation: bs-aim 1s ease-in-out infinite; }
+  @keyframes bs-aim { 50% { background-size: 70%; } }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.hit, html body.fun.g-battleship #bs .bs-grid .bs-cell.sunk { background: #14161c; color: transparent; }
+  html body.fun.g-battleship #bs .bs-cell.hit::after, html body.fun.g-battleship #bs .bs-cell.sunk::after { content: ""; width: 46%; aspect-ratio: 1; background: #ffa51f; transform: rotate(45deg); border-radius: 2px; }
+  html body.fun.g-battleship #bs .bs-grid .bs-cell.sunk::after { background: #ff5a52; }
+  html body.fun.g-battleship #bs .bs-cell.miss { background: #1c3a52; color: #7fc2ee; }
+  #bs .bs-cell.hit.last, #bs .bs-cell.sunk.last { animation: bs-boom .5s ease-out; }
+  #bs .bs-cell.miss.last { animation: bs-splash .5s ease-out; }
+  @keyframes bs-boom { 0% { transform: scale(1.5); filter: brightness(2); } 100% { transform: scale(1); filter: none; } }
+  @keyframes bs-splash { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .bs-hull.sunk { filter: drop-shadow(0 0 0 transparent) sepia(1) saturate(4) hue-rotate(-25deg) brightness(.85); opacity: .85; }
+  @media (prefers-reduced-motion: reduce) { #bs .bs-cell.last, .bs-cannon.recoil .gun, #bs .bs-cell.sel { animation: none !important; } }
+  /* sizes by phase: placing uses the full width, a battle fits two grids, the strip and the cannon on one screen */
+  #bs-board { --e: clamp(200px, calc(100svh - 624px), 330px); --p: clamp(250px, calc(100svh - 546px), 380px); }
+  #bs-board[data-phase="place"] .bs-title, #bs-board[data-phase="battle"] .bs-title { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="place"] .bs-wrap { width: var(--p); margin: 6px auto 0; }
+  #bs-hint:empty { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="place"] #bs-tray { margin: 6px 0; }
+  html body.fun.g-battleship #bs-board[data-phase="place"] #bs-tray .bs-ship { padding: 4px 8px 3px; font-size: 11px; gap: 2px; }
+  #bs-tray .bs-ship .bs-pic { height: 16px; }
+  html body.fun.g-battleship #bs-board[data-phase="place"] .bs-actions .btn { min-height: 44px; }
+  #bs-board[data-phase="battle"] .bs-title { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap { width: var(--e); margin: 6px auto 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: var(--e); position: relative; }
+  /* your own waters sit faded behind the cannon, which is always there during a battle */
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub { opacity: .42; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-grid { padding: 6px; gap: 2px; border-radius: 16px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-note { margin: 6px 0 0; min-height: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-hint { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-actions { margin: 4px 0 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-actions[hidden] { display: none; }
+  html body.fun.g-battleship .bs-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+  html body.fun.g-battleship #bs-note, html body.fun.g-battleship #bs-hint { color: rgba(255,255,255,.75); font-size: 15px; }
+  html body.fun.g-battleship #bs-note strong { color: #fff; font-weight: 400; }
+
+  /* ---- the battle screen, as in the reference: nothing above the boards, the grids edge to edge, the cannon on your waters ---- */
+  html body.fun.g-battleship.bs-battle { --zone: 0px; --fun-bg: #f7977a; }
+  html body.fun.g-battleship.bs-battle:has(.turn.wait) { --fun-bg: #62a8d0; }
+  body.bs-battle .topbar, body.bs-battle .panel > .row, body.bs-battle .gk-slot, body.bs-battle .toolbar, body.bs-battle .panel > .turn, body.bs-battle #bs-note { display: none !important; }
+  /* the link / room panel is still needed to send a move: it floats over your waters while it has something to press */
+  body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60; padding: 10px; border-radius: 24px; background: rgba(20,18,27,.82); }
+  html body.fun.g-battleship.bs-battle .wrap { padding: 0; max-width: none; }
+  html body.fun.g-battleship.bs-battle .panel { padding: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --g: min(100vw, calc((100svh - 74px) / 2)); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100svh; margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: var(--g); margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-main { border-radius: 22px 22px 0 0; padding: calc(var(--g) * .024); gap: calc(var(--g) * .008); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub { border-radius: 0 0 22px 22px; padding: calc(var(--g) * .024); gap: calc(var(--g) * .008); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-main .bs-cell { border-radius: calc(var(--g) * .016); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell.miss { color: #14304c; font-size: calc(var(--g) * .075); font-weight: 700; background: #2b5b86; }
+  .bs-mid { position: relative; width: 100%; height: 66px; display: flex; align-items: center; justify-content: center; }
+  .bs-mid[hidden] { display: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { background: none; width: auto; margin: 0; padding: 0; gap: 8px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mini { height: 22px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 12px; height: 24px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { gap: 6px; height: 54px; align-content: center; }
+  .bs-tab { position: absolute; top: 50%; width: 86px; height: 98px; margin-top: -49px; border-radius: 50%; background: #fff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; text-decoration: none; color: #3b4252; }
+  .bs-tab.left { left: -43px; padding-left: 40px; flex-direction: column; gap: 3px; }
+  .bs-tab.right { right: -43px; padding-right: 38px; }
+  .bs-tab.right span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 24px; letter-spacing: .04em; }
+  .bs-tab.left b { font-size: 24px; line-height: 1; font-weight: 400; }
+  .bs-tab.left b.foe { color: #1ea7f5; } .bs-tab.left b.me { color: #ff5a52; } .bs-tab.left i { width: 9px; height: 9px; border-radius: 50%; background: #3b4252; display: block; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(var(--g) * .37); height: calc(var(--g) * .40); bottom: calc(var(--g) * .03); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: none; }
+
+  /* ---- v3: sizes and positions measured from the reference screenshot (844px tall: 65 gap, 322 grid, 70 strip, 322 grid, 65 gap) ---- */
+  html:has(body.bs-battle) { overflow-x: hidden; }
+  html body.fun.g-battleship.bs-battle { overflow-x: clip; }
+  body.bs-battle .gk-optwrap { display: block !important; position: fixed; left: 10px; right: 10px; top: 10px; z-index: 80; margin: 0; height: 0; }
+  body.bs-battle .gk-optbtn { display: none !important; }
+  body.bs-battle .gk-menu { top: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --gh: min(calc(100vw * .825), calc((100svh - 90px) / 2)); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: 100vw; margin: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-grid { height: var(--gh); box-sizing: border-box; grid-template-rows: repeat(10, minmax(0, 1fr)); padding: calc(var(--gh) * .028) calc(100vw * .018); gap: calc(var(--gh) * .012) calc(100vw * .009); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs .bs-cell, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell { aspect-ratio: auto; width: 100%; height: 100%; min-height: 0; border-radius: calc(var(--gh) * .02); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cell.miss { font-size: calc(var(--gh) * .075); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mid { height: 70px; overflow-x: clip; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { gap: 14px; height: 60px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 12px; height: auto; align-items: center; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row.me .bs-mini { opacity: .8; }
+  .bs-mid .bs-tab { width: 84px; height: 100px; margin-top: -50px; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+  .bs-tab.left { left: -42px; padding-left: 38px; flex-direction: column; gap: 2px; }
+  .bs-tab.right { right: -42px; padding-right: 36px; }
+  .bs-tab.right span { font-size: 17px; letter-spacing: .03em; }
+  .bs-tab.left b { font-size: 24px; transform: rotate(-90deg); }
+  /* the cannon: it rests on your waters and slides off the top of the screen while the opponent plays */
+  html body.fun.g-battleship .panel .bs-cannon { transform: translate(-50%, 0); transition: transform .65s cubic-bezier(.55, 0, .25, 1), visibility 0s linear 0s; }
+  html body.fun.g-battleship .panel .bs-cannon.away { transform: translate(-50%, calc(-100svh - 80px)); visibility: hidden; pointer-events: none; transition: transform .65s cubic-bezier(.55, 0, .25, 1), visibility 0s linear .65s; }
+  html body.fun.g-battleship .panel .bs-cannon.nomove, html body.fun.g-battleship .panel .bs-cannon.nomove.away { transition: none; }
+  html body.fun.g-battleship .panel .bs-cannon:disabled svg { opacity: 1; }
+  .bs-cannon[hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { html body.fun.g-battleship .panel .bs-cannon, html body.fun.g-battleship .panel .bs-cannon.away { transition: none; } }
+
+  /* v4: the cannon is the picture cut from the reference; the tabs are plain white; strip spacing from the reference */
+  html body.fun.g-battleship .panel .bs-cannon { width: calc(100vw * .37); height: auto; aspect-ratio: 436 / 514; bottom: 4px; }
+  .bs-cannon img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+  .bs-cannon.recoil img { animation: bs-recoil .42s ease-out; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(100vw * .37); height: auto; bottom: 4px; }
+  html body.fun.g-battleship .panel .bs-tab, html body.fun.g-battleship .panel .bs-tab:hover, html body.fun.g-battleship .panel .bs-tab:active { background: #fff; color: #3b4252; box-shadow: none; border: 0; border-radius: 50%; filter: none; transform: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { gap: 5px; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull { opacity: .62; }
+
+  /* v5: rows and tab text measured against the reference overlay */
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { height: 70px; align-content: start; padding-top: 6px; gap: 13px; box-sizing: border-box; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row { height: 22px; align-items: center; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row.me .bs-mini { opacity: .55; }
+  .bs-tab.right span { font-size: 14px; letter-spacing: 0; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull { opacity: .5; filter: saturate(.35) brightness(1.45); }
+
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets { padding-top: 7px; gap: 11px; }
+  .bs-tab.right span { font-size: 12px; }
+
+  /* v6: the Options menu no longer pushes the page 10px past the right edge; the tab text sits inside the visible half; FIRE on the cannon; the cannon leaves downwards */
+  body.bs-battle .gk-optwrap { width: auto; max-width: calc(100vw - 20px); box-sizing: border-box; }
+  html body.fun.g-battleship .panel .bs-tab.right { padding: 0 38px 0 0; }
+  html body.fun.g-battleship .panel .bs-cannon.away { transform: translate(-50%, calc(100svh + 60px)); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: block; left: 50%; top: 56%; bottom: auto; transform: translate(-50%, -50%) scale(.6); opacity: 0; font-size: 30px; letter-spacing: .06em; color: #fff; background: none; padding: 0; text-shadow: 0 3px 0 #000, 0 0 10px rgba(0,0,0,.8); transition: opacity .15s ease, transform .2s cubic-bezier(.2,1.4,.4,1); pointer-events: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon.armed .cap { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .bs-home { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-battleship fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>battleship</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel" id="bs">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="battleship" data-man-title="BATTLESHIP(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="controls" style="justify-content:center">
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Computer" value="computer">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+
+    <div id="bs-cover" hidden>
+      <p id="bs-cover-text"></p>
+      <button class="btn primary" id="bs-cover-btn" type="button"></button>
+    </div>
+
+    <div id="bs-board" data-phase="place">
+      <div id="bs-tray" hidden></div>
+      <div class="bs-wrap">
+        <h3 class="bs-title" id="bs-main-title"></h3>
+        <div class="bs-grid" id="bs-main"></div>
+      </div>
+      <div class="bs-mid" id="bs-mid" hidden>
+        <div class="bs-fleets" id="bs-fleets"></div>
+        <div class="bs-tab left" id="bs-score" aria-label="Ships sunk"></div>
+        <button class="bs-tab right" id="bs-opt-tab" type="button" aria-label="Options"><span>OPTIONS</span></button>
+      </div>
+      <div class="bs-wrap small" id="bs-sub-wrap">
+        <h3 class="bs-title" id="bs-sub-title"></h3>
+        <div class="bs-grid" id="bs-sub"></div>
+        <button class="bs-cannon" id="bs-fire" type="button" aria-label="Fire"><img src="ships/cannon.png" alt="" draggable="false"><span class="cap" id="bs-cap">Fire</span></button>
+      </div>
+      <p id="bs-note"></p>
+      <div class="bs-actions" id="bs-place-actions" hidden>
+        <button class="btn ghost" id="bs-rotate" type="button">Rotate</button>
+        <button class="btn ghost" id="bs-random" type="button">Random</button>
+        <button class="btn ghost" id="bs-clear" type="button">Clear</button>
+        <button class="btn primary" id="bs-ready" type="button">Lock in fleet</button>
+      </div>
+      <div class="bs-actions" id="bs-fire-actions" hidden>
+        <button class="btn primary" id="bs-end" type="button" hidden>End turn</button>
+      </div>
+      <p id="bs-hint"></p>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-battleship">
+  <h2>Name</h2>
+  <p>battleship — hide your fleet, sink theirs.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each player secretly places 5 ships on a 10×10 grid: lengths 5, 4, 3, 3 and 2. Ships go straight across or down and can't overlap.</li>
+    <li>Then take turns firing at one square of the enemy grid. You're told hit or miss, and when you've sunk a whole ship.</li>
+    <li>First to sink all five enemy ships wins.</li>
+  </ul>
+
+  <h2>Placing your fleet</h2>
+  <ul>
+    <li>Pick a ship in the tray, tap a square to drop it there, and use <strong>rotate</strong> to flip it across or down. <strong>Random</strong> places everything for you.</li>
+    <li>Tap a placed ship to pick it back up and move it.</li>
+  </ul>
+
+  <h2>Two players over WhatsApp</h2>
+  <ul>
+    <li>Player 1 places their fleet and sends the link. Player 2 places theirs and sends it back. After that you take turns firing, one link per shot.</li>
+    <li>Fleets do technically ride along in the link's data (the same tradeoff as Hangman's word). The page never shows your opponent's ships until the game ends.</li>
+  </ul>
+
+  <h2>Same device &amp; vs computer</h2>
+  <p class="muted">Same device: a cover screen appears between turns so each player's fleet stays hidden. Vs computer: you place your fleet, the computer hides its own and fires back after every shot.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a square</strong> on the enemy grid to aim, then press <strong>Fire!</strong>.</li>
+    <li>Red is a hit, a dark red square is part of a sunk ship, and a blue dot is a miss.</li>
+  </ul>
+</template>
+
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script src="game.js?v=563a2086"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+</body>
+</html>

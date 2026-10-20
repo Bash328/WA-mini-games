@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>dots and boxes · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -32,12 +14,33 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="300">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
-<link rel="stylesheet" href="../async-share.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .db-board {
     display: grid;
@@ -65,7 +68,12 @@
   #board .db-edge:not(.drawn):not(:disabled):hover { background: var(--border-hi); }
   /* Drawn edges are disabled buttons, which the shared CSS fades; keep them solid. */
   #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: var(--fg); opacity: 1; }
-  #board .db-edge.last, #board .db-edge.last:disabled { background: #f5c800; opacity: 1; }
+  /* each player's lines in their own colour (same colours as their boxes) */
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled { background: var(--p1); }
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: var(--p2); }
+  /* the most recent line is ringed, so it still reads as "last" in either colour */
+  #board .db-edge.last, #board .db-edge.last:disabled { opacity: 1; box-shadow: 0 0 0 2px #f5c800; position: relative; z-index: 1; }
+  #board .db-edge.last:not(.p1):not(.p2) { background: #f5c800; }
   .db-boxcell { border-radius: 2px; }
   /* Claimed boxes use the shared bright player colours (--p1 / --p2) and
      carry the player's number, so ownership never relies on colour alone. */
@@ -78,19 +86,39 @@
   #score .sc.p1 { color: var(--p1); }
   #score .sc.p2 { color: var(--p2); }
 
-  select {
-    background: var(--panel-2);
-    color: var(--fg);
-    border: 1px solid var(--border-hi);
-    border-radius: var(--r-md);
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: var(--fs-sm);
-    min-height: var(--tap);
+  /* chunky look: full-width card, big black dots, turn pill. All colours are variables so a palette is one block. */
+  html body.fun.g-dots-and-boxes {
+    --d-bg1: #2f3555; --d-bg2: #3d2d4f;          /* page: Player 1's move / Player 2's move */
+    --d-vs1: #1c2038; --d-vs2: #28193a;          /* score bar */
+    --d-board1: #e9e6f2; --d-board2: #efe6f0;    /* the card the dots sit on */
+    --d-p1: #ff7a7a; --d-p2: #3fd0c0; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1);  /* each player's lines and boxes */
+    --fun-bg: var(--d-bg1); --vs-bg: var(--d-vs1); --vs-l: var(--d-p1); --vs-r: var(--d-p2);
+    transition: background-color .35s;
   }
+  html body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) { --fun-bg: var(--d-bg2); --vs-bg: var(--d-vs2); }
+  .db-board {
+    grid-template-columns: 13px repeat(4, 1fr 13px); grid-template-rows: 13px repeat(4, 1fr 13px);
+    width: calc(100% + 22px); margin: 8px -11px 0; padding: 22px 20px; box-sizing: border-box; max-width: none;
+    background: var(--d-board1); border: 0; border-radius: 42px; transition: background-color .35s;
+  }
+  html body.fun.g-dots-and-boxes:has(.turn[data-p="2"]:not([hidden])) #board { background: var(--d-board2); }
+  #board .db-h { height: 13px; background: #fff; } #board .db-v { width: 13px; background: #fff; }
+  #board .db-edge { border-radius: 6px; box-shadow: none; }
+  .db-dot { width: 25px; height: 25px; background: #000; z-index: 2; position: relative; flex: none; }
+  /* drawn lines are dark; the colour shows in the boxes people win */
+  #board .db-edge.drawn, #board .db-edge.drawn:disabled,
+  #board .db-edge.drawn.p1, #board .db-edge.drawn.p1:disabled,
+  #board .db-edge.drawn.p2, #board .db-edge.drawn.p2:disabled { background: #2a2a33; }
+  /* the latest line is ringed so it still stands out */
+  #board .db-edge.drawn.last, #board .db-edge.drawn.last:disabled { box-shadow: 0 0 0 3px rgba(0,0,0,.45); position: relative; z-index: 1; }
+  .db-boxcell.owned { font-size: 0; }
+  .db-boxcell.owned.p1 { background: var(--d-p1); } .db-boxcell.owned.p2 { background: var(--d-p2); }
+  .db-boxcell.owned::after { content: none !important; }
+
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-dots-and-boxes">
+<body class="g-dots-and-boxes fun" data-fun-zone data-fun-vs="P1,P2">
 <main class="wrap">
   <div class="topbar">
     <h1>dots and boxes</h1>
@@ -105,9 +133,16 @@
       </button>
     </div>
     <div class="controls" style="justify-content:center">
+      <select id="size" aria-label="Board size">
+        <option value="3">3×3 boxes</option>
+        <option value="4" selected>4×4 boxes</option>
+        <option value="5">5×5 boxes</option>
+        <option value="6">6×6 boxes</option>
+      </select>
       <select id="mode" aria-label="Mode">
-        <option value="whatsapp" selected>2 players · WhatsApp</option>
-        <option value="local">2 players · same device</option>
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Local" value="local">2 players · same device</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
@@ -124,7 +159,7 @@
 
   <h2>Rules</h2>
   <ul>
-    <li>A 5×5 grid of dots (16 boxes). On your turn, draw one line between two adjacent dots.</li>
+    <li>A grid of dots, from 3×3 up to 6×6 boxes (4×4 is the default). The player who makes the first move picks the size with the <strong>Board size</strong> menu; it is locked once play starts. On your turn, draw one line between two adjacent dots.</li>
     <li>If your line completes the 4th side of a box (or two boxes at once, when a line borders both), you claim it — and you <strong>go again</strong>.</li>
     <li>When every line is drawn, whoever claimed more boxes wins. Equal counts are a draw.</li>
   </ul>
@@ -142,13 +177,22 @@
   <ul>
     <li><strong>Tap</strong> any undrawn line segment between two dots.</li>
   </ul>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. Your friend joins in their browser and you play in real time, with no link-passing.</li>
+    <li>If someone drops out they can rejoin with the same link. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
 </template>
 
-<script src="../taunts.js"></script>
-<script src="../gamekit.js"></script>
-<script src="../vendor/lz-string.min.js"></script>
-<script src="../async-share.js"></script>
-<script src="game.js"></script>
-<script defer src="../manpage.js"></script>
+<script src="../taunts.js?v=ec4b7770"></script>
+<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script src="../async-share.js?v=a4bdc418"></script>
+<script src="../account.js?v=160336a8"></script>
+<script src="../live-share.js?v=78191825"></script>
+<script src="game.js?v=b8afd17a"></script>
+<script src="../fun.js?v=0db388a6"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

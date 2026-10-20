@@ -2,35 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Google tag (gtag.js) — the library fetch is deferred to window load.
-     This is the standard snippet with the async loader tag removed: gtag()
-     queue in dataLayer and GA4 replays them once the library arrives, so
-     no hits are lost. Keeps a third-party DNS + TLS handshake off the
-     critical path in the WhatsApp in-app browser, where most first
-     paints happen. charset moved first so it stays well inside the
-     1024-byte window browsers scan for it. -->
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RFN70FPWB1');
-  addEventListener("load", function () {
-    var s = document.createElement("script");
-    s.async = true;
-    s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";
-    document.head.appendChild(s);
-  });
-</script>
+<script src="../ga.js?v=e72d72bb"></script>
 <title>zip · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="description" content="Zip — draw one path visiting numbered waypoints in order, covering every cell.">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css">
-<link rel="stylesheet" href="../manpage.css">
-<link rel="stylesheet" href="../soft.css">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
 <style>
   .zp-grid {
     position: relative;
@@ -74,18 +77,38 @@
     40%,80% { transform: translateX(3px); }
   }
   .zp-cell.invalid { animation: zp-shake 0.3s ease; background: rgba(255,107,107,0.15); }
+
+  html body.fun.g-zip { --accent: #ff9500; --fun-bg: #1f3b4d; --fun-btn: #4a7ea0; --fun-chip: rgba(255,255,255,.1); }
+
+  /* chunky look: sea page, a white grid in a heavy frame, round numbered stops */
+  html body.fun.g-zip .panel .zp-grid { width: calc(100% + 22px); margin: 8px -11px; box-sizing: border-box; max-width: none; border: 6px solid #000; border-radius: 22px; overflow: hidden; background: #fff; }
+  html body.fun.g-zip .zp-cell { border-color: #d5dbe3; color: #2f3a46; font-weight: 400; }
+  html body.fun.g-zip .zp-cell.on { background: rgba(255,176,0,.5); }
+  html body.fun.g-zip .zp-cell .wp { background: #5b3df5; color: #fff; }
+  html body.fun.g-zip .zp-cell.start .wp { background: #ff3d5a; } html body.fun.g-zip .zp-cell.end .wp { background: #00d4a8; color: #06231d; }
+  html body.fun.g-zip .zp-wall-h, html body.fun.g-zip .zp-wall-v { background: #ff1f4b; box-shadow: 0 0 0 1px #fff; }
+  /* the path glides (zip/game.js animates the head); cells fill softly as it passes, and the whole line pulses when you finish */
+  .zp-cell { transition: background-color .2s ease; }
+  html body.fun.g-zip .zp-svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); }
+  .zp-svg.win polyline { animation: zp-pulse .8s ease; }
+  @keyframes zp-pulse { 0% { stroke-width: 10; } 40% { stroke-width: 19; } 100% { stroke-width: 10; } }
+  @media (prefers-reduced-motion: reduce) { .zp-svg.win polyline { animation: none; } }
+  .zp-halo { animation: zp-halo .9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes zp-halo { 50% { transform: scale(1.15); opacity: .7; } }
+  @media (prefers-reduced-motion: reduce) { .zp-halo { animation: none; } }
 </style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-zip">
+<body class="g-zip fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>zip</h1>
     <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">-</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Connect 1 → 2 → 3 → … filling every cell.</p>
-      <p class="status">Time: <span id="time">0:00</span> · Best: <span id="best">—</span></p>
       <button class="btn ghost tool-btn man-trigger" data-man="zip" data-man-title="ZIP(1)" type="button">
         how to <span class="q">?</span>
       </button>
@@ -129,9 +152,10 @@
   </ul>
 </template>
 
-<script defer src="../manpage.js"></script>
-<script defer src="../taunts.js"></script>
-<script defer src="../gamekit.js"></script>
-<script defer src="game.js"></script>
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=e3767aac"></script>
 </body>
 </html>

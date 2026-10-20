@@ -17,7 +17,8 @@
   const store = Gamekit.storage("lights-out:");
 
   let diff = "medium";
-  let mode = "whatsapp";      // "whatsapp" | "solo"
+  let mode = "whatsapp";      // "whatsapp" | "live" | "solo"
+  const isLinked = () => mode === "whatsapp" || mode === "live";
 
   function idx(r, c) { return r * N + c; }
   function inB(r, c) { return r >= 0 && r < N && c >= 0 && c < N; }
@@ -62,9 +63,11 @@
   let moves = 0;
   let won = false;
   let cellEls = [];
+  let curSeed = 0;       // the solo puzzle on screen can be rebuilt from this + diff
 
   function newPuzzle(seedOverride) {
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("lights-out", diff);
+    curSeed = seed;
     initial = generate(seed, DIFFS[diff]);
     board = new Uint8Array(initial);
     history = [];
@@ -127,7 +130,7 @@
   }
 
   undoBtn.addEventListener("click", () => {
-    if (mode === "whatsapp" || history.length === 0) return;
+    if (isLinked() || history.length === 0) return;
     board = history.pop();
     moves = Math.max(0, moves - 1);
     won = false;
@@ -136,7 +139,7 @@
   });
 
   resetBtn.addEventListener("click", () => {
-    if (mode === "whatsapp") return;
+    if (isLinked()) return;
     board = new Uint8Array(initial);
     history = [];
     moves = 0;
@@ -146,7 +149,7 @@
   });
 
   newBtn.addEventListener("click", () => {
-    if (mode === "whatsapp") return;
+    if (isLinked()) return;
     newPuzzle(Gamekit.randomSeed());
   });
 
@@ -173,6 +176,12 @@
   function bitsToInt(b) { let n = 0; for (let i = 0; i < N*N; i++) if (b[i]) n |= (1 << i); return n; }
   function intToBits(n) { const b = new Uint8Array(N*N); for (let i = 0; i < N*N; i++) b[i] = (n >> i) & 1; return b; }
 
+  function validateLo(s) {
+    return !!s.board && Number.isInteger(s.board.bits) && s.board.bits >= 0 && s.board.bits < (1 << (N*N)) &&
+      Number.isInteger(s.last) && s.last >= 0 && s.last < N*N;
+  }
+  const drawDetail = (s) => s.status === "draw" ? `Called a draw after ${MOVE_CAP} presses without clearing the board.` : "";
+
   const link = AsyncShare.start({
     game: "lights-out",
     version: 1,
@@ -181,20 +190,42 @@
     label: (p) => PLAYER_NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) =>
-      s.board && Number.isInteger(s.board.bits) && s.board.bits >= 0 && s.board.bits < (1 << (N*N)) &&
-      Number.isInteger(s.last) && s.last >= 0 && s.last < N*N,
+    validateBoard: validateLo,
     onState: loadLink,
-    detail: (s) => s.status === "draw" ? `Called a draw after ${MOVE_CAP} presses without clearing the board.` : "",
+    detail: drawDetail,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "lights-out",
+    version: 1,
+    players: [1, 2],
+    label: (p) => PLAYER_NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateLo,
+    onState: loadLink,
+    detail: drawDetail,
+  });
+  const activeLink = () => (mode === "live" && live ? live : link);
+
+  // The opening scramble. Kept stable while a game hasn't started, so a
+  // repaint (a live room refreshing presence, say) can't reshuffle it under
+  // the player. A new one is dealt only when a difficulty chip is tapped or
+  // after a game has been played.
+  let preview = null;
 
   function loadLink(s, canMove) {
     waInGame = !!s;
     waCanMove = canMove;
     waMoveCount = s ? s.moveCount : 0;
     waCurrent = s ? s.turn : 1;
-    if (s) { waBits = intToBits(s.board.bits); waLast = s.last; }
-    else { waBits = generate(Gamekit.randomSeed(), DIFFS[diff]); waLast = null; }
+    if (s) { waBits = intToBits(s.board.bits); waLast = s.last; preview = null; }
+    else {
+      if (!preview) preview = generate(Gamekit.randomSeed(), DIFFS[diff]);
+      waBits = new Uint8Array(preview);
+      waLast = null;
+    }
     setChipsEnabled(!waInGame);
     renderLink();
   }
@@ -224,17 +255,19 @@
     let status = "in_progress", winner = null;
     if (cleared) { status = "won"; winner = waCurrent; }
     else if (nextCount >= MOVE_CAP) { status = "draw"; }
-    link.commit({ board: { bits: bitsToInt(waBits) }, status, winner, last: idx(r, c) });
+    activeLink().commit({ board: { bits: bitsToInt(waBits) }, status, winner, last: idx(r, c) });
   }
 
   function applyMode() {
-    const wa = mode === "whatsapp";
+    const wa = isLinked();
     undoBtn.hidden = wa;
     resetBtn.hidden = wa;
     newBtn.hidden = wa;
     statsEl.hidden = wa;
-    if (wa) { link.show(); return; }
+    if (mode === "live" && live) { link.hide(); live.show(); return; }
+    if (wa) { if (live) live.hide(); link.show(); return; }
     link.hide();
+    if (live) live.hide();
     setChipsEnabled(true);
     newPuzzle();
   }
@@ -242,7 +275,7 @@
   // Difficulty chips — used for the pre-game puzzle preview in WhatsApp
   // mode (re-rolls it) and for solo puzzles; disabled once a WhatsApp game
   // has actually started, since the board no longer depends on difficulty.
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -250,7 +283,9 @@
     storageKey: "diff",
     onChange: (d) => {
       diff = d;
+      preview = null;                          // a new difficulty deals a new scramble
       if (mode === "whatsapp") { loadLink(null, true); return; }
+      if (mode === "live") return;             // the chips are off once a room is open anyway
       newPuzzle();
     },
   });
@@ -260,7 +295,42 @@
 
   modeSel.addEventListener("change", () => { mode = modeSel.value; applyMode(); });
 
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+    mode = "live";
+  } else if (live) {
+    LiveShare.enable(modeSel, "lights-out");
+  }
+
   modeSel.value = mode;
   applyMode();
+
+  // A refresh keeps a solo puzzle in progress: the lights, undo history and move count.
+  // (Link and online games are not saved here: they live in the URL / the room.)
+  const resumer = Gamekit.resume("lights-out", () => (mode !== "solo" || won || moves === 0) ? null : {
+    diff: diff, seed: curSeed, board: Array.from(board), history: history.map(h => Array.from(h)), moves: moves,
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.board) || s.board.length !== N * N) return false;
+    if (!s.board.every(v => v === 0 || v === 1)) return false;
+    mode = "solo"; modeSel.value = "solo";
+    diff = s.diff; chips.show(diff);
+    applyMode();                      // shows the solo controls, deals a puzzle
+    newPuzzle(s.seed);
+    board = new Uint8Array(s.board);
+    history = (Array.isArray(s.history) ? s.history : []).filter(h => Array.isArray(h) && h.length === N * N).map(h => new Uint8Array(h));
+    moves = Number.isInteger(s.moves) && s.moves >= 0 ? s.moves : history.length;
+    syncLights(); updateStatus();
+    return true;
+  });
+  // Only offer to resume when the player is not arriving from a shared / invite link.
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("lights-out"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

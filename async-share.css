@@ -1,6 +1,6 @@
 /* ============================================================
    async-share.css — share panel for play-by-link games.
-   Loaded after soft.css; uses the shared tokens only, plus
+   Loaded after shared.css; uses the shared tokens only, plus
    WhatsApp green on the send button so it's recognisable.
    ============================================================ */
 
@@ -27,7 +27,7 @@
    own providing top spacing - every board container's own CSS stops at
    its own bottom edge with no margin, so without this the resign button
    sat flush against it. */
-.wa-resign-row { margin-top: 14px; }
+.wa-resign-row { margin-top: 14px; min-height: 34px; }
 .wa-actions .btn {
   display: inline-flex;
   align-items: center;
@@ -51,13 +51,30 @@ body[class*="g-"] .panel .btn.wa-small {
   border-style: dashed;
 }
 
-.panel select {
-  background: var(--panel-2);
-  color: var(--fg);
-  border: 1px solid var(--border-hi);
-  border-radius: var(--r-md);
-  padding: 8px 10px;
-  font-family: inherit;
-  font-size: var(--fs-sm);
-  min-height: var(--tap);
+
+/* "Online": the way into live rooms (live-share.js cta()). A quiet accent outline. */
+body[class*="g-"] .panel .btn.live-cta {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: none;
 }
+body[class*="g-"] .panel .btn.live-cta:hover {
+  background: var(--bg-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+
+/* The room code in a live game's waiting panel: small, with Copy code right beside it. */
+.live-code-box { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 12px; }
+.live-code {
+  font-size: 22px; font-weight: 700; letter-spacing: 0.14em; line-height: 1.1; padding: 8px 12px 8px 16px;
+  border: 1px dashed var(--border-hi); border-radius: 10px; background: var(--panel-2); color: var(--fg);
+  -webkit-user-select: all; user-select: all;
+}
+
+/* two small buttons that belong together (Copy link + New game) share one row */
+.wa-actions.wa-pair { flex-wrap: nowrap; }
+.wa-actions.wa-pair .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; }

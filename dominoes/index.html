@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>dominoes · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Dominoes — the classic draw game for 2 to 4 players. Play online with computer players to fill the seats, or play the computer.">
+<meta property="og:title" content="Dominoes · play online with friends">
+<meta property="og:description" content="Match the ends, draw when you're stuck, first to 100.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../multiseat.css?v=031feb9b">
+<style>
+  .dm-opps { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; margin: 8px 0; }
+  .dm-opp { padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); text-align: center; min-height: 82px; }
+  .dm-opp.act { border-color: var(--accent); }
+  .dm-opp .nm { font-weight: 600; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dm-opp .st { font-size: 11px; color: var(--muted); min-height: 1.3em; }
+  .dm-opp .st.warn { color: var(--coral); }
+  .dm-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 4px; }
+  /* a domino: two halves, each a 3x3 grid of pips. Horizontal by default; .v stands it up (doubles in the line). --u is the half's size. */
+  .dm { --u: 30px; display: inline-flex; flex-direction: row; background: #fbf7ee; border: 1px solid #cdbfa3; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.3); padding: 0; position: relative; box-sizing: content-box; }
+  .dm.v { flex-direction: column; }
+  .dm .h { width: var(--u); height: var(--u); display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: calc(var(--u) * .14); box-sizing: border-box; }
+  .dm .h i { border-radius: 50%; margin: 8%; }
+  .dm .h i.on { background: #1d1a16; }
+  .dm::after { content: ""; position: absolute; background: #cdbfa3; }
+  .dm:not(.v)::after { left: 50%; top: 14%; bottom: 14%; width: 1px; }
+  .dm.v::after { top: 50%; left: 14%; right: 14%; height: 1px; }
+  .dm.back { background: repeating-linear-gradient(45deg, #6b3fb5, #6b3fb5 4px, #5a3299 4px, #5a3299 8px); border-color: #3d2270; }
+  .dm.back .h { visibility: hidden; }
+  .dm.sm { --u: 14px; border-radius: 3px; }
+  .dm.md { --u: 22px; border-radius: 4px; }
+  .dm.end { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .dm.hit { outline: 3px solid #2fbf7f; }
+  .dm-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3px; margin: 8px 0; padding: 10px; min-height: 76px; border: 1px solid var(--border-hi); border-radius: 14px; background: color-mix(in srgb, #2a6b4a 35%, var(--panel-2)); }
+  .dm-line .note { color: var(--muted); font-size: var(--fs-sm); }
+  .dm-info { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-sm); color: var(--muted); margin: 4px 0; }
+  .dm-banner { text-align: center; margin: 8px 0; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border-hi); background: var(--bg-2); font-size: var(--fs-md); font-weight: 600; min-height: 42px; display: flex; align-items: center; justify-content: center; }
+  .dm-banner.you { border-color: var(--accent); color: var(--accent); }
+  .dm-log { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; margin: 2px 0 6px; }
+  .dm-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; min-height: 40px; }
+  body.g-dominoes .panel .dm-tile { padding: 0; min-height: 0; min-width: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+  body.g-dominoes .panel .dm-tile .dm { --u: 34px; }
+  body.g-dominoes .panel .dm-tile.sel .dm { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-6px); }
+  body.g-dominoes .panel .dm-tile.dim .dm { opacity: .55; }
+  .dm-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 46px; }
+  .dm-actions .btn { flex: 1; min-width: 120px; min-height: 46px; }
+  .dm-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.6em; margin-top: 6px; }
+  #dm { display: none; }
+  #dm.on { display: block; }
+
+  /* chunky look: a teal room, a salmon table that turns blue while the bot thinks, grey tile backs up top, your tiles on a red floor */
+  html body.fun.g-dominoes { --fun-bg: #1b87a8; --fun-btn: #4aa3c2; --fun-chip: rgba(255,255,255,.1); --vs-bg: #0e5470; --vs-l: #ff7a7a; --vs-r: #3fd0c0; }
+  html body.fun.g-dominoes .dm-opps { grid-template-columns: 1fr; gap: 6px; margin: 4px 0 10px; }
+  html body.fun.g-dominoes .dm-opp { padding: 0; border: 0; background: none; min-height: 0; }
+  html body.fun.g-dominoes .dm-opp .nm { font-size: 15px; color: rgba(255,255,255,.75); font-weight: 400; }
+  html body.fun.g-dominoes .dm-opp .st { font-size: 12px; min-height: 0; color: rgba(255,255,255,.5); }
+  html body.fun.g-dominoes .dm-opp.act .nm { color: #fff; }
+  html body.fun.g-dominoes .dm-row { gap: 6px; margin-top: 6px; }
+  html body.fun.g-dominoes .dm.back { flex-direction: column; background: #b3a899; border: 2px solid #7d7366; border-radius: 6px; box-shadow: 0 3px 0 rgba(0,0,0,.22); }
+  html body.fun.g-dominoes .dm.back::after { background: #7d7366; top: 50%; left: 14%; right: 14%; width: auto; height: 1px; bottom: auto; }
+  html body.fun.g-dominoes .dm.sm { --u: 22px; }
+  html body.fun.g-dominoes .dm { border: 0; background: #fbf4e2; box-shadow: 0 3px 0 rgba(0,0,0,.18); border-radius: 7px; }
+  html body.fun.g-dominoes .dm::after { background: #d7c9a6; }
+  html body.fun.g-dominoes .dm.end { outline: 3px solid #ffbf2e; outline-offset: 1px; }
+  html body.fun.g-dominoes .dm-info { gap: 8px; margin: 0 0 8px; }
+  html body.fun.g-dominoes .dm-info span { padding: 4px 12px; border-radius: 999px; background: rgba(0,0,0,.22); color: #fff; font-size: 14px; }
+  /* the table */
+  html body.fun.g-dominoes .dm-line { height: 190px; min-height: 190px; overflow: hidden; box-sizing: border-box; margin: 0 -11px; padding: 18px 14px; gap: 5px; border: 0; border-radius: 0; background: radial-gradient(circle at 50% 45%, #fbb08f, #f7977a 70%); align-content: center; transition: background .35s; }
+  html body.fun.g-dominoes #dm:has(.dm-banner:not(.you)) .dm-line { background: radial-gradient(circle at 50% 45%, #8fc9e6, #62a8d0 70%); }
+  html body.fun.g-dominoes .dm-line .note { color: #5e2f22; font-size: 17px; text-align: center; }
+  html body.fun.g-dominoes .dm.md { --u: 25px; }
+  /* your turn */
+  html body.fun.g-dominoes .dm-banner { width: fit-content; max-width: 100%; box-sizing: border-box; margin: 10px auto 6px; padding: 8px 24px; border: 4px solid #fff; border-radius: 999px; background: #ff7b5c; color: #fff; font-size: 26px; font-weight: 400; min-height: 0; text-wrap: balance; }
+  html body.fun.g-dominoes .dm-banner.you { border-color: #fff; color: #fff; }
+  html body.fun.g-dominoes .dm-banner:not(.you) { background: rgba(0,0,0,.25); border-color: rgba(255,255,255,.5); font-size: 20px; }
+  html body.fun.g-dominoes .dm-log { color: rgba(255,255,255,.65); font-size: 14px; min-height: 1.3em; margin: 0 0 4px; }
+  html body.fun.g-dominoes .dm-hand { margin: 10px -11px 0; padding: 12px 12px 10px; gap: 8px; background: #c4503f; box-shadow: inset 0 6px 0 rgba(255,255,255,.18); border-radius: 26px 26px 0 0; min-height: 0; }
+  html body.fun.g-dominoes .panel .dm-tile { background: none; border: 0; box-shadow: none; padding: 0; min-height: 0; opacity: 1; }
+  html body.fun.g-dominoes .panel .dm-tile:active { transform: none; }
+  html body.fun.g-dominoes .panel .dm-tile .dm { --u: 38px; }
+  html body.fun.g-dominoes .panel .dm-tile.sel .dm { outline: 0; box-shadow: 0 0 0 4px #ffbf2e, 0 3px 0 4px #c98a00; transform: translateY(-10px); }
+  html body.fun.g-dominoes .panel .dm-tile.dim .dm { opacity: .45; }
+  html body.fun.g-dominoes .dm-hint { color: rgba(255,255,255,.6); font-size: 14px; }
+  html body.fun.g-dominoes .dm-actions { margin-top: 12px; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-dominoes fun" data-fun-zone="slim" data-fun-reset data-fun-vs="YOU,BOT">
+<main class="wrap">
+  <div class="topbar">
+    <h1>dominoes</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="dominoes" data-man-title="DOMINOES(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="bots" aria-label="Computer players">
+        <option data-short="1 computer" value="1" selected>1 computer player</option>
+        <option data-short="2 computers" value="2">2 computer players</option>
+        <option data-short="3 computers" value="3">3 computer players</option>
+      </select>
+    </div>
+    <span id="score" hidden></span>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="dm" data-board data-reserve>
+      <div class="dm-opps" id="dm-opps"></div>
+      <div class="dm-info" id="dm-info"></div>
+      <div class="dm-line" id="dm-line" aria-label="The line of dominoes"></div>
+      <div class="dm-banner" id="dm-banner"></div>
+      <div class="dm-log" id="dm-log"></div>
+      <div class="dm-hand" id="dm-hand" aria-label="Your dominoes"></div>
+      <div class="dm-actions" id="dm-actions"></div>
+      <div class="dm-hint" id="dm-hint"></div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-dominoes">
+  <h2>Name</h2>
+  <p>dominoes — the classic draw game, a double-six set, 2 to 4 players.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>28 tiles. With 2 or 3 players everyone takes <strong>7</strong>; with 4, <strong>5</strong>. The rest are the <strong>boneyard</strong>.</li>
+    <li>The first round starts with whoever holds the <strong>highest double</strong> (or the highest tile if nobody has one); they must play it. After that the winner of the last round starts, with any tile.</li>
+    <li>On your turn, play a tile with a number that matches <strong>one end</strong> of the line. If you can't, you <strong>draw</strong> from the boneyard until you can. If the boneyard is empty, you <strong>pass</strong>.</li>
+    <li>The round ends when someone plays their <strong>last tile</strong>: they score all the pips left in the other players' hands. If nobody can play (a <strong>block</strong>), the player with the fewest pips left wins the round and scores the others' pips minus their own; a tie scores nothing.</li>
+    <li>First to <strong>100</strong> points wins the game.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap a tile to lift it, then tap the end of the line you want it on (<code>Left</code> or <code>Right</code>). If a tile fits only one end, tap it twice. If a tile doesn't fit, you'll be told why.</li>
+    <li><code>Draw</code> and <code>Pass</code> appear when they're your only choice. Against the computer, pick <strong>Easy / Medium / Hard</strong> and 1 to 3 computer players.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Tap <strong>Online room</strong>, create a room and send the invite link. Up to 4 seats, and the host can add computer players to fill them.</li>
+    <li>The server shuffles and deals and holds everyone's tiles: your browser is only ever sent your own. If you drop out for 90 seconds a computer plays for you until you come back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Play your heavy tiles and doubles early (they cost the most if you get stuck), keep a spread of numbers so you always have a move, and watch what your opponents draw or pass on: they have none of that number.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../multiseat.js?v=15143c7e"></script>
+<script defer src="engine.js?v=daed1ed7"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=861aff59"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
    async-share.js encodes them. */
 
 import LZString from "../vendor/lz-string.min.js";
-import { ogFor, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
+import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
 
 const enc = (o) =>
   LZString.compressToEncodedURIComponent(JSON.stringify(o)).replace(/\+/g, "_");
@@ -45,6 +45,15 @@ check("chess maps b -> Black",
   { title: "Your move · chess",
     description: "You're Black, 12 moves in. Open the board to play your turn." });
 
+check("battleship in progress",
+  ogFor("/battleship/", state({ g: "battleship", t: 2, n: 4 })),
+  { title: "Your move · battleship",
+    description: "You're Player 2, 4 moves in. Open the board to play your turn." });
+check("mastermind uses role names",
+  ogFor("/mastermind/", state({ g: "mastermind", t: 2, n: 1 })),
+  { title: "Your move · mastermind",
+    description: "You're Codebreaker, 1 move in. Open the board to play your turn." });
+
 console.log("\nfinished games:");
 check("a win names the winner",
   ogFor("/reversi/", state({ g: "reversi", t: 1, s: "w", w: 2, n: 30 })),
@@ -54,6 +63,19 @@ check("a draw",
   ogFor("/tic-tac-toe/", state({ g: "tic-tac-toe", v: 2, t: "X", s: "d", n: 9 })),
   { title: "Draw · tic-tac-toe",
     description: "Game over after 9 moves. Open to see the final board." });
+
+console.log("\nlive invite links:");
+check("valid tic-tac-toe invite",
+  ogForLive("/tic-tac-toe/", "K7P2QX"),
+  { title: "Join a live game · tic-tac-toe",
+    description: "You've been invited to play tic-tac-toe in real time. Tap to join, no sign-up." });
+check("every multi-seat card game gets an invite preview",
+  ["/crazy-8/", "/liars-dice/", "/dominoes/"].map((p) => ogForLive(p, "K7P2QX") !== null), [true, true, true]);
+check("game without live mode is left alone", ogForLive("/chess/", "K7P2QX"), null);
+check("bad code is left alone", ogForLive("/tic-tac-toe/", "k7p2qx"), null);
+check("ambiguous characters are not valid", ogForLive("/tic-tac-toe/", "K7P2QO"), null);
+check("missing code", ogForLive("/tic-tac-toe/", null), null);
+check("the code is never echoed", JSON.stringify(ogForLive("/tic-tac-toe/", "K7P2QX")).includes("K7P2QX"), false);
 
 console.log("\nanything suspect falls back to the page's static tags (null):");
 check("no state param", ogFor("/tic-tac-toe/", null), null);

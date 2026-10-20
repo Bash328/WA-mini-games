@@ -21,8 +21,13 @@
   if (!DEPTHS[diff]) diff = "medium";
   let mode = store.get("mode", "whatsapp");
   if (!["whatsapp", "ai-first-p1", "ai-first-p2", "local"].includes(mode)) mode = "whatsapp";
-  // A shared link always opens the two-player game.
+  // A shared link always opens the two-player game; a ?live= invite opens a live room.
+  const invited = new URLSearchParams(location.search).has("live");
   if (new URLSearchParams(location.search).has("s")) mode = "whatsapp";
+  else if (invited) mode = "live";
+  // Both link modes share the same board and state envelope; only the way a
+  // move travels differs (a link vs a live socket).
+  const isLinked = () => mode === "whatsapp" || mode === "live";
   modeSel.value = mode;
 
   let grid = newGrid();       // 6×7, grid[r][c]
@@ -72,15 +77,57 @@
     }
   }
 
+  // A disc that has just landed falls from above its column and bounces. The falling disc is a separate
+  // piece; its target square stays an empty hole until it lands (skipped when many discs appear at once:
+  // a refresh, an undo, a new game).
+  let shown = new Uint8Array(ROWS * COLS);
+  const falling = new Set();
+  function dropAnim(fresh) {
+    const noMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (noMotion || fresh.length === 0 || fresh.length > 2) return;
+    if (getComputedStyle(boardEl).position === "static") boardEl.style.position = "relative";
+    const step = boardEl.children[COLS].offsetTop - boardEl.children[0].offsetTop;
+    for (const i of fresh) {
+      const slot = boardEl.children[i], r = Math.floor(i / COLS), d = (r + 1) * step;
+      const disc = document.createElement("div");
+      disc.className = "c4-slot c4-fall " + (grid[r][i % COLS] === P1 ? "p1" : "p2");
+      disc.style.cssText = "position:absolute;z-index:3;pointer-events:none;animation:none;left:" + slot.offsetLeft + "px;top:" + slot.offsetTop + "px;width:" + slot.offsetWidth + "px;height:" + slot.offsetHeight + "px";
+      boardEl.appendChild(disc);
+      falling.add(i);
+      const a = disc.animate([
+        { transform: "translateY(" + -d + "px)", offset: 0, easing: "cubic-bezier(.5,0,1,.6)" },
+        { transform: "translateY(0)", offset: 0.62, easing: "ease-out" },
+        { transform: "translateY(" + -d * 0.07 + "px)", offset: 0.78, easing: "ease-in" },
+        { transform: "translateY(0)", offset: 0.9, easing: "ease-out" },
+        { transform: "translateY(" + -d * 0.02 + "px)", offset: 0.95, easing: "ease-in" },
+        { transform: "translateY(0)", offset: 1 },
+      ], { duration: 420 + r * 70 });
+      a.onfinish = a.oncancel = () => {
+        disc.remove();
+        falling.delete(i);
+        const rr = Math.floor(i / COLS), cc = i % COLS;
+        if (grid[rr][cc] === P1) slot.classList.add("p1"); else if (grid[rr][cc] === P2) slot.classList.add("p2");
+      };
+    }
+  }
+
   function renderBoard() {
+    const fresh = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      if (grid[r][c] !== EMPTY && shown[i] === EMPTY) fresh.push(i);
+      shown[i] = grid[r][c];
+    }
+    dropAnim(fresh);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const i = r * COLS + c;
         const el = boardEl.children[i];
         el.classList.remove("p1", "p2", "win", "last");
-        if (grid[r][c] === P1) el.classList.add("p1");
+        if (falling.has(i)) { /* still falling: shown as an empty hole until it lands */ }
+        else if (grid[r][c] === P1) el.classList.add("p1");
         else if (grid[r][c] === P2) el.classList.add("p2");
-        if (mode === "whatsapp" && lastSlot === i) el.classList.add("last");
+        if (isLinked() && lastSlot === i) el.classList.add("last");
       }
     }
     if (winLine) {
@@ -91,7 +138,7 @@
     // Disable full columns
     for (let c = 0; c < COLS; c++) {
       const btn = colsEl.children[c];
-      btn.disabled = gameOver || thinking || grid[0][c] !== EMPTY || (mode === "whatsapp" && !linkCanMove);
+      btn.disabled = gameOver || thinking || grid[0][c] !== EMPTY || (isLinked() && !linkCanMove);
     }
   }
 
@@ -253,7 +300,7 @@
   }
 
   function onColClick(c) {
-    if (mode === "whatsapp") return playLink(c);
+    if (isLinked()) return playLink(c);
     if (gameOver || thinking || mode !== "local" && current !== humanIs) return;
     if (!playMove(c)) return;
     advance();
@@ -272,7 +319,7 @@
       const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
         ? (last.p === P1 ? "Red" : "Yellow") + " wins. " + (loser === P1 ? "Red" : "Yellow") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
-        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "AI wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
+        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
       Gamekit.turn(null);
     } else if (isFull(grid)) {
@@ -297,11 +344,11 @@
       statusEl.textContent = (current === P1 ? "Red" : "Yellow") + " to move." + (note ? " " + note : "");
       Gamekit.turn(current, (current === P1 ? "Red" : "Yellow") + " to move");
     } else if (current === humanIs) {
-      statusEl.textContent = "Your turn · drop a checker." + (note ? " " + note : "");
+      statusEl.textContent = "Your turn." + (note ? " " + note : "");
       Gamekit.turn(current, "Your turn · you're " + (current === P1 ? "Red" : "Yellow"));
     } else {
-      statusEl.textContent = "AI thinking…";
-      Gamekit.turn(current, "AI thinking…", true);
+      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(current, "Computer thinking…", true);
     }
   }
 
@@ -321,21 +368,23 @@
         const col = pickAIMove(current);
         thinking = false;
         if (col >= 0) playMove(col);
-      }, 150);
+      }, 800);
     }
   }
 
   function applyMode() {
-    const wa = mode === "whatsapp";
+    const wa = isLinked();
     chipsEl.hidden = wa;
     undoBtn.hidden = wa;
     legendEl.innerHTML = wa ? LEGEND_LINK : LEGEND_SOLO;
     if (wa) {
       cancelAI();
-      link.show();
+      if (mode === "live" && live) { link.hide(); live.show(); }
+      else { if (live) live.hide(); link.show(); }
       return;
     }
     link.hide();
+    if (live) live.hide();
     if (mode === "ai-first-p1") humanIs = P1;
     else if (mode === "ai-first-p2") humanIs = P2;
     else humanIs = P1; // unused in local
@@ -364,6 +413,15 @@
   const COLORS = { [P1]: "Red", [P2]: "Yellow" };
   const LEGEND_LINK = 'Red <span class="c4-key p1">●</span> · Yellow <span class="c4-key p2">●</span>';
 
+  function validateC4(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== ROWS * COLS || !/^[012]+$/.test(b)) return false;
+    // a resignation adds a move to the count without adding a checker
+    const filled = b.split("").filter(c => c !== "0").length;
+    if (filled !== s.moveCount && !(s.resigned && filled === s.moveCount - 1)) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
+  }
+
   const link = AsyncShare.start({
     game: "connect-four",
     version: 2,
@@ -372,14 +430,22 @@
     label: (p) => COLORS[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== ROWS * COLS || !/^[012]+$/.test(b)) return false;
-      if (b.split("").filter(c => c !== "0").length !== s.moveCount) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
-    },
+    validateBoard: validateC4,
     onState: loadLink,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "connect-four",
+    version: 2,
+    players: [P1, P2],
+    label: (p) => COLORS[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateC4,
+    onState: loadLink,
+  });
+  const activeLink = () => (mode === "live" && live ? live : link);
 
   function loadLink(state, canMove) {
     cancelAI();
@@ -403,7 +469,7 @@
     makeMove(c, current);
     const last = history[history.length - 1];
     const win = winAt(grid, last.r, last.c, last.p);
-    link.commit({
+    activeLink().commit({
       board: grid.flatMap(row => Array.from(row)).join(""),
       status: win ? "won" : isFull(grid) ? "draw" : "in_progress",
       winner: win ? last.p : null,
@@ -412,31 +478,34 @@
   }
 
   undoBtn.addEventListener("click", () => {
-    if (thinking || mode === "whatsapp") return;
+    if (thinking || isLinked()) return;
     if (history.length === 0) return;
-    // Undo last move; in AI mode, undo the pair so it's the player's turn again.
+    // Undo the last move. Against the computer, keep undoing until it is the
+    // HUMAN's turn again: after the computer's winning move that means taking
+    // back its move and yours, and if the human plays second and everything is
+    // undone, the computer simply opens again. (It used to stop after one
+    // move and leave the page on "Computer thinking" with nothing moving.)
+    cancelAI();
+    const next = () => (history.length % 2 === 0 ? P1 : P2);
     undoMove();
-    if (mode !== "local" && !gameOver && history.length > 0) {
-      const last = history[history.length - 1];
-      if (last.p === humanIs) undoMove();
-    }
+    while (mode !== "local" && history.length > 0 && next() !== humanIs) undoMove();
     gameOver = false;
     winLine = null;
-    // Recompute whose turn it is based on history
-    current = history.length % 2 === 0 ? P1 : P2;
+    current = next();
     renderBoard();
     updateTurnStatus();
+    if (mode !== "local" && current !== humanIs) advance();   // the computer's turn: make it move
   });
 
-  resetBtn.addEventListener("click", () => (mode === "whatsapp" ? link.newGame() : reset()));
+  resetBtn.addEventListener("click", () => (isLinked() ? activeLink().newGame() : reset()));
 
   modeSel.addEventListener("change", () => {
     mode = modeSel.value;
-    store.set("mode", mode);
+    if (mode !== "live") store.set("mode", mode);   // a live room is never the remembered default
     applyMode();
   });
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -449,7 +518,45 @@
   if (!DEPTHS[diff]) diff = "medium";
 
   // Init
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  if (live && !invited) {
+    LiveShare.enable(modeSel, "connect-four");
+  } else if (live && invited) {
+    liveOpt.hidden = false;
+  }
+  modeSel.value = mode;
   renderShell();
   applyMode();
+
+  // A refresh keeps a game against the computer (or on one device): it is rebuilt
+  // by replaying the moves. Link and online games are not saved here.
+  const resumer = Gamekit.resume("connect-four", () => (isLinked() || gameOver || history.length === 0) ? null : {
+    mode: mode, diff: diff, moves: history.map(h => [h.r, h.c, h.p]),
+  }, (s) => {
+    if (!["ai-first-p1", "ai-first-p2", "local"].includes(s.mode) || !DEPTHS[s.diff] || !Array.isArray(s.moves) || s.moves.length > ROWS * COLS) return false;
+    // replay on a scratch grid first: every move must be a legal drop by the right player
+    const g = newGrid();
+    for (let i = 0; i < s.moves.length; i++) {
+      const m = s.moves[i];
+      if (!Array.isArray(m) || m.length !== 3) return false;
+      const [r, c, p] = m;
+      if (!Number.isInteger(c) || c < 0 || c >= COLS || dropRow(g, c) !== r || p !== (i % 2 === 0 ? P1 : P2)) return false;
+      g[r][c] = p;
+    }
+    mode = s.mode; modeSel.value = mode; store.set("mode", mode);
+    diff = s.diff; chips.show(diff);
+    applyMode();                          // resets the game for that mode
+    cancelAI();
+    grid = g; history = s.moves.map(([r, c, p]) => ({ r, c, p }));
+    gameOver = false; winLine = null;
+    current = history.length % 2 === 0 ? P1 : P2;
+    renderBoard(); updateTurnStatus();
+    if (mode !== "local" && current !== humanIs) advance();
+    return true;
+  });
+  if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("connect-four"));
 })();

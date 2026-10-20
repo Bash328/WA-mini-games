@@ -84,7 +84,34 @@
       boardEl.appendChild(cell);
     }
     const cnt = counts(board);
-    scoreEl.textContent = `Black ${cnt[BLACK]} · White ${cnt[WHITE]}`;
+    scoreEl.textContent = `Black: ${cnt[BLACK]} · White: ${cnt[WHITE]}`;
+    animateMove(board);
+  }
+
+  // After one move: the new disc pops in and the flipped ones turn over in a wave out from it.
+  // (Not on a new game, a refresh or an undo: those change many discs at once.)
+  let shownBoard = null;
+  function animateMove(board) {
+    const prev = shownBoard;
+    shownBoard = board.slice();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (still || !prev || prev.length !== board.length) return;
+    const fresh = [], flipped = [];
+    for (let i = 0; i < board.length; i++) {
+      if (!prev[i] && board[i]) fresh.push(i);
+      else if (prev[i] && board[i] && prev[i] !== board[i]) flipped.push(i);
+    }
+    if (fresh.length !== 1 || !flipped.length) return;
+    const at = fresh[0], dist = (i) => Math.max(Math.abs(Math.floor(i / N) - Math.floor(at / N)), Math.abs(i % N - at % N));
+    const disc = (i) => boardEl.children[i].querySelector(".rv-disc");
+    disc(at).animate([{ transform: "scale(.2)" }, { transform: "scale(1.18)", offset: 0.6 }, { transform: "scale(1)" }], { duration: 260, easing: "ease-out" });
+    for (const i of flipped) {
+      const d = disc(i), now = board[i] === BLACK ? "black" : "white", was = board[i] === BLACK ? "white" : "black";
+      const delay = 120 + 90 * (dist(i) - 1), dur = 380;
+      d.classList.remove(now); d.classList.add(was);                                  // keep showing the old colour until half way
+      d.animate([{ transform: "scaleX(1)" }, { transform: "scaleX(0.04)", offset: 0.5 }, { transform: "scaleX(1)" }], { duration: dur, delay: delay, easing: "ease-in-out", fill: "backwards" });
+      setTimeout(() => { d.classList.remove(was); d.classList.add(now); }, delay + dur / 2);
+    }
   }
 
   // ---------- 2 players over WhatsApp ----------
@@ -94,6 +121,16 @@
   // control returns to the same player (nextTurn), or — if neither side can
   // move — the game ends right here, using async-share's nextTurn/"another
   // turn" support (see async-share.js).
+  function validateReversi(s) {
+    const b = s.board;
+    if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
+    return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
+  }
+  function finalCount(s) {
+    const cnt = counts(s.board.split("").map(Number));
+    return `Final: Black ${cnt[BLACK]} · White ${cnt[WHITE]}.`;
+  }
+
   const link = AsyncShare.start({
     game: "reversi",
     version: 1,
@@ -102,17 +139,24 @@
     label: (p) => NAMES[p],
     ui: document.getElementById("wa-ui"),
     statusEl: statusEl,
-    validateBoard: (s) => {
-      const b = s.board;
-      if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
-    },
+    validateBoard: validateReversi,
     onState: loadLink,
-    detail: (s) => {
-      const cnt = counts(s.board.split("").map(Number));
-      return `Final: Black ${cnt[BLACK]} · White ${cnt[WHITE]}.`;
-    },
+    detail: finalCount,
   });
+
+  // Live online play: same board and rules, moves go over a WebSocket room.
+  const live = typeof LiveShare === "undefined" ? null : LiveShare.start({
+    game: "reversi",
+    version: 1,
+    players: [BLACK, WHITE],
+    label: (p) => NAMES[p],
+    ui: document.getElementById("wa-ui"),
+    statusEl: statusEl,
+    validateBoard: validateReversi,
+    onState: loadLink,
+    detail: finalCount,
+  });
+  const activeLink = () => (modeSel.value === "live" && live ? live : link);
 
   let waBoard = initialBoard();
   let waCurrent = BLACK;
@@ -148,7 +192,7 @@
         nextTurn = waCurrent; // opponent has no legal move — pass back
       }
     }
-    link.commit({ board: board.join(""), status, winner, last: i, nextTurn });
+    activeLink().commit({ board: board.join(""), status, winner, last: i, nextTurn });
   }
 
   // ---------- 2 players, same device ----------
@@ -217,16 +261,44 @@
   }
 
   function applyMode() {
-    const wa = modeSel.value === "whatsapp";
-    resetBtn.hidden = wa;
-    if (wa) { link.show(); return; }
+    const m = modeSel.value;
+    resetBtn.hidden = m === "whatsapp" || m === "live";
+    if (m === "live" && live) { link.hide(); live.show(); return; }
+    if (m === "whatsapp") { if (live) live.hide(); link.show(); return; }
     link.hide();
+    if (live) live.hide();
     resetLocal();
   }
 
   resetBtn.addEventListener("click", resetLocal);
   modeSel.addEventListener("change", applyMode);
+  // A refresh keeps a same-device game: rebuilt from a saved snapshot.
+  // (Link games live in the URL, so they are not saved here.)
+  const resumer = Gamekit.resume("reversi", () => (modeSel.value !== "local" || localOver || localLast === null) ? null : {
+    board: localBoard, current: localCurrent, last: localLast,
+  }, (s) => {
+    if (!Array.isArray(s.board) || s.board.length !== N * N || !s.board.every(v => v === 0 || v === 1 || v === 2)) return false;
+    if (s.current !== BLACK && s.current !== WHITE) return false;
+    modeSel.value = "local"; applyMode();
+    localBoard = s.board.slice(); localCurrent = s.current;
+    localLast = Number.isInteger(s.last) ? s.last : null; localOver = false;
+    renderLocal();
+    return true;
+  });
+
+  // The live option stays hidden until the server says live play is on for
+  // this game. A ?live=CODE invite link opens straight into live mode (the
+  // way ?s= does for WhatsApp mode); LiveShare explains if it's switched off.
+  const liveOpt = modeSel.querySelector('option[value="live"]');
+  const invited = new URLSearchParams(location.search).has("live");
+  if (live && invited) {
+    liveOpt.hidden = false;
+    modeSel.value = "live";
+  } else if (live) {
+    LiveShare.enable(modeSel, "reversi");
+  }
   applyMode();
+  if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("reversi"));
 
   // Exposed only so the e2e suite can drive edge cases (a pass, a double

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>liar's dice · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Liar's Dice (Perudo) — bid on how many dice are on the table, or call the bluff. Up to 4 players online with computer players to fill the seats, or play the computer.">
+<meta property="og:title" content="Liar's Dice · bluff your friends online">
+<meta property="og:description" content="Everyone rolls in secret. Bid, bluff, or call dudo.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../multiseat.css?v=031feb9b">
+<style>
+  .ld-opps { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 8px 0; }
+  .ld-opp { padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); text-align: center; min-height: 86px; }
+  .ld-opp.act { border-color: var(--accent); }
+  .ld-opp.gone { opacity: .45; }
+  .ld-opp .nm { font-weight: 600; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ld-opp .st { font-size: 11px; color: var(--muted); min-height: 1.3em; }
+  .ld-opp .st.warn { color: var(--coral); }
+  .ld-dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 4px; }
+  /* a die: a rounded square with up to nine pips on a 3x3 grid */
+  .ld-die { position: relative; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); width: 30px; height: 30px; padding: 4px; box-sizing: border-box; border-radius: 7px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .ld-die i { border-radius: 50%; margin: 8%; background: transparent; }
+  .ld-die i.on { background: #1d1a16; }
+  .ld-die.wild i.on { background: #c0392b; }
+  .ld-die.hit { outline: 3px solid #2fbf7f; outline-offset: 1px; }
+  .ld-die.back { background: repeating-linear-gradient(45deg, #6b3fb5, #6b3fb5 4px, #5a3299 4px, #5a3299 8px); border-color: #3d2270; }
+  .ld-die.sm { width: 20px; height: 20px; padding: 2px; border-radius: 5px; }
+  .ld-die.lg { width: 44px; height: 44px; padding: 6px; border-radius: 10px; }
+  .ld-bid { text-align: center; margin: 8px 0; padding: 10px; border: 1px solid var(--border-hi); border-radius: 14px; background: var(--panel-2); min-height: 78px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .ld-bid .q { font-size: 34px; font-weight: 700; }
+  .ld-bid .by { font-size: var(--fs-sm); color: var(--muted); width: 100%; }
+  .ld-banner { text-align: center; margin: 8px 0; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border-hi); background: var(--bg-2); font-size: var(--fs-md); font-weight: 600; min-height: 42px; display: flex; align-items: center; justify-content: center; }
+  .ld-banner.you { border-color: var(--accent); color: var(--accent); }
+  .ld-log { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 2.6em; margin: 2px 0 6px; }
+  .ld-mine { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; min-height: 52px; }
+  .ld-bidbox { display: grid; gap: 8px; margin: 8px 0; }
+  .ld-qty { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .ld-qty .n { font-size: 28px; font-weight: 700; min-width: 2.2em; text-align: center; }
+  body.g-liars-dice .panel .ld-step { min-height: 44px; min-width: 44px; padding: 0; font-size: 22px; border-radius: 12px; }
+  .ld-faces { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  body.g-liars-dice .panel .ld-face { min-height: 52px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 10px; font-size: 11px; background: var(--panel-2); border: 1px solid var(--border-hi); color: var(--fg); }
+  body.g-liars-dice .panel .ld-face.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+  body.g-liars-dice .panel .ld-face:disabled { opacity: .35; }
+  .ld-actions { display: flex; gap: 8px; }
+  .ld-actions .btn { flex: 1; min-height: 46px; }
+  .ld-hint { text-align: center; color: var(--muted); font-size: var(--fs-sm); min-height: 1.4em; }
+  #ld { display: none; }
+  #ld.on { display: block; }
+
+  /* chunky look: a dark wood room, a green felt table showing the bid, your dice on a red floor */
+  html body.fun.g-liars-dice { --fun-bg: #2f2218; --fun-btn: #8a6a4a; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-liars-dice .ld-opps { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; margin: 4px 0 10px; }
+  html body.fun.g-liars-dice .ld-opp { padding: 0; border: 0; background: none; min-height: 0; }
+  html body.fun.g-liars-dice .ld-opp .nm { font-size: 15px; color: rgba(255,255,255,.75); font-weight: 400; }
+  html body.fun.g-liars-dice .ld-opp .st { font-size: 12px; min-height: 0; color: rgba(255,255,255,.5); }
+  html body.fun.g-liars-dice .ld-opp.act .nm { color: #fff; }
+  html body.fun.g-liars-dice .ld-opp.act .ld-dice { outline: 0; }
+  html body.fun.g-liars-dice .ld-die { border: 0; background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  html body.fun.g-liars-dice .ld-die i.on { background: #2f3a46; }
+  html body.fun.g-liars-dice .ld-die.wild i.on { background: #e8353a; }
+  html body.fun.g-liars-dice .ld-die.back { background: #6a4a8a; box-shadow: 0 3px 0 #46305e; }
+  html body.fun.g-liars-dice .ld-die.hit { outline: 3px solid #2fbf7f; }
+  /* the table */
+  html body.fun.g-liars-dice .ld-bid { margin: 0 -11px; padding: 12px 14px; min-height: 128px; border: 0; border-radius: 0; background: radial-gradient(circle at 50% 40%, #2f8a55, #1f6b40 75%); color: #fff; justify-content: center; align-content: center; gap: 6px; }
+  html body.fun.g-liars-dice .ld-bid .q { font-size: 44px; font-weight: 400; color: #fff; }
+  html body.fun.g-liars-dice .ld-bid .by { font-size: 16px; color: rgba(255,255,255,.8); }
+  html body.fun.g-liars-dice .ld-banner { width: fit-content; max-width: 100%; box-sizing: border-box; margin: 10px auto 6px; padding: 8px 24px; border: 4px solid #fff; border-radius: 999px; background: #e07a5f; color: #fff; font-size: 22px; font-weight: 400; min-height: 0; text-wrap: balance; }
+  html body.fun.g-liars-dice .ld-banner.you { border-color: #fff; color: #fff; }
+  html body.fun.g-liars-dice .ld-banner:not(.you) { background: rgba(0,0,0,.25); border-color: rgba(255,255,255,.5); font-size: 19px; }
+  html body.fun.g-liars-dice .ld-log { color: rgba(255,255,255,.65); font-size: 14px; }
+  html body.fun.g-liars-dice .ld-mine { margin: 6px -11px 0; padding: 12px 12px; gap: 10px; background: #8f2e2e; border-radius: 26px 26px 0 0; min-height: 0; }
+  html body.fun.g-liars-dice .ld-mine .ld-die.lg { width: 52px; height: 52px; padding: 8px; border-radius: 12px; }
+  html body.fun.g-liars-dice .ld-faces { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  html body.fun.g-liars-dice .panel .ld-face { min-width: 0; }
+  html body.fun.g-liars-dice .ld-hint { color: rgba(255,255,255,.6); font-size: 14px; }
+  html body.fun.g-liars-dice .ld-qty .n { font-weight: 400; font-size: 32px; }
+  html body.fun.g-liars-dice .panel .ld-step { border-radius: 14px; min-height: 48px; min-width: 52px; }
+  html body.fun.g-liars-dice .panel .ld-face { background: #fff; color: #2f3a46; border: 0; box-shadow: 0 4px 0 #b9c2cc; border-radius: 12px; opacity: 1; }
+  html body.fun.g-liars-dice .panel .ld-face.sel { outline: 0; box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; transform: translateY(-3px); }
+  html body.fun.g-liars-dice .panel .ld-face:disabled { opacity: .35; }
+  html body.fun.g-liars-dice .ld-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-liars-dice fun" data-fun-zone="slim" data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>liar's dice</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="liars-dice" data-man-title="LIARS-DICE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="bots" aria-label="Computer players">
+        <option data-short="1 computer" value="1">1 computer player</option>
+        <option data-short="2 computers" value="2" selected>2 computer players</option>
+        <option data-short="3 computers" value="3">3 computer players</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="ld" data-board data-reserve>
+      <div class="ld-opps" id="ld-opps"></div>
+      <div class="ld-bid" id="ld-bid"></div>
+      <div class="ld-banner" id="ld-banner"></div>
+      <div class="ld-log" id="ld-log"></div>
+      <div class="ld-mine" id="ld-mine" aria-label="Your dice"></div>
+      <div class="ld-bidbox" id="ld-bidbox"></div>
+      <div class="ld-hint" id="ld-hint"></div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-liars-dice">
+  <h2>Name</h2>
+  <p>liar's dice — also called Perudo. Bluff, count and call it.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>2 to 4 players, <strong>5 dice each</strong>. Everyone rolls under a cup: you see <strong>only your own dice</strong>.</li>
+    <li>On your turn, either <strong>bid</strong> or call <strong>dudo</strong> ("I doubt it").</li>
+    <li>A bid is a claim about <strong>all the dice on the table</strong>, everyone's: "at least 4 dice show 3". The next bid has to go up: <strong>more dice</strong>, or the <strong>same number of a higher face</strong>.</li>
+    <li><strong>Ones are wild.</strong> When the dice are counted for a bid on 2 to 6, every 1 counts too. (A bid on 1s counts only 1s.)</li>
+    <li>To bid on 1s you may <strong>halve</strong> the number (rounded up). To go from 1s back to another face you must <strong>double it and add one</strong>. The opening bid can't be on 1s.</li>
+    <li><strong>Dudo:</strong> everyone shows their dice and they're counted. If the bid was true or better, <strong>the caller loses a die</strong>. If it was a lie, <strong>the bidder loses a die</strong>.</li>
+    <li>Whoever lost a die starts the next round. At no dice you're out. <strong>Last player with dice wins.</strong></li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Set the number with <code>−</code> and <code>+</code>, tap a face, then <code>Bid</code>. Faces you can't bid on right now are dimmed. <code>Dudo!</code> calls the last bid.</li>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and 1 to 3 computer players.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Tap <strong>Online room</strong>, create a room and send the invite link. Up to 4 seats. The host can add computer players to fill them, and starts the game.</li>
+    <li>The server rolls the dice and keeps them: your browser is only ever sent your own. If you drop out for 90 seconds a computer plays for you until you come back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">With 10 dice on the table, about a third of them show any given face (once the wild ones count). Open with what you hold, nudge the bid up one step at a time, and call dudo when a bid asks for far more than your own dice and the odds can support.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../multiseat.js?v=15143c7e"></script>
+<script defer src="engine.js?v=05d7ade0"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=3499cc4f"></script>
+</body>
+</html>

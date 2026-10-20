@@ -1,6 +1,7 @@
 const N = 4;
 const store = Gamekit.storage('2048:');
 let grid, score, over, mergedCells;
+let lastSpawn = null, lastMoves = null, animToken = 0;   // what the last move did, so render() can slide the tiles
 
 // four = chance a new tile is a 4 instead of a 2. evil = chance the new tile
 // goes in the cell that does the player the most harm instead of a random one.
@@ -24,6 +25,7 @@ function addTile() {
   const v = Math.random() < d.four ? 4 : 2;
   const [r,c] = Math.random() < d.evil ? worstSpot(spots, v) : spots[Math.floor(Math.random()*spots.length)];
   grid[r][c] = v;
+  lastSpawn = [r, c];
 }
 
 // The empty cell where a new tile v hurts most: wedged between very different
@@ -51,13 +53,66 @@ function render() {
     const v = grid[r][c];
     const d = document.createElement('div');
     d.className = 'tile' + (v ? ' t'+v : '');
-    if (mergedCells && mergedCells.has(r*N+c)) d.classList.add('merged');
     d.textContent = v || '';
     el.appendChild(d);
   }
+  if (lastMoves) animateSlide(el, lastMoves, lastSpawn, mergedCells);
+  lastMoves = null; lastSpawn = null;
   mergedCells = null;
   document.getElementById('score').textContent = score;
   document.getElementById('best').textContent = store.getInt(bestKey(), 0);
+}
+
+const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+// Timed against the reference ("smooth 2048", frame by frame): the whole slide takes about 130ms with a quick ease-out and
+// no fading, so two tiles that meet simply overlap and are swapped for the doubled tile, which gives one small pop (about
+// 150ms); the new tile starts to grow the moment the slide ends and is full size 150ms later.
+const SLIDE = 130;
+function animateSlide(el, moves, spawn, merged) {
+  const cells = el.children, token = ++animToken;
+  if (calm() || !el.animate || cells.length < N * N) return;
+  const br = el.getBoundingClientRect();
+  const moving = moves.filter(m => m.from[0] !== m.to[0] || m.from[1] !== m.to[1]);
+  const dests = new Set(moving.map(m => m.to[0] * N + m.to[1]));
+  dests.forEach(i => { cells[i].style.visibility = 'hidden'; });
+  const anims = [];
+  const ghosts = moving.map(m => {
+    const a = cells[m.from[0] * N + m.from[1]].getBoundingClientRect(), b = cells[m.to[0] * N + m.to[1]].getBoundingClientRect();
+    const t = document.createElement('div');
+    t.className = 'tile ghost t' + m.v;
+    t.textContent = m.v;
+    t.style.cssText = 'position:absolute;margin:0;z-index:2;will-change:transform;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
+    el.append(t);
+    anims.push(t.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)' }], { duration: SLIDE, easing: 'cubic-bezier(.25,.8,.35,1)', fill: 'forwards' }));
+    return t;
+  });
+  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.2)', opacity: 0.4 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 1 }], { duration: 160, delay: SLIDE - 10, fill: 'backwards', easing: 'cubic-bezier(.2,.9,.3,1)' });
+  let done = false;
+  const land = () => {
+    if (done || token !== animToken) return;
+    done = true;
+    ghosts.forEach(t => t.remove());
+    dests.forEach(i => {
+      cells[i].style.visibility = '';
+      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(1)' }, { transform: 'scale(1.13)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' });
+    });
+  };
+  // swap exactly when the slides have finished (not on a timer that a busy phone can run late); the timer is only a backstop
+  Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => requestAnimationFrame(land));
+  setTimeout(land, SLIDE + 60);
+}
+
+// where every tile goes in one row slid towards index 0: dest[i] is the column tile i ends up in (two merging tiles share one)
+function slideRowTargets(row) {
+  const xs = [];
+  row.forEach((v, i) => { if (v) xs.push({ v, i }); });
+  const dest = Array(N).fill(-1);
+  let o = 0;
+  for (let k = 0; k < xs.length; k++) {
+    if (k + 1 < xs.length && xs[k].v === xs[k + 1].v) { dest[xs[k].i] = o; dest[xs[k + 1].i] = o; o++; k++; }
+    else { dest[xs[k].i] = o; o++; }
+  }
+  return dest;
 }
 
 function slideRow(row) {
@@ -81,7 +136,10 @@ function move(dir) {
   let working = g;
   for (let k=0;k<rotate;k++) working = rot(working);
   const mc = new Set();
+  const moves = [];                    // in the rotated frame first; turned back below
   for (let r=0;r<N;r++) {
+    const dest = slideRowTargets(working[r]);
+    for (let i=0;i<N;i++) if (working[r][i]) moves.push({ from: [r, i], to: [r, dest[i]], v: working[r][i] });
     const { row, gained: gg, merged: mr } = slideRow(working[r]);
     if (row.some((v,i) => v !== working[r][i])) moved = true;
     working[r] = row;
@@ -95,8 +153,10 @@ function move(dir) {
     for (let k=0;k<(4-rotate)%4;k++) { const nr = N-1-c, nc = r; r = nr; c = nc; }
     mergedCells.add(r*N+c);
   });
+  const back = (p) => { let r = p[0], c = p[1]; for (let k=0;k<(4-rotate)%4;k++) { const nr = N-1-c, nc = r; r = nr; c = nc; } return [r, c]; };
   for (let k=0;k<(4-rotate)%4;k++) working = rot(working);
   if (!moved) { mergedCells = null; return; }
+  lastMoves = moves.map(m => ({ from: back(m.from), to: back(m.to), v: m.v }));
   grid = working;
   score += gained;
   const best = store.getInt(bestKey(), 0);
@@ -125,7 +185,7 @@ function canMove() {
 function reset() {
   grid = empty(); score = 0; over = false;
   const om = document.getElementById('over-msg'); if (om) om.textContent = '';
-  addTile(); addTile(); render();
+  addTile(); addTile(); lastSpawn = null; render();
 }
 
 window.addEventListener('keydown', e => {
@@ -144,7 +204,7 @@ document.getElementById('board').addEventListener('touchend', e=>{
 });
 
 document.getElementById('reset').addEventListener('click', reset);
-Gamekit.wireDifficultyChips({
+const chips = Gamekit.wireDifficultyChips({
   el: document.getElementById('chips'),
   difficulties: Object.keys(DIFFS),
   initial: diff,
@@ -153,3 +213,16 @@ Gamekit.wireDifficultyChips({
   onChange: (d) => { diff = d; reset(); },
 });
 reset();
+
+// A refresh keeps the game: the board, score and difficulty.
+const resumer = Gamekit.resume('2048', () => over ? null : { diff, grid, score }, (s) => {
+  const ok = DIFFS[s.diff] && Array.isArray(s.grid) && s.grid.length === N &&
+    s.grid.every(r => Array.isArray(r) && r.length === N && r.every(v => Number.isInteger(v) && v >= 0)) &&
+    Number.isInteger(s.score) && s.score >= 0;
+  if (!ok) return false;
+  diff = s.diff; chips.show(diff);
+  grid = s.grid.map(r => r.slice()); score = s.score; over = false;
+  render();
+  return true;
+});
+resumer.restore();

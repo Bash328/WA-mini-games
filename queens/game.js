@@ -27,6 +27,7 @@
   let timerStart = 0;
   let timerInterval = null;
   let cellEls = [];
+  let curSeed = 0;       // the puzzle on screen can be rebuilt from this + diff
 
   function idx(r, c) { return r * N + c; }
 
@@ -165,6 +166,7 @@
   function newPuzzle(seedOverride) {
     N = DIFFS[diff];
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("queens", diff);
+    curSeed = seed;
     const p = generate(seed);
     regions = p.regions;
     solution = p.solution;
@@ -327,7 +329,7 @@
   });
   newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
 
-  Gamekit.wireDifficultyChips({
+  const chips = Gamekit.wireDifficultyChips({
     el: chipsEl,
     difficulties: ["easy", "medium", "hard"],
     initial: diff,
@@ -341,5 +343,25 @@
 
   newPuzzle();
   updateStatus();
+
+  // A refresh keeps the puzzle, your queens and marks, undo history and the clock.
+  const resumer = Gamekit.resume("queens", () => won ? null : {
+    diff: diff, seed: curSeed, grid: grid, history: history,
+    elapsed: Math.floor((Date.now() - timerStart) / 1000),
+  }, (s) => {
+    if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.grid)) return false;
+    if (s.grid.length !== DIFFS[s.diff] * DIFFS[s.diff] || !s.grid.every(v => v === 0 || v === 1 || v === 2)) return false;
+    diff = s.diff; chips.show(diff);
+    newPuzzle(s.seed);
+    grid = s.grid.slice();
+    history = Array.isArray(s.history) ? s.history.filter(h => h && Number.isInteger(h.i) && h.i >= 0 && h.i < N * N && (h.v === 0 || h.v === 1 || h.v === 2)) : [];
+    timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
+    timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
+    renderAll(); updateStatus();
+    return true;
+  });
+  resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("queens"));
 })();
+
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>pig · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Pig — a dice game of nerve. Roll to build your turn, hold to bank it, and never roll a 1. First to 100 wins. Over WhatsApp, against the computer, or on one device.">
+<meta property="og:title" content="Pig · push-your-luck dice, two players over WhatsApp">
+<meta property="og:description" content="Roll, bank, or bust. First to 100 wins. Send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=5db52064">
+<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
+<style>
+  .pig-main { max-width: 420px; margin: 0 auto; }
+  .pig-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pig-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; border: 2px solid var(--border); border-radius: 14px; background: var(--bg-2); }
+  .pig-card.on { border-color: var(--accent); }
+  .pig-card.won { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 14%, transparent); }
+  .pig-name { font-size: var(--fs-sm); color: var(--muted); }
+  .pig-num { font-size: 44px; font-weight: 700; line-height: 1; color: var(--fg); }
+  .pig-bar { width: 100%; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .pig-bar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .pig-stage { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 16px 0 6px; min-height: 120px; }
+  .pig-die svg { width: 96px; height: 96px; display: block; }
+  .pig-die svg rect { fill: #fbf7ee; stroke: #b9b09c; stroke-width: 2.5; }
+  .pig-die svg circle { fill: #231f1a; }
+  .pig-die svg circle.one { fill: #d8362c; }
+  .pig-die.bust svg rect { fill: #fde2de; stroke: #d8362c; }
+  .pig-turn { min-height: 3em; text-align: center; font-size: var(--fs-md); color: var(--muted); }
+  .pig-turn b { color: var(--fg); font-size: 22px; }
+  .pig-rolls { display: block; margin-top: 4px; }
+  .pig-rolls i { display: inline-block; min-width: 1.7em; margin: 0 2px; padding: 1px 4px; border-radius: 6px; background: var(--bg-2); border: 1px solid var(--border); font-style: normal; font-size: var(--fs-sm); color: var(--fg); }
+  .pig-rolls i.one { color: var(--coral); border-color: var(--coral); }
+  .pig-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 10px; }
+  #pig-btns button { min-height: 56px; font-size: var(--fs-lg); font-weight: 600; border-radius: 14px; }
+  #pig-btns .primary { background: var(--accent); color: #1a1210; border-color: var(--accent); }
+  .pig-last { min-height: 2.6em; margin: 10px 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+
+  /* chunky look: plum page, one big white die, a red ROLL and a green HOLD; the scores live in the header */
+  html body.fun.g-pig { --fun-bg: #3d2a4d; --fun-btn: #8a5fb0; --fun-chip: rgba(255,255,255,.1); --vs-bg: #261831; --vs-l: #ff7a7a; --vs-r: #3fd0c0; transition: background-color .35s; }
+  html body.fun.g-pig:has(.turn.wait) { --fun-bg: #2b3350; }
+  html body.fun.g-pig .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+  html body.fun.g-pig .pig-scores { display: none; }
+  html body.fun.g-pig .pig-main { max-width: none; }
+  html body.fun.g-pig .pig-stage { margin: 30px 0 10px; min-height: 170px; }
+  html body.fun.g-pig .pig-die svg { width: 150px; height: 150px; filter: drop-shadow(0 8px 0 rgba(0,0,0,.22)); }
+  html body.fun.g-pig .pig-die svg rect { fill: #fff; stroke: #2f3a46; stroke-width: 5; }
+  html body.fun.g-pig .pig-die svg circle { fill: #2f3a46; }
+  html body.fun.g-pig .pig-die svg circle.one { fill: #e8353a; }
+  html body.fun.g-pig .pig-die.bust svg rect { fill: #ffe3e0; stroke: #e8353a; }
+  html body.fun.g-pig .pig-die.rolling svg { animation: pig-spin .3s linear infinite; }
+  @keyframes pig-spin { 0% { transform: rotate(0deg) scale(1.08); } 50% { transform: rotate(180deg) scale(.94); } 100% { transform: rotate(360deg) scale(1.08); } }
+  html body.fun.g-pig .pig-turn { color: rgba(255,255,255,.75); font-size: 18px; min-height: 4.4em; }
+  html body.fun.g-pig .pig-turn b { color: #fff; font-size: 44px; font-weight: 400; display: block; line-height: 1.1; }
+  html body.fun.g-pig .pig-rolls i { border: 0; background: rgba(0,0,0,.25); color: #fff; font-size: 15px; border-radius: 8px; padding: 2px 8px; }
+  html body.fun.g-pig .pig-rolls i.one { background: #e8353a; color: #fff; }
+  html body.fun.g-pig .pig-btns { grid-template-columns: 1fr 1.25fr; gap: 12px; margin-top: 14px; }
+  html body.fun.g-pig #pig-btns button { height: 64px; min-height: 0; border-radius: 16px; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; }
+  html body.fun.g-pig #pig-btns #roll-btn { background: #d95a4e; color: #fff; box-shadow: 0 6px 0 #a8403a; }
+  html body.fun.g-pig #pig-btns #hold-btn { background: #2fb44a; color: #fff; box-shadow: 0 6px 0 #1c7a31; font-size: 22px; }
+  html body.fun.g-pig #pig-btns button:disabled { opacity: .45; }
+  html body.fun.g-pig .pig-last { min-height: 2.6em; font-size: 15px; color: rgba(255,255,255,.65); }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-pig fun" data-fun-zone data-fun-reset data-fun-vs="YOU,BOT">
+<main class="wrap">
+  <div class="topbar">
+    <h1>pig</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your turn.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="pig" data-man-title="PIG(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <span id="score" hidden></span>
+    <div class="pig-main" id="board">
+      <div class="pig-scores" id="pig-score"></div>
+      <div class="pig-stage"><div class="pig-die" id="pig-die"></div></div>
+      <div class="pig-turn" id="pig-turn"></div>
+      <div class="pig-btns" id="pig-btns">
+        <button class="btn" id="roll-btn" type="button" disabled>Roll</button>
+        <button class="btn primary" id="hold-btn" type="button" disabled>Hold</button>
+      </div>
+      <p class="pig-last" id="pig-last"></p>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-pig">
+  <h2>Name</h2>
+  <p>pig — a dice game of nerve. First to 100 wins.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>On your turn, <strong>roll</strong> a die as many times as you like, adding each roll to your <strong>turn total</strong>.</li>
+    <li>Roll a <strong>1</strong> and you score nothing this turn: the turn total is lost and it's the other player's go.</li>
+    <li>Or <strong>hold</strong> to bank your turn total into your score and end your turn.</li>
+    <li>The first player to reach <strong>100</strong> points wins.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts is <strong>Player 1</strong>. A whole turn is one link: roll and hold (or bust), then tap <code>Send on WhatsApp</code>.</li>
+    <li>Your friend sees what you rolled, takes their own turn, and sends a link back.</li>
+    <li>Your browser makes your rolls, so this one runs on trust: there's no referee checking the dice.</li>
+  </ul>
+
+  <h2>Against the computer</h2>
+  <ul>
+    <li><strong>Easy</strong> banks as soon as it has 12. <strong>Medium</strong> holds at 20, the classic rule of thumb. <strong>Hard</strong> reads the score: it presses on when you're close to winning and plays safe when it's well ahead.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Over a whole game, holding at about 20 is hard to beat: the chance of rolling a 1 before you get there is about the same as what you'd lose. Take bigger risks only when you're behind and the other side is near 100.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=ec4b7770"></script>
+<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="rules.js?v=dc469416"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=2f7d83c5"></script>
+</body>
+</html>
