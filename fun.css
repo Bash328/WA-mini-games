@@ -54,12 +54,16 @@ body.fun[class*="g-"] .topbar {
 body.fun[class*="g-"] .topbar .back {
   grid-column: 1; grid-row: 1; width: 56px; height: 56px; min-height: 0; padding: 0; position: relative;
   border-radius: 50%; background: var(--fun-chip); font-size: 0; box-shadow: none;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: transform .09s ease-out, filter .15s ease, background-color .15s ease;
 }
 body.fun[class*="g-"] .topbar .back::before {      /* the chevron, cut from the reference screenshot */
   content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 26px; transform: translate(-58%, -50%);
   background: #fff; -webkit-mask: url(fun/back.png) center / contain no-repeat; mask: url(fun/back.png) center / contain no-repeat;
 }
 body.fun[class*="g-"] .topbar .back:hover { background: var(--fun-chip); filter: brightness(1.15); }
+body.fun[class*="g-"] .topbar .back:active,
+body.fun[class*="g-"] .topbar .back.gk-pressed { transform: scale(.9); filter: brightness(1.3); }
 body.fun[class*="g-"] .topbar h1 {
   grid-column: 2; grid-row: 1; justify-self: center; text-align: center;
   font-size: 22px; font-weight: 400; text-transform: capitalize; color: var(--fun-ink);
@@ -283,7 +287,9 @@ html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-co
 .gk-over .row.t1 svg { color: #f0a800; } .gk-over .row.t2 svg { color: #e8648a; } .gk-over .row.t3 svg { color: #1fbf9a; }
 .gk-over .acts { display: flex; gap: 14px; width: min(400px, 100%); }
 .gk-over .acts a, .gk-over .acts button { height: 62px; border: 0; border-radius: 18px; color: #fff; font-family: inherit; font-size: 28px; letter-spacing: .03em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; }
-.gk-over .acts .home { width: 76px; background: var(--fun-chip, rgba(255,255,255,.14)); }
+.gk-over .acts .home { width: 76px; background: var(--fun-chip, rgba(255,255,255,.14)); touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .09s ease-out, filter .15s ease; }
+.gk-over .acts .home:active,
+.gk-over .acts .home.gk-pressed { transform: scale(.92); filter: brightness(1.25); }
 .gk-over .acts .home svg { width: 34px; height: 34px; }
 .gk-over .acts .again { flex: 1; background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
 .gk-over .view { background: none; border: 0; color: rgba(255,255,255,.7); font-family: inherit; font-size: 17px; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; padding: 6px 12px; }
@@ -344,6 +350,130 @@ body.fun[class*="g-"] .panel { animation: gk-fade .28s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   html body.fun[data-fun-zone] .gk-menu, .gk-over, .gk-over .card, .gk-over .acts, .gk-over .view, body.fun[class*="g-"] .panel { animation: none; }
   body.fun[class*="g-"] .panel button, body.fun[class*="g-"] .panel .btn { transition: none; }
+}
+
+/* Desktop: the games are designed phone-first. Letting the wrap grow to 960px on a PC made
+   square boards 960px tall, so the bottom rows fell below the fold and every piece got huge.
+   Keep the play area at a comfortable board-game size and centre it; phone widths are untouched.
+   The viewport-height term stops tall games from running past the fold on a laptop screen. */
+@media (min-width: 760px) {
+  :where(body.fun[class*="g-"]) .wrap { max-width: clamp(440px, calc(100svh - 460px), 640px); }
+
+  /* Crazy 8's round table is 136cqw tall, so it needs a shorter column than the other games.
+     Its bottom hint and duplicate in-page guide are hidden on a PC, where the top-bar how-to
+     and the status line already cover them. Phones keep both. */
+  body.g-crazy-8 .wrap { max-width: clamp(450px, calc(100svh - 500px), 640px); }
+  body.g-crazy-8 .c8-hint, body.g-crazy-8 .c8-guide { display: none; }
+
+  /* The two-seat card tables gain a score/hand row in computer mode; a 560px ceiling
+     keeps that extra row above the fold on taller windows as well as 1000px ones. */
+  body.g-cribbage .wrap, body.g-lost-cities .wrap { max-width: min(clamp(440px, calc(100svh - 460px), 640px), 560px); }
+}
+
+/* ── Short desktop / compact layer ───────────────────────────────────────────
+   A 1366x768 laptop is the common short screen. At 900px high the normal
+   desktop column fits; below that the chrome plus a usable board does not.
+   The compact layer trims the top bar, message zone, Options row, toolbars and
+   hints, and lets the board shrink to 400px at 768px high. It is still gated by
+   min-width: 760px, with a 480px floor so a landscape phone (about 390-430px
+   high) keeps its phone layout. */
+@media (min-width: 760px) and (max-height: 899px) and (min-height: 480px) {
+  /* Smaller chrome, but keep the same one-column game. */
+  body.fun[class*="g-"] .wrap {
+    max-width: clamp(360px, calc(100svh - 368px), 440px);
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+  body.fun[class*="g-"] .topbar {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  body.fun[class*="g-"] .topbar .back,
+  body.fun[class*="g-"] .gk-top-r .man-trigger,
+  body.fun[class*="g-"] .fun-restart {
+    width: 44px;
+    height: 44px;
+  }
+  body.fun[class*="g-"] .topbar h1 { font-size: 18px; }
+  body.fun[class*="g-"] .gk-top-r { gap: 6px; }
+  body.fun[class*="g-"] .gk-top-r .man-trigger .q { font-size: 22px; }
+  body.fun[class*="g-"] .fun-restart::before { width: 28px; height: 24px; }
+
+  /* Scout/score bars have to shrink with the header, or they hold it at 56px. */
+  body.fun[class*="g-"] .fun-vs { height: 40px; margin-top: 4px; }
+  .fun-vs .tab { top: -6px; height: 11px; line-height: 11px; padding: 0 10px; font-size: 9px; }
+  .fun-vs b { font-size: 11px; }
+  .fun-vs b i { font-size: 20px; }
+  .fun-vs em { font-size: 20px; padding: 0 4px; }
+  body.fun[class*="g-"] .fun-pills { gap: 4px; }
+  body.fun[class*="g-"] .fun-pills div { height: 38px; }
+  body.fun[class*="g-"] .fun-pills b { font-size: 18px; }
+  body.fun[class*="g-"] .fun-pills small { font-size: 9px; }
+
+  /* The message zone, Options button and toolbar are the shared chrome. */
+  html body.fun[data-fun-zone] { --zone: 42px; }
+  html body.fun[data-fun-zone="mini"] { --zone: 36px; }
+  html body.fun[data-fun-zone="slim"] { --zone: 0px; }
+  html body.fun[data-fun-zone] .panel > .row .status { font-size: 17px; }
+  html body.fun[data-fun-zone="mini"] .panel > .row .status { font-size: 15px; }
+  html body.fun[data-fun-zone] .panel > .turn { height: 40px; font-size: 17px; }
+  html body.fun[data-fun-zone="mini"] .panel > .turn { height: 36px; font-size: 16px; }
+
+  /* Full-zone pages reserve a 46px result slot; mini/slim pages already collapse it. */
+  html body.fun[data-fun-zone=""] .panel .gk-slot,
+  html body.fun[data-fun-zone=""] .panel .gk-slot[data-reserve] {
+    height: 34px;
+    margin-bottom: 2px;
+  }
+  html body.fun[data-fun-zone=""] .panel .gk-slot .gk-msg {
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 16px;
+  }
+
+  body.fun[class*="g-"] .panel .gk-optbtn {
+    height: 36px;
+    min-height: 36px;
+    margin-bottom: 4px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+  body.fun[class*="g-"] .panel .gk-optbtn .gk-gear { width: 16px; height: 16px; }
+
+  body.fun[class*="g-"] .panel .toolbar {
+    gap: 4px;
+    padding-top: 2px;
+    margin-top: 2px;
+  }
+  body.fun[class*="g-"] .panel .toolbar button,
+  body.fun[class*="g-"] .panel .toolbar .btn {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  /* One- or two-line hints keep their reservation so the board cannot jump when
+     one appears, but they take much less of the short screen. */
+  body.fun[class*="g-"] .panel #hint {
+    font-size: 12px;
+    line-height: 1.2;
+    min-height: 2.4em;
+    margin-top: 4px;
+  }
+
+  /* Crazy 8's 136cqw table is 8px too tall at 400px; take that out of its own
+     column rather than shrinking every game further. */
+  body.fun.g-crazy-8 .wrap {
+    max-width: calc(clamp(360px, calc(100svh - 368px), 440px) - 8px);
+  }
+
+  /* Quoridor's page rule subtracts 26px from the column for its board's negative
+     margins. Compact mode also shows the undo row in computer/local play, so
+     reserve 21px more and keep the bottom above the fold. */
+  body.fun.g-quoridor .wrap {
+    max-width: calc(clamp(360px, calc(100svh - 368px), 440px) - 47px);
+  }
 }
 
 /* moving between the hub and a game cross-fades instead of flashing (browsers without it just navigate as before) */

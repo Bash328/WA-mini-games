@@ -164,7 +164,9 @@
   // nudge instead, and very rarely the button itself winks (shared.css).
   const ABOUT_OTHERS = /\b(opponents?|opponent's|rivals?|enem(y|ies)|friends?|they|them|their|theirs|humans?|mates?|everyone|group[- ]chat|your (side|team))\b/i;
   const recent = [];                 // the last few lines handed out, so the strip can find them
+  const NO_TAUNT = global.NO_TAUNT || [];
   function taunt(category, game) {
+    if (NO_TAUNT.indexOf(GAME_ID) !== -1) return "";    // this game gets no commentary (see BANTER.md)
     const all = global.TAUNT_LINES || {};
     const kind = modeKind();
     const computer = kind === "computer";
@@ -327,11 +329,17 @@
     msg.hidden = true;
     msg.setAttribute("role", "status");
     slotEl.append(say, msg);
-    const ref = document.getElementById("wa-ui");
-    if (ref) ref.after(slotEl);
+    // The share panel now lives below the board (async-share parks it there),
+    // so "after #wa-ui" would put the result strip below the board too and make
+    // the page taller. Keep the strip above the board as it always was.
+    let b = document.getElementById("board") || document.getElementById("bs-board") ||
+      document.getElementById("ld-board") || document.querySelector("[data-board]");
+    if (b) { while (b.parentNode && b.parentNode !== panel) b = b.parentNode; }
+    if (b && b.parentNode === panel) panel.insertBefore(slotEl, b);
     else {
-      let b = document.getElementById("board") || document.querySelector("[data-board]");
-      if (b) { while (b.parentNode !== panel) b = b.parentNode; b.before(slotEl); } else panel.appendChild(slotEl);
+      const ref = document.getElementById("wa-ui");
+      if (ref) ref.after(slotEl);
+      else panel.appendChild(slotEl);
     }
     return slotEl;
   }
@@ -828,11 +836,30 @@
     });
   }
 
+  // Chrome occasionally suppresses :active on a link once it starts its drag
+  // gesture, so the back/Home buttons also get a pressed class from pointerdown.
+  // The class drives exactly the same CSS as :active (see fun.css).
+  function pressedFeedback() {
+    document.addEventListener("pointerdown", (e) => {
+      const t = e.target && e.target.closest && e.target.closest(".topbar .back, .gk-over .home");
+      if (!t) return;
+      t.classList.add("gk-pressed");
+      const off = () => {
+        t.classList.remove("gk-pressed");
+        document.removeEventListener("pointerup", off, true);
+        document.removeEventListener("pointercancel", off, true);
+      };
+      document.addEventListener("pointerup", off, true);
+      document.addEventListener("pointercancel", off, true);
+    }, true);
+  }
+
   function init() {
     undoIcons();
     layout();
     $$("select").forEach(enhanceSelect);
     watchPanel();
+    pressedFeedback();
   }
   init();
 

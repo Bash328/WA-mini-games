@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
 <style>
   .board2048 {
     display: grid;
@@ -75,8 +75,8 @@
   .t1024 { background: #3a6a45; color: #0a0a0a; border-color: var(--accent-2); font-size: clamp(0.9rem, 4vw, 1.5rem); }
   .t2048 { background: var(--accent-2); color: #0a0a0a; border-color: var(--accent-2); font-size: clamp(0.9rem, 4vw, 1.5rem); box-shadow: 0 0 24px rgba(138,255,193,0.35); }
   .t4096, .t8192 { background: var(--accent); color: #0a0a0a; border-color: var(--accent); font-size: clamp(0.9rem, 4vw, 1.5rem); }
-  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
-  .tile.merged { animation: pop 0.18s cubic-bezier(0.22, 0.9, 0.32, 1); }
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.14); } 100% { transform: scale(1); } }
+  .tile.merged { animation: pop 0.16s cubic-bezier(0.37, 0, 0.63, 1); }
 
   /* chunky look: dark brown page, mauve board, cream and orange tiles */
   html body.fun.g-2048 { --fun-bg: #2b1f1d; --fun-btn: #8a5f63; --fun-chip: rgba(255,255,255,.1); }
@@ -152,10 +152,10 @@
 </template>
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
-<script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=acad9f89"></script>
+<script defer src="game.js?v=bfe426d6"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("2048"));</script>
 </body>
 </html>

@@ -251,7 +251,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)

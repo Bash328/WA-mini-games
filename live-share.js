@@ -240,9 +240,10 @@
         return paint();
       }
       if (m.t === "taunt") {
+        if ((global.NO_BANTER || []).indexOf(opts.game) !== -1) return;
         const L = tauntLines();
-        const list = m.k === "a" ? L.angel : m.k === "d" ? L.devil : null;
-        if (list && list[m.i] && !muted()) Gamekit.say((m.k === "a" ? "\u{1F607} " : "\u{1F608} ") + list[m.i], m.k === "a" ? "angel" : "devil");
+        const list = m.k === "h" ? L.hype : m.k === "k" ? L.heckle : null;
+        if (list && list[m.i] && !muted()) Gamekit.say(list[m.i], m.k === "h" ? "hype" : "heckle");
         return;
       }
       if (m.t === "rematch") { rematch = m.rematch; return paint(); }
@@ -486,28 +487,29 @@
       if (lobbyError) noteP(lobbyError);
     }
 
-    /* Angel and devil taunts: two suggestions, one tap sends one. Only a
+    /* Hype and Heckle table talk: two suggestions, one tap sends one. Only a
        position in a fixed list travels (see taunts.js, online); the server
        relays it to the other seat and limits it to one every 3 seconds. */
-    const tauntLines = () => (global.TAUNT_LINES && global.TAUNT_LINES.online) || { angel: [], devil: [] };
-    const sugg = { a: -1, d: -1 };
+    const tauntLines = () => (global.TAUNT_LINES && global.TAUNT_LINES.online) || { hype: [], heckle: [] };
+    const sugg = { h: -1, k: -1 };
     let tauntCool = false;
     const muted = () => store.get("taunt-mute", "0") === "1";
     function suggest(k) {
-      const list = k === "a" ? tauntLines().angel : tauntLines().devil;
+      const list = k === "h" ? tauntLines().hype : tauntLines().heckle;
       if (!list.length) return;
       let i;
       do { i = Math.floor(Math.random() * list.length); } while (list.length > 1 && i === sugg[k]);
       sugg[k] = i;
     }
     function tauntRow() {
+      if ((global.NO_BANTER || []).indexOf(opts.game) !== -1) return;
       const L = tauntLines();
-      if (!L.angel.length || !L.devil.length) return;
+      if (!L.hype.length || !L.heckle.length) return;
       const wrap = el("div", "live-taunts");
-      [["a", "\u{1F607}", "angel"], ["d", "\u{1F608}", "devil"]].forEach(([k, icon, name]) => {
+      [["h", "hype"], ["k", "heckle"]].forEach(([k, name]) => {
         if (sugg[k] < 0) suggest(k);
         const line = L[name][sugg[k]];
-        const b = button(icon + " " + line, "ghost live-taunt " + name, () => {
+        const b = button(line, "ghost live-taunt " + name, () => {
           if (tauntCool) return;
           if (!send({ t: "taunt", k: k, i: sugg[k] })) return;
           Gamekit.say("You: " + line, name);
@@ -520,7 +522,7 @@
         wrap.appendChild(b);
       });
       ui.appendChild(wrap);
-      ui.appendChild(button(muted() ? "Unmute taunts" : "Mute taunts", "ghost wa-small live-mute", () => {
+      ui.appendChild(button(muted() ? "Unmute banter" : "Mute banter", "ghost wa-small live-mute", () => {
         store.set("taunt-mute", muted() ? "0" : "1");
         paint();
       }));

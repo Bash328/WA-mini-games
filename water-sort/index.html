@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
 <style>
   .ws-tubes { --per: 5; display: grid; grid-template-columns: repeat(var(--per), 1fr); gap: 14px 8px; width: min(480px, 100%); margin: 14px auto 8px; padding: 0 4px; box-sizing: border-box; }
   body.g-water-sort .panel .ws-tube { position: relative; width: 100%; max-width: 64px; margin: 0 auto; aspect-ratio: 1 / 3.5; min-height: 0; min-width: 0; padding: 3px; display: flex; flex-direction: column-reverse; justify-content: flex-start; gap: 2px; box-sizing: border-box; background: color-mix(in srgb, var(--fg) 7%, transparent); border: 2px solid color-mix(in srgb, var(--fg) 35%, transparent); border-radius: 6px 6px 22px 22px; cursor: pointer; transition: transform .12s; }
@@ -88,7 +88,7 @@
   html body.fun.g-water-sort .panel #reset-btn { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); }
   html body.fun.g-water-sort .panel #sym-btn { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); }
   html body.fun.g-water-sort .panel #undo-btn, html body.fun.g-water-sort .panel #hint-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; width: auto; min-width: 70px; height: auto; min-height: 0; padding: 0; background: none; box-shadow: none; color: #ffbf2e; font-size: 20px; letter-spacing: .02em; text-transform: capitalize; }
-  html body.fun.g-water-sort .panel #undo-btn .glyph { display: none; }
+  html body.fun.g-water-sort .panel #undo-btn .glyph, html body.fun.g-water-sort .panel #undo-btn .gk-undo-ico { display: none; }
   html body.fun.g-water-sort .panel #undo-btn::before, html body.fun.g-water-sort .panel #hint-btn::before { content: ""; width: 68px; height: 68px; border-radius: 50%; background-color: #ffbf2e; box-shadow: 0 5px 0 #c98a00; display: block; }
   html body.fun.g-water-sort .panel #undo-btn::after, html body.fun.g-water-sort .panel #hint-btn::after { content: ""; position: absolute; top: 14px; left: 50%; width: 40px; height: 40px; margin-left: -20px; background: #fff; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
   html body.fun.g-water-sort .panel #undo-btn::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5 4 10l5 5'/%3E%3Cpath d='M4 10h10a6 6 0 0 1 0 12H8'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5 4 10l5 5'/%3E%3Cpath d='M4 10h10a6 6 0 0 1 0 12H8'/%3E%3C/svg%3E"); }
@@ -99,14 +99,20 @@
   .ws-stream { position: fixed; z-index: 40; width: 8px; border-radius: 4px; pointer-events: none; }
 
   /* ---- the glass tube is the picture from the reference (fun/tube.png): the liquid sits inside it, the glass and its shine over the top ---- */
-  html body.fun.g-water-sort .panel .ws-tube { max-width: 62px; aspect-ratio: 1 / 2.981; padding: 59.6% 14.5% 4.4%; border: 0; border-radius: 0; background: none; gap: 0; overflow: visible;
+  html body.fun.g-water-sort .panel .ws-tube { max-width: 62px; aspect-ratio: 1 / 2.981; padding: 0; border: 0; border-radius: 0; background: none; gap: 0; overflow: visible;
     filter: drop-shadow(0 10px 8px rgba(0,0,0,.3)); }
   html body.fun.g-water-sort .panel .ws-tube::before { content: none; }
   html body.fun.g-water-sort .panel .ws-tube::after { content: ""; position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; z-index: 3; pointer-events: none;
     background: url(../fun/tube.png) center / 100% 100% no-repeat; }
   html body.fun.g-water-sort .panel .ws-tube.sel { transform: translateY(-16px); border: 0; filter: drop-shadow(0 0 10px rgba(255,210,74,.8)); }
   html body.fun.g-water-sort .panel .ws-tube.done, html body.fun.g-water-sort .panel .ws-tube.hint { border: 0; filter: drop-shadow(0 0 9px rgba(141,240,170,.75)); }
-  html body.fun.g-water-sort .ws-l { height: 25%; border-radius: 0; }
+  /* the liquid is positioned against the tube itself, not the grid cell: a percentage padding
+     would grow with the column on desktop and shrink the water inside the fixed-width glass */
+  html body.fun.g-water-sort .ws-l { position: absolute; left: 14.5%; right: 14.5%; width: auto; height: 19.46%; border-radius: 0; }
+  html body.fun.g-water-sort .ws-l:nth-child(1) { bottom: 1.5%; }
+  html body.fun.g-water-sort .ws-l:nth-child(2) { bottom: 20.96%; }
+  html body.fun.g-water-sort .ws-l:nth-child(3) { bottom: 40.42%; }
+  html body.fun.g-water-sort .ws-l:nth-child(4) { bottom: 59.88%; }
   html body.fun.g-water-sort .ws-l:first-child { border-radius: 0 0 50% 50% / 0 0 64% 64%; }
   html body.fun.g-water-sort .ws-l::before, html body.fun.g-water-sort .ws-l::after { content: none; }
 </style>
@@ -171,10 +177,10 @@
 </template>
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
-<script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
 <script defer src="puzzle.js?v=83a0ddd2"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=b71065a6"></script>
+<script defer src="game.js?v=e40bf946"></script>
 </body>
 </html>

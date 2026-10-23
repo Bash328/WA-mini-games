@@ -870,7 +870,8 @@
     newLocal();
   }
 
-  resetBtn.addEventListener("click", newLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : newLocal()));
   modeSel.addEventListener("change", applyMode);
   applyMode();
 

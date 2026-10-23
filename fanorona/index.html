@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>fanorona &middot; games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Fanorona &mdash; the Malagasy capture game on a 9&times;5 board. Approach or withdraw along the lines, chain your captures, and take every enemy piece. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Fanorona &middot; two players over WhatsApp">
+<meta property="og:description" content="Approach or withdraw, chain the captures, and clear the board. Send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
+<link rel="stylesheet" href="../async-share.css?v=60323ef7">
+<style>
+  /* ---- the board: a cream field of points on a dark wooden frame ---- */
+  .fn-wrap { width: 100%; margin: 6px 0 0; }
+  .fn-board {
+    width: calc(100% + 22px);
+    margin: 4px -11px 8px;
+    box-sizing: border-box;
+    padding: 7px;
+    background: #14251f;
+    border-radius: 14px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .25);
+  }
+  #board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    aspect-ratio: 9 / 5;
+    width: 100%;
+    box-sizing: border-box;
+    background: #f2e1bd;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  #board .fn-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #board .fn-lines line { stroke: #7d674a; stroke-width: .05; stroke-linecap: round; opacity: .8; }
+  #board .fn-pt {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    font-size: 0;
+    opacity: 1;
+    cursor: default;
+  }
+  /* the empty points, so the grid of intersections reads before a piece lands */
+  #board .fn-pt::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: rgba(96, 74, 48, .35);
+    pointer-events: none;
+  }
+  #board .fn-pt.mine, #board .fn-pt.dest { cursor: pointer; }
+  #board .fn-pt:disabled { opacity: 1; cursor: default; }
+  #board .fn-pt:focus-visible { outline: 2px solid #ffbf2e; outline-offset: -3px; }
+  #board .fn-pt.from { box-shadow: inset 0 0 0 2px rgba(64, 96, 76, .35); }
+  #board .fn-pt.last { box-shadow: inset 0 0 0 3px rgba(214, 148, 20, .7); }
+  /* a piece that can make a compulsory capture: a thin gold ring, quieter than the selection ring */
+  #board .fn-pt[data-can] { box-shadow: inset 0 0 0 2px rgba(255, 191, 46, .75); }
+  #board .fn-pt.sel { box-shadow: inset 0 0 0 3px #ffbf2e; }
+  #board .fn-pt.dest::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24%;
+    height: 24%;
+    margin: -12% 0 0 -12%;
+    border-radius: 50%;
+    background: #2f7d5c;
+    pointer-events: none;
+    z-index: 3;
+  }
+  #board .fn-pt.cap::after {
+    width: 72%;
+    height: 72%;
+    margin: -36% 0 0 -36%;
+    background: transparent;
+    border: 3px solid #d99412;
+    box-sizing: border-box;
+  }
+  /* a step where both the line ahead and the line behind can be taken */
+  #board .fn-pt[data-both]::after { background: radial-gradient(circle, #d99412 0 22%, transparent 27%); }
+  #board .fn-pc {
+    position: absolute;
+    inset: 11%;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 2px solid #16241d;
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, .3), 0 2px 0 rgba(0, 0, 0, .3);
+    pointer-events: none;
+    z-index: 2;
+  }
+  #board .fn-pc.p1 { background: radial-gradient(circle at 36% 30%, #ff9b8f, #e05348 78%); }
+  #board .fn-pc.p2 { background: radial-gradient(circle at 36% 30%, #7ce8dc, #23a99c 78%); }
+  .fn-hint {
+    margin: 10px 0 0;
+    min-height: 2.6em;
+    text-align: center;
+    color: rgba(255, 255, 255, .72);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  html body.fun.g-fanorona {
+    --fun-bg: #255847;
+    --fun-btn: #4f9a78;
+    --fun-chip: rgba(255, 255, 255, .12);
+    transition: background-color .35s;
+  }
+  html body.fun.g-fanorona:has(.turn.wait) { --fun-bg: #2b4a5c; }
+  html body.fun.g-fanorona .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+  html body.fun.g-fanorona .fn-wrap { width: 100%; margin: 6px 0 0; }
+  html body.fun.g-fanorona .fn-wrap .fn-board { margin: 4px -11px 8px; max-width: none; }
+  @media (min-width: 500px) {
+    html body.fun.g-fanorona .fn-wrap .fn-board { width: 440px; margin: 4px auto 8px; }
+  }
+  html body.fun.g-fanorona .fn-hint { color: rgba(255, 255, 255, .72); }
+
+  /* A step that can capture either way asks here, in the fixed message zone,
+     so the board never moves when the two choices appear. */
+  html body.fun.g-fanorona #choice {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--zone, 66px);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 6px;
+    background: var(--fun-bg);
+    z-index: 6;
+  }
+  html body.fun.g-fanorona #choice[hidden] { display: none; }
+  html body.fun.g-fanorona #choice .btn {
+    min-height: 44px;
+    height: 46px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #ffbf2e;
+    color: #2c2410;
+    box-shadow: 0 3px 0 #c58d0b;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  html body.fun.g-fanorona #choice .btn:hover,
+  html body.fun.g-fanorona #choice .btn:active {
+    background: #ffbf2e;
+    color: #2c2410;
+    filter: brightness(1.05);
+    transform: none;
+    box-shadow: 0 3px 0 #c58d0b;
+  }
+  /* "fanorona" is a long word for the 320px header: shrink it instead of letting it run under the round buttons */
+  @media (max-width: 360px) {
+    html body.fun.g-fanorona .topbar h1 { font-size: 20px; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-fanorona fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>fanorona</h1>
+    <a class="back" href="../">&#8592;&#xFE0E; all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="fanorona" data-man-title="FANORONA(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="fn-choice" id="choice" role="group" aria-label="Choose which capture line to take" hidden>
+      <button class="btn" id="choice-a" type="button">Take 0 ahead</button>
+      <button class="btn" id="choice-w" type="button">Take 0 behind</button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players &middot; WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players &middot; online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players &middot; same device</option>
+      </select>
+      <select id="side" aria-label="Your side" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Blue" value="2">Play Blue</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="fn-wrap">
+      <div class="fn-board">
+        <div id="board" role="grid" aria-label="Fanorona board, 9 columns by 5 rows"></div>
+      </div>
+    </div>
+    <p class="fn-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">&#8630;&#xFE0E;</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">&#8635;&#xFE0E;</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-fanorona">
+  <h2>Name</h2>
+  <p>fanorona &mdash; the Malagasy game of lines, approaches and withdrawals, on a 9 by 5 board.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each side starts with <strong>22 pieces</strong>. Blue holds the top two rows and the alternate middle points that begin on the left; Red holds the bottom two rows and the other four middle points. The centre point is empty, and <strong>Red moves first</strong>.</li>
+    <li>A piece moves <strong>one point along a marked line</strong> onto an empty point. Rows and columns are lines everywhere. Diagonals are lines only at the alternate points where they are drawn: at those points a piece can also step diagonally, at the others only up, down, left or right.</li>
+    <li><strong>Capturing is compulsory.</strong> If any capture is available, only capturing moves are allowed. Pieces that can make one are ringed in gold.</li>
+    <li><strong>Approach:</strong> move to an empty point with enemy pieces on the line just beyond it. <strong>Withdrawal:</strong> move away from enemy pieces that were on the line just behind the point it left. In either case the whole unbroken line is taken, up to an empty point, your own piece, or the edge of the board.</li>
+    <li>If both lines are open on the same step, only one line is taken: two buttons appear and you choose <strong>ahead</strong> or <strong>behind</strong>.</li>
+    <li><strong>Chain captures:</strong> after a capture, if the same piece can capture again it does, and your turn continues with that piece. The turn ends when it has no capture left. The piece stays selected for the next jump.</li>
+    <li><strong>Win</strong> by leaving your opponent with no pieces or no legal move. So a link can never loop forever, <strong>60 turns in a row without a capture</strong> end the game in a draw.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap one of your pieces, then tap a marked point. A dot is a step; <strong>a ring takes a line</strong>; a ring with a dot in it offers both directions.</li>
+    <li>Tap the piece again, or tap empty space, to let it go.</li>
+    <li>The point a piece came from and the point it reached stay marked in amber. A gold ring on a piece means it must capture.</li>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and whether you play Red (first) or Blue.</li>
+    <li><code>undo</code> sits below the board against the computer and on one device; it takes back your whole turn, chain included. The round arrow in the header always starts a new game.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Red</strong>; your friend is <strong>Blue</strong>.</li>
+    <li>After your turn tap <code>Send on WhatsApp</code>. Your friend opens the link, moves and sends one back. <code>Copy link</code> works for any other messenger.</li>
+    <li>A chain captures on the same turn: the link updates after each jump, so <strong>send it once the chain has finished</strong>. Opening it twice shows the latest jump.</li>
+  </ul>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You play in real time, with no link-passing. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">The points with diagonal lines are worth more: a piece there has up to eight ways out. Look for a piece that can start a chain, and remember that a compulsory capture can be a trap &mdash; sometimes the only capture on the board pulls your piece out of the line you were holding. Neighbouring pieces cover each other; a long unbroken line is a gift to your opponent.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../async-share.js?v=51603494"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=2da83d25"></script>
+<script defer src="rules.js?v=8251c4d2"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=3553d53b"></script>
+</body>
+</html>

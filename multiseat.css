@@ -1,5 +1,6 @@
 /* multiseat.css — the room screens of multiseat.js (landing, lobby, rematch), and the toast */
 .ms-room { margin: 8px 0; }
+.ms-room:empty { display: none; }
 .ms-room h3 { margin: 0 0 8px; font-size: var(--fs-lg); }
 .ms-room .note { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 10px; }
 .ms-code { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 12px; flex-wrap: wrap; }

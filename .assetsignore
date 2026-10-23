@@ -18,6 +18,11 @@ worker/
 *.test.mjs
 README.md
 TODO.md
+CHANGELOG.md
+BANTER.md
+AGENTS.md
+docs/
+previews/
 LICENSE
 .gitattributes
 .gitignore

@@ -500,7 +500,7 @@
       if (!res.ok) res = C.act(st, seat, { t: "draw" }, Math.random);
       if (res.ok) L.events = res.events;
       localRender(); localSchedule();
-    }, 4200 + Math.random() * 600);
+    }, 2800 + Math.random() * 600);
   }
 
   /* ============================================================
@@ -597,21 +597,21 @@
   }
 
   /* ---------- online taunts ---------- */
-  const lines = () => (window.TAUNT_LINES && window.TAUNT_LINES.online) || { angel: [], devil: [] };
-  const sugg = { a: -1, d: -1 };
+  const lines = () => (window.TAUNT_LINES && window.TAUNT_LINES.online) || { hype: [], heckle: [] };
+  const sugg = { h: -1, k: -1 };
   let tauntCool = false;
   const muted = () => store.get("taunt-mute", "0") === "1";
-  function suggest(k) { const l = k === "a" ? lines().angel : lines().devil; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
+  function suggest(k) { const l = k === "h" ? lines().hype : lines().heckle; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
   function renderTaunts() {
     tauntsEl.innerHTML = "";
     const online = M && M.kind === "online" && M.phase !== "lobby" && M.table;
-    tauntsEl.hidden = !online || !lines().angel.length;
+    tauntsEl.hidden = !online || !lines().hype.length;
     if (tauntsEl.hidden) return;
-    [["a", "angel"], ["d", "devil"]].forEach(([k, name]) => {
+    [["h", "hype"], ["k", "heckle"]].forEach(([k, name]) => {
       if (sugg[k] < 0) suggest(k);
       const text = lines()[name][sugg[k]];
       const b = el("button", "btn ghost", text);
-      b.type = "button"; b.disabled = tauntCool; b.style.borderColor = k === "a" ? "var(--teal)" : "var(--coral)";
+      b.type = "button"; b.disabled = tauntCool; b.style.borderColor = k === "h" ? "var(--teal)" : "var(--coral)";
       b.addEventListener("click", () => {
         if (tauntCool) return;
         onlineSend({ t: "taunt", k, i: sugg[k] });
@@ -624,7 +624,7 @@
   }
   function onTaunt(m) {
     if (muted()) return;
-    const l = m.k === "a" ? lines().angel : lines().devil;
+    const l = m.k === "h" ? lines().hype : lines().heckle;
     const p = M && M.players && M.players.find((x) => x.pid === m.from);
     if (l && l[m.i]) toast((p ? p.name : "Someone") + ": " + l[m.i]);
   }

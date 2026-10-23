@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>cribbage · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Cribbage — the classic two-player card game. Throw two cards to the crib, peg to 31, count fifteens, pairs, runs, flushes and nobs, and race to 121. Play online or against the computer.">
+<meta property="og:title" content="Cribbage · peg, count, race to 121">
+<meta property="og:description" content="Standard six-card Cribbage for two players. Play online with a friend, or against the computer.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
+<link rel="stylesheet" href="../multiseat.css?v=15df6c42">
+<style>
+  /* ---------- the chunky look: a warm card table ---------- */
+  html body.fun.g-cribbage { --fun-bg: #174b43; --fun-btn: #c8653e; --fun-chip: rgba(0,0,0,.24); --accent: #ffd166; --cb-felt: #10564a; --cb-rim: #0a3932; --cb-strip: #0b3c34; --cb-card: #fffdf5; --cb-ink: #24211a; }
+  #cb { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
+  #cb.on { display: block; }
+
+  /* scores: two fixed slots, so a changing score never moves the table */
+  .cb-scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4cqw; margin: 0 0 1.4cqw; }
+  .cb-score { min-width: 0; height: 10.6cqw; display: flex; align-items: center; gap: 1.2cqw; padding: 0 2.6cqw; border-radius: 2.4cqw; background: rgba(0,0,0,.26); line-height: 1; overflow: hidden; }
+  .cb-score .nm { min-width: 0; flex: 1; font-size: 3cqw; text-transform: uppercase; color: rgba(255,255,255,.72); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cb-score .sc { font-size: 5.4cqw; color: #fff; flex: none; }
+  .cb-score .tag { flex: none; padding: .8cqw 1.4cqw; border-radius: 999px; background: rgba(255,209,102,.2); color: var(--accent); font-size: 2.5cqw; text-transform: uppercase; }
+  .cb-score.you { background: rgba(255,255,255,.16); }
+  .cb-score.turn { outline: .55cqw solid var(--accent); outline-offset: -.55cqw; }
+  .cb-score.win { background: var(--accent); }
+  .cb-score.win .nm, .cb-score.win .sc, .cb-score.win .tag { color: #3a2600; }
+  .cb-score.win .tag { background: rgba(0,0,0,.12); }
+
+  /* the table */
+  .cb-table { position: relative; height: 72cqw; border-radius: 5.6cqw; background: radial-gradient(circle at 50% 35%, #166354, var(--cb-felt) 72%); box-shadow: inset 0 0 0 .85cqw var(--cb-rim), 0 .8cqw 0 rgba(0,0,0,.22); overflow: hidden; }
+
+  /* the live play layer */
+  .cb-play { position: absolute; inset: 0; display: grid; grid-template-rows: 15cqw minmax(0, 1fr) 7.2cqw; gap: 1cqw; padding: 2.2cqw 2.4cqw 1.6cqw; box-sizing: border-box; }
+  .cb-play[hidden] { display: none; }
+  .cb-oppband { display: flex; align-items: center; gap: 1.6cqw; min-width: 0; }
+  .cb-oppname { flex: 1; min-width: 0; line-height: 1.1; }
+  .cb-oppname b { display: block; font-size: 3.4cqw; font-weight: 400; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cb-oppname span { display: block; margin-top: .5cqw; font-size: 2.85cqw; color: rgba(255,255,255,.55); white-space: nowrap; }
+  .cb-oppnow .cb-oppname b { color: var(--accent); }
+  .cb-backs { display: flex; align-items: center; flex: none; }
+  .cb-crib { flex: none; display: flex; align-items: center; gap: 1.2cqw; padding: .8cqw 1.5cqw; border-radius: 2.2cqw; background: rgba(0,0,0,.2); }
+  .cb-crib .cb-back { width: 5cqw; height: 7.2cqw; }
+  .cb-crib .lbl { font-size: 2.85cqw; color: rgba(255,255,255,.62); line-height: 1.1; white-space: nowrap; }
+  .cb-crib .lbl b { display: block; font-weight: 400; font-size: 3.1cqw; color: #fff; }
+  .cb-crib.ours { box-shadow: inset 0 0 0 .4cqw rgba(255,209,102,.6); }
+
+  .cb-boardmid { position: relative; display: grid; grid-template-columns: 15cqw minmax(0, 1fr) 17cqw; grid-template-rows: 20cqw 16cqw minmax(0, 1fr); gap: .8cqw 1.6cqw; align-items: center; }
+  .cb-starter { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: .4cqw; }
+  .cb-starter .cap { font-size: 2.7cqw; color: rgba(255,255,255,.5); text-transform: uppercase; }
+  .cb-countbox { grid-column: 3; grid-row: 1; justify-self: end; width: 17cqw; height: 15cqw; border-radius: 3cqw; background: rgba(0,0,0,.26); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  .cb-countbox b { font-size: 7cqw; font-weight: 400; color: #fff; }
+  .cb-countbox span { margin-top: .5cqw; font-size: 2.7cqw; color: rgba(255,255,255,.5); text-transform: uppercase; }
+  .cb-midlabel { grid-column: 2; grid-row: 1; min-width: 0; text-align: center; }
+  .cb-midlabel b { display: block; font-size: 3.6cqw; font-weight: 400; color: var(--accent); line-height: 1.1; }
+  .cb-midlabel span { display: block; margin-top: .7cqw; font-size: 2.9cqw; color: rgba(255,255,255,.58); line-height: 1.2; }
+  .cb-line { grid-column: 1 / -1; grid-row: 2; align-self: center; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; }
+  .cb-line:empty::after { content: ""; display: block; width: 44cqw; height: 1.2cqw; border-top: .35cqw dashed rgba(255,255,255,.16); }
+  #cb .cb-line .cb-card.sm { width: 5cqw; height: 7.4cqw; margin-left: .35cqw; border-radius: .9cqw; }
+  #cb .cb-line .cb-card.sm:first-child { margin-left: 0; }
+  #cb .cb-line .cb-card.sm .r { left: .35cqw; top: .3cqw; font-size: 2.4cqw; }
+  #cb .cb-line .cb-card.sm .s { left: .4cqw; top: 2.9cqw; font-size: 2.1cqw; }
+  .cb-note { grid-column: 1 / -1; grid-row: 3; align-self: start; text-align: center; font-size: 3.05cqw; line-height: 1.2; color: rgba(255,255,255,.68); text-wrap: balance; }
+  .cb-note b { font-weight: 400; color: var(--accent); }
+
+  /* face-down hands on the table */
+  .cb-back { position: relative; display: block; width: 6.2cqw; height: 8.8cqw; flex: none; margin-left: -2.6cqw; border: .35cqw solid #17100c; border-radius: 1.1cqw; background: #7b3228; box-shadow: 0 .3cqw 0 rgba(0,0,0,.22); overflow: hidden; }
+  .cb-back:first-child { margin-left: 0; }
+  .cb-back::before { content: ""; position: absolute; inset: .45cqw; border: .3cqw solid #e8c46a; border-radius: .55cqw; background: repeating-linear-gradient(45deg, #6d2821, #6d2821 .55cqw, #87352b .55cqw, #87352b 1.1cqw); }
+  .cb-backs .cb-back { width: 5.4cqw; height: 7.7cqw; }
+  .cb-starter .cb-back { width: 11.2cqw; height: 16cqw; margin-left: 0; border-radius: 1.6cqw; }
+  .cb-emptycard { width: 11.2cqw; height: 16cqw; border: .35cqw dashed rgba(255,255,255,.2); border-radius: 1.6cqw; }
+
+  /* a playing card */
+  #cb .cb-card { position: relative; flex: none; width: 9.6cqw; height: 13.6cqw; min-width: 0; min-height: 0; margin: 0 0 0 .8cqw; padding: 0; border: .35cqw solid #17110d; border-radius: 1.3cqw; background: var(--cb-card); color: var(--cb-ink); font-family: inherit; font-size: 10px; font-weight: 400; line-height: 1; letter-spacing: 0; text-transform: none; text-align: left; box-shadow: 0 .4cqw 0 rgba(0,0,0,.2); overflow: hidden; cursor: default; }
+  #cb .cb-card:first-child { margin-left: 0; }
+  #cb .cb-card.red { color: #c62a2a; }
+  #cb .cb-card .r { position: absolute; left: .6cqw; top: .55cqw; font-size: 3.1cqw; line-height: 1; }
+  #cb .cb-card .s { position: absolute; left: .65cqw; top: 3.7cqw; font-size: 2.7cqw; line-height: 1; }
+  #cb .cb-card .big { position: absolute; right: .15cqw; bottom: -.5cqw; font-size: 6.3cqw; line-height: 1; opacity: .22; }
+  #cb .cb-card.ten .r { font-size: 2.6cqw; letter-spacing: -.1cqw; }
+  #cb .cb-card.sm { width: 6.2cqw; height: 8.8cqw; margin-left: .5cqw; border-radius: 1cqw; }
+  #cb .cb-card.sm .r { top: .35cqw; left: .4cqw; font-size: 2.5cqw; }
+  #cb .cb-card.sm .s { top: 3.2cqw; left: .45cqw; font-size: 2.2cqw; }
+  #cb .cb-card.sm .big { display: none; }
+  #cb .cb-card.sm.ten .r { font-size: 2.1cqw; }
+  #cb .cb-card.startercard { width: 11.2cqw; height: 16cqw; margin: 0; border-radius: 1.6cqw; box-shadow: 0 0 0 .5cqw var(--accent), 0 .4cqw 0 rgba(0,0,0,.24); }
+  #cb .cb-card.startercard .r { left: .8cqw; top: .7cqw; font-size: 3.8cqw; }
+  #cb .cb-card.startercard .s { left: .85cqw; top: 4.6cqw; font-size: 3.1cqw; }
+  #cb .cb-card.startercard .big { font-size: 7.8cqw; right: -.2cqw; bottom: -.8cqw; }
+  #cb .cb-card.startercard.ten .r { font-size: 3.2cqw; }
+
+  /* your six cards, on a darker strip under the table */
+  .cb-handbar { margin: 1.4cqw -11px 0; padding: 1.6cqw 11px .4cqw; border-radius: 5.6cqw 5.6cqw 0 0; background: var(--cb-strip); box-shadow: inset 0 .7cqw 0 rgba(255,255,255,.06); }
+  #cb .cb-hand { display: flex; justify-content: center; align-items: flex-end; min-height: 22.2cqw; }
+  #cb .cb-hand .cb-card { width: 15cqw; height: 21.2cqw; margin-left: -4.6cqw; border-width: .45cqw; border-radius: 2cqw; transition: transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s, opacity .15s; }
+  #cb .cb-hand .cb-card:first-child { margin-left: 0; }
+  #cb .cb-hand .cb-card .r { left: .9cqw; top: .8cqw; font-size: 4.8cqw; }
+  #cb .cb-hand .cb-card .s { left: 1cqw; top: 5.8cqw; font-size: 4.1cqw; }
+  #cb .cb-hand .cb-card .big { right: -.5cqw; bottom: -1.2cqw; font-size: 10cqw; opacity: .9; }
+  #cb .cb-hand .cb-card.ten .r { font-size: 4cqw; letter-spacing: -.12cqw; }
+  #cb .cb-hand .cb-card.play { cursor: pointer; box-shadow: 0 0 0 .5cqw var(--accent), 0 .5cqw 0 rgba(0,0,0,.25); }
+  #cb .cb-hand .cb-card.play:hover, #cb .cb-hand .cb-card.play:focus-visible { transform: translateY(-1.5cqw); }
+  #cb .cb-hand .cb-card.pick { transform: translateY(-3.2cqw); box-shadow: 0 0 0 .7cqw var(--accent), 0 .9cqw 0 rgba(0,0,0,.25); z-index: 4; }
+  #cb .cb-hand .cb-card.dim { opacity: .42; }
+  #cb .cb-hand .cb-card:disabled { opacity: .42; }
+  .cb-actions { display: flex; justify-content: center; align-items: center; gap: 1.8cqw; min-height: 11cqw; padding-top: 1.4cqw; }
+  .cb-actions:empty { min-height: 11cqw; }
+  #cb .cb-actions .btn { min-height: 9cqw; padding: 0 4.6cqw; border-radius: 999px; font-size: 3.5cqw; }
+  #cb .cb-actions .btn:disabled { opacity: .45; }
+  .cb-hint { min-height: 6.6cqw; padding: 0 1.4cqw; font-size: 3.05cqw; line-height: 1.15; text-align: center; color: rgba(255,255,255,.62); text-wrap: balance; }
+  .cb-hint b { font-weight: 400; color: var(--accent); }
+
+  /* the hand-scoring layer, exactly over the live table so nothing moves */
+  .cb-review { position: absolute; inset: 0; display: flex; flex-direction: column; gap: .8cqw; padding: 2cqw 2.4cqw 1.6cqw; box-sizing: border-box; }
+  .cb-review[hidden] { display: none; }
+  .cb-reviewhead { display: flex; align-items: center; justify-content: space-between; gap: 1cqw; min-height: 8cqw; line-height: 1.1; }
+  .cb-reviewhead .t { font-size: 3.4cqw; color: #fff; }
+  .cb-reviewhead .s { font-size: 2.6cqw; color: rgba(255,255,255,.55); }
+  .cb-reviewhead .startermini { display: flex; align-items: center; gap: 1cqw; font-size: 2.5cqw; color: rgba(255,255,255,.58); }
+  .cb-reviewhead .cb-card { width: 6.2cqw; height: 8.8cqw; }
+  .cb-srow { display: grid; grid-template-columns: 15cqw minmax(0,1fr) 11cqw; grid-template-rows: 9cqw auto; column-gap: 1.2cqw; align-items: center; min-height: 17cqw; padding: 1cqw 1.4cqw; border-radius: 2.4cqw; background: rgba(0,0,0,.2); }
+  .cb-srow.cribrow { box-shadow: inset 0 0 0 .4cqw rgba(255,209,102,.45); }
+  .cb-srow .who { min-width: 0; line-height: 1.1; }
+  .cb-srow .who b { display: block; font-size: 2.9cqw; font-weight: 400; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cb-srow .who span { display: block; margin-top: .4cqw; font-size: 2.4cqw; color: rgba(255,255,255,.5); }
+  .cb-srow .scards { display: flex; align-items: center; min-width: 0; overflow: hidden; }
+  .cb-srow .scards .cb-card { width: 7.4cqw; height: 10.4cqw; margin-left: .45cqw; }
+  .cb-srow .scards .cb-card:first-child { margin-left: 0; }
+  .cb-srow .scards .cb-card .r { font-size: 2.7cqw; }
+  .cb-srow .scards .cb-card .s { font-size: 2.2cqw; top: 3.7cqw; }
+  .cb-srow .pts { text-align: right; font-size: 5.8cqw; color: var(--accent); line-height: 1; }
+  .cb-srow .bits { grid-column: 1 / -1; font-size: 2.85cqw; line-height: 1.15; color: rgba(255,255,255,.58); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+  .cb-srow .bits b { color: rgba(255,255,255,.82); font-weight: 400; }
+
+  @keyframes cb-deal { from { transform: translateY(-1.8cqw) scale(.93); opacity: .3; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    #cb .cb-hand .cb-card { transition: none; }
+    #cb .cb-hand .cb-card.play:hover { transform: none; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-cribbage fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>cribbage</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="cribbage" data-man-title="CRIBBAGE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="cb" data-board data-reserve>
+      <div class="cb-scores" id="cb-scores" aria-label="Scores"></div>
+      <div class="cb-table">
+        <div class="cb-play" id="cb-play">
+          <div class="cb-oppband" id="cb-oppband">
+            <div class="cb-oppname"><b id="cb-oppname">Computer</b><span id="cb-oppmeta">6 cards</span></div>
+            <div class="cb-backs" id="cb-oppbacks" aria-label="Opponent's hand, face down"></div>
+            <div class="cb-crib" id="cb-crib">
+              <span class="lbl" id="cb-criblbl">crib <b>0</b></span>
+            </div>
+          </div>
+          <div class="cb-boardmid">
+            <div class="cb-starter" id="cb-starter">
+              <span class="cb-emptycard"></span>
+              <span class="cap">starter</span>
+            </div>
+            <div class="cb-midlabel" id="cb-midlabel"><b id="cb-midtitle">Throw two cards</b><span id="cb-midsub">to the dealer's crib</span></div>
+            <div class="cb-countbox"><b id="cb-count">0</b><span>count</span></div>
+            <div class="cb-line" id="cb-line" aria-label="Pegging line"></div>
+            <div class="cb-note" id="cb-note" aria-live="polite"></div>
+          </div>
+          <div class="cb-oppname" id="cb-meband" aria-label="You"></div>
+        </div>
+        <div class="cb-review" id="cb-review" hidden></div>
+      </div>
+      <div class="cb-handbar">
+        <div class="cb-hand" id="cb-hand" aria-label="Your hand"></div>
+        <div class="cb-actions" id="cb-actions"></div>
+        <div class="cb-hint" id="cb-hint" aria-live="polite"></div>
+      </div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button">new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-cribbage">
+  <h2>Name</h2>
+  <p>cribbage — the classic two-player card game of pegging and counting. Race around the board to 121.</p>
+
+  <h2>The deal</h2>
+  <ul>
+    <li>Both players get <strong>six cards</strong>. Each throws <strong>two face down</strong> into the <strong>dealer's crib</strong>.</li>
+    <li>The dealer cuts a <strong>starter card</strong>. A Jack cut as the starter scores the dealer 2 points ("his heels").</li>
+    <li>The crib belongs to the dealer and is only counted at the end of the deal.</li>
+  </ul>
+
+  <h2>Pegging</h2>
+  <ul>
+    <li>Players take turns playing one card and adding it to a running <strong>count</strong>. The count may not pass <strong>31</strong>.</li>
+    <li><strong>15 scores 2</strong>, <strong>31 scores 2</strong>, a <strong>pair scores 2</strong> (three of a kind 6, four of a kind 12), and a <strong>run of three or more</strong> scores its length.</li>
+    <li>If you cannot play without passing 31, say <strong>go</strong>. The other player keeps playing until they also cannot; the last card scores 1 and the count starts again.</li>
+  </ul>
+
+  <h2>Counting hands</h2>
+  <ul>
+    <li>Each four-card hand is counted with the starter. <strong>Fifteens</strong> are 2 points for every combination that adds to 15.</li>
+    <li><strong>Pairs</strong> are 2, <strong>runs</strong> score one point per card (double runs count twice), and <strong>nobs</strong> is the Jack of the starter's suit for 1.</li>
+    <li>A <strong>flush</strong> is four cards in your hand of one suit, or five with the starter. The crib only scores a flush when all five cards match.</li>
+  </ul>
+
+  <h2>Winning</h2>
+  <p>The first player to <strong>121</strong> wins. The dealer changes each deal, and the player who won the last deal leads the next one.</p>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Discard:</strong> tap two cards, then tap <strong>Send 2 to crib</strong>.</li>
+    <li><strong>Peg:</strong> tap a highlighted card. If nothing fits under 31, tap <strong>Go</strong>.</li>
+    <li><strong>Count:</strong> tap <strong>Score hands</strong> to add the hands and crib to the scores.</li>
+  </ul>
+
+  <h2>Against the computer</h2>
+  <ul>
+    <li><strong>Easy</strong> discards and pegs almost at random. <strong>Medium</strong> keeps useful cards and takes points when they are there. <strong>Hard</strong> counts its hand shape, protects its crib and avoids feeding yours.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Cribbage has <strong>two seats</strong>. Tap <strong>Online room</strong>, create a room and send the invite link to a friend.</li>
+    <li>The server deals and holds the hands. Your browser only sees your own cards until the hands are counted.</li>
+  </ul>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=2da83d25"></script>
+<script defer src="../multiseat.js?v=f5bba1b1"></script>
+<script defer src="engine.js?v=841ec31d"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=b7b0f3ba"></script>
+</body>
+</html>

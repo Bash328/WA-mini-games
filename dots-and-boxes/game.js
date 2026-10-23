@@ -268,7 +268,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when link play hides it.
+  resetBtn.addEventListener("click", () => (["whatsapp", "live"].includes(modeSel.value) ? activeLink().newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // Choosing a size before the first move: redraw an empty board of that size.
   sizeSel.addEventListener("change", () => {

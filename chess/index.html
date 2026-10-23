@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .board {
@@ -132,6 +132,11 @@
     <div class="board" id="board"></div>
     <div class="controls" style="justify-content:center">
       <button class="primary" id="reset">New game</button>
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
       <select id="mode" aria-label="Mode">
         <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
         <option data-short="Computer" value="ai">vs computer</option>
@@ -139,11 +144,6 @@
       </select>
       <button id="undo" hidden>Undo</button>
       <button id="flip">Flip board</button>
-      <select id="level" aria-label="Computer level" hidden>
-        <option value="1">Easy (depth 1)</option>
-        <option value="2" selected>Normal (depth 2)</option>
-        <option value="3">Hard (depth 3)</option>
-      </select>
       <select id="side" aria-label="Your side" hidden>
         <option value="w" selected>Play White</option>
         <option value="b">Play Black</option>
@@ -190,19 +190,19 @@
   <ul>
     <li><strong>Tap</strong> one of your pieces to select it. Legal destinations are highlighted with dots (moves) or rings (captures).</li>
     <li><strong>Tap a highlighted square</strong> to move there. Tap the piece again to deselect.</li>
-    <li>Switch the mode to <code>vs computer</code> to play solo. <code>Undo</code> takes back one full pair of moves there; choose <code>Easy / Normal / Hard</code> for engine strength.</li>
+    <li>Switch the mode to <code>vs computer</code> to play solo. <code>Undo</code> takes back one full pair of moves there; choose <code>Easy / Medium / Hard</code> for engine strength.</li>
   </ul>
 
   <h2>Notes</h2>
   <p class="muted">The engine uses minimax with alpha-beta pruning and piece-square tables. At depth 3 it plays a decent casual game.</p>
 </template>
 
-<script src="../taunts.js?v=ec4b7770"></script>
-<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../taunts.js?v=de2cfe57"></script>
+<script src="../gamekit.js?v=e0e3f4c6"></script>
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../async-share.js?v=a4bdc418"></script>
+<script src="../async-share.js?v=51603494"></script>
 <script src="puzzles.js?v=b4690f89"></script>
-<script src="game.js?v=706a1d9b"></script>
+<script src="game.js?v=6945a671"></script>
 <script src="../fun.js?v=0db388a6"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("chess"));</script>

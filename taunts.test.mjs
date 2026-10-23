@@ -15,7 +15,7 @@ const phraseUse = new Map(); // sentence -> Set of "game.category"
 for (const [game, block] of Object.entries(T)) {
   for (const [cat, lines] of Object.entries(block)) {
     const where = `${game}.${cat}`;
-    if (game === "online" ? !["angel", "devil"].includes(cat) : (game === "_" || game === "_computer") && !SHARED.includes(cat)) problems.push(`${where}: unknown generic category`);
+    if (game === "online" ? !["hype", "heckle"].includes(cat) : (game === "_" || game === "_computer") && !SHARED.includes(cat)) problems.push(`${where}: unknown generic category`);
     if (!lines.length) problems.push(`${where}: empty`);
     if (new Set(lines).size !== lines.length) problems.push(`${where}: duplicate line`);
     for (const l of lines) {
@@ -36,8 +36,8 @@ for (const [s, pools] of phraseUse) {
 // the server validates taunt ids by count; it must match the lists here
 const proto = readFileSync(new URL("./worker/live-protocol.mjs", import.meta.url), "utf8");
 const count = (name) => Number((proto.match(new RegExp("export const " + name + " = (\\d+)")) || [])[1]);
-if (count("ANGEL_COUNT") !== T.online.angel.length) problems.push("ANGEL_COUNT does not match online.angel");
-if (count("DEVIL_COUNT") !== T.online.devil.length) problems.push("DEVIL_COUNT does not match online.devil");
+if (count("HYPE_COUNT") !== T.online.hype.length) problems.push("HYPE_COUNT does not match online.hype");
+if (count("HECKLE_COUNT") !== T.online.heckle.length) problems.push("HECKLE_COUNT does not match online.heckle");
 
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 console.log("taunts.js ok");

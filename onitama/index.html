@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .on-wrap { width: min(440px, 100%); margin: 8px auto 0; }
@@ -96,6 +96,10 @@
   html body.fun.g-onitama .on-mini i { background: #e5e8ee; border-radius: 3px; } html body.fun.g-onitama .on-mini i.c { background: #2f3a46; opacity: 1; }
   html body.fun.g-onitama .on-mini i.m { background: var(--pc, #ff7a7a); }
   html body.fun.g-onitama .panel .on-board { width: clamp(276px, min(calc(100% + 22px), calc(100svh - 580px)), calc(100% + 22px)); margin: 8px auto; box-sizing: border-box; max-width: none; padding: 8px; gap: 4px; background: #14172b; border: 6px solid #000; border-radius: 22px; }
+  /* The PC AI/local toolbar takes 54px, so leave room for it in the height budget. */
+  @media (min-width: 760px) {
+    html body.fun.g-onitama .panel .on-board { width: clamp(276px, min(calc(100% + 22px), calc(100svh - 620px)), calc(100% + 22px)); }
+  }
   html body.fun.g-onitama #board .on-cell { background: #f1dcb4; border-radius: 8px; opacity: 1; box-shadow: none; }
   html body.fun.g-onitama #board .on-cell:nth-child(even) { background: #e6c999; }
   html body.fun.g-onitama #board .on-cell.from { background: #d8b878; }
@@ -190,12 +194,12 @@
 </template>
 
 <script defer src="../manpage.js?v=6ba2d49b"></script>
-<script defer src="../taunts.js?v=ec4b7770"></script>
-<script defer src="../gamekit.js?v=32528ca9"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
 <script defer src="../vendor/lz-string.min.js?v=2414f3d8"></script>
-<script defer src="../async-share.js?v=a4bdc418"></script>
+<script defer src="../async-share.js?v=51603494"></script>
 <script defer src="../account.js?v=160336a8"></script>
-<script defer src="../live-share.js?v=78191825"></script>
+<script defer src="../live-share.js?v=2da83d25"></script>
 <script defer src="rules.js?v=1ccaca06"></script>
 <script defer src="../fun.js?v=0db388a6"></script>
 <script defer src="game.js?v=afe7b1b1"></script>

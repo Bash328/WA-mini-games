@@ -261,7 +261,16 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when it is hidden in a link
+  // game. Route it through the live controller there, so "New game" actually
+  // clears the match (and the Admit defeat screen) instead of resetting a
+  // local game behind it.
+  resetBtn.addEventListener("click", () => {
+    const m = modeSel.value;
+    if (m === "whatsapp") link.newGame();
+    else if (m === "live" && live) live.newGame();
+    else resetLocal();
+  });
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device match: the score, the last round and a pick already made.
   // (Link and online games are not saved here.)

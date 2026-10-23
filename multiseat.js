@@ -1,10 +1,17 @@
 /* ============================================================
    multiseat.js — the online-room screens shared by the multi-seat games
-   (Liar's Dice, Dominoes). Crazy 8 has its own copy of this inside crazy-8/game.js.
+   (Liar's Dice, Dominoes, Ludo, Hearts). Crazy 8 has its own copy of this inside
+   crazy-8/game.js.
 
-   MultiSeat.create({ game, title, roomEl, tauntsEl, store, onModel, modes })
+   MultiSeat.create({ game, title, roomEl, tauntsEl, store, onModel, modes,
+                      tableSize, fixedSeats })
    gives a controller that owns the WebSocket to /api/card/*, the landing / lobby /
-   rematch screens (drawn into roomEl) and the little angel / devil taunt buttons.
+   rematch screens (drawn into roomEl) and the little Hype / Heckle table-talk
+   buttons.
+   `tableSize` is the number of seats (default 4). `fixedSeats` is for a game that
+   always plays with that many (Hearts, Lost Cities): the lobby hides the computer
+   count and says that empty seats are filled by computers. `fillSeats: false`
+   (Lost Cities) instead shows the empty seats as people who must join.
    The page draws the table itself from the model it is handed:
 
      model = { kind: "online", phase: "landing" | "lobby" | "playing" | "round_over" | "game_over" | "closed",
@@ -124,23 +131,23 @@
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && wantOpen && !ws) { retries = 0; connect(); } });
     window.addEventListener("online", () => { if (wantOpen && !ws) { retries = 0; connect(); } });
 
-    // ---------- taunts ----------
-    const lines = () => (window.TAUNT_LINES && window.TAUNT_LINES.online) || { angel: [], devil: [] };
-    const sugg = { a: -1, d: -1 };
+    // ---------- table talk (Hype / Heckle) ----------
+    const lines = () => (window.TAUNT_LINES && window.TAUNT_LINES.online) || { hype: [], heckle: [] };
+    const sugg = { h: -1, k: -1 };
     let tauntCool = false;
     const muted = () => store.get("taunt-mute", "0") === "1";
-    function suggest(k) { const l = k === "a" ? lines().angel : lines().devil; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
+    function suggest(k) { const l = k === "h" ? lines().hype : lines().heckle; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
     function renderTaunts() {
       if (!tauntsEl) return;
       tauntsEl.innerHTML = "";
       const on = M && M.kind === "online" && M.phase !== "lobby" && M.phase !== "landing" && M.phase !== "closed" && M.table;
-      tauntsEl.hidden = !on || !lines().angel.length;
+      tauntsEl.hidden = !on || !lines().hype.length;
       if (tauntsEl.hidden) return;
-      [["a", "angel"], ["d", "devil"]].forEach(([k, name]) => {
+      [["h", "hype"], ["k", "heckle"]].forEach(([k, name]) => {
         if (sugg[k] < 0) suggest(k);
         const text = lines()[name][sugg[k]];
         const b = el("button", "btn ghost", text);
-        b.type = "button"; b.disabled = tauntCool; b.style.borderColor = k === "a" ? "var(--teal)" : "var(--coral)";
+        b.type = "button"; b.disabled = tauntCool; b.style.borderColor = k === "h" ? "var(--teal)" : "var(--coral)";
         b.addEventListener("click", () => {
           if (tauntCool) return;
           sendRaw({ t: "taunt", k, i: sugg[k] });
@@ -153,7 +160,7 @@
     }
     function onTaunt(m) {
       if (muted()) return;
-      const l = m.k === "a" ? lines().angel : lines().devil;
+      const l = m.k === "h" ? lines().hype : lines().heckle;
       const p = M && M.players && M.players.find((x) => x.pid === m.from);
       if (l && l[m.i]) toast((p ? p.name : "Someone") + ": " + l[m.i]);
     }
@@ -180,9 +187,12 @@
       renderTaunts();
       if (!M) { roomEl.hidden = true; return; }
       roomEl.hidden = false;
+      const tableSize = opts.tableSize || MAX_SEATS;
       if (M.phase === "landing") {
         roomEl.append(el("h3", "", "Play " + opts.title + " online"));
-        roomEl.append(el("p", "note", "Up to 4 players. Create a room and send the invite link, or join a friend's room with its code. The host can add computer players to fill seats."));
+        roomEl.append(el("p", "note", opts.fixedSeats
+          ? opts.title + " always has " + tableSize + " seats. " + (opts.fillSeats === false ? "Create a room and send the invite link: the game starts when " + tableSize + " people are in." : "Create a room and send the invite link: friends take a seat, and computers fill any still empty when the game starts.")
+          : "Up to " + tableSize + " players. Create a room and send the invite link, or join a friend's room with its code. The host can add computer players to fill seats."));
         const row = el("div", "ms-join");
         row.append(btn("Create a room", "primary", () => enter(null)));
         const input = el("input"); input.type = "text"; input.maxLength = 8; input.placeholder = "Room code"; input.autocomplete = "off"; input.spellcheck = false; input.setAttribute("aria-label", "Room code");
@@ -214,19 +224,33 @@
           row.append(el("span", "tag", (p.host ? "host" : "") + (p.online ? "" : " · offline")));
           seats.append(row);
         });
-        for (let i = 0; i < M.config.bots; i++) { const r = el("div", "ms-seat"); r.append(el("span", "", "Computer " + (i + 1)), el("span", "tag", M.config.level)); seats.append(r); }
-        for (let i = M.players.length + M.config.bots; i < MAX_SEATS; i++) seats.append(el("div", "ms-seat empty", "Waiting for someone to join…"));
+        // a fixed table (Hearts) always fills up with computers, whatever the host's count says
+        const auto = opts.fixedSeats && opts.fillSeats !== false ? Math.max(0, tableSize - M.players.length) : 0;
+        const botRows = Math.min(tableSize - M.players.length, Math.max(M.config.bots, auto));
+        for (let i = 0; i < botRows; i++) {
+          const r = el("div", "ms-seat");
+          r.append(el("span", "", "Computer " + (i + 1)), el("span", "tag", i < M.config.bots ? M.config.level : "fills a seat"));
+          seats.append(r);
+        }
+        for (let i = M.players.length + botRows; i < tableSize; i++) seats.append(el("div", "ms-seat empty", "Waiting for someone to join…"));
         roomEl.append(seats);
         const cfg = el("div", "ms-cfg");
         if (modes) cfg.append(seg("Game type", modes, M.config.mode, (v) => sendRaw({ t: "config", mode: v }), isHost ? () => true : null));
-        cfg.append(seg("Computer players", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => sendRaw({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= MAX_SEATS : null));
+        if (!opts.fixedSeats) {
+          const botChoices = [[0, "None"]];
+          for (let n = 1; n < tableSize; n++) botChoices.push([n, String(n)]);
+          cfg.append(seg("Computer players", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= tableSize : null));
+        }
         cfg.append(seg("Computer level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), isHost ? () => true : null));
         roomEl.append(cfg);
         if (isHost) {
           const go = btn("Start the game", "primary", () => sendRaw({ t: "start" }));
-          go.disabled = M.seatsWanted < 2;
+          const minSeats = M.minSeats || 2;
+          go.disabled = M.seatsWanted < minSeats;
           roomEl.append(go);
-          roomEl.append(el("p", "note", M.seatsWanted < 2 ? "You need at least 2 players: invite a friend or add a computer." : "It starts by itself when all 4 seats are full."));
+          roomEl.append(el("p", "note", M.seatsWanted < minSeats
+            ? opts.fixedSeats ? "You need at least one more person: invite a friend with the link." : "You need at least " + minSeats + " players: invite a friend or add a computer."
+            : opts.fixedSeats ? (opts.fillSeats === false ? "It starts when " + tableSize + " people are in the room." : "It starts when you tap Start, or by itself when " + tableSize + " people are in the room. Empty seats are played by computers.") : "It starts when you tap Start, or by itself when all " + tableSize + " seats are full."));
         } else roomEl.append(el("p", "note", "Waiting for " + ((M.players.find((p) => p.host) || {}).name || "the host") + " to start. Only the host can change the settings."));
         if (typeof Account !== "undefined") {
           Account.status().then((st) => {
@@ -257,8 +281,14 @@
         roomEl.append(seats);
         if (isHost) {
           const cfg = el("div", "ms-cfg");
-          cfg.append(seg("Computer players", [[0, "None, just the people here"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => sendRaw({ t: "config", bots: v }), (v) => M.players.length + v <= MAX_SEATS));
+          if (!opts.fixedSeats) {
+            const botChoices = [[0, "None, just the people here"]];
+            for (let n = 1; n < tableSize; n++) botChoices.push([n, String(n)]);
+            cfg.append(seg("Computer players", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), (v) => M.players.length + v <= tableSize));
+          }
+          cfg.append(seg("Computer level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), () => true));
           roomEl.append(cfg);
+          if (opts.fixedSeats) roomEl.append(el("p", "note", "Empty seats are filled by computers at the level above."));
         } else roomEl.append(el("p", "note", "The host chooses the computer players for the rematch."));
         const mine = M.players.find((p) => p.pid === M.you.pid);
         const rm = btn(mine && mine.voted ? "Waiting for the others…" : "Rematch", "primary", () => sendRaw({ t: "vote" }));
@@ -274,7 +304,7 @@
 
     return {
       enter, leave, send, landing, toast, nowMs, closeSocket,
-      model: () => M, active: () => wantOpen || !!ws,
+      model: () => M, active: () => wantOpen || !!ws || !!M,
       stop() { closeSocket(); M = null; code = null; roomEl.innerHTML = ""; roomEl.hidden = true; if (tauntsEl) tauntsEl.hidden = true; },
     };
   }

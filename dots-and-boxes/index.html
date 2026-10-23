@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared.css?v=5db52064">
-<link rel="stylesheet" href="../fun.css?v=43227aac">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
 <link rel="stylesheet" href="../async-share.css?v=60323ef7">
 <style>
   .db-board {
@@ -92,6 +92,7 @@
     --d-vs1: #1c2038; --d-vs2: #28193a;          /* score bar */
     --d-board1: #e9e6f2; --d-board2: #efe6f0;    /* the card the dots sit on */
     --d-p1: #ff7a7a; --d-p2: #3fd0c0; --fun-btn: #5a63b8; --fun-chip: rgba(255,255,255,.1);  /* each player's lines and boxes */
+    --p1: var(--d-p1); --p2: var(--d-p2);        /* the shared turn dot matches the board */
     --fun-bg: var(--d-bg1); --vs-bg: var(--d-vs1); --vs-l: var(--d-p1); --vs-r: var(--d-p2);
     transition: background-color .35s;
   }
@@ -185,13 +186,13 @@
   </ul>
 </template>
 
-<script src="../taunts.js?v=ec4b7770"></script>
-<script src="../gamekit.js?v=32528ca9"></script>
+<script src="../taunts.js?v=de2cfe57"></script>
+<script src="../gamekit.js?v=e0e3f4c6"></script>
 <script src="../vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../async-share.js?v=a4bdc418"></script>
+<script src="../async-share.js?v=51603494"></script>
 <script src="../account.js?v=160336a8"></script>
-<script src="../live-share.js?v=78191825"></script>
-<script src="game.js?v=b8afd17a"></script>
+<script src="../live-share.js?v=2da83d25"></script>
+<script src="game.js?v=7d01c9a1"></script>
 <script src="../fun.js?v=0db388a6"></script>
 <script defer src="../manpage.js?v=6ba2d49b"></script>
 </body>

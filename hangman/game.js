@@ -2,7 +2,8 @@
   "use strict";
 
   const P1 = 1, P2 = 2; // P1 sets the word (once); P2 guesses (repeatedly)
-  const MAX_WRONG = 6;
+  const B = window.HangmanBanter;                 // the stick man's lines and when he says them (banter.js)
+  const MAX_WRONG = B.MAX_WRONG;
   const NAMES = { [P1]: "Player 1", [P2]: "Player 2" };
   const A_CODE = "A".charCodeAt(0);
 
@@ -10,6 +11,38 @@
   const bubbleEl = document.getElementById("bubble");
   let spoken = "";
   const ghostEl = document.getElementById("ghost");
+  const stageEl = document.querySelector(".hm-stage");
+  const gallowsEl = document.getElementById("gallows");
+  const shadowEl = document.getElementById("hm-shadow");
+  const dustPosEl = document.getElementById("hm-dust-pos");
+  const dustEl = document.getElementById("hm-dust");
+
+  // “Splinter” remembers finished games on this device. It is only used for
+  // a few callbacks (a save streak, a repeat loss, a returning setter), never
+  // for odds or hints. A finished WhatsApp link keeps its lastKey so opening
+  // the same result twice cannot count twice.
+  const historyStore = Gamekit.storage("hangman:");
+  const history = Object.assign({ games: 0, saves: 0, losses: 0, streak: 0, best: 0, last: "", lastKey: "" },
+    historyStore.getJSON("history", {}));
+  for (const k of ["games", "saves", "losses", "streak", "best"]) {
+    if (!Number.isFinite(history[k]) || history[k] < 0) history[k] = 0;
+  }
+  function recordResult(won, key) {
+    if (key && history.lastKey === key) return;
+    history.games++;
+    if (won) {
+      history.saves++;
+      history.streak++;
+      history.best = Math.max(history.best, history.streak);
+    } else {
+      history.losses++;
+      history.streak = 0;
+    }
+    history.last = won ? "saved" : "lost";
+    if (key) history.lastKey = key;
+    historyStore.setJSON("history", history);
+  }
+
   function speak(line) {
     const t = line ? line.text : "";
     const key = t + (line && line.ghost ? "|ghost" : "");
@@ -19,13 +52,59 @@
     bubbleEl.textContent = t;
     bubbleEl.classList.toggle("beg", !!(line && line.beg));
     bubbleEl.classList.toggle("ghost", !!(line && line.ghost));
+    // The face follows the words, not only the miss count: a proud line gets
+    // a proud face even on the last life, so he never grins through a shiver.
+    const face = t && B.faceOf ? B.faceOf(t) : "";
+    if (face) stageEl.dataset.face = face; else delete stageEl.dataset.face;
     ghostEl.toggleAttribute("hidden", !(line && line.ghost));   // the last line, when he has run out of chances, comes from his ghost (an SVG has no .hidden property)
   }
+
+  let reactionTimer = 0;
+  function reaction(kind) {
+    stageEl.dataset.react = kind;
+    clearTimeout(reactionTimer);
+    reactionTimer = setTimeout(() => { delete stageEl.dataset.react; }, 520);
+  }
+  function paintMood(misses, result) {
+    stageEl.dataset.mood = result || (misses >= MAX_WRONG - 1 ? "terrified"
+      : misses >= MAX_WRONG - 2 ? "scared"
+      : misses >= 2 ? "worried" : "calm");
+    // Poke is only meaningful once the head is there and the game is live.
+    gallowsEl.setAttribute("aria-disabled", result || misses < 1 ? "true" : "false");
+  }
+
+  // A little dust at the joint of the part that was just drawn.
+  function puff(part) {
+    if (!dustEl || !dustPosEl) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const box = part.getBBox();
+    dustPosEl.setAttribute("transform", `translate(${box.x + box.width / 2} ${box.y + box.height / 2})`);
+    dustEl.classList.remove("on");
+    void dustEl.getBoundingClientRect();
+    dustEl.classList.add("on");
+  }
+
   // the gallows draws one more part for every miss; it reads the "Misses: n / 6" line, whichever mode wrote it
   (function () {
-    const missesNode = document.getElementById("misses"), parts = document.querySelectorAll("#gallows .pt");
+    const missesNode = document.getElementById("misses");
+    const parts = [...document.querySelectorAll("#gallows .pt")];
     if (!missesNode || !parts.length) return;
-    const draw = () => { const m = /Misses: (\d+)/.exec(missesNode.textContent); const n = m ? Number(m[1]) : 0; parts.forEach((p, i) => p.classList.toggle("on", i < n)); };
+    let prev = -1;
+    const draw = () => {
+      const m = /Misses: (\d+)/.exec(missesNode.textContent);
+      const n = m ? Number(m[1]) : 0;
+      parts.forEach((p, i) => p.classList.toggle("on", i < n));
+      stageEl.dataset.misses = String(n);
+      stageEl.dataset.head = n > 0 ? "1" : "0";
+      if (shadowEl) {
+        const k = Math.min(n, MAX_WRONG) / MAX_WRONG;
+        shadowEl.style.opacity = String(0.12 + k * 0.28);
+        shadowEl.style.transform = `scaleX(${0.55 + k * 0.65})`;
+      }
+      // A restore or a re-render must not puff; only a genuinely new part.
+      if (prev >= 0 && n > prev && n <= parts.length) puff(parts[n - 1]);
+      prev = n;
+    };
     new MutationObserver(draw).observe(missesNode, { childList: true, characterData: true, subtree: true });
     draw();
   })();
@@ -38,6 +117,113 @@
   const keyboardEl = document.getElementById("keyboard");
   const modeSel = document.getElementById("mode");
   const resetBtn = document.getElementById("reset-btn");
+
+  // ---------- idle, poke, eyes ----------
+  let idleTimer = 0, idleCount = 0, loIdle = "", waIdle = "";
+  function clearIdle(resetCount) {
+    clearTimeout(idleTimer); idleTimer = 0;
+    if (resetCount) idleCount = 0;
+  }
+  function activeIdleTarget() {
+    if (modeSel.value === "local") return !!(loWord && loStatus === "in_progress");
+    return !!(waInGame && waStatus === "in_progress" && waCanMove && waCurrent === P2);
+  }
+  function showIdle() {
+    if (document.hidden || idleCount >= 2) return;
+    if (modeSel.value === "local" && loWord && loStatus === "in_progress") {
+      idleCount++;
+      glance();
+      loIdle = { text: B.idleLine() };
+      renderLocal();
+    } else if (waInGame && waStatus === "in_progress" && waCanMove && waCurrent === P2) {
+      idleCount++;
+      glance();
+      waIdle = { text: B.idleLine() };
+      renderWA();
+    }
+  }
+  function scheduleIdle() {
+    clearTimeout(idleTimer); idleTimer = 0;
+    if (document.hidden || idleCount >= 2 || !activeIdleTarget()) return;
+    idleTimer = setTimeout(showIdle, idleCount === 0 ? 15000 : 25000);
+  }
+
+  // A poke is deliberately only possible once his head is drawn; before that
+  // there is nothing on the gallows to poke.
+  function poke() {
+    if (modeSel.value === "local" && loWord && loStatus === "in_progress") {
+      const misses = wrongCount(loWord, loMask);
+      if (misses < 1) return;
+      clearIdle(true);
+      loIdle = { text: B.pokeLine(misses) };
+      renderLocal();
+      reaction("poke");
+    } else if (waInGame && waStatus === "in_progress") {
+      const misses = wrongCount(waWord, waMask);
+      if (misses < 1) return;
+      clearIdle(true);
+      waIdle = { text: B.pokeLine(misses) };
+      renderWA();
+      reaction("poke");
+    }
+  }
+
+  let lookTimer = 0, lookPinned = 0;
+  function setLook(i) {
+    const x = ((i % 7) - 3) * 0.55;
+    const y = 1 + Math.floor(i / 7) * 0.35;
+    stageEl.style.setProperty("--look-x", x.toFixed(2) + "px");
+    stageEl.style.setProperty("--look-y", y.toFixed(2) + "px");
+  }
+  function lookAway(force) {
+    // Rebuilding the keyboard after a guess fires focusout; a glance at the
+    // guessed key should survive that, but leaving the keyboard or the timer
+    // should still bring his eyes back.
+    if (!force && Date.now() < lookPinned) return;
+    lookPinned = 0;
+    clearTimeout(lookTimer);
+    stageEl.style.setProperty("--look-x", "0px");
+    stageEl.style.setProperty("--look-y", "0px");
+  }
+  function lookAtGuess(i) {
+    setLook(i);
+    lookPinned = Date.now() + 900;
+    clearTimeout(lookTimer);
+    lookTimer = setTimeout(() => lookAway(true), 900);
+  }
+  // When he is bored he looks around the room instead of staring at the keys.
+  function glance() {
+    const x = (Math.floor(Math.random() * 3) - 1) * 1.1;
+    stageEl.style.setProperty("--look-x", x.toFixed(2) + "px");
+    stageEl.style.setProperty("--look-y", "0.7px");
+    lookPinned = Date.now() + 1300;
+    clearTimeout(lookTimer);
+    lookTimer = setTimeout(() => lookAway(true), 1300);
+  }
+  // Each page-load blinks on its own rhythm; two eyes still blink together.
+  (function () {
+    const delay = (-Math.random() * 5).toFixed(2) + "s";
+    document.querySelectorAll(".hm-eye").forEach((eye) => { eye.style.animationDelay = delay; });
+  })();
+
+  gallowsEl.addEventListener("click", poke);
+  gallowsEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poke(); }
+  });
+  keyboardEl.addEventListener("pointerover", (e) => {
+    const key = e.target.closest(".hm-key");
+    if (key) setLook([...keyboardEl.children].indexOf(key));
+  });
+  keyboardEl.addEventListener("pointerleave", () => lookAway(true));
+  keyboardEl.addEventListener("focusin", (e) => {
+    const key = e.target.closest(".hm-key");
+    if (key) setLook([...keyboardEl.children].indexOf(key));
+  });
+  keyboardEl.addEventListener("focusout", () => lookAway(false));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) clearIdle(false);
+    else scheduleIdle();
+  });
 
   const other = (p) => p === P1 ? P2 : P1;
   const letterIdx = (ch) => ch.charCodeAt(0) - A_CODE;
@@ -129,7 +315,12 @@
   // The guess reaction belongs to one board state: it's shown only while
   // waMask still equals waNoteMask, so a re-render keeps it and a fresh
   // link never inherits a stale one.
-  let waNote = "", waNoteMask = -1, waTaunt = newTauntState(), waEnd = "", waEndKey = "";
+  let waNote = "", waNoteMask = -1, waTaunt = B.newState(), waEnd = "", waEndKey = "";
+  // The setter's line is picked once per word: a re-render must not
+  // re-roll it (the same reason waEnd is cached).
+  let waSetKey = "", waSetLine = "";
+  // One result per finished board state, even if the final link reopens.
+  let waRecordedKey = "";
 
   function loadLink(s, canMove) {
     waInGame = !!s;
@@ -141,7 +332,11 @@
     } else {
       waWord = ""; waMask = 0; waCurrent = P1;
     }
-    if (waMask === 0) { waNote = ""; waNoteMask = -1; waTaunt = newTauntState(); waEnd = ""; waEndKey = ""; }
+    clearIdle(true); waIdle = "";
+    if (waMask === 0) {
+      waNote = ""; waNoteMask = -1; waTaunt = B.newState(); waEnd = ""; waEndKey = "";
+      waSetKey = ""; waSetLine = ""; waRecordedKey = "";
+    }
     renderWA();
   }
 
@@ -151,17 +346,36 @@
     if (waInGame) {
       renderWord(waWord, waMask, reveal);
       const misses = wrongCount(waWord, waMask);
+      const solved = isSolved(waWord, waMask);
       const guesserTurn = waCanMove && waCurrent === P2 && waStatus === "in_progress";
-      const note = guesserTurn && waNoteMask === waMask ? waNote : "";
+      const note = waIdle || (guesserTurn && waNoteMask === waMask ? waNote : "");
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
+      paintMood(misses, reveal ? (solved ? "saved" : "dead") : "");
       if (reveal) {
         const k = waWord + ":" + waMask;
-        if (waEndKey !== k) { waEndKey = k; waEnd = isSolved(waWord, waMask) ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(waWord, waMask), ghost: true }; }
+        // Record before choosing the line, so a save that makes three in a
+        // row can say so immediately.
+        if (waRecordedKey !== k) {
+          waRecordedKey = k;
+          recordResult(solved, k);
+        }
+        if (waEndKey !== k) {
+          waEndKey = k;
+          waEnd = solved
+            ? { text: B.savedLine(history, misses) }
+            : { text: B.lossTaunt(waWord, waMask, history), ghost: true };
+        }
         speak(waEnd);
+      } else if (waInGame && !waCanMove && waStatus === "in_progress" && waMask === 0) {
+        // Player 1 looking at their own just-sent link: he comments on the
+        // word they chose. Picked once per word so re-renders are stable.
+        if (waSetKey !== waWord) { waSetKey = waWord; waSetLine = B.setterLine(waWord, "self", history); }
+        speak({ text: waSetLine });
       } else speak(note);
     } else {
       wordEl.textContent = "";
       missesEl.textContent = "";
+      paintMood(0, "");
       speak("");
     }
     const guesserCanGuess = waCanMove && waInGame && waCurrent === P2 && waStatus === "in_progress";
@@ -174,6 +388,7 @@
     if (waInGame && !waCanMove && waStatus === "in_progress" && waMask === 0) {
       missesEl.textContent = `You set: ${waWord} — waiting for Player 2 to start guessing.`;
     }
+    scheduleIdle();
   }
 
   function setWordWA() {
@@ -183,17 +398,23 @@
       return;
     }
     setupError.textContent = "";
+    clearIdle(true); waIdle = "";
     link.commit({ board: boardToStr(word, 0), status: "in_progress", winner: null, last: 26 });
   }
 
   function guessWA(i) {
     if (!waCanMove || waCurrent !== P2 || waStatus !== "in_progress") return;
     const mask = waMask | bit(i);
+    const ch = String.fromCharCode(A_CODE + i);
+    const hit = waWord.includes(ch);
     let status = "in_progress", winner = null;
     if (isSolved(waWord, mask)) { status = "won"; winner = P2; }
     else if (wrongCount(waWord, mask) >= MAX_WRONG) { status = "won"; winner = P1; }
-    waNote = voice(guessNote(waTaunt, waWord, mask, String.fromCharCode(A_CODE + i)), waWord, mask, String.fromCharCode(A_CODE + i));
+    clearIdle(true); waIdle = "";
+    waNote = B.react(waTaunt, waWord, mask, ch);
     waNoteMask = mask;
+    lookAtGuess(i);
+    if (status === "in_progress") reaction(hit ? "hit" : "miss");
     // Keep the turn with the guesser while the game is on. Once it's over
     // the default (turn goes to the opponent) must apply, otherwise Player 1
     // opening the final link is treated as Player 2 and sees the result inverted.
@@ -201,290 +422,13 @@
   }
 
   // ---------- 2 players, same device ----------
-  // Hangman's own gallows-humor taunts, rather than Gamekit's generic
-  // pool — "the one hanging" joke doesn't land in checkers.
-  const HANGMAN_LAST_CHANCE = [
-    "Try harder. I'm the one hanging here!",
-    "One more miss and that's curtains.",
-    "The rope's getting tighter. Figuratively. Mostly.",
-    "Last letter standing between you and the noose.",
-    "The gallows are warming up.",
-    "One guess left. Make it count. You won't.",
-    "This is the letter that decides everything.",
-    "Dramatic pause intensifies.",
-    "This is the nail-biter moment.",
-    "One wrong move from game over.",
-    "The executioner is checking their watch.",
-    "Pick wisely. Or don't — it's funnier that way.",
-  ];
-  const HANGMAN_LOSS = [
-    "Hanged by your own indecision.",
-    "The word remains undefeated.",
-    "Better luck spelling next time.",
-    "That word really had your number.",
-    "The dictionary wins again.",
-    "A moment of silence for your guesses.",
-    "Spelling was never your strong suit, huh.",
-    "The noose has spoken.",
-    "Game over. The word lives to see another day.",
-    "Well, the letters tried to warn you.",
-    "That's going in the hangman hall of shame.",
-    "The rope wins this round.",
-  ];
-  // Mid-game mockery for a pile of misses that hasn't reached the gallows
-  // yet — distinct from the last-chance line, which is reserved for the
-  // final guess. Needs no word-length awareness: the joke here is just
-  // "you've already whiffed a lot," not about the word itself.
-  const MANY_WRONG_THRESHOLD = 3;
-  const HANGMAN_MANY_WRONG = [
-    "That's a lot of wrong letters for one word.",
-    "The alphabet is not your friend tonight.",
-    "At this rate you're guessing backwards.",
-    "Statistically, you should've hit one by now.",
-    "The gallows crew is placing bets.",
-    "Quite a collection of misses you're building there.",
-    "This is turning into a greatest-misses album.",
-    "Half your guesses gone and the word's barely dented.",
-    "The keyboard is starting to feel personally attacked.",
-  ];
-  // A hint dressed up as a jab. Only offered while the word still has an
-  // unguessed vowel (see guessNote), so it never points at a letter that
-  // can't help — and it sets up the VOWEL_PAYOFF / VOWEL_WRONG callbacks.
-  const HANGMAN_VOWEL_NUDGE = [
-    "Maybe try... a vowel? Any vowel?",
-    "Have you considered a vowel?",
-    "Vowels exist. Just saying.",
-    "A, E, I, O, U — pick one. Any one.",
-    "Pro tip: most words have vowels.",
-  ];
-  // Callbacks to the lines above, shown on the very next guess.
-  const HANGMAN_VOWEL_PAYOFF = [
-    "Seeeeee? Was that so hard?",
-    "Seeeee — all it took was a vowel.",
-    "See?? Vowels. They work.",
-    "Seeeeeee! I'm basically a genius.",
-    "And THAT is why we try vowels.",
-  ];
-  const HANGMAN_VOWEL_WRONG = [
-    "Technically a vowel. Technically wrong.",
-    "Right idea, wrong vowel.",
-    "You listened! ...and still missed.",
-    "A vowel, yes. The vowel, no.",
-  ];
-  const HANGMAN_COMEBACK = [
-    "Now we're talking.",
-    "There it is. Now we're talking.",
-    "Oh, so you CAN do this.",
-    "Finally. Now we're getting somewhere.",
-    "Look at that — a correct letter. Now we're talking.",
-    "Okay okay, now we're cooking.",
-  ];
-  // Right letters while down to the last life: surprise on the first one,
-  // genuine praise once it becomes a streak.
-  const HANGMAN_LAST_LIFE_SURPRISE = [
-    "Wait — that was right? On your last life?",
-    "Okay, didn't see that coming.",
-    "Whoa. Still alive. For now.",
-    "Plot twist: you might survive this.",
-    "Look who's still breathing.",
-    "Hold on. Is this a comeback?",
-  ];
-  const HANGMAN_LAST_LIFE_PRAISE = [
-    "Okay, this is getting impressive.",
-    "Cheating death, one letter at a time.",
-    "Ice. In. Your. Veins.",
-    "The noose is sweating. You're not.",
-    "Alright, I'm genuinely impressed.",
-    "Hanging by a thread and still delivering.",
-    "That's called clutch.",
-  ];
-  // Taunts are seasoning, not a laugh track: most guesses get no line at
-  // all. Callbacks (payoffs) always fire, since they answer a line the
-  // player already saw.
-  const CHANCE_LAST_CHANCE = 0.6;
-  const CHANCE_MANY_WRONG = 0.5;
-  const CHANCE_VOWEL_NUDGE = 0.35; // share of many-wrong lines that are the vowel hint
-  const CHANCE_FIRST_SURPRISE = 0.7;
-  // Word-length-aware extras, blended into the pool above rather than
-  // replacing it: a short word losing to the guesser is extra embarrassing
-  // (it was right there), a long one earns a little sympathy instead.
-  const SHORT_WORD_MAX = 4;
-  const LONG_WORD_MIN = 8;
-  const HANGMAN_SHORT_LAST_CHANCE = [
-    "Come on, this is an easy one.",
-    "It's barely a word. How is this close?",
-    "This one should've been free.",
-    "A toddler could spell this one.",
-    "This word has training wheels and you're still wobbling.",
-    "Four letters. FOUR.",
-  ];
-  const HANGMAN_SHORT_LOSS = [
-    "That word had training wheels and you still fell off.",
-    "Four letters or less. And you still lost.",
-    "A word that short deserved a better guesser.",
-    "Short word. Shorter memory, apparently.",
-    "That's the hangman equivalent of missing an open goal.",
-    "Autocorrect would've gotten that one.",
-  ];
-  const HANGMAN_LONG_LAST_CHANCE = [
-    "Stay sharp — that's a long one to blow now.",
-    "This word's been testing everyone. Don't let it win.",
-    "One letter from cracking a genuinely hard word.",
-    "That's a lot of letters to lose on now.",
-    "This one's earned its difficulty badge. Don't waste it.",
-    "So close to cracking a real beast of a word.",
-  ];
-  const HANGMAN_LONG_LOSS = [
-    "I don't blame you, that's a big one.",
-    "Honestly, that word was unreasonable.",
-    "Nobody was spelling that one cold.",
-    "That word was basically a boss fight.",
-    "Respect for even attempting that monster.",
-    "Long words like that have humbled better guessers.",
-  ];
-  // The cruelest loss: only one unguessed letter stood between the guesser
-  // and the win. Checked independently of word length — a short word lost
-  // by one letter stings just as much as a long one.
-  const ALMOST_MAX_MISSING = 1;
-  const HANGMAN_ALMOST_LOSS = [
-    "You had my hopes up for nothing.",
-    "So close. So, so close.",
-    "One letter. ONE letter away.",
-    "The word was right there and you still missed it.",
-    "That's the cruelest kind of loss — the almost kind.",
-    "You could taste the win. Then you couldn't.",
-    "One more correct guess and this ends differently.",
-    "You really couldn't tell, huh?",
-  ];
-  // The hanged man does the talking: taunts, and now and then begging for his life.
-  const HANGMAN_BEGS = [
-    "Wait, wait, wait! I have a family!",
-    "Please! I'm only made of sticks!",
-    "Tell my stick wife I love her.",
-    "I'm too young to hang!",
-    "Not that letter again, please!",
-    "I can see the rope from here!",
-    "Can we talk about this?",
-    "I'll give you my last twig.",
-    "Is there a vowel you haven't tried?",
-    "My knees are shaking. I have no knees!",
-  ];
-  const HANGMAN_BEGS_LAST = [
-    "ONE LEFT! Please, please, please!",
-    "I can't look. I have no eyes. I can't look!",
-    "I'll be good! I'll be so good!",
-    "Don't do this to me!",
-    "Tell them I was a good stick man.",
-    "My whole life is flashing before me. It's two lines!",
-  ];
-  // the first miss draws his head: that is when he starts talking
-  const HANGMAN_FIRST_MISS = [
-    "Hey! Where did my head come from?",
-    "Oh no. Is that a rope?",
-    "Well, that's a head. I didn't ask for one.",
-    "Uh oh. I can see the noose.",
-    "Hello? Something just appeared above my neck.",
-  ];
-  const HANGMAN_RELIEF = [
-    "Yes! Keep going, you beauty!",
-    "I can breathe again. Slightly.",
-    "That's the one, that's the one!",
-    "My toes are touching the floor again!",
-  ];
-  const HANGMAN_SAVED = [
-    "Phew! You saved me. I owe you my life.",
-    "I'm free! Drinks are on me. I have no pockets.",
-    "Never doubted you. Okay, I doubted you a little.",
-  ];
-  function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
-  function missingUniqueCount(word, mask) {
-    const seen = new Set();
-    let missing = 0;
-    for (const ch of word) {
-      if (seen.has(ch)) continue;
-      seen.add(ch);
-      if (!(mask & bit(letterIdx(ch)))) missing++;
-    }
-    return missing;
-  }
-  function lastChanceTaunt(word) {
-    if (word.length <= SHORT_WORD_MAX) return pick(HANGMAN_LAST_CHANCE.concat(HANGMAN_SHORT_LAST_CHANCE));
-    if (word.length >= LONG_WORD_MIN) return pick(HANGMAN_LAST_CHANCE.concat(HANGMAN_LONG_LAST_CHANCE));
-    return pick(HANGMAN_LAST_CHANCE);
-  }
-  function lossTaunt(word, mask) {
-    let pool = HANGMAN_LOSS;
-    if (word.length <= SHORT_WORD_MAX) pool = pool.concat(HANGMAN_SHORT_LOSS);
-    else if (word.length >= LONG_WORD_MIN) pool = pool.concat(HANGMAN_LONG_LOSS);
-    if (typeof mask === "number" && missingUniqueCount(word, mask) <= ALMOST_MAX_MISSING) {
-      pool = pool.concat(HANGMAN_ALMOST_LOSS);
-    }
-    return pick(pool);
-  }
-  function hasUnguessedVowel(word, mask) {
-    for (const ch of word) {
-      if ("AEIOU".includes(ch) && !(mask & bit(letterIdx(ch)))) return true;
-    }
-    return false;
-  }
-
-  // Per-game memory the guess reactions need: what the last line nudged
-  // (so the next guess can call back to it) and how many right letters in
-  // a row have landed while on the last life.
-  function newTauntState() { return { nudge: null, lastLifeHits: 0 }; }
-  function voice(note, word, mask, ch) {
-    const misses = wrongCount(word, mask), hit = word.includes(ch);
-    if (isSolved(word, mask) || misses >= MAX_WRONG) return "";
-    if (!hit && misses === 1) return { text: pick(HANGMAN_FIRST_MISS), beg: true };
-    if (!hit && misses === MAX_WRONG - 1 && Math.random() < 0.7) return { text: pick(HANGMAN_BEGS_LAST), beg: true };
-    if (!hit && misses >= 2 && Math.random() < 0.45) return { text: pick(HANGMAN_BEGS), beg: true };
-    if (hit && misses >= 3 && !note && Math.random() < 0.35) return { text: pick(HANGMAN_RELIEF) };
-    return note ? { text: note } : "";
-  }
-
-
-  // The line (or "") to show after the guesser picks `ch`; `mask` already
-  // includes it. Decided once per guess and stored by the caller, so a
-  // re-render never re-rolls it. Game-over lines are handled elsewhere.
-  function guessNote(st, word, mask, ch) {
-    const prevNudge = st.nudge;
-    st.nudge = null;
-    const misses = wrongCount(word, mask);
-    if (isSolved(word, mask) || misses >= MAX_WRONG) return "";
-    const hit = word.includes(ch);
-    const isVowel = "AEIOU".includes(ch);
-
-    if (misses === MAX_WRONG - 1) {
-      if (!hit) {
-        st.lastLifeHits = 0;
-        return Math.random() < CHANCE_LAST_CHANCE ? lastChanceTaunt(word) : "";
-      }
-      st.lastLifeHits++;
-      if (st.lastLifeHits === 1) {
-        return Math.random() < CHANCE_FIRST_SURPRISE ? pick(HANGMAN_LAST_LIFE_SURPRISE) : "";
-      }
-      return pick(HANGMAN_LAST_LIFE_PRAISE);
-    }
-
-    if (misses < MANY_WRONG_THRESHOLD) return "";
-    if (hit) {
-      if (prevNudge === "vowel" && isVowel) return pick(HANGMAN_VOWEL_PAYOFF);
-      return prevNudge ? pick(HANGMAN_COMEBACK) : "";
-    }
-    if (prevNudge === "vowel" && isVowel) return pick(HANGMAN_VOWEL_WRONG);
-    if (Math.random() >= CHANCE_MANY_WRONG) return "";
-    if (hasUnguessedVowel(word, mask) && Math.random() < CHANCE_VOWEL_NUDGE) {
-      st.nudge = "vowel";
-      return pick(HANGMAN_VOWEL_NUDGE);
-    }
-    st.nudge = "other";
-    return pick(HANGMAN_MANY_WRONG);
-  }
-
-  let loWord = "", loMask = 0, loStatus = "in_progress", loNote = "", loTaunt = newTauntState(), loEnd = "";
+  let loWord = "", loMask = 0, loStatus = "in_progress", loNote = "", loTaunt = B.newState(), loEnd = "", loSetLine = "";
+  let loRecorded = false;
 
   function resetLocal() {
-    loWord = ""; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
+    loWord = ""; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = B.newState(); loEnd = ""; loSetLine = "";
+    loRecorded = false;
+    clearIdle(true); loIdle = "";
     renderLocal();
   }
 
@@ -495,42 +439,63 @@
       renderWord(loWord, loMask, reveal);
       const misses = wrongCount(loWord, loMask);
       missesEl.textContent = `Misses: ${misses} / ${MAX_WRONG}`;
-      if (loStatus !== "in_progress" && !loEnd) loEnd = loStatus === "won-p2" ? { text: pick(HANGMAN_SAVED) } : { text: lossTaunt(loWord, loMask), ghost: true };
+      paintMood(misses, reveal ? (loStatus === "won-p2" ? "saved" : "dead") : "");
+      if (reveal && !loRecorded) {
+        loRecorded = true;
+        recordResult(loStatus === "won-p2", "");
+      }
+      if (reveal && !loEnd) {
+        loEnd = loStatus === "won-p2"
+          ? { text: B.savedLine(history, misses) }
+          : { text: B.lossTaunt(loWord, loMask, history), ghost: true };
+      }
       statusEl.textContent = loStatus === "in_progress"
         ? "Player 2: guess a letter."
         : (loStatus === "won-p2" ? "Player 2 wins! " + loEnd.text : "Player 1 wins. The word wasn't guessed in time. " + loEnd.text);
-      speak(loStatus === "in_progress" ? loNote : loEnd);
+      // Before the first guess he comments on the word Player 1 chose;
+      // after that he reacts to guesses, and eventually gets impatient.
+      const opening = loMask === 0 ? { text: loSetLine || (loSetLine = B.setterLine(loWord, "handoff", history)) } : null;
+      speak(loStatus === "in_progress" ? (loIdle || opening || loNote) : loEnd);
       Gamekit.turn(loStatus === "in_progress" ? P2 : null, "Player 2 · guess a letter");
       keyboardEl.hidden = false;
       renderKeyboard(loMask, loWord, loStatus === "in_progress", guessLocal);
     } else {
       Gamekit.turn(P1, "Player 1 · set a secret word");
-      wordEl.textContent = ""; missesEl.textContent = ""; speak("");
+      wordEl.textContent = ""; missesEl.textContent = ""; paintMood(0, ""); speak("");
       statusEl.textContent = "Player 1: set a secret word, then hand the device to Player 2.";
       keyboardEl.hidden = true;
     }
+    scheduleIdle();
   }
 
   function setWordLocal() {
     const word = normalizeWord(setupInput.value);
     if (!validWord(word)) { setupError.textContent = "Enter a word from 3 to 20 letters (A-Z only)."; return; }
     setupError.textContent = "";
-    loWord = word; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
+    loWord = word; loMask = 0; loStatus = "in_progress"; loNote = ""; loTaunt = B.newState(); loEnd = ""; loSetLine = B.setterLine(word, "handoff", history);
+    loRecorded = false;
+    clearIdle(true); loIdle = "";
     renderLocal();
   }
 
   function guessLocal(i) {
     if (loStatus !== "in_progress") return;
+    const ch = String.fromCharCode(A_CODE + i);
+    const hit = loWord.includes(ch);
     loMask |= bit(i);
     if (isSolved(loWord, loMask)) loStatus = "won-p2";
     else if (wrongCount(loWord, loMask) >= MAX_WRONG) loStatus = "won-p1";
-    loNote = voice(guessNote(loTaunt, loWord, loMask, String.fromCharCode(A_CODE + i)), loWord, loMask, String.fromCharCode(A_CODE + i));
+    clearIdle(true); loIdle = "";
+    loNote = B.react(loTaunt, loWord, loMask, ch);
+    lookAtGuess(i);
+    if (loStatus === "in_progress") reaction(hit ? "hit" : "miss");
     renderLocal();
   }
 
   function applyMode() {
     const wa = modeSel.value === "whatsapp";
     resetBtn.hidden = wa;
+    clearIdle(true); loIdle = ""; waIdle = "";
     if (wa) { link.show(); return; }
     link.hide();
     resetLocal();
@@ -539,7 +504,8 @@
   // Setup form is shared between modes; route to the right handler.
   setupBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? setWordWA() : setWordLocal()));
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   applyMode();
 
@@ -552,12 +518,18 @@
     if (!Number.isInteger(s.mask) || s.mask < 0 || s.mask >= (1 << 26)) return false;
     if (wrongCount(s.word, s.mask) >= MAX_WRONG || isSolved(s.word, s.mask)) return false;
     modeSel.value = "local"; applyMode();
-    loWord = s.word; loMask = s.mask; loStatus = "in_progress"; loNote = ""; loTaunt = newTauntState(); loEnd = "";
+    loWord = s.word; loMask = s.mask; loStatus = "in_progress"; loNote = ""; loTaunt = B.newState(); loEnd = ""; loRecorded = false;
+    loSetLine = s.mask === 0 ? B.setterLine(s.word, "handoff", history) : "";
     renderLocal();
     return true;
   });
   if (!/[?&](s|live)=/.test(location.search)) resumer.restore();
   window.addEventListener("load", () => Manpage.autoOpen("hangman"));
 
-  window.__hangmanTest = { boardToStr, strToBoard, wrongCount, isSolved, normalizeWord, validWord, MAX_WRONG };
+  window.__hangmanTest = {
+    boardToStr, strToBoard, wrongCount, isSolved, normalizeWord, validWord, MAX_WRONG,
+    banter: B, history, idle: showIdle, poke,
+    mood: () => stageEl.dataset.mood,
+    face: () => stageEl.dataset.face || "",
+  };
 })();

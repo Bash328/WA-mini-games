@@ -187,6 +187,19 @@
     const label = opts.label || String;
     let view = null;   // { kind, state, enc, viewer, latest }
 
+    // The share panel grows from one hint line to a banner plus Send/Copy
+    // buttons the moment the first move is made. While it lived above the
+    // board that growth pushed the whole game down mid-turn. It now sits
+    // BELOW the board (just before the toolbar), so sending a link only ever
+    // adds height under the game, never moves it.
+    (function parkSharePanel() {
+      if (!ui || !ui.parentNode) return;
+      const toolbar = document.querySelector(".toolbar");
+      const board = document.getElementById("board") || document.getElementById("bs-board") || document.getElementById("ld-board");
+      if (toolbar && toolbar.parentNode === ui.parentNode) ui.parentNode.insertBefore(ui, toolbar);
+      else if (board && board.parentNode === ui.parentNode) board.parentNode.insertBefore(ui, board.nextSibling);
+    })();
+
     // "Admit defeat" lives in one fixed slot BELOW the board (shared with the
     // live-play controller). It used to sit above the board and appear only on
     // your turn, so the board jumped down and up on every move. Now the slot

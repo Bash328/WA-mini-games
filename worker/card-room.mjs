@@ -1,5 +1,5 @@
 /* ============================================================
-   card-room.mjs — the Durable Object behind one multi-seat room (Crazy 8, Liar's Dice, Dominoes).
+   card-room.mjs — the Durable Object behind one multi-seat room (Crazy 8, Liar's Dice, Dominoes, Ludo, Hearts, Farkle, Lost Cities).
 
    Deliberately thin, like live-room.mjs: every decision is made by
    card-protocol.mjs (pure, unit-tested with a fake clock). This file only does

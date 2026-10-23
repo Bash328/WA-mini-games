@@ -25,6 +25,11 @@ import * as onitama from "./rules/onitama.mjs";
 import * as quoridor from "./rules/quoridor.mjs";
 import * as backgammon from "./rules/backgammon.mjs";
 import * as pig from "./rules/pig.mjs";
+import * as nineMensMorris from "./rules/nine-mens-morris.mjs";
+import * as breakthrough from "./rules/breakthrough.mjs";
+import * as connect6 from "./rules/connect6.mjs";
+import * as tablut from "./rules/tablut.mjs";
+import * as fanorona from "./rules/fanorona.mjs";
 
 export const LIVE_GAMES = {
   "tic-tac-toe": {
@@ -50,6 +55,11 @@ export const LIVE_GAMES = {
   // hidden: picks are secret until both are in, so moves go through
   // applyPick (the server resolves rounds) rather than a proposed board.
   "rock-paper-scissors": { version: 1, players: [1, 2], first: 1, hidden: true, rules: rockPaperScissors },
+  "nine-mens-morris":    { version: 1, players: [1, 2], first: 1, rules: nineMensMorris },
+  "breakthrough":        { version: 1, players: [1, 2], first: 1, rules: breakthrough },
+  "connect6":            { version: 1, players: [1, 2], first: 1, rules: connect6 },
+  "tablut":              { version: 1, players: [1, 2], first: 1, rules: tablut },
+  "fanorona":            { version: 1, players: [1, 2], first: 1, rules: fanorona },
 };
 
 export function liveGame(slug) {

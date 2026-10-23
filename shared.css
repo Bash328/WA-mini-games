@@ -1686,8 +1686,8 @@ body[class*="g-"] { overflow-x: clip; }
 .gk-msg.win { border-color: var(--forest); color: var(--forest); }
 .gk-msg.bad { border-color: var(--coral); color: var(--coral); }
 .gk-say { margin: 0 0 6px; text-align: center; font-size: var(--fs-md); padding: 8px 12px; border-radius: 14px; border: 1px dashed var(--border-hi); }
-.gk-say[data-kind="angel"] { border-color: var(--teal); }
-.gk-say[data-kind="devil"] { border-color: var(--coral); }
+.gk-say[data-kind="hype"] { border-color: var(--teal); }
+.gk-say[data-kind="heckle"] { border-color: var(--coral); }
 .gk-msg[hidden], .gk-say[hidden] { display: none; }
 
 /* The Admit defeat button, very rarely, when you are really losing (a joke). */
@@ -1700,11 +1700,11 @@ body[data-wink] .wa-resign-row button { animation: gk-wink 1.1s ease-in-out infi
   body[data-wink] .wa-resign-row button { animation: none; border-color: var(--coral); color: var(--coral); }
 }
 
-/* Angel and devil taunts in a live room */
+/* Hype and Heckle table talk in a live room */
 .live-taunts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 6px; }
 body[class*="g-"] .panel .btn.live-taunt { min-height: 52px; height: auto; white-space: normal; text-align: left; line-height: 1.3; font-size: 12px; padding: 8px 10px; }
-body[class*="g-"] .panel .btn.live-taunt.angel { border-color: var(--teal); }
-body[class*="g-"] .panel .btn.live-taunt.devil { border-color: var(--coral); }
+body[class*="g-"] .panel .btn.live-taunt.hype { border-color: var(--teal); }
+body[class*="g-"] .panel .btn.live-taunt.heckle { border-color: var(--coral); }
 .live-mute { display: block; margin: 0 auto 6px; }
 
 @media (max-width: 480px) {

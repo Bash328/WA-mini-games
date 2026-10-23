@@ -146,8 +146,8 @@ async function handleLive(request, env, url) {
   return json({ error: "not-found" }, 404);
 }
 
-/* ---------- Crazy 8, Liar's Dice and Dominoes rooms (/api/card/*) ----------
-   A different kind of room (2-4 seats, hidden hands, computer players), so a
+/* ---------- Crazy 8, Liar's Dice, Dominoes, Ludo, Hearts, Farkle and Lost Cities rooms (/api/card/*) ----------
+   A different kind of room (3-6 seats for Skull, 2-4 for the others; hidden hands, computer players), so a
    different Durable Object (card-room.mjs); the same rules for the Origin
    check, the kill switch and the new-room rate limit as live rooms.
    new   GET  ?game=SLUG (default crazy-8), WebSocket upgrade: makes a room AND connects, like /api/live/new

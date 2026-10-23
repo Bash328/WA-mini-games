@@ -25,7 +25,7 @@
      losingHint  you're behind in a game that has an Admit defeat button
    Two special blocks: `_computer` (same categories, used INSTEAD of the
    generic pool when the mode menu is set to the computer) and `online`
-   (the angel / devil lines players can send each other in a live room).
+   (the Hype / Heckle lines players can send each other in a live room).
    Outside computer mode any line that mentions "computer" is skipped, so a
    per-game line like "The computer is building something" can never show in
    a game against a person.
@@ -34,6 +34,18 @@
    In a game block the shared categories are mixed with the generic pool
    (the game's own lines are picked about half the time).
    ============================================================ */
+// Games that get NO automatic commentary: solo puzzles, word games, and the
+// quiet/heavy games. Gamekit.taunt() returns "" for these. See BANTER.md.
+window.NO_TAUNT = [
+  "sudoku", "mini-sudoku", "nonogram", "cross-sums", "sliding-puzzle", "water-sort",
+  "minesweeper", "lights-out", "memory", "2048", "queens", "tango", "zip", "patches",
+  "hashiwokakero", "flow-free", "slitherlink", "star-battle", "word-ladder", "word-guess", "letter-boxed", "word-search",
+  "yatzy", "mastermind", "mancala", "onitama", "quoridor", "hex", "gomoku", "pentago",
+  "ultimate-tic-tac-toe", "blokus-duo", "car-park"
+];
+// Live rooms that get no Table Talk buttons (Hype / Heckle): the heavy
+// abstracts, where chatter breaks concentration. See BANTER.md.
+window.NO_BANTER = ["onitama", "quoridor", "hex", "gomoku", "pentago", "ultimate-tic-tac-toe", "blokus-duo"];
 window.TAUNT_LINES = {
   _: {
     loss: [
@@ -692,100 +704,6 @@ window.TAUNT_LINES = {
     ],
   },
 
-  mancala: {
-    loss: [
-      "Your stones all went home with them.",
-      "Sowed the seeds. They harvested.",
-      "Your store is looking a bit empty.",
-      "All that sowing, no reaping.",
-      "Stones don't lie. They just left.",
-      "The oldest game in the book, and you found a new way to lose it.",
-      "Your pits ran dry.",
-      "Somebody should've counted the seeds.",
-      "Your last move was a long walk to nowhere.",
-      "Every stone you sowed ended up in their store.",
-      "They got an extra turn. You got an extra loss.",
-      "You emptied your pits for them.",
-      "Their store overflowed. Yours echoed.",
-      "Somewhere, an ancestor shakes their head.",
-    ],
-    win: [
-      "Stones collected, ego inflated.",
-      "The harvest is yours.",
-      "Your store overflowed. Theirs did not.",
-      "Ancient game, modern smugness.",
-      "More stones, more swagger.",
-      "That capture was surgical.",
-      "You saw the extra turn before they did.",
-      "A perfectly sown victory.",
-      "Your store looks heavy. Heavy with glory.",
-      "You played the pits like a piano.",
-      "They emptied their side. You filled yours.",
-      "You stole their stones and their dreams.",
-      "Harvest day. The harvest is you.",
-    ],
-    draw: [
-      "Exactly equal stones. Perfect and pointless.",
-      "A tie in an ancient game. The ancestors are unimpressed.",
-      "Even-steven, down to the last stone.",
-      "Balanced as all things should be. Annoying.",
-      "A tie: the stones refuse to choose.",
-      "Every stone accounted for. No winner.",
-      "A tie: the ancient way of saying \"again.\"",
-      "The ancestors shrug.",
-      "Not a single stone out of place. Nobody won.",
-      "You both sowed the same. And reaped the same.",
-      "The stones can't agree on a winner.",
-    ],
-    // leader on stores
-    confidence: [
-      "Your store is filling up nicely.",
-      "Hoarding stones like a dragon.",
-      "Stones in the store are stones you keep.",
-      "That store is looking heavy.",
-      "You're ahead on stones. Keep your pits guarded.",
-      "A big lead, but the stones can still shift.",
-      "Keep an eye on captures. They're sneaky.",
-      "Don't empty your pits too fast.",
-      "Your side is stacked. Their side is stressed.",
-      "A strong lead. Watch the extra turns.",
-      "Don't leave a gap for them to capture.",
-      "Stone hoarder detected.",
-      "Their store's looking a bit light.",
-    ],
-    // the trailing player
-    lastChance: [
-      "Your store is looking a little sparse.",
-      "Time to sow something good.",
-      "Every stone counts now. Ancient wisdom.",
-      "Capture something. Anything.",
-      "An empty pit is a trap for them. Probably.",
-      "Look for an extra turn. It's your best friend.",
-      "Behind on stones. Time to set a capture.",
-      "Their side has gaps. Find them.",
-      "Keep your last pits full. Don't feed them.",
-      "Use the extra-turn trick. Chain it.",
-      "A big capture can change everything.",
-      "Don't give them easy captures. That's rule one.",
-      "One big capture could flip this.",
-      "Don't empty the pit they're aiming at.",
-    ],
-    reversal: [
-      "Leading by stones, losing by the end. A mancala special.",
-      "The stones turned on you.",
-      "So many stones. So few that mattered.",
-      "Your store was ahead. Their store had other plans.",
-      "A big lead, lost to one big capture.",
-      "You were ahead. Then they weren't done.",
-      "The extra turns got you. They always do.",
-      "You had the stones. They had the timing.",
-      "They emptied the right pit at the right time.",
-      "It all went into their store in the end.",
-      "The last sowing was theirs.",
-      "Your pits ran dry at the worst time.",
-      "A late capture stole the show.",
-    ],
-  },
 
   "dots-and-boxes": {
     loss: [
@@ -880,95 +798,6 @@ window.TAUNT_LINES = {
     ],
   },
 
-  pentago: {
-    // confidence = one marble from five, with no threat from the other side;
-    // lastChance goes to the other player. Rotations can undo it, hence the jokes.
-    confidence: [
-      "Four in a line. One marble from glory.",
-      "Your marbles are lining up. Just don't lose them.",
-      "One more marble. Then pray nobody rotates it away.",
-      "That row is looking dangerous. For them.",
-      "They're one rotation from ruining it. Keep an eye out.",
-      "Four marbles aligned. The fifth is thinking about it.",
-      "Your marbles are getting ideas.",
-      "You're one marble away. Don't blink.",
-      "Don't let a spin ruin your line.",
-      "They have to break that line. Can they?",
-      "A clean four-line. Chef's kiss.",
-      "Keep the row safe from rotation.",
-    ],
-    lastChance: [
-      "Four in a row over there. Rotate something. Anything.",
-      "Spin it away or lose it.",
-      "That's a threat. A spinning quadrant could fix it.",
-      "Time to twist your way out of this.",
-      "Break that line. With a spin if you must.",
-      "They're one marble from five. Panic politely.",
-      "A rotation could save you. Find it.",
-      "Block the fifth spot. Or spin the whole row away.",
-      "Twist the quadrant, twist the plot.",
-      "Spin their row into a mess.",
-      "You need a rotation miracle.",
-      "Rotate their marbles away from each other.",
-    ],
-    reversal: [
-      "One marble from five, and then the board spun.",
-      "The quadrant giveth. The quadrant taketh away.",
-      "So close to five. The rotation had other plans.",
-      "You had the line. The spin took it.",
-      "Four in a row, then zero. Magic.",
-      "A rotation unmade your masterpiece.",
-      "You were almost there. Then they spun.",
-      "The final marble never arrived.",
-      "The quadrant betrayed you.",
-      "Spun out of your lead.",
-      "You had the pressure. Then the pivot.",
-      "A rotation ruined your row.",
-    ],
-    loss: [
-      "The board spun, and so did your hopes.",
-      "Spun out. Beautifully.",
-      "Rotate your strategy. Or your sanity.",
-      "You twisted when you should've stood still.",
-      "Four quadrants, zero answers.",
-      "The board turned on you. Literally.",
-      "You placed a piece. They rotated the evidence away.",
-      "Your marbles went missing. So did your win.",
-      "Five in a row is hard. Getting rotated is harder.",
-      "You were dizzy before the game even ended.",
-      "The twist ending wasn't in your favour.",
-      "You rotated the wrong quadrant. We all saw it.",
-      "Your marbles are scattered. Like your plan.",
-      "They used your quadrant against you.",
-    ],
-    win: [
-      "Five in a row. Spin to win.",
-      "You spun it right round.",
-      "Twist and shout. Mostly shout.",
-      "Quadrants conquered.",
-      "Five in a row, and the board is yours.",
-      "That rotation was criminal.",
-      "You spun the board into a win.",
-      "A twist of fate. A twist of the board.",
-      "Marbles aligned like destiny.",
-      "The final spin was pure art.",
-      "You rotated your way to victory.",
-      "That quadrant had it coming.",
-    ],
-    draw: [
-      "A draw. Maximum spin, minimum result.",
-      "The board spun, nothing changed.",
-      "Everyone's dizzy. Nobody's won.",
-      "A tie, after all that rotating. Tragic.",
-      "You both ran out of marbles. And ideas.",
-      "Both reached five at once? Or a full board. Either way, a draw.",
-      "A rotation that made everybody happy. And nobody.",
-      "The marbles are in place, but the glory isn't.",
-      "Round and round and round we go. Draw.",
-      "A draw: for those who like rotating in place.",
-      "Quadrants cancelled each other out.",
-    ],
-  },
 
   // a confidence line means a player is one round from taking the match
   "rock-paper-scissors": {
@@ -1052,155 +881,9 @@ window.TAUNT_LINES = {
   // "boom" = solo, you hit a mine. "clear" = solo, you cleared the board.
   // loss/win also fire in the WhatsApp race, where a loss may be on tile count
   // (not a mine), so those two stay general.
-  minesweeper: {
-    boom: [
-      "You stepped on it. It was literally a mine.",
-      "Click. Boom. Regret.",
-      "The flags were right there.",
-      "That number was a hint. You ignored it.",
-      "Somewhere, a mine is very proud of itself.",
-      "Bold of you to guess there.",
-      "It said 3. You saw \"safe.\"",
-      "The mine was minding its own business.",
-      "\"Click with confidence,\" they said.",
-      "That wasn't a guess. That was a donation.",
-      "You clicked on a mine. A mine! In Minesweeper!",
-      "50/50 odds, 100% regret.",
-      "The numbers were trying to help you.",
-      "That corner was a trap. Everyone knows.",
-    ],
-    clear: [
-      "Every mine, dodged.",
-      "Cleared the field. Shaking hands optional.",
-      "Not a single boom. Smooth operator.",
-      "Mines: 0. You: 1.",
-      "Sweeper, certified.",
-      "The minefield is now a meadow.",
-      "You flagged. You cleared. You conquered.",
-      "Logic: 1. Luck: 0 (mostly).",
-      "Not one boom. Impressive.",
-      "Every number made sense to you. Rare.",
-      "The mines never stood a chance.",
-      "You've defused the entire field.",
-      "You didn't guess once. (You guessed twice.)",
-    ],
-    loss: [
-      "Not every tile is a safe tile. Noted.",
-      "The mines won this round.",
-      "You tiptoed. It wasn't enough.",
-      "Tiles lost, pride lost.",
-      "A minefield is no place for a hot take.",
-      "The mines are patient. They'll wait.",
-      "One wrong click and it all comes down.",
-      "You opened fewer tiles, or the wrong one. Either way.",
-      "They out-swept you.",
-      "The mines were hiding. The evidence wasn't.",
-      "You can't win them all. Especially these.",
-      "You lost. But the mines look satisfied.",
-    ],
-    win: [
-      "Every mine, dodged.",
-      "Not a single boom. Smooth operator.",
-      "Mines: 0. You: 1.",
-      "Tiptoed through the minefield like a pro.",
-      "Safe tiles collected, ego intact.",
-      "You swept more than they did.",
-      "You found the safe tiles. They found the mines.",
-      "The mines respect you.",
-      "More tiles, no booms.",
-      "You tiptoed beautifully.",
-      "Zero mines hit. Maximum swagger.",
-    ],
-  },
 
   // WhatsApp race: whoever clears the board (or the opponent bails) wins
-  "lights-out": {
-    loss: [
-      "Lights out. For you.",
-      "They found the switch. You found the dark.",
-      "You left a light on. They left none.",
-      "Dark mode: activated. For you, emotionally.",
-      "You pressed buttons. They pressed the right ones.",
-      "The last light was theirs to turn off.",
-      "You flipped the wrong switches.",
-      "That board was a puzzle. You were the missing piece.",
-      "They saw the pattern. You saw lights.",
-      "One light stayed on. Of course it did.",
-      "The grid looked at you and laughed.",
-      "You tried to turn off the lights. The lights turned off you.",
-      "Your brain flickered and went out.",
-    ],
-    win: [
-      "You brought the dark. Nicely done.",
-      "Lights out for them. Lights up for you.",
-      "Not a single light left. Tidy.",
-      "Every light, extinguished. Genius.",
-      "You solved it. They stared at it.",
-      "Click by click, you ended the glow.",
-      "The grid is dark. Your future is bright.",
-      "Lights: off. Ego: on.",
-      "The last light fell to you.",
-      "They're still staring at the lights.",
-      "Everyone else is in the dark. You made it so.",
-      "A power move. A power outage, really.",
-    ],
-    draw: [
-      "Nobody cleared it. The lights are still on. And so are the questions.",
-      "Press cap reached. Dim result.",
-      "The press limit hit. The lights won.",
-      "Neither of you could kill the lights.",
-      "The board stayed lit. The pride didn't.",
-      "Too many presses, not enough solutions.",
-      "You both ran out of presses and patience.",
-      "The lights outlasted you both.",
-      "A grid that refused to go dark.",
-      "Lights: 1. Humans: 0.",
-    ],
-  },
 
-  memory: {
-    loss: [
-      "Your memory is a sieve.",
-      "You forgot where the pair was. They didn't.",
-      "Goldfish: 1. You: 0.",
-      "Somewhere, a card is still laughing at you.",
-      "You remembered nothing. They remembered everything.",
-      "They matched. You mismatched.",
-      "Your brain is on a break.",
-      "A fish just beat your memory.",
-      "You forgot the one thing: where things are.",
-      "The cards hide. They remember.",
-      "Your hippocampus filed a complaint.",
-      "You'll forget this defeat soon. Lucky.",
-    ],
-    win: [
-      "Elephant memory, activated.",
-      "You remember everything. Annoying.",
-      "Every pair, no doubt. Brain: on.",
-      "Photographic memory. Or luck. Say memory.",
-      "You found every pair. Show-off.",
-      "Your brain is a vault.",
-      "You've got the memory of an elephant.",
-      "They forgot. You remembered.",
-      "A perfect recall performance.",
-      "The cards didn't hide from you.",
-      "Hippocampus: online.",
-      "You remember where everything is. Even your keys?",
-    ],
-    draw: [
-      "You tied. You both forgot who won.",
-      "Equal pairs, equal forgetfulness.",
-      "Nobody's memory won the day.",
-      "A perfect tie: you each remembered half.",
-      "A tie! Forgotten already?",
-      "You both found the same amount. Impressive. Boring.",
-      "Your brains are twins.",
-      "You each forgot the same cards.",
-      "A tie in the memory game. Ironic if you forget.",
-      "Two goldfish, one result.",
-      "You tied and you'll forget it.",
-    ],
-  },
 
   // loss also fires when you resign, so none of these claim you were sunk
   battleship: {
@@ -1229,29 +912,6 @@ window.TAUNT_LINES = {
     ],
   },
 
-  mastermind: {
-    loss: [
-      "The code won this round.",
-      "Colours were involved. You lost anyway.",
-      "The pegs had other plans.",
-      "Back to the colour wheel.",
-      "A lot of pegs, not a lot of answers.",
-      "That code lives to see another day.",
-    ],
-    win: [
-      "Four pegs, one genius.",
-      "Code broken. Ego boosted.",
-      "You read those colours like a book.",
-      "That code never stood a chance.",
-      "Deduction level: unreasonable.",
-      "Cracked it. Smug mode engaged.",
-    ],
-    forfeit: [
-      "They gave up on the colours.",
-      "The code stays a mystery. You win anyway.",
-      "Surrender accepted.",
-    ],
-  },
 
   // game-over line by difficulty; nobody to taunt you, so keep them gentle
   2048: {
@@ -1300,30 +960,6 @@ window.TAUNT_LINES = {
       "You lost to a machine with a grudge.",
     ],
   },
-  gomoku: {
-    loss: [
-      "They got five. You got a lot of blocking.",
-      "You blocked the wrong end. Classic.",
-      "That open three was a flashing sign.",
-      "Fifteen by fifteen, and you missed the one square that mattered.",
-      "Gomoku is just tic-tac-toe for people who like losing slowly.",
-      "You saw it coming from three moves away. Then did nothing.",
-      "They built a line, you built a fence. Theirs was longer.",
-    ],
-    win: [
-      "A clean five. No notes.",
-      "That open three had no answer.",
-      "You played the whole board. They played the corner.",
-      "Two threats at once. Beautiful. Cruel.",
-      "Stones don't lie: that was a good line.",
-      "You made the board look small.",
-    ],
-    draw: [
-      "A full board and no five. You both blocked everything.",
-      "Two hundred and twenty-five stones, zero winners.",
-      "Nobody lined up five. Nobody lost. Nobody enjoyed it.",
-    ],
-  },
 
   pig: {
     loss: [
@@ -1348,59 +984,8 @@ window.TAUNT_LINES = {
     ],
   },
 
-  hex: {
-    loss: [
-      "You were one hexagon short. Always one.",
-      "They built a bridge. You built a fence.",
-      "Hex has no draws. You got the other option.",
-      "Blue found a path you didn't think existed.",
-      "Red found a path you didn't think existed.",
-      "Connected, just not by you.",
-    ],
-    win: [
-      "A chain across the whole board. Smooth.",
-      "Two bridges and they couldn't stop both.",
-      "You read the board like a map.",
-      "Edge to edge. Nobody saw it coming.",
-      "That's a very long way to go in a straight line.",
-    ],
-  },
 
-  "ultimate-tic-tac-toe": {
-    loss: [
-      "You sent them exactly where they wanted to go.",
-      "Nine boards, and you lost the one that mattered.",
-      "That's the problem with winning small boards.",
-      "You won the battles. They won the board.",
-      "Tic-tac-toe, but with more ways to be wrong.",
-      "You gave them a free move. They noticed.",
-    ],
-    win: [
-      "You played the board you sent them to. Clever.",
-      "Three boards in a line. Beautiful.",
-      "You thought three moves ahead, on nine boards.",
-      "The big board is yours.",
-      "Nobody has ever sent someone to a better square.",
-    ],
-  },
 
-  "blokus-duo": {
-    loss: [
-      "You ran out of corners. They didn't.",
-      "Too many squares left over. That's the problem.",
-      "You boxed yourself in. Impressive, really.",
-      "The big pieces were meant to go first.",
-      "You were left with the awkward ones.",
-      "They took your last corner. Rude, but fair.",
-    ],
-    win: [
-      "Every piece found a home.",
-      "You cut off their corners and kept yours.",
-      "Fewer squares left. Fewer problems.",
-      "You fit it all in. Tidy.",
-      "A well-packed board.",
-    ],
-  },
 
   "crazy-8": {
     loss: [
@@ -1422,6 +1007,136 @@ window.TAUNT_LINES = {
     ],
     draw: [
       "Somehow nobody won. That shouldn't be possible.",
+    ],
+  },
+
+  // loss: your dice are gone. win: the last player holding dice.
+  "liars-dice": {
+    loss: [
+      "Out-bid, out-bluffed, out of dice.",
+      "Dice don't lie. People do. You lost to both.",
+      "Your last die left the building.",
+      "That poker face needs a refund.",
+      "The dice have spoken. Rude of them.",
+      "Bluffing is easy. Winning is the hard part.",
+      "The table out-talked you.",
+      "No dice left and nowhere to hide.",
+      "The dice were honest. That's the problem.",
+      "You talked a big game. The dice didn't listen.",
+    ],
+    win: [
+      "Last die standing. First-rate lying.",
+      "You bluffed like a champion. Allegedly.",
+      "The table believed you. Suckers.",
+      "You counted, you bluffed, you collected.",
+      "Everyone else ran out of dice. Funny how that works.",
+      "A masterpiece of dishonest arithmetic.",
+      "Your poker face deserves a trophy.",
+      "They saw the lie coming and doubted themselves instead.",
+      "Sole survivor of the dice table.",
+      "You talked them out of their dice.",
+    ],
+  },
+
+  hearts: {
+    loss: [
+      "Lowest score wins. You went the other way.",
+      "The queen of spades sends her regards.",
+      "Hearts are worth one point. You found plenty.",
+      "Your score climbed faster than your hopes.",
+      "A high score, and not the good kind.",
+      "You dodged hearts all game. Mostly.",
+      "The cards were cruel. The scoreboard agrees.",
+      "Points piled up like unread messages.",
+      "You played the long game. It was long and bad.",
+      "The lowest score won. It wasn't yours.",
+    ],
+    win: [
+      "Lowest score. Highest smugness.",
+      "You dodged the queen and kept the points down.",
+      "The queen of spades never found you. Rude of her.",
+      "Fewest points, most bragging rights.",
+      "You passed trouble and kept the good stuff.",
+      "The scoreboard says you were the least bad.",
+      "Hearts hate you. That's a compliment.",
+      "You made taking no points look easy.",
+      "A quiet masterclass in avoiding trouble.",
+      "Everyone else took the points. You took notes.",
+    ],
+  },
+
+  farkle: {
+    loss: [
+      "Farkle has a way of finding you.",
+      "You rolled. You pushed. You lost it all.",
+      "One more roll, you said. Famous last words.",
+      "The dice had other plans. Again.",
+      "You banked on luck. Luck didn't bank on you.",
+      "Ten thousand is a lot. Especially from behind.",
+      "That turn had a lot of promise. Had.",
+      "The dice were not in a giving mood.",
+      "The dice owe you an apology.",
+      "Your luck ran out before the score did.",
+    ],
+    win: [
+      "Ten thousand. Banked and bagged.",
+      "Hot dice, cold blood.",
+      "You rolled like the dice owed you money.",
+      "The bank was open. You made a deposit.",
+      "Farkle? Not today.",
+      "You pushed your luck and luck said yes.",
+      "Six dice, zero fear.",
+      "A score to frame. A win to gloat about.",
+      "You banked at exactly the right moment.",
+      "The dice finally listened.",
+    ],
+  },
+
+  // forfeit and resigned are passed by name from the shared link and live screens.
+  backgammon: {
+    loss: [
+      "They got all fifteen home. You got a front-row seat.",
+      "Your checkers are still packing.",
+      "The dice were kind. To them.",
+      "Bear off? More like bear witness.",
+      "A blot too many, a roll too late.",
+      "The race is over. You were still lacing up.",
+      "Your home board stayed a guest room.",
+      "The last checker was theirs, not yours.",
+      "The dice rolled for them all night.",
+      "Fifteen checkers, none of them home.",
+    ],
+    win: [
+      "All fifteen home. The board is yours.",
+      "You hit, you ran, you bore off. Clean.",
+      "The dice obeyed for once.",
+      "Their blots were an open invitation.",
+      "You made points and made them pay.",
+      "Home board: empty. Opponent: empty-handed.",
+      "A race well run.",
+      "The last checker came home. So did the win.",
+      "You rolled like the board was yours.",
+      "Fifteen checkers, zero doubts.",
+    ],
+    forfeit: [
+      "They hit the button before the last checker.",
+      "A win by resignation. The quiet kind.",
+      "They left the table. The checkers stayed.",
+      "They saw the writing on the board.",
+      "No last roll needed. They called it.",
+      "They took the early exit. You took the win.",
+      "Victory, handed over with a small button.",
+      "A resignation is still a win. Sign here.",
+    ],
+    resigned: [
+      "You found the tiny button. The board found your weakness.",
+      "The checkers were not consulted.",
+      "Fifteen checkers, one white flag.",
+      "You quit. The board didn't argue.",
+      "The board will remember this longer than you.",
+      "You hit Admit defeat. The dice didn't blink.",
+      "A dignified exit. Mostly.",
+      "The table is still warm. Your seat isn't.",
     ],
   },
 
@@ -1500,11 +1215,11 @@ window.TAUNT_LINES = {
   },
 
   // ---- online play: tap to send ---------------------------------------
-  // The server only ever sees a position in these lists (ANGEL_COUNT /
-  // DEVIL_COUNT in worker/live-protocol.mjs must equal the list lengths;
+  // The server only ever sees a position in these lists (HYPE_COUNT /
+  // HECKLE_COUNT in worker/live-protocol.mjs must equal the list lengths;
   // taunts.test.mjs checks it). Never free text.
   online: {
-    angel: [
+    hype: [
       "Good game so far!",
       "Nice move!",
       "That was clever.",
@@ -1518,7 +1233,7 @@ window.TAUNT_LINES = {
       "Thanks for playing with me!",
       "Good luck!",
     ],
-    devil: [
+    heckle: [
       "Is that your best move?",
       "I've seen toddlers play better.",
       "You sure about that?",

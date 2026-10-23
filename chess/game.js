@@ -491,8 +491,20 @@ function checkConfidence() {
 const modeSel = document.getElementById('mode');
 const undoBtn = document.getElementById('undo');
 const sideSel = document.getElementById('side');
-const levelSel = document.getElementById('level');
 const flipBtn = document.getElementById('flip');
+const chipsEl = document.getElementById('chips');
+const AI_DEPTHS = { easy: 1, medium: 2, hard: 3 };
+const aiStore = Gamekit.storage('chess:');
+let aiDiff = aiStore.get('diff', 'medium');
+if (!AI_DEPTHS[aiDiff]) aiDiff = 'medium';
+const chips = Gamekit.wireDifficultyChips({
+  el: chipsEl,
+  difficulties: Object.keys(AI_DEPTHS),
+  storage: aiStore,
+  storageKey: 'diff',
+  initial: aiDiff,
+  onChange: (d) => { aiDiff = d; resetSolo(); },
+});
 
 // The piece that just moved glides from its old square to its new one (once per move; a re-render of
 // the same position, such as selecting a piece, does not move it again).
@@ -620,7 +632,7 @@ function aiTurn() {
   aiTimer = setTimeout(() => {
     aiTimer = null;
     if (state.turn === humanColor) { thinking = false; renderBoard(); return; }
-    const depth = +document.getElementById('level').value;
+    const depth = AI_DEPTHS[aiDiff] || 2;
     const m = bestMove(state, depth);
     if (m) { makeMove(state, m); lastMove = m; }
     checkConfidence();
@@ -864,7 +876,7 @@ document.getElementById('puz-solve').addEventListener('click', puzzleSolution);
 
 function applyMode() {
   const wa = mode === 'whatsapp', pz = mode === 'puzzle';
-  levelSel.hidden = wa || pz;
+  chipsEl.hidden = wa || pz;
   sideSel.hidden = wa || pz;
   undoBtn.hidden = wa || pz;
   puzBtns.forEach((b) => { b.hidden = !pz; });
@@ -910,12 +922,12 @@ modeSel.addEventListener('change', () => { mode = modeSel.value; applyMode(); })
 modeSel.value = mode;
 applyMode();
 
-// A refresh keeps a game against the computer: the position, your side and the level.
+// A refresh keeps a game against the computer: the position, your side and the difficulty.
 // (Undo history and repetition tracking start fresh. Link games live in the URL.)
 const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.length === 0 || outcome(state).status !== 'in_progress') ? null : {
   b: boardToStr(state.board), castle: castleToStr(state.castling),
   ep: state.ep ? state.ep.r * 8 + state.ep.c : null, half: state.halfmove, turn: state.turn,
-  human: humanColor, level: levelSel.value,
+  human: humanColor, level: aiDiff,
 }, (s) => {
   if (typeof s.b !== 'string' || !/^[.pnbrqkPNBRQK]{64}$/.test(s.b)) return false;
   if ((s.b.match(/K/g) || []).length !== 1 || (s.b.match(/k/g) || []).length !== 1) return false;
@@ -923,9 +935,12 @@ const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.le
   if (!(s.ep === null || (Number.isInteger(s.ep) && s.ep >= 0 && s.ep < 64))) return false;
   if (!Number.isInteger(s.half) || s.half < 0 || s.half > 150) return false;
   if ((s.turn !== 'w' && s.turn !== 'b') || (s.human !== 'w' && s.human !== 'b')) return false;
-  if (![...levelSel.options].some(o => o.value === s.level)) return false;
+  // Older saves stored the depth as "1"/"2"/"3"; accept both that and the
+  // easy/medium/hard keys used by the chips now.
+  const savedDiff = AI_DEPTHS[s.level] ? s.level : ({ 1: 'easy', 2: 'medium', 3: 'hard' })[s.level];
+  if (!savedDiff) return false;
   mode = 'ai'; modeSel.value = 'ai';
-  sideSel.value = s.human; levelSel.value = s.level;
+  sideSel.value = s.human; aiDiff = savedDiff; chips.show(aiDiff);
   applyMode();                                   // computer game, fresh board for that side
   cancelAI();
   state = stateFromLinkBoard({ b: s.b, castle: s.castle, ep: s.ep, half: s.half }, s.turn);

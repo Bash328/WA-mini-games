@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>hearts · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Hearts — the four-player card game. Pass three cards, avoid every heart and the queen of spades, and finish with the lowest score. Play online or against three computers.">
+<meta property="og:title" content="Hearts · pass three, dodge the queen">
+<meta property="og:description" content="Standard Hearts for four seats. Play online with friends, or against the computer.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
+<link rel="stylesheet" href="../multiseat.css?v=15df6c42">
+<style>
+  /* ---------- the chunky look: a green card table ---------- */
+  html body.fun.g-hearts { --fun-bg: #1d6b46; --fun-btn: #d94a3d; --fun-chip: rgba(0,0,0,.24); --accent: #ffd34a; --ht-felt: #155638; --ht-rim: #0d3f28; --ht-hand: #0f4a30; --ht-soft: rgba(255,255,255,.13); }
+  #ht { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
+  #ht.on { display: block; }
+
+  /* scores: four fixed slots, so a changing score never moves the table */
+  .ht-scores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4cqw; margin: 0 0 1.8cqw; }
+  .ht-score { min-width: 0; height: 11cqw; padding: 1.1cqw 0.8cqw 0.7cqw; border-radius: 2.4cqw; background: rgba(0,0,0,.24); text-align: center; line-height: 1; overflow: hidden; }
+  .ht-score .nm { display: block; font-size: 2.9cqw; color: rgba(255,255,255,.72); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ht-score .sc { display: inline-block; font-size: 5.4cqw; margin-top: .8cqw; }
+  .ht-score .gain { font-size: 2.7cqw; color: var(--accent); margin-left: .8cqw; }
+  .ht-score.you { background: rgba(255,255,255,.18); }
+  .ht-score.turn { outline: .55cqw solid var(--accent); outline-offset: -.55cqw; }
+  .ht-score.win { background: var(--accent); color: #2a1a00; }
+  .ht-score.win .nm { color: #2a1a00; }
+  .ht-score.win .gain { color: #7a4a00; }
+
+  /* the table */
+  .ht-stage { position: relative; height: 103cqw; border-radius: 7cqw; background: radial-gradient(circle at 50% 45%, #1a6744, var(--ht-felt) 70%); box-shadow: inset 0 0 0 1cqw var(--ht-rim), 0 1cqw 0 rgba(0,0,0,.22); }
+  .ht-opp { position: absolute; display: flex; flex-direction: column; align-items: center; gap: .8cqw; max-width: 46cqw; }
+  .ht-op { left: 50%; top: 2.4cqw; transform: translateX(-50%); }
+  .ht-ol { left: 2cqw; top: 15cqw; align-items: flex-start; }
+  .ht-or { right: 2cqw; top: 15cqw; align-items: flex-end; }
+  .ht-opp .nm { max-width: 42cqw; font-size: 3.2cqw; line-height: 1; color: rgba(255,255,255,.78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ht-opp .nm b { font-weight: 400; color: #fff; }
+  .ht-opp .fan { display: flex; align-items: center; height: 8cqw; }
+  .ht-opp .st { font-size: 2.7cqw; line-height: 1; color: rgba(255,255,255,.5); white-space: nowrap; }
+  .ht-opp.now .nm, .ht-opp.now .st { color: var(--accent); }
+  .ht-opp.now .fan .ht-card.back { box-shadow: 0 0 0 .4cqw var(--accent); }
+  .ht-me { position: absolute; left: 50%; bottom: 2.2cqw; transform: translateX(-50%); display: flex; align-items: center; gap: 1.6cqw; max-width: 70cqw; padding: 1.2cqw 3cqw; border-radius: 999px; background: rgba(0,0,0,.24); font-size: 3.2cqw; line-height: 1; white-space: nowrap; }
+  .ht-me b { font-weight: 400; color: var(--accent); }
+  .ht-me.now { background: rgba(255,211,74,.2); }
+
+  /* the trick, in the middle */
+  .ht-mid { position: absolute; left: 50%; top: 48%; width: 56cqw; height: 56cqw; transform: translate(-50%, -50%); }
+  .ht-trick { position: absolute; inset: 0; }
+  .ht-play { position: absolute; width: 10.4cqw; height: 15cqw; }
+  .ht-play .ht-card { width: 100%; height: 100%; cursor: default; box-shadow: 0 .5cqw 0 rgba(0,0,0,.3); }
+  .ht-play.pos-me { left: 50%; bottom: -2cqw; transform: translateX(-50%) rotate(1.5deg); }
+  .ht-play.pos-l { left: -2cqw; top: 50%; transform: translateY(-50%) rotate(-8deg); }
+  .ht-play.pos-t { left: 50%; top: -2cqw; transform: translateX(-50%) rotate(-1.5deg); }
+  .ht-play.pos-r { right: -2cqw; top: 50%; transform: translateY(-50%) rotate(8deg); }
+  .ht-play.took { outline: .6cqw solid var(--accent); outline-offset: .4cqw; border-radius: 2cqw; }
+  .ht-note { position: absolute; left: 50%; bottom: -9cqw; transform: translateX(-50%); width: 64cqw; text-align: center; font-size: 3.1cqw; line-height: 1.15; color: rgba(255,255,255,.74); text-wrap: balance; }
+  .ht-note b { font-weight: 400; color: var(--accent); }
+  .ht-empty { width: 22cqw; height: 22cqw; margin: 0 auto; border-radius: 50%; border: .6cqw dashed rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 3cqw; color: rgba(255,255,255,.5); }
+
+  /* your cards, on a darker strip under the table */
+  .ht-handbar { margin: 1.8cqw -11px 0; padding: 2cqw 11px 1cqw; border-radius: 6cqw 6cqw 0 0; background: var(--ht-hand); box-shadow: inset 0 .8cqw 0 rgba(255,255,255,.08); }
+  #ht .ht-hand { display: flex; justify-content: center; align-items: flex-end; min-height: 17cqw; padding: 0; margin: 0; }
+  #ht .ht-card { --ink: #1b1b1b; position: relative; flex: 0 0 auto; width: 11.4cqw; height: 16.2cqw; min-width: 0; min-height: 0; padding: 0; margin-left: -5.1cqw; border: .5cqw solid #101010; border-radius: 1.7cqw; background: #fff; color: var(--ink); font-family: inherit; font-size: 10px; font-weight: 400; line-height: 1; letter-spacing: 0; text-transform: none; text-align: left; box-shadow: 0 .55cqw 0 rgba(0,0,0,.22); overflow: hidden; cursor: pointer; transition: transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s, opacity .15s; }
+  #ht .ht-hand .ht-card:first-child { margin-left: 0; }
+  #ht .ht-card.red { --ink: #c62a2a; }
+  #ht .ht-card .r { position: absolute; top: .7cqw; left: 1cqw; font-size: 4.7cqw; line-height: 1; }
+  #ht .ht-card .s { position: absolute; top: 5.5cqw; left: 1.1cqw; font-size: 3.7cqw; line-height: 1; }
+  #ht .ht-card .big { position: absolute; right: -1.3cqw; bottom: -1.9cqw; font-size: 10.5cqw; line-height: 1; opacity: .92; }
+  #ht .ht-card.ten .r { font-size: 3.9cqw; letter-spacing: -.12cqw; }
+  #ht .ht-card.back { background: #7a2b2b; cursor: default; }
+  #ht .ht-card.back::before { content: ""; position: absolute; inset: .55cqw; border: .5cqw solid #f2c14e; border-radius: 1.1cqw; background: repeating-linear-gradient(45deg, #6d2424, #6d2424 .8cqw, #873030 .8cqw, #873030 1.6cqw); }
+  #ht .ht-card.sm { width: 5.4cqw; height: 7.8cqw; margin-left: -3.3cqw; border-radius: .9cqw; box-shadow: 0 .3cqw 0 rgba(0,0,0,.2); }
+  #ht .ht-card.sm:first-child { margin-left: 0; }
+  #ht .ht-card.sm::before { inset: .3cqw; border-width: .3cqw; border-radius: .6cqw; }
+  #ht .ht-card.play { box-shadow: 0 0 0 .5cqw var(--accent), 0 .55cqw 0 rgba(0,0,0,.25); }
+  #ht .ht-card.play:hover, #ht .ht-card.play:focus-visible { transform: translateY(-1.6cqw); }
+  #ht .ht-card.pick { transform: translateY(-3.6cqw); box-shadow: 0 0 0 .7cqw var(--accent), 0 1cqw 0 rgba(0,0,0,.25); z-index: 4; }
+  #ht .ht-card.dim { opacity: .4; }
+  #ht .ht-card:disabled { opacity: .4; }
+  .ht-actions { display: flex; justify-content: center; align-items: center; gap: 2cqw; min-height: 13cqw; padding-top: 1.8cqw; }
+  .ht-actions:empty { min-height: 13cqw; }
+  .ht-actions .btn { min-height: 10cqw; padding: 0 5cqw; border-radius: 999px; font-size: 4.1cqw; }
+  .ht-hint { min-height: 3.2cqw; font-size: 3.1cqw; line-height: 1; text-align: center; color: rgba(255,255,255,.62); }
+  .ht-hint b { font-weight: 400; color: var(--accent); }
+  .ht-hand:empty + .ht-actions { min-height: 13cqw; }
+
+  /* the last trick stays up for a moment, so you can see who took it */
+  @keyframes ht-deal { from { transform: translateY(-2cqw) scale(.92); opacity: .3; } to { transform: none; opacity: 1; } }
+  .ht-play .ht-card { animation: ht-deal .2s ease-out; }
+  /* match the reference: dark room, deep-blue felt table with a gold rail */
+  html body.fun.g-hearts {
+    --fun-bg: #3b2525;
+    --fun-chip: rgba(255,255,255,.12);
+    --ht-felt: #2b6d86;
+    --ht-rim: #f2b23f;
+    --ht-hand: transparent;
+  }
+  body.g-hearts { background: var(--fun-bg); }
+  body.g-hearts .wrap { max-width: 430px; padding-inline: 8px; }
+  body.g-hearts .panel { background: transparent; border: 0; box-shadow: none; padding: 0 !important; }
+  body.g-hearts .topbar { margin-bottom: 0; }
+  body.g-hearts .topbar .man-trigger { display: none; }
+  body.g-hearts .topbar .back { background: rgba(255,255,255,.1); box-shadow: none; }
+  body.g-hearts .panel > .row, body.g-hearts .panel > .game-controls, body.g-hearts .panel > .toolbar { display: none; }
+  body.g-hearts .ht-scores { display: none; }
+  body.g-hearts .gk-optwrap { position: fixed !important; top: 76px !important; right: 12px !important; left: auto !important; width: 44px; height: 44px; z-index: 30; }
+  body.g-hearts .gk-optbtn { width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 0; overflow: hidden; justify-content: center; }
+  body.g-hearts .gk-optbtn span { display: none; }
+  body.g-hearts .gk-optbtn .gk-gear { width: 22px; height: 22px; }
+  body.g-hearts .gk-opts { top: 52px; right: 0; left: auto; }
+  body.g-hearts #gk-slot { display: none; }
+  #ht { margin: 66px -8px 0; padding: 0 8px; overflow: visible; }
+
+  .ht-stage {
+    width: 72%; height: 82cqw; margin: 18px auto 0; border-radius: 6cqw;
+    background:
+      radial-gradient(ellipse at 50% 48%, rgba(255,255,255,.045) 0 18%, transparent 19%),
+      radial-gradient(circle at 50% 45%, #347d95, var(--ht-felt) 72%);
+    box-shadow: 0 0 0 1.4cqw var(--ht-rim), 0 1.2cqw 0 rgba(0,0,0,.28);
+  }
+  .ht-opp .nm {
+    max-width: 38cqw; padding: 1.2cqw 3cqw; border-radius: 2.4cqw;
+    background: var(--ht-rim); color: #8a4a2a; text-transform: uppercase;
+    font-size: 3.2cqw; letter-spacing: .02em;
+  }
+  .ht-opp .nm b { color: inherit; }
+  .ht-opp .st { display: none; }
+  .ht-opp .fan { filter: drop-shadow(0 .4cqw 0 rgba(0,0,0,.2)); }
+  .ht-op { top: -5.5cqw; }
+  .ht-ol { left: -4cqw; top: 50%; transform: translateY(-50%); align-items: flex-start; }
+  .ht-or { right: -4cqw; top: 50%; transform: translateY(-50%); align-items: flex-end; }
+  /* the left/right hands are vertical stacks, like Crazy 8 */
+  .ht-ol .fan, .ht-or .fan {
+    flex-direction: column; height: auto; align-items: flex-start;
+  }
+  .ht-or .fan { align-items: flex-end; }
+  #ht .ht-ol .ht-card.sm, #ht .ht-or .ht-card.sm {
+    width: 19cqw; height: 12.6cqw; margin-left: 0; margin-top: -7.2cqw;
+  }
+  #ht .ht-ol .ht-card.sm:first-child, #ht .ht-or .ht-card.sm:first-child { margin-top: 0; }
+  .ht-ol .nm, .ht-or .nm {
+    writing-mode: vertical-rl; max-width: none; max-height: 38cqw;
+    padding: 2.2cqw 1.2cqw; border-radius: 2.2cqw;
+  }
+  .ht-ol .nm { transform: rotate(180deg); }
+  .ht-me {
+    bottom: -4cqw; padding: 1.2cqw 4cqw; border-radius: 2.4cqw;
+    background: var(--ht-rim); color: #8a4a2a; text-transform: uppercase;
+    font-size: 3.4cqw; letter-spacing: .02em;
+  }
+  .ht-me b, .ht-me span { display: none; }
+  .ht-mid { top: 50%; }
+  .ht-play { width: 10.8cqw; height: 15.6cqw; }
+  .ht-note { bottom: -10cqw; }
+
+  .ht-handbar { margin: 2.4cqw -8px 0; padding: 1.6cqw 8px 0; background: transparent; box-shadow: none; border-radius: 0; }
+  #ht .ht-hand { min-height: 18.6cqw; }
+  #ht .ht-card { width: 13.2cqw; height: 18.6cqw; margin-left: -5.6cqw; border-width: .45cqw; border-radius: 1.6cqw; }
+  #ht .ht-card .r { font-size: 5.2cqw; }
+  #ht .ht-card .s { top: 6.1cqw; font-size: 4cqw; }
+  #ht .ht-card .big { font-size: 11.8cqw; }
+  #ht .ht-card.dim { background: #c8bfae; border-color: #211d1a; color: #51463d; }
+  .ht-hint { min-height: 3.4cqw; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .03em; }
+
+  @media (max-width: 360px) {
+    .ht-stage { width: 76%; height: 86cqw; margin-top: 12px; }
+    .ht-ol { left: -7cqw; } .ht-or { right: -7cqw; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-hearts fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="hearts" data-man-title="HEARTS(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <button class="btn ghost tool-btn man-trigger" data-man="hearts" data-man-title="HEARTS(1)" type="button">How to play</button>
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="ht" data-board data-reserve>
+      <div class="ht-scores" id="ht-scores" aria-label="Scores"></div>
+      <div class="ht-stage" id="ht-stage">
+        <div class="ht-opp ht-op" id="ht-op"></div>
+        <div class="ht-opp ht-ol" id="ht-ol"></div>
+        <div class="ht-opp ht-or" id="ht-or"></div>
+        <div class="ht-me" id="ht-me"></div>
+        <div class="ht-mid" id="ht-mid">
+          <div class="ht-trick" id="ht-trick"></div>
+          <div class="ht-note" id="ht-note"></div>
+        </div>
+      </div>
+      <div class="ht-handbar">
+        <div class="ht-hand" id="ht-hand" aria-label="Your hand"></div>
+        <div class="ht-actions" id="ht-actions"></div>
+        <div class="ht-hint" id="ht-hint"></div>
+      </div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-hearts">
+  <h2>Name</h2>
+  <p>hearts — the classic four-player card game. The lowest score wins.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Four players, thirteen cards each. Before most hands you <strong>pass three cards</strong>: left, then right, then across, then nobody (and repeat).</li>
+    <li>The holder of the <strong>two of clubs</strong> leads it. On every trick you must follow the suit that was led if you can.</li>
+    <li>Every <strong>heart</strong> is 1 point and the <strong>queen of spades</strong> is 13. You want as few points as possible.</li>
+    <li>You may not lead a heart until one has been played ("broken"), and on the first trick you may not play a heart or the queen if you can avoid it.</li>
+    <li>Taking all 26 points in a hand (<strong>shooting the moon</strong>) gives everyone else 26 and you nothing.</li>
+    <li>After each hand the points go on the scores. As soon as someone reaches 100 the game ends, and the <strong>lowest</strong> score wins.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Passing:</strong> tap three cards, then tap <strong>Pass</strong>. The computer players hand theirs over at the same time.</li>
+    <li><strong>Playing:</strong> tap a card that is highlighted. A card that can't be played stays dim; tapping it tells you why.</li>
+  </ul>
+
+  <h2>Against the computer</h2>
+  <ul>
+    <li>Easy plays any legal card. Medium follows suit cheaply and keeps a safe lead. Hard also guards the queen of spades and dumps her when a hand is void.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Tap <strong>Online room</strong>, create a room and send the invite link. Hearts always has four seats: friends take them, and computers fill any that are still empty when the game starts.</li>
+    <li>The server deals and holds the hands — your browser is only ever sent your own cards. If you drop out for 90 seconds a computer plays for you until you come back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Pass high hearts and the queen of spades when they are not guarded. Keep short suits so you can shed points on someone else's trick, and remember that winning a trick with hearts in it is usually a bad idea.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=2da83d25"></script>
+<script defer src="../multiseat.js?v=f5bba1b1"></script>
+<script defer src="engine.js?v=e827ff37"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=609b4ea4"></script>
+</body>
+</html>

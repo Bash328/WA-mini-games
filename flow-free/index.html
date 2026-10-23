@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>flow free · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Flow Free — join every coloured pair with a pipe and fill the whole grid. A new daily puzzle in three sizes, or a random one.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
+<style>
+  /* ── the board: a dark tray, a light grid, bright pipes on top ─────────────────────────── */
+  .ff-board {
+    --n: 6;
+    position: relative;
+    width: calc(100% + 22px);
+    margin: 8px -11px 4px;
+    aspect-ratio: 1 / 1;
+    box-sizing: border-box;
+    padding: 4px;
+    border: 6px solid #070a13;
+    border-radius: 24px;
+    background: #070a13;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+  }
+  .ff-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #151b31;
+  }
+  .ff-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--n), 1fr);
+    grid-template-rows: repeat(var(--n), 1fr);
+  }
+  .ff-cell {
+    box-sizing: border-box;
+    border-right: 1px solid rgba(255, 255, 255, .075);
+    border-bottom: 1px solid rgba(255, 255, 255, .075);
+  }
+  .ff-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .38));
+  }
+  .ff-hint { animation: ff-dash 1s linear infinite; }
+  @keyframes ff-dash { to { stroke-dashoffset: -36; } }
+  @media (prefers-reduced-motion: reduce) { .ff-hint { animation: none; } }
+  .ff-note {
+    min-height: 1.6em;
+    margin: 2px 0 0;
+    text-align: center;
+    color: rgba(255, 255, 255, .72);
+    font-size: var(--fs-sm);
+  }
+
+  /* the page's own mood: deep night blue, strong yellow for Hint */
+  html body.fun.g-flow-free { --fun-bg: #141b2d; --fun-btn: #4b5bd6; --fun-chip: rgba(255, 255, 255, .1); }
+  html body.fun.g-flow-free .panel .gk-acts #hint-btn { background: #ffbf2e; color: #4a2f00; box-shadow: 0 4px 0 #c98a00; }
+  html body.fun.g-flow-free .panel .gk-acts #hint-btn:disabled { background: rgba(255, 191, 46, .5); color: rgba(74, 47, 0, .7); }
+
+  /* a wider screen gets a board of its own size, centred, instead of a giant one */
+  @media (min-width: 560px) {
+    .ff-board { width: min(100%, 520px); margin: 10px auto 4px; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-flow-free fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>flow free</h1>
+    <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Moves</small><b id="moves">0</b></div><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">—</b></div></div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Connect the pairs. Fill every cell.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="flow-free" data-man-title="FLOW-FREE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 6×6</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 7×7</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 8×8</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button">new</button>
+      <button class="btn ghost tool-btn" id="random-btn" type="button">random</button>
+    </div>
+    <div class="ff-board" id="board" data-board role="group" aria-label="Flow Free board">
+      <div class="ff-inner" id="inner">
+        <div class="ff-grid" id="grid" aria-hidden="true"></div>
+        <svg class="ff-svg" id="svg" aria-hidden="true"></svg>
+      </div>
+    </div>
+    <div class="ff-note" id="hint" aria-live="polite"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button">undo</button>
+      <button class="btn ghost tool-btn" id="hint-btn" type="button">hint</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button">restart</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-flow-free">
+  <h2>Name</h2>
+  <p>flow free — join every pair of dots and fill the whole grid with pipes.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Every colour has <strong>two dots</strong>. Draw one pipe from one dot to the other.</li>
+    <li>A pipe runs between <strong>neighbouring cells</strong> (up, down, left or right) and may not pass through another pipe or another colour's dot.</li>
+    <li>Join <strong>every pair</strong>, and use <strong>every cell</strong> of the grid. No cell is left empty and no pipe crosses another.</li>
+    <li>Every board has a solution. Most have only one; the daily board is the same for everyone at each size.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Drag from a dot through the cells to its twin. Letting go part-way leaves the pipe there so you can carry on.</li>
+    <li>Or tap a dot, then tap the cells one at a time to extend the pipe, and tap the twin dot to finish it.</li>
+    <li>Tap a dot or a pipe to <strong>lift</strong> it (erase that colour). Drag from a pipe's middle to re-route it from that cell.</li>
+    <li><code>Hint</code> shows one pair's route from the answer. <code>Undo</code> takes back the last stroke. <code>Restart</code> puts the same board back. The round arrow at the top starts a new random board; <code>Random</code> inside Options does the same.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with the pair whose route has the fewest choices, often one that has to hug an edge. Keep new pipes out of corners that another colour will need, and when two pairs compete for the last free cells, undo and route the longer one first.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
+<script defer src="puzzle.js?v=b352e16f"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=e8518985"></script>
+</body>
+</html>

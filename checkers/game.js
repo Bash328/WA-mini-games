@@ -531,7 +531,9 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // In WhatsApp play the reset button is hidden, but the top-bar restart still
+  // clicks it. Reset the link, not the local game sitting behind it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   sideSel.value = aiStore.get("side", "1") === "2" ? "2" : "1";
   sideSel.addEventListener("change", () => { aiStore.set("side", sideSel.value); applyMode(); });

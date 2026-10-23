@@ -245,15 +245,15 @@ export function takeToken(bucket, now) {
 
 /* ---------- taunts ---------- */
 
-/* Online taunts are a position in a fixed list kept in taunts.js
-   (online.angel / online.devil), never free text; taunts.test.mjs checks
-   these counts against the lists. msg: { t:"taunt", k:"a"|"d", i }.
+/* Online table talk is a position in a fixed list kept in taunts.js
+   (online.hype / online.heckle), never free text; taunts.test.mjs checks
+   these counts against the lists. msg: { t:"taunt", k:"h"|"k", i }.
    lastAt: when this seat last sent one. One every 3 seconds, at most. */
-export const ANGEL_COUNT = 12;
-export const DEVIL_COUNT = 12;
+export const HYPE_COUNT = 12;
+export const HECKLE_COUNT = 12;
 export const TAUNT_GAP_MS = 3000;
 export function checkTaunt(msg, lastAt, now) {
-  const max = msg.k === "a" ? ANGEL_COUNT : msg.k === "d" ? DEVIL_COUNT : 0;
+  const max = msg.k === "h" ? HYPE_COUNT : msg.k === "k" ? HECKLE_COUNT : 0;
   if (!Number.isInteger(msg.i) || msg.i < 0 || msg.i >= max) return { ok: false, reason: "illegal" };
   if (lastAt && now - lastAt < TAUNT_GAP_MS) return { ok: false, reason: "rate-limit" };
   return { ok: true, k: msg.k, i: msg.i };

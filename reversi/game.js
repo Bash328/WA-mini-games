@@ -270,7 +270,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when link play hides it.
+  resetBtn.addEventListener("click", () => (["whatsapp", "live"].includes(modeSel.value) ? activeLink().newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../ga.js?v=e72d72bb"></script>
+<title>ludo · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Ludo — race four tokens around the cross board, send rivals home and bring all four in. Two to four players, against the computer or online with friends.">
+<meta property="og:title" content="Ludo · roll, race and send them home">
+<meta property="og:description" content="The classic cross-board race for two to four players.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared.css?v=23e106bd">
+<link rel="stylesheet" href="../fun.css?v=6da1c6eb">
+<link rel="stylesheet" href="../multiseat.css?v=15df6c42">
+<style>
+  /* ---------- the chunky look: a deep blue table with a cream cross board ---------- */
+  html body.fun.g-ludo { --fun-bg: #27306b; --fun-btn: #e0524c; --fun-chip: rgba(255,255,255,.12); --accent: #ffd34a; --ld-red: #e0524c; --ld-yellow: #f2c14e; --ld-blue: #4a86e8; --ld-green: #2fb44a; --ld-cream: #f7f1e3; --ld-line: rgba(30,25,15,.2); }
+  #ld { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
+  #ld.on { display: block; }
+
+  /* the four player tabs */
+  .ld-players { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.2cqw; height: 11cqw; margin-bottom: 1.6cqw; }
+  .ld-player { min-width: 0; display: flex; align-items: center; justify-content: center; gap: 1.2cqw; padding: 0 1.2cqw; border-radius: 2.6cqw; background: rgba(0,0,0,.26); line-height: 1; overflow: hidden; }
+  .ld-player .dot { width: 3.2cqw; height: 3.2cqw; flex: none; border-radius: 50%; background: var(--pc); box-shadow: 0 0 0 .35cqw rgba(255,255,255,.3); }
+  .ld-player .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 3cqw; color: rgba(255,255,255,.8); }
+  .ld-player .hm { flex: none; font-size: 3.2cqw; color: rgba(255,255,255,.55); }
+  .ld-player.you { background: rgba(255,255,255,.16); }
+  .ld-player.you .nm { color: #fff; }
+  .ld-player.now { outline: .5cqw solid var(--accent); outline-offset: -.5cqw; }
+  .ld-player.now .hm { color: var(--accent); }
+  .ld-player.win { background: var(--accent); }
+  .ld-player.win .nm, .ld-player.win .hm { color: #2a1a00; }
+
+  /* the 15x15 cross board */
+  .ld-board { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 4.5cqw; background: var(--ld-cream); overflow: hidden; box-shadow: 0 1cqw 0 rgba(0,0,0,.28); }
+  .ld-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); }
+  .ld-cell { position: relative; box-sizing: border-box; }
+  .ld-cell.track { background: #fffdf6; box-shadow: inset 0 0 0 .1cqw var(--ld-line); }
+  .ld-cell.safe::after { content: ""; position: absolute; left: 50%; top: 50%; width: 26%; height: 26%; transform: translate(-50%, -50%) rotate(45deg); background: #c4b797; border-radius: .15cqw; }
+  .ld-cell.entry-red { background: var(--ld-red); }
+  .ld-cell.entry-yellow { background: var(--ld-yellow); }
+  .ld-cell.entry-blue { background: var(--ld-blue); }
+  .ld-cell.entry-green { background: var(--ld-green); }
+  .ld-cell.home-red { background: color-mix(in srgb, var(--ld-red) 28%, #fffdf6); }
+  .ld-cell.home-yellow { background: color-mix(in srgb, var(--ld-yellow) 34%, #fffdf6); }
+  .ld-cell.home-blue { background: color-mix(in srgb, var(--ld-blue) 28%, #fffdf6); }
+  .ld-cell.home-green { background: color-mix(in srgb, var(--ld-green) 28%, #fffdf6); }
+
+  .ld-yard { position: absolute; width: 40%; height: 40%; border-radius: 3.4cqw; overflow: hidden; }
+  .ld-yard-in { position: absolute; inset: 11%; border-radius: 2.4cqw; background: rgba(255,255,255,.34); box-shadow: inset 0 0 0 .5cqw rgba(255,255,255,.38); }
+  .ld-yard.yard-red { left: 0; top: 60%; background: var(--ld-red); }
+  .ld-yard.yard-yellow { left: 0; top: 0; background: var(--ld-yellow); }
+  .ld-yard.yard-blue { left: 60%; top: 0; background: var(--ld-blue); }
+  .ld-yard.yard-green { left: 60%; top: 60%; background: var(--ld-green); }
+  .ld-spot { position: absolute; width: 15%; aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,.55); transform: translate(-50%, -50%); }
+  .ld-home { position: absolute; left: 40%; top: 40%; width: 20%; height: 20%; border-radius: 1.4cqw; background: conic-gradient(from 45deg, var(--ld-green) 0 25%, var(--ld-red) 0 50%, var(--ld-yellow) 0 75%, var(--ld-blue) 0 100%); box-shadow: inset 0 0 0 .5cqw rgba(0,0,0,.12); }
+  .ld-home::after { content: ""; position: absolute; left: 50%; top: 50%; width: 34%; height: 34%; border-radius: 50%; background: rgba(255,255,255,.8); transform: translate(-50%, -50%); }
+
+  /* tokens */
+  .ld-tokens { position: absolute; inset: 0; pointer-events: none; }
+  html body.g-ludo .panel .ld-token { position: absolute; width: calc(100% / 15 * 0.74); aspect-ratio: 1; min-width: 0; min-height: 0; padding: 0; margin: 0; border: .34cqw solid #fff; border-radius: 50%; background: var(--tok); color: #fff; box-shadow: 0 .28cqw 0 rgba(0,0,0,.3); transform: translate(-50%, -50%); cursor: default; pointer-events: auto; font-size: 0; letter-spacing: 0; text-transform: none; z-index: 2; transition: left .28s cubic-bezier(.2,.9,.3,1), top .28s cubic-bezier(.2,.9,.3,1), box-shadow .15s, transform .12s; }
+  html body.g-ludo .panel .ld-token.tok-red { --tok: var(--ld-red); }
+  html body.g-ludo .panel .ld-token.tok-yellow { --tok: var(--ld-yellow); }
+  html body.g-ludo .panel .ld-token.tok-blue { --tok: var(--ld-blue); }
+  html body.g-ludo .panel .ld-token.tok-green { --tok: var(--ld-green); }
+  html body.g-ludo .panel .ld-token.movable { cursor: pointer; box-shadow: 0 0 0 .6cqw var(--accent), 0 .28cqw 0 rgba(0,0,0,.3); }
+  html body.g-ludo .panel .ld-token:hover, html body.g-ludo .panel .ld-token:focus-visible { background: var(--tok); color: #fff; }
+  html body.g-ludo .panel .ld-token::before { content: ""; position: absolute; inset: 28%; border-radius: 50%; background: rgba(255,255,255,.72); }
+  html body.g-ludo .panel .ld-token.movable:active { transform: translate(-50%, -50%) scale(.9); }
+  html body.g-ludo .panel .ld-token.movable::after { content: ""; position: absolute; inset: 22%; border-radius: 50%; background: rgba(255,255,255,.8); }
+  html body.g-ludo .panel .ld-token.done { box-shadow: 0 0 0 .4cqw #fff, 0 .28cqw 0 rgba(0,0,0,.3); }
+
+  /* die, roll and the line under the board */
+  .ld-controls { display: flex; align-items: center; gap: 3cqw; height: 22cqw; margin-top: 2cqw; }
+  .ld-die { width: 18cqw; height: 18cqw; flex: none; border-radius: 3.4cqw; background: #fff; color: #1b1b1d; box-shadow: 0 .8cqw 0 rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; }
+  .ld-die svg { width: 100%; height: 100%; display: block; }
+  .ld-die .ld-q { font-size: 8cqw; line-height: 1; color: #b9b2a5; }
+  .ld-die.rolling svg { animation: ld-tumble .45s cubic-bezier(.2,.9,.3,1); }
+  @keyframes ld-tumble { 0% { transform: rotate(0) scale(.9); } 45% { transform: rotate(190deg) scale(1.14); } 100% { transform: rotate(360deg) scale(1); } }
+  html body.g-ludo .panel button.ld-roll { flex: 1; min-width: 0; height: 16cqw; min-height: 0; padding: 0 3cqw; border-radius: 4cqw; font-size: 5.4cqw; letter-spacing: .04em; background: var(--fun-btn); box-shadow: 0 1cqw 0 #9c322c; }
+  html body.g-ludo .panel button.ld-roll:disabled { background: #39427a !important; box-shadow: none !important; color: rgba(255,255,255,.62) !important; opacity: 1; }
+  .ld-note { min-height: 4.2cqw; font-size: 3.1cqw; line-height: 1.15; text-align: center; color: rgba(255,255,255,.62); padding: 0 2cqw; }
+  /* match the reference: coral page, dark-edged cross board, compact score bar */
+  html body.fun.g-ludo {
+    --fun-bg: #ef8a73;
+    --fun-chip: rgba(255,255,255,.22);
+    --fun-btn: #d9574b;
+    --ld-yellow: #f7c21e;
+    --ld-blue: #22b6e8;
+    --ld-red: #ff5a5a;
+    --ld-green: #5cc84a;
+  }
+  body.g-ludo { background: var(--fun-bg); }
+  body.g-ludo .wrap { max-width: 430px; padding-inline: 8px; }
+  body.g-ludo .panel { background: transparent; border: 0; box-shadow: none; padding: 0 !important; }
+  body.g-ludo .topbar { margin-bottom: 0; }
+  body.g-ludo .topbar .man-trigger { display: none; }
+  body.g-ludo .topbar .back { background: #c97862; box-shadow: none; }
+
+  /* YOU 0 VS BOT 0, with the difficulty on its little tab */
+  .ld-vs {
+    grid-column: 2; grid-row: 1; justify-self: center; position: relative;
+    width: min(230px, 100%); height: 48px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    background: #6e4646; border-radius: 12px; color: #fff; text-transform: uppercase;
+  }
+  .ld-vs .ld-tab {
+    position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
+    padding: 0 14px; height: 14px; line-height: 14px; background: #6e4646;
+    border-radius: 8px 8px 0 0; font-size: 9px; color: rgba(255,255,255,.72); letter-spacing: .06em; white-space: nowrap;
+  }
+  .ld-vs .ld-side { display: flex; flex-direction: column; align-items: center; font-weight: 400; line-height: 1; }
+  .ld-vs .ld-side small { font-size: 10px; letter-spacing: .04em; }
+  .ld-vs .ld-side i { font-style: normal; font-size: 25px; line-height: 1.05; }
+  .ld-vs .ld-side.you small, .ld-vs .ld-side.you i { color: #f39a9a; }
+  .ld-vs .ld-side.bot small, .ld-vs .ld-side.bot i { color: #76e2ea; }
+  .ld-vs em { font-style: normal; font-size: 19px; font-weight: 700; padding: 0 4px; }
+
+  /* keep the shared Options button, but as a small gear in the header */
+  body.g-ludo .gk-optwrap { position: fixed !important; top: 76px !important; right: 12px !important; left: auto !important; width: 44px; height: 44px; z-index: 30; }
+  body.g-ludo .gk-optbtn { width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%; background: var(--fun-chip); font-size: 0; overflow: hidden; justify-content: center; }
+  body.g-ludo .gk-optbtn span { display: none; }
+  body.g-ludo .gk-optbtn .gk-gear { width: 22px; height: 22px; }
+  body.g-ludo .gk-opts { top: 52px; right: 0; left: auto; }
+  body.g-ludo #gk-slot { display: none; }
+
+  body.g-ludo .ld-players, body.g-ludo .ld-note, body.g-ludo .row { display: none !important; }
+  body.g-ludo .panel > .row, body.g-ludo .panel > .game-controls, body.g-ludo .panel > .toolbar { display: none; }
+  #ld { margin: 88px -8px 0; padding: 0 8px; }
+
+  /* the board: straight edges, saturated yards, thin dark grid */
+  .ld-board { border: 3px solid #392a2a; border-radius: 0; background: #fff; box-shadow: none; }
+  .ld-cells { border-radius: 0; }
+  .ld-cell.track { background: #fff; box-shadow: inset 0 0 0 .12cqw #4c3a2f; }
+  .ld-cell.safe::after { background: #c9a23a; border-radius: 0; }
+  .ld-yard { border-radius: 0; }
+  .ld-yard-in { inset: 12%; border-radius: 2.2cqw; background: rgba(255,255,255,.9); box-shadow: none; }
+  .ld-spot { width: 13%; border: .45cqw solid rgba(0,0,0,.14); background: rgba(255,255,255,.34); }
+  .ld-home { border-radius: 0; box-shadow: inset 0 0 0 .5cqw #392a2a; }
+  .ld-home::after { width: 22%; height: 22%; background: #f7f1e3; }
+  html body.g-ludo .panel .ld-token { border: .55cqw solid #2b1f1f; box-shadow: 0 .22cqw 0 rgba(0,0,0,.3); }
+  html body.g-ludo .panel .ld-token::before { inset: 30%; background: rgba(255,255,255,.55); }
+
+  .ld-controls { height: 21cqw; margin-top: 2.4cqw; gap: 2.4cqw; }
+  .ld-die { width: 17cqw; height: 17cqw; border-radius: 3cqw; background: #fff; box-shadow: 0 .7cqw 0 #d0c7b6; }
+  .ld-die .ld-q { width: 42%; height: 42%; font-size: 0; background: #e35b4f; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
+  html body.g-ludo .panel button.ld-roll { height: 17cqw; border-radius: 3cqw; font-size: 6cqw; background: #d9574b; box-shadow: 0 1cqw 0 #a53a32; }
+
+  @media (max-width: 360px) { #ld { margin-top: 46px; } .ld-vs { width: 210px; } }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-ludo fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <div class="ld-vs" id="ld-vs" aria-label="Scores">
+      <span class="ld-tab" id="ld-tab">MEDIUM</span>
+      <b class="ld-side you"><small>YOU</small><i id="ld-you">0</i></b>
+      <em>VS</em>
+      <b class="ld-side bot"><small>BOT</small><i id="ld-bot">0</i></b>
+    </div>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="ludo" data-man-title="LUDO(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <button class="btn ghost tool-btn man-trigger" data-man="ludo" data-man-title="LUDO(1)" type="button">How to play</button>
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="players" aria-label="Players">
+        <option data-short="2 players" value="2">2 players</option>
+        <option data-short="3 players" value="3">3 players</option>
+        <option data-short="4 players" value="4" selected>4 players</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="ld" data-reserve>
+      <div class="ld-players" id="ld-players"></div>
+      <div class="ld-board" id="ld-board" data-board aria-label="Ludo board">
+        <div class="ld-cells" id="ld-cells"></div>
+        <div class="ld-tokens" id="ld-tokens"></div>
+      </div>
+      <div class="ld-controls">
+        <div class="ld-die" id="ld-die" role="img" aria-label="Die"></div>
+        <button class="btn ld-roll" id="ld-roll" type="button">ROLL</button>
+      </div>
+      <div class="ld-note" id="ld-note"></div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-ludo">
+  <h2>Name</h2>
+  <p>ludo — the classic cross-board race. Two to four players, four tokens each; first to bring all four home wins.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Each player starts with four tokens in their yard. Roll a <strong>6</strong> to bring one out onto your coloured entry square.</li>
+    <li>A token travels right around the loop, then up its own coloured column and into the home in the middle. You need the <strong>exact</strong> roll to finish.</li>
+    <li>Land on an opponent on an ordinary square and their token goes back to their yard. Entry squares and the star squares are safe.</li>
+    <li>A <strong>6</strong> earns another roll. Three 6s in a row forfeit the turn. If no token can move, the turn passes.</li>
+    <li>If several tokens share a square, tap the one you want. There are no blockades.</li>
+  </ul>
+
+  <h2>Modes</h2>
+  <ul>
+    <li><strong>vs computer:</strong> choose 2, 3 or 4 players and Easy, Medium or Hard. You are red at the bottom left.</li>
+    <li><strong>Online room:</strong> create a room for 2 to 4 people and send the invite link. The host can add computers to fill empty seats. The server rolls the die, so nobody can cheat it.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Getting tokens out is the slowest part, so a 6 is nearly always worth using for that. Watch the squares just in front of your tokens: an opponent six steps behind can send you home. The safe star squares are good places to wait.</p>
+</template>
+
+<script defer src="../manpage.js?v=6ba2d49b"></script>
+<script defer src="../taunts.js?v=de2cfe57"></script>
+<script defer src="../gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../account.js?v=160336a8"></script>
+<script defer src="../live-share.js?v=2da83d25"></script>
+<script defer src="../multiseat.js?v=f5bba1b1"></script>
+<script defer src="engine.js?v=069c8237"></script>
+<script defer src="../fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=86f26a3d"></script>
+</body>
+</html>
