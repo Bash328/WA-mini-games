@@ -2,7 +2,7 @@
    Exercises the preview text against states encoded exactly the way
    async-share.js encodes them. */
 
-import LZString from "../vendor/lz-string.min.js";
+import LZString from "../assets/vendor/lz-string.min.js";
 import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
 
 const enc = (o) =>
@@ -70,7 +70,7 @@ check("valid tic-tac-toe invite",
   { title: "Join a live game · tic-tac-toe",
     description: "You've been invited to play tic-tac-toe in real time. Tap to join, no sign-up." });
 check("every multi-seat card game gets an invite preview",
-  ["/crazy-8/", "/liars-dice/", "/dominoes/"].map((p) => ogForLive(p, "K7P2QX") !== null), [true, true, true]);
+  ["/crazy-8/", "/liars-dice/", "/dominoes/", "/ludo/", "/hearts/", "/farkle/", "/lost-cities/", "/nine-mens-morris/", "/breakthrough/", "/connect6/", "/tablut/", "/fanorona/", "/cribbage/", "/skull/"].map((p) => ogForLive(p, "K7P2QX") !== null), [true, true, true, true, true, true, true, true, true, true, true, true, true, true]);
 check("game without live mode is left alone", ogForLive("/chess/", "K7P2QX"), null);
 check("bad code is left alone", ogForLive("/tic-tac-toe/", "k7p2qx"), null);
 check("ambiguous characters are not valid", ogForLive("/tic-tac-toe/", "K7P2QO"), null);

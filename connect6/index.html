@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>connect6 · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Connect6 — two stones a turn on a 15×15 board, and six in a row wins. Play a friend over WhatsApp or live online, take on the computer, or pass and play on one device.">
+<meta property="og:title" content="Connect6 · two stones a turn, six in a row">
+<meta property="og:description" content="Black opens with one stone; every turn after that places two. Line up six and send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
+<style>
+  .c6-wrap { width: 100%; margin: 6px 0 0; }
+  .c6-board {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+    grid-template-rows: repeat(15, minmax(0, 1fr));
+    aspect-ratio: 1;
+    width: calc(100% + 22px);
+    margin: 4px -11px 8px;
+    box-sizing: border-box;
+    padding: 2.8%;
+    background: #e2b96c;
+    border: 6px solid #000;
+    border-radius: 22px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25);
+    overflow: hidden;
+  }
+  /* #board-prefixed so the shared "body[class*='g-'] .panel button" fill,
+     radius, padding and chunky lip never show behind a crossing. */
+  #board .c6-cell {
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    filter: none;
+    opacity: 1;
+    font-size: 0;
+    line-height: 0;
+    cursor: pointer;
+  }
+  #board .c6-cell:hover { background: transparent; box-shadow: none; filter: none; }
+  #board .c6-cell:active { transform: none; box-shadow: none; }
+  #board .c6-cell:disabled { opacity: 1; cursor: default; }
+  #board .c6-cell::before,
+  #board .c6-cell::after {
+    content: "";
+    position: absolute;
+    background: #4a3a1c;
+    pointer-events: none;
+  }
+  #board .c6-cell::before { left: 0; right: 0; top: 50%; height: 1px; }
+  #board .c6-cell::after { top: 0; bottom: 0; left: 50%; width: 1px; }
+  #board .c6-cell.lft::before { left: 50%; }
+  #board .c6-cell.rgt::before { right: 50%; }
+  #board .c6-cell.top::after { top: 50%; }
+  #board .c6-cell.bot::after { bottom: 50%; }
+  .c6-stone { position: absolute; inset: 9%; border-radius: 50%; z-index: 1; pointer-events: none; }
+  /* the five star points, until a stone covers one */
+  #board .c6-cell.star:not(.b):not(.w):not(.pend) .c6-stone { inset: 40%; background: #4a3a1c; }
+  #board .c6-cell.b .c6-stone {
+    background: radial-gradient(circle at 35% 30%, #5c5c5c, #111 72%);
+    border: 2px solid #000;
+  }
+  #board .c6-cell.w .c6-stone {
+    background: radial-gradient(circle at 35% 30%, #fff, #e7e1d2 80%);
+    border: 2px solid #000;
+  }
+  /* a faint stone where a click or tap would land */
+  #board[data-turn="b"] .c6-cell:not(.b):not(.w):not(.pend):not(:disabled):hover .c6-stone {
+    inset: 9%; background: #111; opacity: .35;
+  }
+  #board[data-turn="w"] .c6-cell:not(.b):not(.w):not(.pend):not(:disabled):hover .c6-stone {
+    inset: 9%; background: #fff; opacity: .55;
+  }
+  /* the stone that is down but not sent yet: solid enough to read, ringed so it reads as a draft */
+  #board .c6-cell.pend .c6-stone {
+    inset: 9%;
+    background: #111;
+    border: 2px solid #000;
+    opacity: .68;
+    outline: 2px dashed #ffd34a;
+    outline-offset: 1px;
+  }
+  #board .c6-cell.pend.pw .c6-stone { background: #fff; }
+  #board .c6-cell.last .c6-stone { box-shadow: 0 0 0 3px #ff5a52; }
+  #board .c6-cell.win .c6-stone { box-shadow: 0 0 0 3px #2fbf7f, 0 0 10px #2fbf7f; }
+  .c6-hint {
+    margin: 10px 0 0;
+    min-height: 2.6em;
+    text-align: center;
+    color: rgba(255, 255, 255, .72);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  html body.fun.g-connect6 { --fun-bg: #24465a; --fun-btn: #2f8f86; --fun-chip: rgba(255, 255, 255, .1); --vs-bg: #183342; transition: background-color .35s; }
+  /* the turn pill follows the stones: steel for Black, cream for White */
+  body.g-connect6 { --p1: #9fb3c8; --p2: #f4efe6; }
+  html body.fun.g-connect6:has(.turn.wait) { --fun-bg: #3a3050; }
+  html body.fun.g-connect6 .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+  html body.fun.g-connect6 .c6-wrap { width: 100%; margin: 6px 0 0; }
+  html body.fun.g-connect6 .panel .c6-board {
+    width: calc(100% + 22px);
+    margin: 4px -11px 8px;
+    box-sizing: border-box;
+    max-width: none;
+    padding: 2.8%;
+    background: #e3b765;
+    border: 6px solid #000;
+    border-radius: 22px;
+    box-shadow: none;
+  }
+  html body.fun.g-connect6 #board .c6-cell { opacity: 1; box-shadow: none; }
+  html body.fun.g-connect6 .c6-hint { color: rgba(255, 255, 255, .72); }
+  @media (min-width: 500px) {
+    html body.fun.g-connect6 .c6-wrap .c6-board { width: 440px; margin: 4px auto 8px; }
+  }
+  /* "connect6" fits the 320px header, but the turn pill needs a little less width there */
+  @media (max-width: 360px) {
+    html body.fun.g-connect6 .topbar h1 { font-size: 18px; }
+    html body.fun.g-connect6 .panel > .turn { font-size: 19px; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-connect6 fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>connect6</h1>
+    <a class="back" href="../">&#8592;&#xFE0E; all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Your move.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="connect6" data-man-title="CONNECT6(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players · online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players · same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Black" value="1" selected>Play Black (first)</option>
+        <option data-short="Play White" value="2">Play White</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="c6-wrap">
+      <div class="c6-board" id="board" role="grid" aria-label="Connect6 board, 15 by 15"></div>
+    </div>
+    <p class="c6-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">&#8630;&#xFE0E;</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">&#8635;&#xFE0E;</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-connect6">
+  <h2>Name</h2>
+  <p>connect6 — six in a row, two stones at a time.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>A <strong>15×15 board</strong>. Black moves first and places <strong>one stone</strong> on the opening turn.</li>
+    <li>After that, <strong>every turn places two stones</strong>. They can go on any two empty points, next to each other or far apart.</li>
+    <li>The first side to get <strong>six or more stones in a row</strong> — across, down or diagonally — wins. Seven or more counts just the same.</li>
+    <li>A turn may place fewer than two stones only when the board is nearly full: with one empty point left that turn places one, and with two left it places both and fills the board.</li>
+    <li>If the board fills with no six, it is a <strong>draw</strong>. Stones never move or get taken.</li>
+    <li>This page uses 15×15 rather than the 19×19 tournament board so the points stay thumb-sized on a phone. With two stones a turn, a mis-tap is expensive, so the smaller board is the friendlier one.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Tap a point</strong> to put down your first stone. It shows as a dim stone with a dashed gold ring until the turn is sent.</li>
+    <li><strong>Tap a second point</strong> and the whole turn plays at once. Tap the staged stone again to take it back before the second point goes down.</li>
+    <li>The two stones of the last turn are ringed in red; a winning line glows green.</li>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and whether you play Black (first) or White.</li>
+    <li><code>undo</code> is below the board against the computer and on one device. The round arrow in the header starts a new game.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Black</strong> and places the opening stone; your friend is <strong>White</strong>.</li>
+    <li>After each turn tap <code>Send on WhatsApp</code>. Your friend opens the link, sees your two stones ringed, plays their two and sends a link back.</li>
+    <li><code>Copy link</code> works for any other messenger. A link opened twice shows the latest move, so a refresh never loses the game.</li>
+  </ul>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You play in real time, with no link-passing. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Because a turn is two stones, a single threat is easy to answer: make two at once, on different lines, so one pair of stones cannot cover both. A five with two open ends can still be blocked by two stones, so the shapes that win are the ones with more than two ways to make six. Look for a point where your two stones would each complete a five, and block your opponent's pairs the same way.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../shared/async-share.js?v=d4254c50"></script>
+<script defer src="../shared/account.js?v=160336a8"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="rules.js?v=44b1f939"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=861cd71b"></script>
+</body>
+</html>

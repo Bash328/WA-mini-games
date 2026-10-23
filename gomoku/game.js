@@ -200,8 +200,8 @@
     if (res.status !== "in_progress") return finish(res);
     if (mode === "ai" && current !== humanIs) {
       thinking = true;
-      Gamekit.turn(slotOf(current), "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(slotOf(current), "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 350);
       return;
@@ -233,7 +233,7 @@
     Gamekit.turn(null);
     if (res.status === "draw") statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
     else if (mode === "ai") {
-      statusEl.textContent = res.winner === humanIs ? "You win! 🎉 " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+      statusEl.textContent = res.winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     } else {
       statusEl.textContent = `${NAMES[res.winner]} wins. ${NAMES[other(res.winner)]} — ${Gamekit.taunt("loss")}`;
     }
@@ -274,7 +274,17 @@
     if (typeof b !== "string" || b.length !== CELLS || !/^[012]+$/.test(b)) return false;
     const stones = b.length - b.replace(/[12]/g, "").length;
     if (stones !== s.moveCount && !(s.resigned && stones === s.moveCount - 1)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && b[s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && b[s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: Black opens and the colours alternate, the last
+    // stone is the newest one and belongs to the side that just moved, no five-in-a-row hides in an "in progress" game, and the result matches
+    const g = Uint8Array.from(b, Number), black = g.filter(v => v === BLACK).length, white = stones - black;
+    if (black !== white && black !== white + 1) return false;
+    if (s.resigned) return true;
+    const mover = g[s.last];
+    if (mover !== (black > white ? BLACK : WHITE) || s.turn === mover) return false;
+    if (lineAt(g, s.last)) return s.status === "won" && s.winner === mover;
+    for (let i = 0; i < CELLS; i++) if (g[i] && lineAt(g, i)) return false;
+    return s.status === (full(g) ? "draw" : "in_progress");
   }
   const shared = {
     game: "gomoku", version: 1, players: [BLACK, WHITE],

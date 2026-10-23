@@ -491,8 +491,20 @@ function checkConfidence() {
 const modeSel = document.getElementById('mode');
 const undoBtn = document.getElementById('undo');
 const sideSel = document.getElementById('side');
-const levelSel = document.getElementById('level');
 const flipBtn = document.getElementById('flip');
+const chipsEl = document.getElementById('chips');
+const AI_DEPTHS = { easy: 1, medium: 2, hard: 3 };
+const aiStore = Gamekit.storage('chess:');
+let aiDiff = aiStore.get('diff', 'medium');
+if (!AI_DEPTHS[aiDiff]) aiDiff = 'medium';
+const chips = Gamekit.wireDifficultyChips({
+  el: chipsEl,
+  difficulties: Object.keys(AI_DEPTHS),
+  storage: aiStore,
+  storageKey: 'diff',
+  initial: aiDiff,
+  onChange: (d) => { aiDiff = d; resetSolo(); },
+});
 
 // The piece that just moved glides from its old square to its new one (once per move; a re-render of
 // the same position, such as selecting a piece, does not move it again).
@@ -568,9 +580,9 @@ function renderBoard() {
     const aiToMove = thinking || state.turn !== humanColor;
     // same words as the turn pill so the status line stays hidden and the board never shifts
     document.getElementById('status').textContent =
-      (aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : 'Your move.') + note;
+      (aiToMove ? 'Bot thinking…' : inChk ? 'Check! Your move' : 'Your move.') + note;
     Gamekit.turn(state.turn === 'w' ? 1 : 2,
-      aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black'),
+      aiToMove ? 'Bot thinking…' : inChk ? 'Check! Your move' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black'),
       aiToMove);
   }
 }
@@ -620,7 +632,7 @@ function aiTurn() {
   aiTimer = setTimeout(() => {
     aiTimer = null;
     if (state.turn === humanColor) { thinking = false; renderBoard(); return; }
-    const depth = +document.getElementById('level').value;
+    const depth = AI_DEPTHS[aiDiff] || 2;
     const m = bestMove(state, depth);
     if (m) { makeMove(state, m); lastMove = m; }
     checkConfidence();
@@ -665,8 +677,33 @@ function resetSolo() {
   humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();
-  document.getElementById('status').textContent = humanColor === 'b' ? 'Computer is thinking…' : 'Your move.';
+  document.getElementById('status').textContent = humanColor === 'b' ? 'Bot is thinking…' : 'Your move.';
   if (humanColor === 'b') aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
+}
+
+// A hand-edited link must still be a position two players could have reached: sane piece counts, flags that match the
+// board, the side that just moved not in check, and the stated result equal to what the board says.
+function reachable(s) {
+  const b = s.board, str = b.b, n = (ch) => str.split(ch).length - 1;
+  for (const [P, N, B, R, Q, K] of [['P','N','B','R','Q','K'], ['p','n','b','r','q','k']]) {
+    const extra = Math.max(0, n(Q) - 1) + Math.max(0, n(R) - 2) + Math.max(0, n(B) - 2) + Math.max(0, n(N) - 2);
+    if (n(P) > 8 || extra > 8 - n(P) || [P,N,B,R,Q,K].reduce((t, c) => t + n(c), 0) > 16) return false;
+  }
+  if (/[pP]/.test(str.slice(0, 8) + str.slice(56))) return false;
+  const rights = [['K', 60, 'K', 63, 'R'], ['Q', 60, 'K', 56, 'R'], ['k', 4, 'k', 7, 'r'], ['q', 4, 'k', 0, 'r']];
+  for (const [f, ks, kc, rs, rc] of rights) if (b.castle.includes(f) && (str[ks] !== kc || str[rs] !== rc)) return false;
+  if (b.ep !== null) {
+    const c = b.ep & 7;
+    const ok = b.ep >> 3 === 5 ? s.turn === 'b' && str[32 + c] === 'P' && str[48 + c] === '.' : b.ep >> 3 === 2 && s.turn === 'w' && str[24 + c] === 'p' && str[8 + c] === '.';
+    if (!ok || str[b.ep] !== '.') return false;
+  }
+  const st = stateFromLinkBoard(b, s.turn);
+  if (s.resigned) return true;             // a resignation leaves the board as it was
+  const mover = str[s.last[1]];
+  if (mover === '.' || str[s.last[0]] !== '.' || (mover === mover.toUpperCase() ? 'b' : 'w') !== s.turn) return false;
+  if (inCheck(st, opp(s.turn))) return false;
+  const o = outcome(st);
+  return o.status === s.status && o.winner === s.winner;
 }
 
 // ---------- 2 players over WhatsApp ----------
@@ -689,8 +726,8 @@ const link = AsyncShare.start({
     if (typeof b.castle !== 'string' || !/^(-|[KQkq]{1,4})$/.test(b.castle)) return false;
     if (!(b.ep === null || (Number.isInteger(b.ep) && b.ep >= 0 && b.ep < 64))) return false;
     if (!Number.isInteger(b.half) || b.half < 0 || b.half > 150) return false;
-    return Array.isArray(s.last) && s.last.length === 2 &&
-      s.last.every(i => Number.isInteger(i) && i >= 0 && i < 64);
+    if (!(Array.isArray(s.last) && s.last.length === 2 && s.last.every(i => Number.isInteger(i) && i >= 0 && i < 64))) return false;
+    return reachable(s);
   },
   onState: loadLink,
   detail: () => lastReason || '',
@@ -864,7 +901,7 @@ document.getElementById('puz-solve').addEventListener('click', puzzleSolution);
 
 function applyMode() {
   const wa = mode === 'whatsapp', pz = mode === 'puzzle';
-  levelSel.hidden = wa || pz;
+  chipsEl.hidden = wa || pz;
   sideSel.hidden = wa || pz;
   undoBtn.hidden = wa || pz;
   puzBtns.forEach((b) => { b.hidden = !pz; });
@@ -896,7 +933,7 @@ undoBtn.addEventListener('click', () => {
   if (state.turn !== humanColor) {
     // everything was undone and the computer plays first: let it open again
     // instead of leaving the board waiting for a move that never comes
-    document.getElementById('status').textContent = 'Computer is thinking…';
+    document.getElementById('status').textContent = 'Bot is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';
@@ -910,12 +947,12 @@ modeSel.addEventListener('change', () => { mode = modeSel.value; applyMode(); })
 modeSel.value = mode;
 applyMode();
 
-// A refresh keeps a game against the computer: the position, your side and the level.
+// A refresh keeps a game against the computer: the position, your side and the difficulty.
 // (Undo history and repetition tracking start fresh. Link games live in the URL.)
 const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.length === 0 || outcome(state).status !== 'in_progress') ? null : {
   b: boardToStr(state.board), castle: castleToStr(state.castling),
   ep: state.ep ? state.ep.r * 8 + state.ep.c : null, half: state.halfmove, turn: state.turn,
-  human: humanColor, level: levelSel.value,
+  human: humanColor, level: aiDiff,
 }, (s) => {
   if (typeof s.b !== 'string' || !/^[.pnbrqkPNBRQK]{64}$/.test(s.b)) return false;
   if ((s.b.match(/K/g) || []).length !== 1 || (s.b.match(/k/g) || []).length !== 1) return false;
@@ -923,9 +960,12 @@ const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.le
   if (!(s.ep === null || (Number.isInteger(s.ep) && s.ep >= 0 && s.ep < 64))) return false;
   if (!Number.isInteger(s.half) || s.half < 0 || s.half > 150) return false;
   if ((s.turn !== 'w' && s.turn !== 'b') || (s.human !== 'w' && s.human !== 'b')) return false;
-  if (![...levelSel.options].some(o => o.value === s.level)) return false;
+  // Older saves stored the depth as "1"/"2"/"3"; accept both that and the
+  // easy/medium/hard keys used by the chips now.
+  const savedDiff = AI_DEPTHS[s.level] ? s.level : ({ 1: 'easy', 2: 'medium', 3: 'hard' })[s.level];
+  if (!savedDiff) return false;
   mode = 'ai'; modeSel.value = 'ai';
-  sideSel.value = s.human; levelSel.value = s.level;
+  sideSel.value = s.human; aiDiff = savedDiff; chips.show(aiDiff);
   applyMode();                                   // computer game, fresh board for that side
   cancelAI();
   state = stateFromLinkBoard({ b: s.b, castle: s.castle, ep: s.ep, half: s.half }, s.turn);
@@ -933,7 +973,7 @@ const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.le
   lastMove = null; selected = null; legalFromSel = [];
   renderBoard();
   if (state.turn !== humanColor) {
-    document.getElementById('status').textContent = 'Computer is thinking…';
+    document.getElementById('status').textContent = 'Bot is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';

@@ -119,7 +119,7 @@
     }
   }
 
-  // The computer's shot: finish off ships it has already hit (staying in
+  // The bot's shot: finish off ships it has already hit (staying in
   // line once it has two hits), otherwise sweep a checkerboard, since the
   // smallest ship is two cells long.
   function aiPick(humanFleet, shots) {
@@ -642,6 +642,8 @@
     if (!Number.isInteger(s.last) || s.last < -1 || s.last >= CELLS) return false;
     const sunk1 = allSunk(f2, s1), sunk2 = allSunk(f1, s2);   // sunk1: Player 1 has won
     if (sunk1 && sunk2) return false;
+    // every move is a fleet placed or a shot fired, so the move count must add up (a resignation adds one)
+    if (s.moveCount !== (f2 ? 2 : 1) + s1.length + s2.length + (s.resigned ? 1 : 0)) return false;
     if (s.status === "in_progress") {
       if (sunk1 || sunk2) return false;
       if (!f2) return s.turn === P2 && s.last === -1;
@@ -750,7 +752,7 @@
     const who = (p) => vsc ? "You" : NAMES[p];
     if (L.phase === "over") {
       const w = L.winner;
-      statusEl.textContent = (vsc ? (w === P1 ? "You win! " : "The computer wins. ") : NAMES[w] + " wins! ") +
+      statusEl.textContent = (vsc ? (w === P1 ? "You win! " : "The bot wins. ") : NAMES[w] + " wins! ") +
         Gamekit.taunt(vsc ? (w === P1 ? "win" : "loss") : "win");
       Gamekit.turn(null);
       draw({ kind: "over", F: L.F, S: L.S, note: L.report });
@@ -770,12 +772,12 @@
       const p = L.placer;
       statusEl.textContent = (vsc ? "Place your fleet." : NAMES[p] + ": place your fleet.");
       Gamekit.turn(p, (vsc ? "You" : NAMES[p]) + " · place your fleet");
-      draw({ kind: "place", note: vsc ? "Place your fleet. The computer hides its own." : "" });
+      draw({ kind: "place", note: vsc ? "Place your fleet. The bot hides its own." : "" });
       return;
     }
     const me = L.turn, foe = other(me);
-    statusEl.textContent = L.thinking ? "Computer thinking…" : L.handoff ? "Shot fired — end your turn." : (vsc ? "Your shot." : NAMES[me] + ": take your shot.");
-    if (L.thinking) Gamekit.turn(P2, "Computer thinking…", true);
+    statusEl.textContent = L.thinking ? "Bot thinking…" : L.handoff ? "Shot fired — end your turn." : (vsc ? "Your shot." : NAMES[me] + ": take your shot.");
+    if (L.thinking) Gamekit.turn(P2, "Bot thinking…", true);
     else Gamekit.turn(me, who(me) + (L.handoff ? " · end turn" : " · fire"), L.handoff);
     draw({
       kind: "battle", me: me, myFleet: L.F[me], enemyFleet: L.F[foe],
@@ -813,7 +815,7 @@
     L.report = "You fired at " + cellName(cell) + ": " + resText(res, true);
     if (allSunk(L.F[foe], L.S[me])) {
       L.phase = "over"; L.winner = me;
-      L.report = (L.vsComputer ? (me === P1 ? "You" : "The computer") : NAMES[me]) + " sank the whole fleet.";
+      L.report = (L.vsComputer ? (me === P1 ? "You" : "The bot") : NAMES[me]) + " sank the whole fleet.";
     } else if (L.vsComputer) {
       L.thinking = true;                         // your shot is shown, the cannon slides away, and the computer takes a moment
       clearTimeout(L.aiTimer);
@@ -833,10 +835,10 @@
     const r2 = shotResult(L.F[P1], L.S[P2], c);
     L.S[P2].push(c);
     L.hl.theirs = c;
-    L.report += " The computer fired at " + cellName(c) + ": " + resText(r2, false);
+    L.report += " The bot fired at " + cellName(c) + ": " + resText(r2, false);
     if (allSunk(L.F[P1], L.S[P2])) {
       L.phase = "over"; L.winner = P2;
-      L.report = "The computer sank your whole fleet.";
+      L.report = "The bot sank your whole fleet.";
     }
     renderLocal();
   }
@@ -870,7 +872,8 @@
     newLocal();
   }
 
-  resetBtn.addEventListener("click", newLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : newLocal()));
   modeSel.addEventListener("change", applyMode);
   applyMode();
 

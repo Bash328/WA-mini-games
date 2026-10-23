@@ -72,6 +72,7 @@
         cell.className = "c4-slot";
         cell.dataset.r = String(r);
         cell.dataset.c = String(c);
+        cell.addEventListener("click", () => onColClick(c));   // tapping a disc drops in its column, like the arrow above
         boardEl.appendChild(cell);
       }
     }
@@ -319,7 +320,7 @@
       const reversed = confidenceGivenTo === loser;
       const who = (mode === "local")
         ? (last.p === P1 ? "Red" : "Yellow") + " wins. " + (loser === P1 ? "Red" : "Yellow") + " — " + Gamekit.taunt(reversed ? "reversal" : "loss")
-        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
+        : (last.p === humanIs ? "You win. " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt(reversed ? "reversal" : "loss"));
       statusEl.innerHTML = '<span class="ok">' + who + '</span>';
       Gamekit.turn(null);
     } else if (isFull(grid)) {
@@ -347,8 +348,8 @@
       statusEl.textContent = "Your turn." + (note ? " " + note : "");
       Gamekit.turn(current, "Your turn · you're " + (current === P1 ? "Red" : "Yellow"));
     } else {
-      statusEl.textContent = "Computer thinking…";
-      Gamekit.turn(current, "Computer thinking…", true);
+      statusEl.textContent = "Bot thinking…";
+      Gamekit.turn(current, "Bot thinking…", true);
     }
   }
 
@@ -419,7 +420,22 @@
     // a resignation adds a move to the count without adding a checker
     const filled = b.split("").filter(c => c !== "0").length;
     if (filled !== s.moveCount && !(s.resigned && filled === s.moveCount - 1)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < ROWS * COLS && b[s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: discs rest on discs, Red opens and the
+    // colours alternate, the last disc is the newest one of its column and belongs to the side that just moved, and the result matches
+    const g = Array.from({ length: ROWS }, (_, r) => Array.from(b.slice(r * COLS, (r + 1) * COLS), Number));
+    let n1 = 0, n2 = 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (g[r][c] && r < ROWS - 1 && !g[r + 1][c]) return false;
+      if (g[r][c] === P1) n1++; else if (g[r][c] === P2) n2++;
+    }
+    if (n1 !== n2 && n1 !== n2 + 1) return false;
+    if (s.resigned) return true;
+    const lr = Math.floor(s.last / COLS), lc = s.last % COLS, lp = g[lr][lc];
+    if ((lr > 0 && g[lr - 1][lc]) || lp !== (n1 > n2 ? P1 : P2) || s.turn === lp) return false;
+    if (winAt(g, lr, lc, lp)) return s.status === "won" && s.winner === lp;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (g[r][c] && winAt(g, r, c, g[r][c])) return false;
+    return s.status === (isFull(g) ? "draw" : "in_progress");
   }
 
   const link = AsyncShare.start({
@@ -484,7 +500,7 @@
     // HUMAN's turn again: after the computer's winning move that means taking
     // back its move and yours, and if the human plays second and everything is
     // undone, the computer simply opens again. (It used to stop after one
-    // move and leave the page on "Computer thinking" with nothing moving.)
+    // move and leave the page on "Bot thinking" with nothing moving.)
     cancelAI();
     const next = () => (history.length % 2 === 0 ? P1 : P2);
     undoMove();

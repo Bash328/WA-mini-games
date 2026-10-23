@@ -11,7 +11,7 @@
    this part is plain JS so it can be tested in node.
    ============================================================ */
 
-import LZString from "../vendor/lz-string.min.js";
+import LZString from "../assets/vendor/lz-string.min.js";
 import { liveGame } from "./live-games.mjs";
 import { CARD_GAMES } from "./card-protocol.mjs";
 
@@ -43,6 +43,17 @@ const GAMES = {
   "crazy-8":            { title: "crazy 8",            labels: { 1: "Player 1", 2: "Player 2" } },
   "liars-dice":         { title: "liar's dice",        labels: { 1: "Player 1", 2: "Player 2" } },
   "dominoes":           { title: "dominoes",           labels: { 1: "Player 1", 2: "Player 2" } },
+  "ludo":               { title: "ludo",                labels: { 1: "Player 1", 2: "Player 2" } },
+  "hearts":             { title: "hearts",              labels: { 1: "Player 1", 2: "Player 2" } },
+  "nine-mens-morris":   { title: "nine men's morris",   labels: { 1: "Player 1", 2: "Player 2" } },
+  "breakthrough":       { title: "breakthrough",         labels: { 1: "Red", 2: "Blue" } },
+  "farkle":             { title: "farkle",               labels: { 1: "Player 1", 2: "Player 2" } },
+  "lost-cities":        { title: "lost cities",          labels: { 1: "Player 1", 2: "Player 2" } },
+  "connect6":           { title: "connect6",             labels: { 1: "Black", 2: "White" } },
+  "tablut":             { title: "tablut",               labels: { 1: "Attackers", 2: "Defenders" } },
+  "fanorona":           { title: "fanorona",             labels: { 1: "Red", 2: "Blue" } },
+  "cribbage":           { title: "cribbage",             labels: { 1: "Player 1", 2: "Player 2" } },
+  "skull":              { title: "skull",                labels: { 1: "Player 1", 2: "Player 2" } },
   "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
   "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
   "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },

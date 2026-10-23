@@ -1,0 +1,516 @@
+/* ============================================================
+   async-share.js — play-by-link for two-player games.
+
+   There is no server: the whole game state rides in the URL as
+   ?s=<lz-string>. After a move the player sends the new link on
+   WhatsApp; the opponent opens it, moves, and sends one back.
+
+   State envelope (every game):
+     { game, version, id, turn, board, status, winner, moveCount, last, resigned }
+     id        random, only used by this device to spot old links
+     turn      player who moves next (after the game ends: the player
+               who did NOT make the final move). commit()'s move.nextTurn
+               can override the default "give it to the opponent" for
+               rules where the same player goes again (a pass, an extra
+               turn on a streak).
+     status    "in_progress" | "won" | "draw"
+     winner    null unless status is "won"
+     last      game-specific index of the last move, for highlighting
+     resigned  true when status "won" was reached by the loser hitting
+               "Admit defeat" rather than playing it out; absent (not
+               false) on every ordinary move, so it costs nothing in the
+               link until it's actually used
+
+   Exposes `window.AsyncShare`. Needs gamekit.js and
+   vendor/lz-string.min.js loaded first.
+   ============================================================ */
+(function (global) {
+  "use strict";
+
+  const PARAM = "s";
+  const STATUSES = ["in_progress", "won", "draw"];
+  const MAX_REMEMBERED = 40;
+
+  // The confirm() dialog is the only safeguard before this irreversible
+  // action, so every variant keeps the factual warning (opponent wins,
+  // no undo) and only varies the line added after it — picked fresh each
+  // tap, same spirit as Gamekit's taunts but specific to the resign
+  // moment itself, so it lives here rather than in the shared pool.
+  const RESIGN_CONFIRMS = [
+    "Try harder. You've got this... probably not, but try.",
+    "Hint: you still have a chance here. Don't run.",
+    "Just run. You stand no chance anyway.",
+    "I understand your choice, coward!!",
+    "Bold of you to give up this early.",
+    "Your opponent will remember this.",
+    "Sure you don't want to make them earn it?",
+    "This is permanent. Unlike your dignity, which left a while ago.",
+    "Waving the white flag already?",
+    "They'll tell this story for years.",
+    "Giving up builds character. Allegedly.",
+    "One click from legendary status. Legendary cowardice.",
+    "This screenshot is going somewhere.",
+    "Running away never looked so... available.",
+    "Your opponent didn't even have to try.",
+    "Future you will have questions about this moment.",
+  ];
+  function resignConfirmText() {
+    const flavor = RESIGN_CONFIRMS[Math.floor(Math.random() * RESIGN_CONFIRMS.length)];
+    return "Admit defeat? Your opponent wins immediately — there's no undo. " + flavor;
+  }
+
+  /* ---------- Encoding ----------
+     Every byte in the URL costs WhatsApp preview real estate, so the
+     envelope is shrunk to single-letter keys and status codes on the wire
+     — purely a transport detail. encode() takes, and decode() returns, the
+     full-key envelope described above; every caller (validate(), every
+     game's board code) only ever sees that shape. */
+
+  const WIRE_KEY = { game: "g", version: "v", id: "i", turn: "t", board: "b", status: "s", winner: "w", moveCount: "n", last: "l", resigned: "r" };
+  const STATUS_CODE = { in_progress: "p", won: "w", draw: "d" };
+  const STATUS_NAME = { p: "in_progress", w: "won", d: "draw" };
+
+  // lz-string's URI alphabet is [A-Za-z0-9+-]. A "+" in a query string
+  // decodes to a space and some apps mangle it, so swap it for "_" and
+  // keep links to unreserved characters. decode() accepts all spellings.
+  function encode(state) {
+    const wire = {};
+    for (const k in WIRE_KEY) wire[WIRE_KEY[k]] = k === "status" ? (STATUS_CODE[state[k]] || state[k]) : state[k];
+    return LZString.compressToEncodedURIComponent(JSON.stringify(wire)).replace(/\+/g, "_");
+  }
+
+  function decode(str) {
+    if (typeof str !== "string" || !str) return null;
+    try {
+      const json = LZString.decompressFromEncodedURIComponent(str.replace(/[_ ]/g, "+"));
+      if (!json) return null;
+      const wire = JSON.parse(json);
+      if (!wire || typeof wire !== "object") return null;
+      const state = {};
+      for (const k in WIRE_KEY) state[k] = wire[WIRE_KEY[k]];
+      state.status = STATUS_NAME[state.status] || state.status;
+      return state;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Envelope checks shared by every game; opts.validateBoard covers the rest.
+  function validate(s, opts) {
+    if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+    if (s.game !== opts.game || s.version !== opts.version) return false;
+    if (typeof s.id !== "string" || !/^[a-z0-9]{4,16}$/.test(s.id)) return false;
+    if (STATUSES.indexOf(s.status) === -1) return false;
+    if (opts.players.indexOf(s.turn) === -1) return false;
+    if (!Number.isInteger(s.moveCount) || s.moveCount < 1) return false;
+    if (s.status === "won" ? opts.players.indexOf(s.winner) === -1 : s.winner !== null) return false;
+    if (s.resigned !== undefined && (s.resigned !== true || s.status !== "won")) return false;
+    try { return !!opts.validateBoard(s); } catch (e) { return false; }
+  }
+
+  /* ---------- What this device has seen ----------
+     Links carry no identity, so each browser remembers the newest move
+     it has seen per game id. That is how a re-opened old link is spotted,
+     and how a refresh after moving shows "send it" instead of letting the
+     same player move twice. */
+  const store = Gamekit.storage("async:");
+
+  function seenAll() {
+    const all = store.getJSON("seen", {});
+    return all && typeof all === "object" && !Array.isArray(all) ? all : {};
+  }
+
+  function recall(s) {
+    const rec = seenAll()[s.game + ":" + s.id];
+    return rec && Number.isInteger(rec.n) && typeof rec.s === "string" ? rec : null;
+  }
+
+  function remember(s, enc, sent, mover) {
+    const all = seenAll();
+    all[s.game + ":" + s.id] = { n: s.moveCount, s: enc, sent: sent, t: Date.now(), mover: mover };
+    Object.keys(all)
+      .sort((a, b) => (all[b].t || 0) - (all[a].t || 0))
+      .slice(MAX_REMEMBERED)
+      .forEach(k => delete all[k]);
+    store.setJSON("seen", all);
+  }
+
+  function newId() {
+    let id = "";
+    while (id.length < 6) id += Gamekit.randomSeed().toString(36);
+    return id.slice(0, 6);
+  }
+
+  /* ---------- Links + clipboard ---------- */
+
+  function pageUrl() { return location.href.split(/[?#]/)[0]; }
+  function linkFor(enc) { return pageUrl() + "?" + PARAM + "=" + enc; }
+
+  function setParam(enc) {
+    try { history.replaceState(null, "", enc ? "?" + PARAM + "=" + enc : location.pathname); } catch (e) {}
+  }
+
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    return ok;
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && global.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(() => true, () => legacyCopy(text));
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  /* ---------- Controller ----------
+     opts = {
+       game, version, title,       identifiers + name used in the message
+       players: [first, second],   values stored in turn / winner
+       label(player),              display name, e.g. "X" or "Red"
+       validateBoard(state),       game-specific shape check
+       onState(state, canMove),    render the board (state null = new game)
+       detail(state, viewer),      optional extra line on the game-over screen
+       ui, statusEl                containers for the share panel + status line
+     } */
+  function start(opts) {
+    const ui = opts.ui;
+    const statusEl = opts.statusEl;
+    const label = opts.label || String;
+    let view = null;   // { kind, state, enc, viewer, latest }
+
+    // The share panel grows from one hint line to a banner plus Send/Copy
+    // buttons the moment the first move is made. While it lived above the
+    // board that growth pushed the whole game down mid-turn. It now sits
+    // BELOW the board (just before the toolbar), so sending a link only ever
+    // adds height under the game, never moves it.
+    (function parkSharePanel() {
+      if (!ui || !ui.parentNode) return;
+      const toolbar = document.querySelector(".toolbar");
+      const board = document.getElementById("board") || document.getElementById("bs-board") || document.getElementById("ld-board");
+      if (toolbar && toolbar.parentNode === ui.parentNode) ui.parentNode.insertBefore(ui, toolbar);
+      else if (board && board.parentNode === ui.parentNode) board.parentNode.insertBefore(ui, board.nextSibling);
+    })();
+
+    // "Admit defeat" lives in one fixed slot BELOW the board (shared with the
+    // live-play controller). It used to sit above the board and appear only on
+    // your turn, so the board jumped down and up on every move. Now the slot
+    // is always there during a game; only the button inside it comes and goes.
+    const resignRow = ensureResignRow(ui);
+    const resignOff = () => { resignRow.style.display = "none"; resignRow.replaceChildren(); };
+    const resignSlot = (visible) => { resignRow.style.display = ""; resignRow.style.visibility = visible ? "visible" : "hidden"; };
+
+    function other(p) { return p === opts.players[0] ? opts.players[1] : opts.players[0]; }
+
+    function classify(raw) {
+      if (raw === null) return { kind: "new", state: null, viewer: opts.players[0] };
+      raw = raw.replace(/[+ ]/g, "_");
+      const state = decode(raw);
+      if (!validate(state, opts)) return { kind: "invalid", state: null };
+      const rec = recall(state);
+      if (rec && state.moveCount < rec.n) return { kind: "stale", state: state, latest: rec };
+      if (rec && state.moveCount === rec.n && rec.sent) {
+        // Normally the mover is whoever DIDN'T get `turn` next. But a move
+        // that grants another turn (Othello's pass, an extra turn in
+        // Mancala/Dots and Boxes) can leave `turn` pointing at the mover
+        // themself — so prefer the mover recorded at commit time, and only
+        // fall back to the old guess for records saved before this existed.
+        return { kind: "sent", state: state, enc: raw, viewer: rec.mover !== undefined ? rec.mover : other(state.turn) };
+      }
+      remember(state, raw, false);
+      return { kind: "received", state: state, enc: raw, viewer: state.turn };
+    }
+
+    function canMove() {
+      if (!view) return false;
+      if (view.state && view.state.status !== "in_progress") return false;
+      // Normally only a freshly-opened link is playable. But a move that
+      // granted another turn (see commit()'s nextTurn) can leave it still
+      // this viewer's turn right after their own commit — let them keep
+      // playing immediately instead of forcing a send-then-reopen round trip.
+      return view.kind === "new" || view.kind === "received" ||
+        (view.kind === "sent" && view.state.turn === view.viewer);
+    }
+
+    // move = { board, status, winner, last, nextTurn? } for the player whose
+    // turn it is. nextTurn is optional and defaults to the opponent — pass
+    // it explicitly when a rule grants another turn to the same player
+    // (Othello's pass, an extra turn in Mancala or Dots and Boxes).
+    function commit(move) {
+      if (!canMove()) return;
+      const prev = view.state;
+      const mover = view.viewer;
+      // the same link open in a second tab already moved on: this tab is now looking at an old link, not a live board
+      const seen = prev && recall(prev);
+      if (seen && seen.n > prev.moveCount) { view = classify(view.enc); paint(); return; }
+      const enc = encode({
+        game: opts.game,
+        version: opts.version,
+        id: prev ? prev.id : newId(),
+        turn: move.nextTurn !== undefined ? move.nextTurn : other(mover),
+        board: move.board,
+        status: move.status,
+        winner: move.winner === undefined ? null : move.winner,
+        moveCount: (prev ? prev.moveCount : 0) + 1,
+        last: move.last === undefined ? null : move.last,
+        resigned: move.resigned === true ? true : undefined,
+      });
+      // Render from the decoded link so the sender sees exactly what the opponent will.
+      const state = decode(enc);
+      remember(state, enc, true, mover);
+      setParam(enc);
+      view = { kind: "sent", state: state, enc: enc, viewer: mover };
+      paint();
+    }
+
+    // Forfeits on the spot, board unchanged, from whoever's turn it
+    // currently is — commit() already requires that, so no separate check
+    // here. Starting a brand-new game (view.state null) has nothing to
+    // resign from, so the button for this is simply never shown then.
+    function resign() {
+      if (!view.state) return;
+      if (!global.confirm(resignConfirmText())) return;
+      commit({
+        board: view.state.board,
+        status: "won",
+        winner: other(view.viewer),
+        last: view.state.last,
+        resigned: true,
+      });
+    }
+
+    function go(enc) {
+      setParam(enc);
+      view = classify(enc);
+      paint();
+    }
+
+    function newGame() {
+      setParam(null);
+      view = classify(null);
+      paint();
+    }
+
+    /* ----- DOM helpers ----- */
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text) e.textContent = text;
+      return e;
+    }
+    function banner(cls, text) { ui.appendChild(el("div", "banner" + (cls ? " " + cls : ""), text)); }
+    function note(text) { ui.appendChild(el("p", "wa-note", text)); }
+    function actions(...buttons) {
+      const row = el("div", "wa-actions");
+      buttons.forEach(b => row.appendChild(b));
+      ui.appendChild(row);
+      return row;
+    }
+    function button(text, cls, onClick) {
+      const b = el("button", "btn " + cls, text);
+      b.type = "button";
+      b.addEventListener("click", onClick);
+      return b;
+    }
+    // The big turn badge already says whose move it is, so while it is showing
+    // the small status line stays empty instead of repeating it.
+    function clearStatus() { statusEl.replaceChildren(); }
+    function setStatus(bold, rest) {
+      statusEl.replaceChildren(el("strong", "", bold));
+      if (rest) statusEl.appendChild(document.createTextNode(" · " + rest));
+    }
+
+    // A wa.me text link always shows the raw link a second time under the
+    // preview card, because the whole message is one text string. Sharing
+    // *only* the url via navigator.share — same as tapping Spotify's own
+    // Share button, with no caption baked in by the app — avoids that:
+    // confirmed on-device, the share sheet appears and WhatsApp shows just
+    // the clean preview card.
+    function canNativeShare() {
+      return typeof navigator.share === "function";
+    }
+
+    // Link first, then a line break, then the caption — matches what was
+    // asked for after seeing the actual WhatsApp message text. Used for
+    // both the native share (as a single `text` field, no separate `url`
+    // — the two-field version left the order up to WhatsApp, which put
+    // the caption first) and the wa.me fallback, so the two paths produce
+    // the same message shape.
+    function waMessage(caption, url) {
+      return url + "\n" + caption;
+    }
+
+    function waLink(caption, url) {
+      const a = el("a", "btn wa-send", "");
+      a.href = "https://wa.me/?text=" + encodeURIComponent(waMessage(caption, url));
+      a.target = "_blank";
+      a.rel = "noopener";
+      return a;
+    }
+
+    function captionFor(finished, moveCount, resigned) {
+      return resigned ? "I surrendered!"
+        : finished ? "Game over!"
+        : moveCount === 1 ? "Let's play!"
+        : "Your turn!";
+    }
+
+    function sendButton(enc, finished, moveCount, resigned) {
+      const caption = captionFor(finished, moveCount, resigned);
+      const url = linkFor(enc);
+      const label = resigned ? "Share your shame" : finished ? "Send result on WhatsApp" : "Send on WhatsApp";
+
+      if (canNativeShare()) {
+        return button(label, "wa-send", () => {
+          // AbortError just means the person backed out of the share
+          // sheet — leave it alone. Anything else (the share sheet
+          // rejecting the payload, no app handling it, ...) falls back
+          // to the plain wa.me link rather than leaving the tap dead.
+          navigator.share({ text: waMessage(caption, url) }).catch(err => {
+            if (err && err.name === "AbortError") return;
+            waLink(caption, url).click();
+          });
+        });
+      }
+
+      const a = waLink(caption, url);
+      a.textContent = label;
+      return a;
+    }
+
+    // Copies the same text the Send button shares (link, line break,
+    // caption), so a pasted message matches a sent one.
+    function copyButton(enc, finished, moveCount, resigned) {
+      const b = button("Copy link", "ghost", () => {
+        copyText(waMessage(captionFor(finished, moveCount, resigned), linkFor(enc))).then(ok => {
+          b.textContent = ok ? "Copied!" : "Copy failed — use the address bar";
+          setTimeout(() => { b.textContent = "Copy link"; }, 1800);
+        });
+      });
+      return b;
+    }
+
+    function result(s, viewer) {
+      if (s.status === "draw") return { cls: "", text: "It's a draw." };
+      if (s.winner === viewer) return { cls: "win", text: s.resigned ? "They gave up — you won!" : "You won!" };
+      return { cls: "bad", text: s.resigned ? "You admitted defeat." : "You lost." };
+    }
+
+    function paint() {
+      const v = view;
+      const s = v.state;
+      opts.onState(s, canMove(), { me: v.viewer });
+      ui.hidden = false;
+      ui.replaceChildren();
+      resignOff();
+
+      const slotOf = (p) => opts.players.indexOf(p) + 1;
+      Gamekit.turn(null);
+
+      if (v.kind === "invalid") {
+        setStatus("Invalid link");
+        banner("bad", "This link looks invalid or from an older version of the game — start a new game?");
+        actions(button("Start new game", "primary", newGame));
+        return;
+      }
+
+      if (v.kind === "stale") {
+        setStatus("Old link");
+        banner("bad", "This is an old link — the game has already moved on to move " + v.latest.n + ".");
+        note("You're looking at move " + s.moveCount + ".");
+        actions(
+          button("Open latest move", "primary", () => go(v.latest.s)),
+          button("New game", "ghost", newGame)
+        );
+        return;
+      }
+
+      if (v.kind === "new") {
+        clearStatus();
+        Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
+        note("Make the first move, then send the link to a friend on WhatsApp.");
+        return;
+      }
+
+      if (s.status === "in_progress") {
+        // True even for kind "sent" when a rule (commit()'s nextTurn) just
+        // granted the same player another turn — see canMove() above.
+        if (v.kind === "received" || s.turn === v.viewer) {
+          clearStatus();
+          Gamekit.turn(slotOf(v.viewer), "Your move · you're " + label(v.viewer));
+          note(v.kind === "sent" ? "That move gets you another turn — keep going." : "Make your move, then send the new link back.");
+          resignRow.appendChild(button("Admit defeat (coward)", "ghost wa-small", resign));
+          resignSlot(true);
+          return;
+        }
+        clearStatus();
+        resignSlot(false);                      // keep the slot so nothing below moves
+        Gamekit.turn(slotOf(s.turn), "Waiting for " + label(s.turn), true);
+        banner("", "Move made — now send the link. It's " + label(s.turn) + "'s turn.");
+        actions(sendButton(v.enc, false, s.moveCount), copyButton(v.enc, false, s.moveCount));
+        actions(button("Opponent on this device? Play " + label(s.turn) + " here", "ghost wa-small", () => {
+          view = { kind: "received", state: s, enc: v.enc, viewer: s.turn };
+          paint();
+        }));
+        return;
+      }
+
+      const r = result(s, v.viewer);
+      setStatus("Game over");
+      banner(r.cls, r.text);
+      // loser gets a roast, winner a gloat (gentler if the loser quit), a draw a shrug
+      note(Gamekit.taunt(s.status === "draw" ? "draw" : s.winner !== v.viewer ? (s.resigned ? "resigned" : "loss") : s.resigned ? "forfeit" : "win"));
+      const extra = opts.detail ? opts.detail(s, v.viewer) : "";
+      if (extra) note(extra);
+      if (v.kind === "sent") {
+        note(s.resigned ? "Let them know you threw in the towel." : "Send the final board so your opponent sees how it ended.");
+        // Send on its own line; "Copy link" and "New game" side by side under it
+        actions(sendButton(v.enc, true, undefined, s.resigned));
+        actions(copyButton(v.enc, true, undefined, s.resigned), button("New game", "ghost", newGame)).classList.add("wa-pair");
+      } else actions(button("New game", "primary", newGame));
+    }
+
+    return {
+      show() {
+        view = classify(new URLSearchParams(location.search).get(PARAM));
+        paint();
+      },
+      hide() {
+        Gamekit.turn(null);
+        ui.hidden = true;
+        ui.replaceChildren();
+        resignOff();
+      },
+      canMove: canMove,
+      commit: commit,
+      newGame: newGame,
+    };
+  }
+
+  /* The one "Admit defeat" slot, shared by AsyncShare and LiveShare. Placed
+     below the board: before the page's .toolbar if it has one, otherwise
+     right after #board, otherwise after the share panel. */
+  function ensureResignRow(ui) {
+    let row = document.querySelector(".wa-resign-row");
+    if (row) return row;
+    row = document.createElement("div");
+    row.className = "wa-actions wa-resign-row";
+    row.style.display = "none";
+    const toolbar = document.querySelector(".toolbar");
+    const board = document.getElementById("board");
+    if (toolbar && toolbar.parentNode) toolbar.parentNode.insertBefore(row, toolbar);
+    else if (board && board.parentNode) board.parentNode.insertBefore(row, board.nextSibling);
+    else ui.parentNode.insertBefore(row, ui.nextSibling);
+    return row;
+  }
+
+  global.AsyncShare = { start: start, encode: encode, decode: decode, validate: validate, resignRow: ensureResignRow };
+})(window);

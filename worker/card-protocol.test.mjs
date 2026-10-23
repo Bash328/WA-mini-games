@@ -182,5 +182,60 @@ for (const mode of ["normal", "tournament"]) {
   const { room } = lobby(["Alice"]);
   check("an unstarted room expires after 2 hours, a finished one after 1", P.expiresAt(room) === T0 + P.LOBBY_IDLE_MS && (room.finishedAt = T0, P.expiresAt(room) === T0 + P.FINISHED_MS));
 }
+// --- hidden hands stay hidden: what a person is sent never names a card in someone else's hand
+{
+  // Hearts: the cards a person passes are only for the giver and the receiver
+  const room = P.newRoom("ABC234", T0, "hearts");
+  const ann = P.join(room, null, "Ann", mint, T0, rng).pid, bob = P.join(room, null, "Bob", mint, T0, rng).pid;
+  P.setConfig(room, ann, { bots: 2 }, T0, rng);
+  const seatOf = (pid) => room.table.findIndex((s) => s.pid === pid);
+  for (const pid of [ann, bob]) P.act(room, pid, { t: "pass", cards: room.state.seats[seatOf(pid)].hand.slice(0, 3) }, T0 + 1, rng);
+  let t = T0 + 10000;
+  for (let i = 0; i < 6 && room.state.phase === "pass"; i++) P.tick(room, t += 5000, rng);
+  const passes = P.viewFor(room, bob, t).lastEvents.filter((e) => e.e === "pass");
+  check("hearts: a person is only sent the passes they gave or got", passes.length === 2 && passes.every((e) => e.seat === seatOf(bob) || e.to === seatOf(bob)), JSON.stringify(passes));
+  check("hearts: someone outside the table is sent no passed cards", P.viewFor(room, 999, t).lastEvents.every((e) => e.e !== "pass"));
+}
+for (const game of ["crazy-8", "cribbage"]) {
+  const room = P.newRoom("ABC234", T0, game);
+  const pids = ["Ann", "Bob"].map((nm) => P.join(room, null, nm, mint, T0, rng).pid);
+  if (room.phase === "lobby") P.start(room, pids[0], T0, rng);
+  let t = T0, leaked = 0;
+  for (let step = 0; step < 600 && room.phase !== "game_over"; step++) {
+    t = Math.max(t + 1, Math.min(P.nextWake(room, t), t + 5000));
+    P.tick(room, t, rng);
+    if (room.phase !== "playing") continue;
+    for (const pid of pids) {
+      const sent = JSON.stringify(P.viewFor(room, pid, t));
+      room.state.seats.forEach((s, i) => { if (room.table[i].pid !== pid && Array.isArray(s.hand)) for (const c of s.hand) if (sent.includes(JSON.stringify(c))) leaked++; });
+    }
+  }
+  check(game + ": no card from another hand is ever sent to a person", leaked === 0, leaked + " sightings");
+}
+// While a game is being played nobody else's hand is in what a person is sent, in every game that has hidden hands.
+// Hands are shown only on the round-over / game-over screens, and in Cribbage's scoring step (public by the rules).
+// Skull's discs stay face down (kind null) unless flipped; events and a stale reveal never carry hands.
+for (const game of ["crazy-8", "liars-dice", "hearts", "lost-cities", "cribbage", "dominoes", "skull"]) {
+  const room = P.newRoom("ABC234", T0, game);
+  const ann = P.join(room, null, "Ann", mint, T0, rng).pid;
+  P.join(room, null, "Bob", mint, T0, rng);
+  if (game === "skull") P.setConfig(room, ann, { bots: 1 }, T0, rng);
+  if (room.phase === "lobby") P.start(room, ann, T0, rng);
+  const bad = new Set(); let t = T0, looked = 0;
+  for (let step = 0; step < 3000 && room.phase !== "game_over"; step++) {
+    t = Math.max(t + 1, Math.min(P.nextWake(room, t), t + 5000));
+    P.tick(room, t, rng);
+    if (room.phase !== "playing" || !room.state || room.state.phase === "scoring") continue;
+    const v = P.viewFor(room, ann, t), me = room.table.findIndex((s) => s.pid === ann);
+    looked++;
+    v.table.seats.forEach((s, i) => {
+      if (i !== me && s.hand !== null && s.hand !== undefined) bad.add("another hand shown (" + room.state.phase + ")");
+      if (game === "skull" && i !== me) s.stack.forEach((d) => { if (!d.up && d.kind !== null) bad.add("a face-down disc names its kind"); });
+    });
+    if (/"hands?":/.test(JSON.stringify(v.lastEvents))) bad.add("an event carries hands");
+    if (v.table.reveal && v.table.reveal.hands && room.state.phase === "play") bad.add("a stale reveal still carries hands");
+  }
+  check(game + ": nobody else's hand is sent while playing", looked > 50 && bad.size === 0, looked < 51 ? "only looked at " + looked + " states" : [...bad].join("; "));
+}
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

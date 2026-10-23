@@ -198,8 +198,8 @@
     selectBest();
     if (mode === "ai" && current !== humanIs) {
       thinking = true;
-      Gamekit.turn(current, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(current, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       renderAll();
       aiTimer = setTimeout(() => { aiTimer = null; thinking = false; if (over) return; const m = aiChoose(diff); if (m) commitMove(m, current); }, 450);
       return;
@@ -213,7 +213,7 @@
     const a = R.penalty(pos.used[ONE], lastPieceOf(ONE)), b = R.penalty(pos.used[TWO], lastPieceOf(TWO));
     const tally = NAMES[ONE] + " " + a + " · " + NAMES[TWO] + " " + b + " (lower wins)";
     if (!winner) statusEl.textContent = "Draw. " + tally + ". " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = (winner === humanIs ? "You win! 🎉 " : "Computer wins. ") + tally + ". " + Gamekit.taunt(winner === humanIs ? "win" : "loss");
+    else if (mode === "ai") statusEl.textContent = (winner === humanIs ? "You win! " : "Bot wins. ") + tally + ". " + Gamekit.taunt(winner === humanIs ? "win" : "loss");
     else statusEl.textContent = NAMES[winner] + " wins. " + tally + ". " + Gamekit.taunt("loss");
     renderAll();
   }
@@ -310,7 +310,32 @@
     if (!R.validBoard(s.board)) return false;
     const stones = s.board.slice(0, CELLS).replace(/0/g, "").length;
     if (!s.resigned && stones === 0) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && (s.resigned || s.board[s.last] !== "0");
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && (s.resigned || s.board[s.last] !== "0"))) return false;
+    // a hand-edited link must still be a position two players could have reached: each player's squares add up to the pieces
+    // marked used (and cover their start square), one piece per move, the last piece is one of the mover's used pieces, and
+    // who moves next and the result are the ones the rules give
+    const p = R.parse(s.board), onBoard = [0, 0, 0];
+    let pieces = 0;
+    for (let i = 0; i < CELLS; i++) onBoard[p.grid[i]]++;
+    for (const pl of [ONE, TWO]) {
+      let sq = 0;
+      for (let i = 0; i < R.PIECES; i++) if (p.used[pl][i]) { sq += R.SIZES[i]; pieces++; }
+      if (sq !== onBoard[pl] || (sq && p.grid[R.START[pl]] !== pl)) return false;
+    }
+    if (pieces !== s.moveCount - (s.resigned ? 1 : 0)) return false;
+    if (s.resigned) return true;
+    const mover = p.grid[s.last], cells = [s.last];
+    for (let h = 0; h < cells.length && cells.length <= 5; h++) {
+      const r = (cells[h] / SIZE) | 0, c = cells[h] % SIZE;
+      for (const [dr, dc] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
+        const rr = r + dr, cc = c + dc, j = rr * SIZE + cc;
+        if (rr >= 0 && rr < SIZE && cc >= 0 && cc < SIZE && p.grid[j] === mover && !cells.includes(j)) cells.push(j);
+      }
+    }
+    const piece = R.identify(cells);
+    if (piece < 0 || !p.used[mover][piece]) return false;
+    const o = R.outcome(p, mover, piece);
+    return s.status === o.status && s.winner === o.winner && s.turn === o.nextTurn;
   }
   const finalText = (s) => {
     const p = R.parse(s.board);

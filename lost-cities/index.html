@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>lost cities · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Lost Cities — the two-player expedition card game. Play numbers upward, stack handshakes to double an expedition, and finish with the higher score. Play online or against the computer.">
+<meta property="og:title" content="Lost Cities · five expeditions, one rival">
+<meta property="og:description" content="Standard Lost Cities for two seats. Play online with a friend, or against the computer.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
+<style>
+  /* ---------- the chunky look: a dark expedition table ---------- */
+  html body.fun.g-lost-cities { --fun-bg: #123c46; --fun-btn: #c97a2b; --fun-chip: rgba(0,0,0,.24); --accent: #ffd166; --lc-felt: #0d2f38; --lc-rim: #071f26; --lc-card: #fffdf4; --lc-ink: #24211a; --lc-line: rgba(255,255,255,.16); }
+  #lc { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }
+  #lc.on { display: block; }
+
+  /* scores: two fixed slots, so a changing score never moves the table */
+  .lc-scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4cqw; margin: 0 0 1.4cqw; }
+  .lc-score { height: 9.8cqw; display: flex; align-items: center; justify-content: space-between; gap: 1cqw; padding: 0 3cqw; border-radius: 2.4cqw; background: rgba(0,0,0,.26); line-height: 1; min-width: 0; overflow: hidden; }
+  .lc-score .nm { font-size: 2.9cqw; letter-spacing: .02em; text-transform: uppercase; color: rgba(255,255,255,.72); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lc-score b { font-size: 5.2cqw; font-weight: 400; color: #fff; }
+  .lc-score.you { background: rgba(255,255,255,.16); }
+  .lc-score.active { outline: .5cqw solid var(--accent); outline-offset: -.5cqw; }
+  .lc-score.win { background: var(--accent); }
+  .lc-score.win .nm, .lc-score.win b { color: #3a2600; }
+
+  /* the table: five colour rows, each with both expeditions and a discard pile */
+  .lc-table { border-radius: 4.6cqw; background: radial-gradient(circle at 50% 0%, #164551, var(--lc-felt) 72%); box-shadow: inset 0 0 0 .8cqw var(--lc-rim), 0 .8cqw 0 rgba(0,0,0,.22); padding: 1.8cqw 1.8cqw 1.4cqw; }
+  .lc-tablehead { display: grid; grid-template-columns: 6.4cqw minmax(0,1fr) 11.4cqw minmax(0,1fr); gap: .9cqw; align-items: end; margin-bottom: 1.2cqw; }
+  .lc-sidehead { min-width: 0; line-height: 1.1; }
+  .lc-sidehead.right { text-align: right; }
+  .lc-sidehead b { display: block; font-size: 3.2cqw; font-weight: 400; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lc-sidehead span { display: block; font-size: 2.5cqw; color: rgba(255,255,255,.5); white-space: nowrap; }
+  .lc-sidehead.on b { color: var(--accent); }
+  #lc .lc-deck { width: 100%; min-width: 0; min-height: 0; height: auto; margin: 0 auto; padding: 0; border: 0; border-radius: 2cqw; background: none; box-shadow: none; color: rgba(255,255,255,.72); font: inherit; font-size: 2.5cqw; line-height: 1; letter-spacing: 0; text-transform: none; display: flex; flex-direction: column; align-items: center; gap: .6cqw; cursor: default; }
+  #lc .lc-deck .lc-back { width: 8.2cqw; height: 11.4cqw; }
+  #lc .lc-deck .cnt { white-space: nowrap; }
+  #lc .lc-deck.can { cursor: pointer; }
+  #lc .lc-deck.can .lc-back { box-shadow: 0 0 0 .5cqw var(--accent), 0 .4cqw 0 rgba(0,0,0,.25); }
+  .lc-back { display: block; border-radius: 1.2cqw; background: #6d3a2a; border: .4cqw solid #16100c; position: relative; overflow: hidden; }
+  .lc-back::before { content: ""; position: absolute; inset: .55cqw; border: .35cqw solid #e8c46a; border-radius: .6cqw; background: repeating-linear-gradient(45deg, #5e2f22, #5e2f22 .55cqw, #753d2b .55cqw, #753d2b 1.1cqw); }
+
+  .lc-rows { display: grid; gap: .8cqw; }
+  .lc-row { display: grid; grid-template-columns: 6.4cqw minmax(0,1fr) 11.4cqw minmax(0,1fr); align-items: center; gap: .9cqw; min-height: 11.4cqw; }
+  .lc-colour { width: 6.4cqw; height: 11.4cqw; border-radius: 1.5cqw; background: var(--c); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 -.45cqw 0 rgba(0,0,0,.18); }
+  .lc-colour b { font-size: 4.2cqw; font-weight: 400; color: #fff; line-height: 1; }
+  .lc-colour.lite b { color: #231f15; }
+  .lc-pile { min-width: 0; height: 11.4cqw; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lc-cards { display: flex; align-items: center; min-width: 0; }
+  .lc-cards:empty::after { content: ""; display: block; width: 5.6cqw; height: 9.6cqw; border: .3cqw dashed rgba(255,255,255,.16); border-radius: 1cqw; }
+  .lc-mini { position: relative; flex: 0 0 auto; width: 5.6cqw; height: 9.6cqw; margin-left: -2.9cqw; border: .3cqw solid #17110d; border-radius: .9cqw; background: var(--lc-card); color: var(--lc-ink); box-shadow: .2cqw .3cqw 0 rgba(0,0,0,.18); overflow: hidden; }
+  .lc-mini:first-child { margin-left: 0; }
+  .lc-mini .bar { position: absolute; left: 0; right: 0; top: 0; height: 1.4cqw; background: var(--c); }
+  .lc-mini .rk { position: absolute; left: .35cqw; top: 1.7cqw; font-size: 3.2cqw; line-height: 1; letter-spacing: -.05cqw; }
+  .lc-mini.ten .rk { font-size: 2.6cqw; }
+  .lc-mini.h .rk { font-size: 2.7cqw; top: 1.9cqw; }
+
+  #lc .lc-discard { width: 11.4cqw; height: 11.4cqw; display: flex; align-items: center; justify-content: center; }
+  #lc .lc-discardbtn { position: relative; width: 8.6cqw; height: 11.4cqw; min-width: 0; min-height: 0; margin: 0; padding: 0; border: .35cqw solid #17110d; border-radius: 1.1cqw; background: var(--lc-card); color: var(--lc-ink); box-shadow: .2cqw .4cqw 0 rgba(0,0,0,.2); overflow: hidden; font: inherit; letter-spacing: 0; text-transform: none; cursor: default; }
+  #lc .lc-discardbtn .bar { position: absolute; left: 0; right: 0; top: 0; height: 1.8cqw; background: var(--c); }
+  #lc .lc-discardbtn .rk { position: absolute; left: 0; right: 0; top: 2.6cqw; text-align: center; font-size: 4cqw; line-height: 1; }
+  #lc .lc-discardbtn.ten .rk { font-size: 3.2cqw; }
+  #lc .lc-discardbtn.h .rk { font-size: 3.4cqw; }
+  #lc .lc-discardbtn .ct { position: absolute; left: 0; right: 0; bottom: .4cqw; text-align: center; font-size: 2.2cqw; color: #6c665c; line-height: 1; }
+  #lc .lc-discardbtn.can { cursor: pointer; box-shadow: 0 0 0 .5cqw var(--accent), .2cqw .4cqw 0 rgba(0,0,0,.2); }
+  #lc .lc-discardbtn.can:hover { transform: translateY(-.4cqw); }
+  .lc-discard-empty { width: 8.6cqw; height: 11.4cqw; border: .3cqw dashed rgba(255,255,255,.16); border-radius: 1.1cqw; }
+
+  /* your hand: bigger cards on a darker strip under the table */
+  .lc-handbar { margin: 1.4cqw -11px 0; padding: 1.6cqw 11px .4cqw; border-radius: 4.6cqw 4.6cqw 0 0; background: rgba(0,0,0,.2); box-shadow: inset 0 .6cqw 0 rgba(255,255,255,.05); }
+  #lc .lc-hand { display: flex; justify-content: center; align-items: flex-end; min-height: 16.4cqw; }
+  #lc .lc-card { position: relative; flex: 0 0 auto; width: 11.4cqw; height: 16.2cqw; min-width: 0; min-height: 0; margin-left: -2.4cqw; padding: 0; border: .45cqw solid #17110d; border-radius: 1.6cqw; background: var(--lc-card); color: var(--lc-ink); font: inherit; font-size: 10px; font-weight: 400; line-height: 1; letter-spacing: 0; text-transform: none; text-align: left; box-shadow: 0 .5cqw 0 rgba(0,0,0,.22); overflow: hidden; cursor: pointer; transition: transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s, opacity .15s; }
+  #lc .lc-card:first-child { margin-left: 0; }
+  #lc .lc-card .bar { position: absolute; left: 0; right: 0; top: 0; height: 2.1cqw; background: var(--c); }
+  #lc .lc-card .rk { position: absolute; top: 3.1cqw; left: 1.1cqw; font-size: 5.4cqw; line-height: 1; }
+  #lc .lc-card.ten .rk { font-size: 4.5cqw; letter-spacing: -.2cqw; }
+  #lc .lc-card.h .rk { top: 3.2cqw; font-size: 4.6cqw; }
+  #lc .lc-card .sub { position: absolute; top: 9.2cqw; left: 1.3cqw; font-size: 3.3cqw; line-height: 1; color: #6c665c; }
+  #lc .lc-card.h .sub { top: 9.6cqw; font-size: 2.5cqw; color: #7a5a12; }
+  #lc .lc-card.sel { transform: translateY(-3.2cqw); box-shadow: 0 0 0 .7cqw var(--accent), 0 1cqw 0 rgba(0,0,0,.25); z-index: 4; }
+  #lc .lc-card.ok { box-shadow: 0 0 0 .4cqw rgba(255,209,102,.85), 0 .5cqw 0 rgba(0,0,0,.22); }
+  #lc .lc-card.no { opacity: .45; }
+  #lc .lc-card.dim { opacity: .45; }
+  #lc .lc-card.sel.ok, #lc .lc-card.sel.no { opacity: 1; box-shadow: 0 0 0 .7cqw var(--accent), 0 1cqw 0 rgba(0,0,0,.25); }
+
+  .lc-actions { display: flex; justify-content: center; align-items: center; gap: 1.8cqw; min-height: 10.8cqw; padding-top: 1.2cqw; }
+  #lc .lc-actions .btn { min-height: 9.2cqw; padding: 0 5.2cqw; border-radius: 99cqw; font-size: 3.9cqw; }
+  #lc .lc-actions .btn:disabled { opacity: .45; }
+  .lc-hint { min-height: 7.2cqw; padding: 0 2cqw; font-size: 3.05cqw; line-height: 1.15; text-align: center; color: rgba(255,255,255,.62); text-wrap: balance; }
+  .lc-log { min-height: 4.2cqw; padding: .3cqw 2cqw 1cqw; font-size: 2.7cqw; line-height: 1.15; text-align: center; color: rgba(255,255,255,.45); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) {
+    #lc .lc-card, #lc .lc-discardbtn.can { transition: none; }
+    #lc .lc-discardbtn.can:hover { transform: none; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-lost-cities fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>lost cities</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="lost-cities" data-man-title="LOST-CITIES(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="lc" data-board data-reserve>
+      <div class="lc-scores" id="lc-scores" aria-label="Scores"></div>
+      <div class="lc-table">
+        <div class="lc-tablehead" id="lc-head"></div>
+        <div class="lc-rows" id="lc-rows" aria-label="Expeditions and discard piles"></div>
+      </div>
+      <div class="lc-handbar">
+        <div class="lc-hand" id="lc-hand" aria-label="Your hand"></div>
+        <div class="lc-actions" id="lc-actions"></div>
+        <div class="lc-hint" id="lc-hint" aria-live="polite"></div>
+      </div>
+      <div class="lc-log" id="lc-log"></div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button">new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-lost-cities">
+  <h2>Name</h2>
+  <p>lost cities — the two-player expedition card game. Five colours, five expeditions each, and one trip down a very expensive river.</p>
+
+  <h2>The deck</h2>
+  <ul>
+    <li>Five colours: <strong>yellow, blue, white, green and red</strong>. Each colour has the numbers <strong>2 to 10</strong> and <strong>three handshakes</strong>.</li>
+    <li>That is 60 cards. You and your opponent each get <strong>8</strong>; the other <strong>44</strong> wait in the deck.</li>
+  </ul>
+
+  <h2>Your turn</h2>
+  <ul>
+    <li><strong>Play one card</strong> onto one of your own expeditions, or <strong>discard one card</strong> face up onto its colour's discard pile. Then <strong>draw one card</strong>: the top of the deck, or the top of any discard pile.</li>
+    <li>A number may only be played if it is <strong>higher than the top number</strong> already on that expedition. An empty expedition takes any number.</li>
+    <li>A <strong>handshake</strong> may only be played <strong>before the first number</strong> of an expedition. You may stack several handshakes there. Once a number is down, that expedition can no longer take a handshake.</li>
+    <li>Discard piles are shared. You may take a card the other player just discarded — or the one you just discarded yourself.</li>
+  </ul>
+
+  <h2>Scoring</h2>
+  <ul>
+    <li>Each expedition with cards scores <strong>(the sum of its numbers - 20) x (1 + its handshakes)</strong>. An expedition with no cards scores 0.</li>
+    <li>An expedition that does not reach 20 is <strong>negative</strong>, and a handshake makes a negative expedition more negative too. Sum the five.</li>
+    <li>The round ends as soon as the <strong>deck is empty</strong>. Your unplayed hand does not score. The higher total wins; a tie is a draw.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Playing:</strong> tap a card, then <strong>Play</strong> or <strong>Discard</strong>. Cards that fit are outlined; tapping a card that does not fit tells you why.</li>
+    <li><strong>Drawing:</strong> after you play or discard, the deck and every non-empty discard pile light up. Tap one, or tap <strong>Draw from deck</strong>.</li>
+  </ul>
+
+  <h2>Against the computer</h2>
+  <ul>
+    <li><strong>Easy</strong> plays and discards almost at random. <strong>Medium</strong> extends its expeditions and keeps useful low cards. <strong>Hard</strong> values handshakes, starts expeditions only when they can grow, and dumps dead high cards early.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Lost Cities always has <strong>two seats</strong>. Tap <strong>Online room</strong>, create a room and send the invite link to a friend.</li>
+    <li>The server deals and holds the hands — your browser is only ever sent your own cards. If you drop out for 90 seconds a computer plays for you until you come back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Only start an expedition you can grow: a lone 2 costs 18 points. Play a handshake early on a colour where you hold several high numbers, but remember it doubles a loss as readily as a win. Low cards are worth keeping; high cards with no lower cards to lead into them are the first things to throw away.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/account.js?v=160336a8"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/multiseat.js?v=eca9364b"></script>
+<script defer src="engine.js?v=477708de"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=7838d690"></script>
+</body>
+</html>

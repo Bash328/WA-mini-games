@@ -17,23 +17,23 @@ import http from 'node:http';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const opt = (n) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : null; };
-const ONLY = opt('only'), PAGE = opt('page');
+const ONLY = opt('only'), PAGE = opt('page'), QUICK = args.includes('--quick'), JOBS = Math.max(1, +opt('jobs') || 6);
 
 /* ---------- pages ---------- */
 // pages with the steady layout (data-fun-zone): message zone, Options popover, board in a fixed place
-const ZONE = ['mastermind', 'rock-paper-scissors', 'word-ladder', 'letter-boxed', 'cross-sums', 'sliding-puzzle', 'tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman'];
+const ZONE = ['mastermind', 'rock-paper-scissors', 'word-ladder', 'letter-boxed', 'cross-sums', 'sliding-puzzle', 'tango', 'queens', 'zip', 'patches', 'nonogram', 'lights-out', 'sudoku', 'mini-sudoku', 'blokus-duo', 'onitama', 'gomoku', 'hex', 'quoridor', 'pentago', 'ultimate-tic-tac-toe', 'battleship', 'yatzy', 'dominoes', 'pig', 'liars-dice', 'chess', 'checkers', 'tic-tac-toe', 'reversi', 'connect-four', 'backgammon', 'dots-and-boxes', 'mancala', '2048', 'minesweeper', 'memory', 'water-sort', 'hangman', 'hearts', 'ludo', 'nine-mens-morris', 'breakthrough', 'farkle', 'hashiwokakero', 'flow-free', 'word-search', 'lost-cities', 'slitherlink', 'star-battle', 'connect6', 'tablut', 'fanorona', 'cribbage', 'skull', 'car-park'];
 const FUN = [...ZONE, 'crazy-8', 'word-guess'];
 // what to measure as "the board" on each page (default #board)
 // pages whose first thing is a form (hangman: set the secret word) may start lower
 const MAXTOP = { hangman: 520, battleship: 470, onitama: 470, mastermind: 620, 'rock-paper-scissors': 620 };
 // pages whose layout legitimately differs between modes (the guess panel only exists while it is your turn)
 const NOMODECMP = new Set(['mastermind']);
-const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', mastermind: '#count', 'rock-paper-scissors': '#choices', 'word-ladder': '#ladder', 'letter-boxed': '#box', 'cross-sums': '#grid', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid' };
+const BOARD = { 'water-sort': '#tubes', hangman: '#gallows', yatzy: '#dice', mastermind: '#count', 'rock-paper-scissors': '#choices', 'word-ladder': '#ladder', 'letter-boxed': '#box', 'cross-sums': '#grid', battleship: '#bs-main', dominoes: '#dm-line', 'liars-dice': '#ld-bid', hearts: '#ht', ludo: '#ld-board', 'lost-cities': '#lc' };
 // put a page into the state a player sees mid-game
 const SOLO = { chess: "var m=document.querySelector('#mode');m.value='ai';m.dispatchEvent(new Event('change'))" };
 // make a page show its end-of-game text the way the game itself writes it
@@ -42,15 +42,15 @@ const END = {
   checkers: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'tic-tac-toe': "document.getElementById('status').textContent='Draw. '+Gamekit.taunt('draw')",
   reversi: "document.getElementById('status').textContent='Black wins. '+Gamekit.taunt('loss')",
-  'connect-four': "document.getElementById('status').textContent='Computer wins. '+Gamekit.taunt('loss')",
-  backgammon: "document.getElementById('status').textContent='Computer wins. '+Gamekit.taunt('loss')",
+  'connect-four': "document.getElementById('status').textContent='Bot wins. '+Gamekit.taunt('loss')",
+  backgammon: "document.getElementById('status').textContent='Bot wins. '+Gamekit.taunt('loss')",
   'dots-and-boxes': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   mancala: "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
-  2048: "document.getElementById('over-msg').textContent='· Game over. '+Gamekit.taunt('over-normal')",
+  2048: "document.getElementById('over-msg').textContent='Game over. Final score: 123.'",
   minesweeper: "document.getElementById('status').textContent='Boom. '+Gamekit.taunt('boom')",
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
-  'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  'liars-dice': "document.getElementById('status').textContent='Bot 1 wins. '+Gamekit.taunt('loss')",
   mastermind: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'rock-paper-scissors': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'word-ladder': "document.getElementById('status').textContent='Solved. Perfect! 4 steps. '+Gamekit.taunt('win')",
@@ -76,13 +76,30 @@ const END = {
   pig: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   yatzy: "document.getElementById('status').textContent='Game over. Final score: 120. '+Gamekit.taunt('win')",
   hangman: "document.getElementById('status').textContent='Player 1 wins. The word was not guessed in time. '+Gamekit.taunt('loss')",
+  hearts: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  ludo: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'nine-mens-morris': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  breakthrough: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  farkle: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'lost-cities': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  hashiwokakero: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'flow-free': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'word-search': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  slitherlink: "document.getElementById('status').textContent='Solved in 1:30.'",
+  'star-battle': "document.getElementById('status').textContent='Solved in 1:30.'",
+  connect6: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  tablut: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  fanorona: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  cribbage: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  skull: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
+  'car-park': "document.getElementById('status').textContent='Solved in 4 moves.'",
 };
 
 /* ---------- harness ---------- */
 const results = [];
 const checks = [];
 function check(id, issue, fn, pages) { checks.push({ id, issue, fn, pages }); }
-const wantPage = (g) => !PAGE || PAGE === g;
+const wantPage = (g) => !PAGE || PAGE.split(',').includes(g);          // --page chess  or  --page chess,hearts
 
 function serve() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
@@ -105,16 +122,45 @@ function chromePath() {
 const srv = await serve();
 const base = 'http://localhost:' + srv.address().port + '/';
 const browser = await chromium.launch({ executablePath: chromePath() });
+// Nothing leaves this machine during a run: every page loads Google Analytics, and thousands of test visits must not
+// reach the real property. (It also lets the suite run offline.) Local pages and data: URLs are untouched.
+const newPage = browser.newPage.bind(browser);
+browser.newPage = async (o) => { const p = await newPage(o); await p.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort()); return p; };
 
-async function open(game, width = 390, setup) {
-  const page = await browser.newPage({ viewport: { width, height: 844 } });
+async function open(game, width = 390, setup, opts = {}) {
+  const page = await browser.newPage({ viewport: { width, height: 844 }, ...opts });
   page.errs = [];
   page.on('pageerror', (e) => page.errs.push(e.message));
   await page.goto(base + game + '/');
-  await page.waitForTimeout(700);
-  await page.keyboard.press('Escape');            // the how-to window opens by itself the first time
+  await page.waitForTimeout(400);
+  // measure the settled page: a late webfont swap could otherwise add a few
+  // pixels to the page height and make a layout check flaky.
+  await page.evaluate(() => (document.fonts ? document.fonts.ready : null));
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  // The how-to window opens by itself on the first visit. Press Escape after
+  // the page has settled, and clear a leftover backdrop if one survived a
+  // late auto-open (it used to steal focus from the keyboard checks).
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(120);
+  await page.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
   if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
   return page;
+}
+
+// Open a page once and measure it at several viewport sizes. A resize gives the same layout as a fresh load
+// (compared on 22 pages x 12 sizes: identical but for 5px of timing noise on one page), at a fifth of the cost.
+async function sweep(game, sizes, measure) {
+  const [w0, h0] = sizes[0];
+  const p = await open(game, w0, null, { viewport: { width: w0, height: h0 } });
+  const out = [];
+  for (const [w, h] of sizes) {
+    const cur = p.viewportSize();
+    if (cur.width !== w || cur.height !== h) { await p.setViewportSize({ width: w, height: h }); await p.waitForTimeout(150); }
+    await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    out.push(await measure(p, w, h));
+  }
+  await p.close();
+  return out;
 }
 const top = (page, game) => page.evaluate((s) => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : -1; }, BOARD[game] || '#board');
 
@@ -122,17 +168,221 @@ const top = (page, game) => page.evaluate((s) => { const e = document.querySelec
 
 check('no-sideways-scroll', 'a page that is wider than the phone lets you drag it sideways (waiting page pill, check pill, header at 320px)', async (g) => {
   const bad = [];
-  for (const w of [320, 360, 375, 390, 430]) {
-    const p = await open(g, w);
+  const sizes = [320, 360, 375, 390, 430].map((w) => [w, 844]);
+  const rows = await sweep(g, sizes, async (p, w) => {
     // the longest things the pill ever says
     await p.evaluate(() => { try { Gamekit.turn(2, 'Waiting for your opponent', true); } catch (e) {} });
-    await p.waitForTimeout(150);
-    const sw = await p.evaluate(() => document.documentElement.scrollWidth);
-    if (sw > w) bad.push(w + 'px page is ' + sw + 'px wide');
-    await p.close();
+    await p.waitForTimeout(100);
+    return { w, sw: await p.evaluate(() => document.documentElement.scrollWidth) };
+  });
+  for (const r of rows) if (r.sw > r.w) bad.push(r.w + 'px page is ' + r.sw + 'px wide');
+  return bad;
+}, FUN);
+
+check('desktop-column', 'on a PC the phone-first boards stretched to the 960px wrap, so tall boards fell below the fold and every piece became huge', async (g) => {
+  const p = await open(g, 1280, null, { viewport: { width: 1280, height: 900 } });
+  const r = await p.evaluate(() => {
+    const w = document.querySelector('.wrap').getBoundingClientRect();
+    const panel = document.querySelector('.panel').getBoundingClientRect();
+    return { wrap: w.width, panel: panel.width, sw: document.documentElement.scrollWidth, iw: innerWidth };
+  });
+  await p.close();
+  const bad = [];
+  if (r.sw > r.iw) bad.push('page is ' + r.sw + 'px wide at 1280px');
+  if (r.wrap > 641) bad.push('game column is ' + Math.round(r.wrap) + 'px wide');
+  if (r.panel > 621) bad.push('play area is ' + Math.round(r.panel) + 'px wide');
+  return bad;
+}, FUN);
+
+check('desktop-height', 'on a 1280x1000 or 1280x900 PC window the page still scrolled; the desktop column should end above the fold', async (g) => {
+  const bad = [];
+  const rows = await sweep(g, [[1280, 1000], [1280, 900]], (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth })));
+  for (const [i, h] of [1000, 900].entries()) {
+    const r = rows[i];
+    if (r.sh > r.ih + 1) bad.push(h + 'px window needs ' + (r.sh - r.ih) + 'px of scroll');
+    if (r.sw > r.iw) bad.push(h + 'px window is ' + r.sw + 'px wide');
   }
   return bad;
 }, FUN);
+
+check('desktop-large-viewports', 'wide PC windows and tablets (1440x900, 1920x1080, 834x1112, 1024x768) were never checked; the height-aware column should still end above the fold and stay narrow', async (g) => {
+  const bad = [];
+  const sizes = [[1440, 900], [1920, 1080], [834, 1112], [1024, 768]];
+  const rows = await sweep(g, sizes, (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth, wrap: document.querySelector('.wrap').getBoundingClientRect().width })));
+  rows.forEach((r, i) => {
+    const [w, h] = sizes[i];
+    if (r.sh > r.ih + 2) bad.push(w + 'x' + h + ' needs ' + (r.sh - r.ih) + 'px of scroll');
+    if (r.sw > r.iw) bad.push(w + 'x' + h + ' is ' + r.sw + 'px wide');
+    if (r.wrap > 641) bad.push(w + 'x' + h + ' column is ' + Math.round(r.wrap) + 'px wide');
+  });
+  return bad;
+}, FUN);
+
+check('desktop-breakpoint', 'the 760px breakpoint: 759px must keep the phone-first layout and 760px must switch to the desktop column, without a sideways overflow at either side', async () => {
+  const bad = [];
+  for (const [w, expect] of [[759, 'phone'], [760, 'desktop']]) {
+    const p = await open('chess', w, null, { viewport: { width: w, height: 900 } });
+    const r = await p.evaluate(() => ({ wrap: document.querySelector('.wrap').getBoundingClientRect().width, sw: document.documentElement.scrollWidth, iw: innerWidth }));
+    await p.close();
+    if (r.sw > r.iw) bad.push(w + 'px is ' + r.sw + 'px wide');
+    if (expect === 'desktop' && r.wrap > 641) bad.push('760px did not switch to the desktop column (' + Math.round(r.wrap) + 'px)');
+    if (expect === 'phone' && r.wrap < 700) bad.push('759px already narrowed to the desktop column (' + Math.round(r.wrap) + 'px)');
+  }
+  return bad;
+}, ['chess']);
+
+check('phone-landscape-700', 'a 600–759px landscape window is still phone territory; it must keep the wide phone layout and never scroll sideways', async (g) => {
+  const p = await open(g, 700, null, { viewport: { width: 700, height: 600 } });
+  const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, wrap: document.querySelector('.wrap').getBoundingClientRect().width }));
+  await p.close();
+  const bad = [];
+  if (r.sw > r.iw) bad.push('page is ' + r.sw + 'px wide at 700px');
+  // Hearts and Ludo deliberately keep their 430px card-table column.
+  if (r.wrap < 650 && g !== 'hearts' && g !== 'ludo') bad.push('700px already narrowed to the desktop column (' + Math.round(r.wrap) + 'px)');
+  return bad;
+}, ['chess', 'battleship', 'hangman', 'car-park', 'crazy-8', 'water-sort', 'sudoku', 'tic-tac-toe', 'hearts', 'ludo']);
+
+check('desktop-tab-order', 'Tab focus was only checked on a phone; at PC width the top-bar back button must be first, every stop must be visible, and focus must not land on a hidden control', async () => {
+  const p = await open('chess', 1280, null, { viewport: { width: 1280, height: 900 } });
+  await p.evaluate(() => { document.body.focus(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
+  const stops = [];
+  for (let i = 0; i < 10; i++) {
+    await p.keyboard.press('Tab');
+    stops.push(await p.evaluate(() => {
+      const e = document.activeElement;
+      if (!e || e === document.body) return { tag: 'BODY' };
+      const r = e.getBoundingClientRect();
+      return { tag: e.tagName, id: e.id, cls: (e.className || '').toString().slice(0, 40), visible: r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden', inside: r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight };
+    }));
+  }
+  const bad = [];
+  const real = stops.filter((s) => s.tag !== 'BODY');
+  if (!stops[0].cls || !stops[0].cls.includes('back')) bad.push('the first Tab stop is not the back button (' + JSON.stringify(stops[0]) + ')');
+  if (real.length < 5) bad.push('Tab only reached ' + real.length + ' controls before wrapping to the page');
+  if (real.some((s) => s.visible === false)) bad.push('Tab landed on a hidden control');
+  if (real.some((s) => s.inside === false)) bad.push('Tab landed on an off-screen control');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['chess']);
+
+check('back-home-navigation', 'the back button and the game-over Home button were never timed; both must reach the hub promptly at 320 and 390 without a stale page or a reload loop', async () => {
+  const bad = [];
+  for (const w of [320, 390]) {
+    let p = await open('chess', w);
+    let t0 = Date.now();
+    await Promise.all([p.waitForURL((u) => new URL(u).pathname === '/'), p.locator('.topbar .back').click()]);
+    let ms = Date.now() - t0;
+    if (ms > 3000) bad.push(w + 'px: back took ' + ms + 'ms');
+    await p.close();
+
+    p = await open('chess', w);
+    await p.evaluate(() => { document.getElementById('status').textContent = 'You win! ' + Gamekit.taunt('win'); });
+    await p.waitForTimeout(700);
+    t0 = Date.now();
+    await Promise.all([p.waitForURL((u) => new URL(u).pathname === '/'), p.locator('.gk-over .home').click()]);
+    ms = Date.now() - t0;
+    if (ms > 3000) bad.push(w + 'px: Home took ' + ms + 'ms');
+    await p.close();
+  }
+  return bad;
+}, ['chess']);
+
+check('desktop-pointer-keyboard', 'desktop drag/drop, hover and the custom mode menu were only exercised on a phone; they must work with a mouse and keyboard at PC width', async () => {
+  const bad = [];
+  // mouse drag at desktop width
+  const p = await open('battleship', 1280, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')", { viewport: { width: 1280, height: 900 } });
+  await p.waitForTimeout(500);
+  const tray = await p.locator('#bs-tray .bs-ship').first().boundingBox(), cell = await p.locator('#bs-main .bs-cell').nth(23).boundingBox();
+  await p.mouse.move(tray.x + tray.width / 2, tray.y + tray.height / 2); await p.mouse.down();
+  await p.mouse.move(cell.x + 8, cell.y + 8, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(300);
+  if (!(await p.locator('#bs-main .bs-hull').count())) bad.push('dragging a ship with the mouse at 1280px placed nothing');
+  if (p.errs.length) bad.push('battleship errors: ' + p.errs.join('; '));
+  await p.close();
+
+  // hover and keyboard on the custom mode menu
+  const q = await open('chess', 1280, null, { viewport: { width: 1280, height: 900 } });
+  await q.hover('.topbar .back'); await q.waitForTimeout(150);
+  const hover = await q.evaluate(() => getComputedStyle(document.querySelector('.topbar .back')).filter);
+  if (!/brightness/.test(hover)) bad.push('the back button has no desktop hover');
+  await q.locator('.gk-optbtn').click(); await q.waitForTimeout(250);      // the mode menu lives in the Options popover
+  const btn = q.locator('.gk-sel-btn').first();
+  await btn.focus();
+  await q.keyboard.press('ArrowDown'); await q.waitForTimeout(120);
+  const opened = await q.evaluate(() => ({ exp: document.querySelector('.gk-sel-btn').getAttribute('aria-expanded'), n: document.querySelectorAll('.gk-sel-list li').length, hidden: document.querySelector('.gk-sel-list').hidden }));
+  if (opened.exp !== 'true' || opened.hidden || opened.n < 2) bad.push('ArrowDown did not open the mode menu');
+  await q.keyboard.press('End'); await q.waitForTimeout(80);
+  const last = await q.evaluate(() => { const li = [...document.querySelectorAll('.gk-sel-list li')].pop(); return li ? li.classList.contains('on') : false; });
+  if (!last) bad.push('End did not move to the last menu item');
+  await q.keyboard.press('Escape'); await q.waitForTimeout(120);
+  const closed = await q.evaluate(() => ({ hidden: document.querySelector('.gk-sel-list').hidden, focused: document.activeElement.classList.contains('gk-sel-btn') }));
+  if (!closed.hidden) bad.push('Escape did not close the mode menu');
+  if (!closed.focused) bad.push('Escape did not return focus to the mode button');
+  if (q.errs.length) bad.push('chess errors: ' + q.errs.join('; '));
+  await q.close();
+  return bad;
+}, ['chess']);
+
+check('desktop-modes', 'switching to computer or same-device play at PC width added a toolbar row and pushed the bottom of the page past the fold', async (g) => {
+  const p = await open(g, 1280, null, { viewport: { width: 1280, height: 1000 } });
+  const modes = await p.evaluate(() => { const s = document.querySelector('#mode'); return s ? [...s.options].map((o) => o.value).filter((v) => v !== 'live') : []; });
+  const bad = [];
+  for (const m of modes) {
+    await p.evaluate((v) => { const s = document.querySelector('#mode'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }, m);
+    await p.waitForTimeout(400);
+    const r = await p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth }));
+    if (r.sh > r.ih + 1) bad.push(m + ' mode needs ' + (r.sh - r.ih) + 'px of scroll');
+    if (r.sw > r.iw) bad.push(m + ' mode is ' + r.sw + 'px wide');
+  }
+  await p.close();
+  return bad;
+}, FUN);
+
+check('desktop-compact', 'at 1366x768 the compact desktop layer still left a game scrolling, or a mode toolbar pushed the bottom past the fold', async (g) => {
+  const p = await open(g, 1366, null, { viewport: { width: 1366, height: 768 } });
+  const measure = () => p.evaluate(() => {
+    const wrap = document.querySelector('.wrap');
+    return {
+      sh: document.documentElement.scrollHeight,
+      ih: innerHeight,
+      sw: document.documentElement.scrollWidth,
+      iw: innerWidth,
+      wrap: wrap.getBoundingClientRect().width,
+      padTop: parseFloat(getComputedStyle(wrap).paddingTop),
+      topbar: document.querySelector('.topbar').getBoundingClientRect().height,
+    };
+  });
+  const bad = [];
+  const r = await measure();
+  if (r.sh > r.ih + 1) bad.push('needs ' + (r.sh - r.ih) + 'px of scroll at 1366x768');
+  if (r.sw > r.iw) bad.push('page is ' + r.sw + 'px wide at 1366x768');
+  if (r.wrap > 441) bad.push('compact column is ' + Math.round(r.wrap) + 'px wide');
+  if (r.padTop > 9) bad.push('compact layer padding is ' + r.padTop + 'px; layer may not be active');
+  if (r.topbar > 49) bad.push('compact topbar is ' + Math.round(r.topbar) + 'px high; layer may not be active');
+  const modes = await p.evaluate(() => { const s = document.querySelector('#mode'); return s ? [...s.options].map((o) => o.value).filter((v) => v !== 'live') : []; });
+  for (const m of modes) {
+    await p.evaluate((v) => { const s = document.querySelector('#mode'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }, m);
+    await p.waitForTimeout(400);
+    const r2 = await measure();
+    if (r2.sh > r2.ih + 1) bad.push(m + ' mode needs ' + (r2.sh - r2.ih) + 'px of scroll at 1366x768');
+    if (r2.sw > r2.iw) bad.push(m + ' mode is ' + r2.sw + 'px wide at 1366x768');
+  }
+  await p.close();
+  return bad;
+}, FUN);
+
+check('desktop-phone-guard', 'the short-screen desktop layer leaked onto a landscape phone, changing the phone layout', async () => {
+  const p = await open('chess', 844, null, { viewport: { width: 844, height: 390 } });
+  const r = await p.evaluate(() => {
+    const w = document.querySelector('.wrap');
+    return { pad: parseFloat(getComputedStyle(w).paddingTop), topbar: document.querySelector('.topbar').getBoundingClientRect().height };
+  });
+  await p.close();
+  const bad = [];
+  if (r.pad < 13) bad.push('wrap padding-top is ' + r.pad + 'px at 844x390; compact layer is active');
+  if (r.topbar < 55) bad.push('topbar is ' + Math.round(r.topbar) + 'px at 844x390; compact layer is active');
+  return bad;
+}, ['chess']);
 
 check('board-steady', 'the board jumped down when Options opened, or sat far down on pages with nothing above it', async (g) => {
   const p = await open(g);
@@ -252,10 +502,19 @@ check('zip-win-card-and-next', 'zip had no end-of-game card (its win text was "Z
 check('zip-path-glides', 'zip: the line and the filled squares jumped to each new square; the head now glides and the squares fill as it passes', async (g) => {
   const p = await open(g, 390); await p.waitForTimeout(400);
   const start = await p.evaluate(() => { const c = document.querySelector('.zp-cell.start').getBoundingClientRect(); return { x: c.left + c.width / 2, y: c.top + c.height / 2, w: c.width }; });
+  // start sampling before the pointer move: a round-trip that lands after the
+  // glide finished used to see only the final position and fail under load
+  await p.evaluate(() => {
+    window.__zipXs = [];
+    const t0 = performance.now();
+    const f = () => { const c = document.querySelector('#svg circle'); if (c) window.__zipXs.push(+c.getAttribute('cx')); if (performance.now() - t0 < 700) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  });
   await p.mouse.move(start.x, start.y); await p.mouse.down();
   await p.mouse.move(start.x + start.w * 0.6, start.y, { steps: 2 });
   // sample the head while it travels: it must be seen between two squares at least once
-  const seen = await p.evaluate(() => new Promise((res) => { const xs = []; const t0 = performance.now(); const f = () => { const c = document.querySelector('#svg circle'); if (c) xs.push(+c.getAttribute('cx')); if (performance.now() - t0 < 260) requestAnimationFrame(f); else res(xs); }; f(); }));
+  await p.waitForTimeout(800);
+  const seen = await p.evaluate(() => window.__zipXs);
   await p.mouse.up(); await p.close();
   const distinct = new Set(seen.map((v) => Math.round(v))).size;
   return distinct < 3 ? ['the head jumped (saw ' + distinct + ' positions while moving one square)'] : [];
@@ -489,11 +748,11 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   const r = await p.evaluate(() => { const b = document.getElementById('board').getBoundingClientRect(), o = document.querySelector('.gk-optbtn').getBoundingClientRect(); const free = innerHeight - o.bottom; return { above: b.top - o.bottom, below: innerHeight - b.bottom, free, over: document.documentElement.scrollHeight - innerHeight }; });
   if (Math.abs(r.above - r.below) > 40) bad.push('the board is not centred in the free space (gap above ' + Math.round(r.above) + ', below ' + Math.round(r.below) + ')');
   if (r.over > 0) bad.push('the page scrolls (' + r.over + 'px)');
-  // force a merge: two 2s side by side, slide left. Timed against the reference video: slide about 130ms, no fading, one small pop on the doubled tile
+  // force a merge: two 2s side by side, slide left. The slower settle makes the merge legible without fading.
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); });
   await p.keyboard.press('ArrowLeft');
-  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fade++; } if (k.some((x) => /scale\(1\.13\)/.test(x.transform || ''))) pop++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
-  if (!(seen.slide > 0 && seen.slide <= 160)) bad.push('the slide should take about 130ms like the reference (saw ' + seen.slide + 'ms)');
+  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fade++; } if (k.some((x) => /scale\(1\.14\)/.test(x.transform || ''))) pop++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
+  if (!(seen.slide >= 155 && seen.slide <= 165)) bad.push('a one-cell slide should take about 160ms (0.8 x 200), saw ' + seen.slide + 'ms');
   if (seen.fade) bad.push('the merging tiles fade; in the reference they just meet and swap');
   if (!seen.pop) bad.push('the doubled tile does not pop as it appears');
   await p.waitForTimeout(400);
@@ -502,6 +761,51 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;
+}, ['2048']);
+
+check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 then pop from that scale; they now stay full size while they overlap, and the doubled tile bulges from scale 1', async () => {
+  const p = await open('2048', 390);
+  await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); move('left'); });
+  const seen = await p.evaluate(() => new Promise((res) => {
+    let squash = false, popFromOne = false, popExpands = false, slideEase = '', bulge = null, spawn = null;
+    const t0 = performance.now();
+    const sample = () => {
+      document.querySelectorAll('#board .tile').forEach((tile) => tile.getAnimations().forEach((animation) => {
+        const frames = animation.effect.getKeyframes().map((frame) => frame.transform || '');
+        const joined = frames.join(' ');
+        const timing = animation.effect.getTiming();
+        if (joined.includes('scale(0.92)')) squash = true;
+        if (tile.classList.contains('ghost')) slideEase = timing.easing || '';
+        if (!tile.classList.contains('ghost') && frames[0].includes('scale(1)')) popFromOne = true;
+        if (!tile.classList.contains('ghost') && frames.some((transform) => transform.includes('scale(1.14)'))) {
+          popExpands = true;
+          bulge = { duration: timing.duration, iterations: timing.iterations, direction: timing.direction, easing: timing.easing };
+        }
+        if (!tile.classList.contains('ghost') && frames[0].includes('scale(0)')) {
+          spawn = { duration: timing.duration, easing: timing.easing };
+        }
+      }));
+      if (performance.now() - t0 < 480) requestAnimationFrame(sample);
+      else res({ squash, popFromOne, popExpands, slideEase, bulge, spawn });
+    };
+    sample();
+  }));
+  await p.close();
+  const bad = [];
+  if (seen.squash) bad.push('tiles still squash before they merge');
+  if (!seen.popFromOne || !seen.popExpands) bad.push('the doubled tile does not bulge from full size after they meet');
+  if (!/0\.25/.test(seen.slideEase)) bad.push('the slide does not use OutQuad (saw ' + seen.slideEase + ')');
+  if (!seen.bulge || seen.bulge.duration !== 80 || seen.bulge.iterations !== 2 || seen.bulge.direction !== 'alternate' || !/0\.37/.test(seen.bulge.easing)) bad.push('the merge bulge is not the 1.14 yoyo with InOutSine (' + JSON.stringify(seen.bulge) + ')');
+  if (!seen.spawn || seen.spawn.duration !== 300 || !/0\.37/.test(seen.spawn.easing)) bad.push('the new tile does not grow from scale 0 with InOutSine (' + JSON.stringify(seen.spawn) + ')');
+  return bad;
+}, ['2048']);
+
+check('2048-travel-scales-by-distance', '2048: the reference shortens a 1-cell slide to 0.8x and a 2-cell slide to 0.9x, so the three distances take 160, 180 and 200ms', async () => {
+  const p = await open('2048', 390);
+  await p.evaluate(() => { grid = [[0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2], [0, 0, 0, 0]]; render(); move('left'); });
+  const durations = await p.evaluate(() => [...document.querySelectorAll('.tile.ghost')].map((g) => Math.round(g.getAnimations()[0].effect.getTiming().duration)).sort((a, b) => a - b));
+  await p.close();
+  return durations.join(',') === '160,180,200' ? [] : ['ghost durations were ' + durations.join(',') + ', expected 160,180,200'];
 }, ['2048']);
 
 check('pig-online-view-and-requests', 'pig online: you ask the server for a roll (you never send one), the screen shows what it rolled, a lost turn and a hold, and only the player to move can act', async () => {
@@ -567,6 +871,72 @@ check('tic-tac-toe-win-line-then-card', 'tic-tac-toe: the result card jumped up 
   await p.close();
   return bad;
 }, ['tic-tac-toe']);
+
+check('tic-tac-toe-no-last-outline', 'tic-tac-toe: the square just played in WhatsApp mode was ringed with a dashed white outline', async () => {
+  const p = await open('tic-tac-toe', 390);
+  await p.locator('#board .cell').first().click();
+  await p.waitForTimeout(250);
+  const r = await p.evaluate(() => {
+    const c = document.querySelector('#board .cell.last');
+    if (!c) return null;
+    const cs = getComputedStyle(c);
+    return { style: cs.outlineStyle, width: cs.outlineWidth };
+  });
+  await p.close();
+  if (!r) return ['no last-move cell found'];
+  return r.style !== 'none' && parseFloat(r.width) > 0 ? ['last-move outline is ' + r.style + ' ' + r.width] : [];
+}, ['tic-tac-toe']);
+
+check('tic-tac-toe-press-does-not-scale', 'tic-tac-toe: pressing a square scaled it and moved the thick grid-line borders', async () => {
+  const p = await open('tic-tac-toe', 390);
+  const cell = p.locator('#board .cell').first();
+  const b = await cell.boundingBox();
+  await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await p.mouse.down();
+  await p.waitForTimeout(80);
+  const tr = await cell.evaluate((el) => getComputedStyle(el).transform);
+  await p.mouse.up();
+  await p.close();
+  return tr === 'none' ? [] : ['pressed cell transform is ' + tr];
+}, ['tic-tac-toe']);
+
+check('dots-turn-dot-colour', 'dots and boxes: Player 2 turn dot was the default blue instead of the board green', async () => {
+  const p = await open('dots-and-boxes', 390);
+  await p.evaluate(() => { const m = document.getElementById('mode'); m.value = 'local'; m.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(300);
+  await p.locator('#board .db-edge').first().click();
+  await p.waitForTimeout(300);
+  const r = await p.evaluate(() => {
+    const t = document.querySelector('.turn');
+    const d = t && t.querySelector('.turn-dot');
+    return { p: t && t.dataset.p, dot: d && getComputedStyle(d).backgroundColor, green: getComputedStyle(document.body).getPropertyValue('--d-p2').trim() };
+  });
+  await p.close();
+  if (r.p !== '2') return ['expected Player 2 to move, got ' + r.p];
+  return r.dot === 'rgb(63, 208, 192)' ? [] : ['Player 2 dot is ' + r.dot + ' (board green is ' + r.green + ')'];
+}, ['dots-and-boxes']);
+
+check('rps-retry-clears-resign', 'rock paper scissors: after Admit defeat, the top retry started a new game with the defeat screen still showing', async () => {
+  const p = await open('rock-paper-scissors', 390);
+  const bad = [];
+  await p.evaluate(() => { const m = document.getElementById('mode'); m.value = 'whatsapp'; m.dispatchEvent(new Event('change')); });
+  await p.locator('.rps-choice').first().click();
+  await p.waitForTimeout(300);
+  await p.locator('#wa-ui button:has-text("on this device")').click();
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { window.confirm = () => true; });
+  await p.locator('.wa-resign-row button').click();
+  await p.waitForTimeout(400);
+  if (!/admitted defeat/i.test(await p.locator('#wa-ui').innerText())) bad.push('the resign screen did not appear');
+  await p.locator('.fun-restart').click();
+  await p.waitForTimeout(400);
+  const after = await p.evaluate(() => ({ text: document.getElementById('wa-ui').innerText, search: location.search }));
+  if (/admitted defeat/i.test(after.text)) bad.push('the defeat screen is still showing');
+  if (after.search) bad.push('the share state is still in the URL');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['rock-paper-scissors']);
 
 check('options-opens-without-moving', 'opening Options moved the board or made the page scroll on some games, although the menu opens over the board', async (g) => {
   const p = await open(g, 390);
@@ -648,6 +1018,17 @@ check('hangman-ghost-clear-of-man', 'hangman: the ghost floated over the stick m
   return bad;
 }, ['hangman']);
 
+check('hangman-desktop-gallows', 'on a PC the gallows stayed phone-sized inside the wider play area, so the drawing looked like a stamp', async () => {
+  const p = await open('hangman', 1280);
+  const r = await p.evaluate(() => ({ w: document.querySelector('#gallows').getBoundingClientRect().width, sw: document.documentElement.scrollWidth }));
+  await p.close();
+  const bad = [];
+  if (r.w < 260) bad.push('gallows is only ' + Math.round(r.w) + 'px wide at 1280px');
+  if (r.w > 340) bad.push('gallows is ' + Math.round(r.w) + 'px wide: too big for the speech bubble');
+  if (r.sw > 1280) bad.push('page got wider (' + r.sw + 'px)');
+  return bad;
+}, ['hangman']);
+
 check('connect-four-no-landing-flash', 'connect four: a small flash when the disc landed (the empty hole showed for a moment as the slot faded its colour in)', async () => {
   const p = await open('connect-four', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
   await p.waitForTimeout(500);
@@ -682,6 +1063,26 @@ check('chess-own-move-slides-against-computer', 'chess: your own move against th
   const xs = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(), out = []; const f = () => { const g = document.querySelectorAll('#board .sq')[36].querySelector('.pc'); if (g) { const r = g.getBoundingClientRect(); out.push(Math.round(r.left * 10) / 10 + ',' + Math.round(r.top * 10) / 10); } if (performance.now() - t0 < 330) requestAnimationFrame(f); else res(out); }; f(); }));
   if (new Set(xs).size < 5) bad.push('your pawn slid in only ' + new Set(xs).size + ' distinct positions (it jumped)');
   await p.close();
+  return bad;
+}, ['chess']);
+
+check('chess-difficulty-chips', 'chess: difficulty was still a dropdown; it should use the Easy/Medium/Hard chips Checkers uses', async () => {
+  const p = await open('chess', 390, SOLO.chess);
+  const r = await p.evaluate(() => {
+    const c = document.getElementById('chips');
+    return {
+      chips: !!c,
+      level: !!document.getElementById('level'),
+      buttons: c ? [...c.querySelectorAll('.chip')].map((b) => b.textContent.trim()) : [],
+      hidden: c && c.hidden,
+    };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.chips) bad.push('no difficulty chips');
+  if (r.level) bad.push('the old level dropdown is still there');
+  if (r.hidden) bad.push('the chips are hidden in computer mode');
+  if (r.buttons.join(',') !== 'Easy,Medium,Hard') bad.push('chips are ' + r.buttons.join(','));
   return bad;
 }, ['chess']);
 
@@ -785,14 +1186,111 @@ check('battleship-vs-computer-turn-and-fire-word', 'battleship vs the computer: 
   return bad;
 }, ['battleship']);
 
+check('mastermind-real-flow-desktop', 'the desktop game-over checks used injected result text; Mastermind must survive a real set-code, guess, win and game-over card at 1280 and 1920', async () => {
+  const bad = [];
+  for (const [w, h] of [[1280, 900], [1920, 1080]]) {
+    const p = await open('mastermind', w, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))", { viewport: { width: w, height: h } });
+    await p.waitForTimeout(400);
+    for (let i = 0; i < 4; i++) await p.locator('#palette button').nth(0).click();
+    await p.locator('#submit-btn').click();
+    await p.waitForTimeout(250);
+    if (!(await p.locator('#entry').isVisible())) bad.push(w + 'px: the guess row did not appear after setting the code');
+    for (let i = 0; i < 4; i++) await p.locator('#palette button').nth(0).click();
+    await p.locator('#submit-btn').click();
+    await p.waitForTimeout(900);
+    const r = await p.evaluate(() => {
+      const card = document.querySelector('.gk-over');
+      const cr = card && card.getBoundingClientRect();
+      const secret = document.getElementById('secret-row');
+      return {
+        card: !!card, h2: card ? card.querySelector('h2').textContent.trim() : '',
+        inside: !!cr && cr.left >= -1 && cr.right <= innerWidth + 1 && cr.top >= -1 && cr.bottom <= innerHeight + 1,
+        secret: !secret.hidden && /The code was/.test(secret.textContent),
+        sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight,
+        emoji: card ? /[\u{1F300}-\u{1FAFF}]/u.test(card.textContent) : false,
+        status: document.getElementById('status').textContent,
+      };
+    });
+    if (!r.card) bad.push(w + 'px: no game-over card after the winning guess');
+    else {
+      if (!/won|cracked|win/i.test(r.h2 + ' ' + r.status)) bad.push(w + 'px: the winning result was not reported (' + r.h2 + ' / ' + r.status + ')');
+      if (!r.inside) bad.push(w + 'px: the game-over card is outside the viewport');
+      if (r.emoji) bad.push(w + 'px: emoji on the game-over card');
+    }
+    if (!r.secret) bad.push(w + 'px: the secret code was not revealed after the win');
+    if (r.sw > w) bad.push(w + 'px: the card made the page wider');
+    if (p.errs.length) bad.push(w + 'px errors: ' + p.errs.join('; '));
+    await p.close();
+  }
+  return bad;
+}, ['mastermind']);
+
+check('resign-screen-desktop', 'Admit defeat was only tested at phone width with a text check; at 1280 and 1920 the real forfeit must fit and report the loss without widening the page', async () => {
+  const bad = [];
+  for (const [w, h] of [[1280, 900], [1920, 1080]]) {
+    const p = await open('tic-tac-toe', w, null, { viewport: { width: w, height: h } });
+    await p.locator('.cell').nth(0).click();
+    await p.waitForTimeout(250);
+    await p.locator('.wa-ui button:has-text("on this device")').click();
+    await p.waitForTimeout(300);
+    await p.evaluate(() => { window.confirm = () => true; });
+    await p.locator('.wa-resign-row button').click();
+    await p.waitForTimeout(600);
+    const r = await p.evaluate(() => {
+      const ui = document.getElementById('wa-ui');
+      const ur = ui.getBoundingClientRect();
+      return {
+        text: ui.innerText, shown: !ui.hidden && ur.height > 0,
+        inside: ur.left >= -1 && ur.right <= innerWidth + 1,
+        resignGone: !document.querySelector('.wa-resign-row button'),
+        sw: document.documentElement.scrollWidth,
+      };
+    });
+    if (!r.shown) bad.push(w + 'px: the defeat screen did not appear');
+    if (!/admitted defeat/i.test(r.text)) bad.push(w + 'px: the screen does not say the player admitted defeat');
+    if (!r.resignGone) bad.push(w + 'px: the Admit defeat button is still offered after resigning');
+    if (!r.inside) bad.push(w + 'px: the defeat screen is outside the viewport');
+    if (r.sw > w) bad.push(w + 'px: the defeat screen made the page wider');
+    if (p.errs.length) bad.push(w + 'px errors: ' + p.errs.join('; '));
+    await p.close();
+  }
+  return bad;
+}, ['tic-tac-toe']);
+
+check('battleship-no-black-overscroll', 'swiping the floating battle menu down rubber-banded the one-screen board and showed the shared dark html canvas as a black band under the coral/blue game', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+  const r = await p.evaluate(() => {
+    const html = getComputedStyle(document.documentElement), body = getComputedStyle(document.body);
+    window.scrollTo(0, -240);
+    return {
+      battle: document.body.classList.contains('bs-battle'), phase: document.getElementById('bs-board').dataset.phase,
+      htmlBg: html.backgroundColor, bodyBg: body.backgroundColor,
+      htmlOver: html.overscrollBehaviorY, bodyOver: body.overscrollBehavior,
+      y: Math.round(scrollY),
+    };
+  });
+  const bad = [];
+  if (r.phase !== 'battle' || !r.battle) bad.push('the battle screen did not start');
+  if (r.htmlBg === 'rgb(10, 10, 10)') bad.push('the exposed html canvas is still the shared black');
+  if (r.htmlBg !== r.bodyBg) bad.push('the html and body battle colours do not match (' + r.htmlBg + ' vs ' + r.bodyBg + ')');
+  if (r.htmlOver !== 'none' || r.bodyOver !== 'none') bad.push('overscroll bounce is still enabled');
+  if (r.y !== 0) bad.push('the page rubber-banded past the top (' + r.y + 'px)');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
 check('crazy-8-table-full-size', 'crazy 8: the table had been narrowed to stop the page scrolling, which made the cards small and pulled the side player cards in from the screen edge; the table must be the full width of the screen', async () => {
   const p = await open('crazy-8', 390, "var m=document.querySelector('#mode');if(m&&[...m.options].some(o=>o.value==='computer')){m.value='computer';m.dispatchEvent(new Event('change'))}");
   await p.waitForTimeout(700);
-  const r = await p.evaluate(() => { const c = document.getElementById('c8').getBoundingClientRect(), st = document.getElementById('c8-stage').getBoundingClientRect(), hand = document.querySelector('#c8-hand .c8-card'); return { w: Math.round(c.width), stage: Math.round(st.width), card: hand ? Math.round(hand.getBoundingClientRect().height) : 0 }; });
+  const r = await p.evaluate(() => { const c = document.getElementById('c8').getBoundingClientRect(), st = document.getElementById('c8-stage').getBoundingClientRect(), hand = document.querySelector('#c8-hand .c8-card'); return { w: Math.round(c.width), stage: Math.round(st.width), card: hand ? Math.round(hand.getBoundingClientRect().height) : 0, hint: getComputedStyle(document.getElementById('c8-hint')).display, guide: getComputedStyle(document.getElementById('c8-guide')).display }; });
   await p.close();
   const bad = [];
   if (r.w < 385) bad.push('the table is only ' + r.w + 'px wide');
   if (r.card < 100) bad.push('your cards are only ' + r.card + 'px tall');
+  if (r.hint === 'none' || r.guide === 'none') bad.push('the desktop-only hiding of the hint/guide also hit the phone');
   return bad;
 }, ['crazy-8']);
 
@@ -821,6 +1319,39 @@ check('game-over-card', 'a result and its taunt showed in a small strip that ove
     if (await p.locator('.gk-over').count()) bad.push('View board did not close the card');
   }
   if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) bad.push('card made the page wider');
+  await p.close();
+  return bad;
+}, ZONE.filter((g) => END[g]));
+
+check('desktop-overlays', 'on a PC-width page the Options popover or the game-over card ran off the viewport, or a state change made the page wider', async (g) => {
+  const p = await open(g, 1366, null, { viewport: { width: 1366, height: 768 } });
+  const bad = [];
+  if (await p.locator('.gk-optbtn').count()) {
+    await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);
+    const o = await p.evaluate(() => {
+      const e = document.querySelector('.gk-opts');
+      if (!e) return null;
+      const r = e.getBoundingClientRect();
+      return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight };
+    });
+    if (!o) bad.push('Options did not open');
+    else if (o.l < -1 || o.r > o.w + 1 || o.t < -1 || o.b > o.h + 1) bad.push('Options is off-screen (' + [o.l, o.t, o.r, o.b].map(Math.round).join(', ') + ')');
+    await p.locator('.gk-optbtn').click(); await p.waitForTimeout(150);
+  } else bad.push('no Options button');
+  await p.evaluate(END[g]);
+  await p.waitForTimeout(800 + (await p.evaluate(() => +document.body.dataset.overDelay || 0)));
+  const c = await p.evaluate(() => {
+    const e = document.querySelector('.gk-over .card');
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight, sw: document.documentElement.scrollWidth };
+  });
+  if (!c) bad.push('no game over card at 1366x768');
+  else {
+    if (c.l < -1 || c.r > c.w + 1) bad.push('game over card is off-screen sideways');
+    if (c.t < -1 || c.b > c.h + 1) bad.push('game over card is taller than the window');
+    if (c.sw > c.w) bad.push('game over card made the page wider');
+  }
   await p.close();
   return bad;
 }, ZONE.filter((g) => END[g]));
@@ -910,11 +1441,14 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   await press('Z'); await p.waitForTimeout(200);                                  // the first miss draws his head ...
   const first = await state();
   if (first.hidden || !first.text) bad.push('he says nothing when his head appears (first miss)');
-  await press('X'); await p.waitForTimeout(200);                                  // ... and a second miss
+  await press('X'); await p.waitForTimeout(200);                                  // ... a second miss comes right after a line: he stays quiet
+  const quiet = await state();
+  if (!quiet.hidden) bad.push('he commented on the very next miss; after a line he should stay quiet for a few guesses');
+  for (const c of 'QJ') { await press(c); await p.waitForTimeout(150); }
+  await press('V'); await p.waitForTimeout(200);                                  // the fifth miss is the last life: he always speaks then
   const s = await state();
-  if (s.hidden || !s.text) bad.push('no speech bubble after two misses');
+  if (s.hidden || !s.text) bad.push('no speech bubble on the last life');
   else {
-    if (!s.beg) bad.push('expected him to beg (random forced to 0)');
     if (s.left < s.gRight - 2) bad.push('bubble overlaps the gallows');
     if (s.right > 390) bad.push('bubble runs off the screen');
     if (/[\u{1F300}-\u{1FAFF}]/u.test(s.text)) bad.push('emoji in the bubble');
@@ -922,7 +1456,7 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   if (s.gl > 40) bad.push('gallows is not at the left edge (more room is wanted for the bubble)');
   if (s.gTop !== t0) bad.push('gallows moved when he spoke');
   if (s.sw > 390) bad.push('page got wider');
-  for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
+  await press('W'); await p.waitForTimeout(150);
   const e = await state();
   if (e.hidden || !e.text) bad.push('nothing says the last line when the game ends');
   const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), big = g.querySelector('.big'), b = document.getElementById('bubble'), gr = big.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0 && g.querySelectorAll('.hm-g').length === 1, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
@@ -952,6 +1486,291 @@ check('hangman-one-taunt', 'two taunts showed on the finished WhatsApp game: one
   if (/return `The word was \$\{word\}\.` \+/.test(src)) bad.push('"The word was X." has a taunt tacked on again');
   return bad;
 }, ['hangman']);
+
+check('hangman-no-repeat', 'the stick man said the same line on consecutive misses (the picker had no memory)', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const said = [];
+  await p.evaluate(() => { const t = document.getElementById('talk'); t.value = 'lots'; t.dispatchEvent(new Event('change')); });   // the chattiest setting, so there are several lines to compare
+  for (const c of 'ZXQJ') {
+    await press(c);
+    await p.waitForTimeout(150);
+    const t = await p.evaluate(() => (document.getElementById('bubble').hidden ? '' : document.getElementById('bubble').textContent));
+    if (t) said.push(t);
+  }
+  const bad = [];
+  if (said.length < 2) bad.push('he said ' + said.length + ' lines in four misses on the chattiest setting');
+  if (new Set(said).size !== said.length) bad.push('the same line appeared twice: ' + said.join(' / '));
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-setter-line', 'the stick man said nothing after Player 1 set the word; he now comments on the chosen word before the first guess', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click()");
+  const s = await p.evaluate(() => { const b = document.getElementById('bubble'); return { hidden: b.hidden, text: b.textContent, beg: b.classList.contains('beg') }; });
+  const bad = [];
+  if (s.hidden || !s.text) bad.push('no line after the word was set');
+  if (s.beg) bad.push('the setter line is styled as begging');
+  if (/[\u{1F300}-\u{1FAFF}]/u.test(s.text)) bad.push('emoji in the bubble');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-face-mood', 'the drawn stick man had no face or mood: a guessed letter should change his expression, reveal the sweat and leave the layout alone', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const read = () => p.evaluate(() => {
+    const stage = document.querySelector('.hm-stage');
+    const op = (s) => { const e = document.querySelector(s); return e ? Number(getComputedStyle(e).opacity) : -1; };
+    return {
+      misses: stage.dataset.misses, head: stage.dataset.head, mood: stage.dataset.mood, face: stage.dataset.face || '',
+      faceBox: op('.hm-face'), calm: op('.hm-mouth-calm'), worried: op('.hm-mouth-worried'),
+      gasp: op('.hm-mouth-gasp'), wail: op('.hm-mouth-wail'), o: op('.hm-mouth-o'),
+      wobble: op('.hm-mouth-wobble'), grin: op('.hm-mouth-grin'), sweat: op('.hm-sweat'),
+      outline: op('#hm-outline'), shadow: op('#hm-shadow'), on: document.querySelectorAll('#gallows .pt.on').length,
+      rope: !!document.getElementById('rope'), top: document.getElementById('gallows').getBoundingClientRect().top,
+      look: stage.style.getPropertyValue('--look-x'),
+    };
+  });
+  await press('Z'); await p.waitForTimeout(750);
+  const one = await read();
+  await press('X'); await p.waitForTimeout(300);
+  const two = await read();
+  for (const c of 'QJ') { await press(c); await p.waitForTimeout(180); }
+  await p.waitForTimeout(300);
+  const four = await read();
+  const bad = [];
+  if (one.misses !== '1' || one.head !== '1') bad.push('the first miss did not draw the head');
+  if (one.faceBox < .5) bad.push('the face is invisible once the head is drawn');
+  if (one.on !== 1) bad.push('the first miss drew ' + one.on + ' parts');
+  if (!one.rope) bad.push('the rope is no longer a separate part');
+  if (one.outline > .05) bad.push('the chalk outline is still strong once he is drawn');
+  if (one.shadow <= .1) bad.push('the ground shadow is not visible');
+  if (one.mood !== 'calm') bad.push('one miss should still leave the resting mood calm');
+  if (one.face !== 'shocked' || one.o < .5 || one.gasp > .1) bad.push('the first miss is not delivered with a shocked face');
+  if (!one.look) bad.push('his eyes did not follow the guessed key');
+  if (two.mood !== 'worried') bad.push('two misses do not leave the resting mood worried');
+  if (two.face !== 'nervous') bad.push('a quiet miss shows nothing on his face (' + two.face + ')');
+  const plead = await p.evaluate(async () => { const st = document.querySelector('.hm-stage'); delete st.dataset.face; st.dataset.face = 'pleading'; await new Promise((r) => setTimeout(r, 300)); const o = (s) => Number(getComputedStyle(document.querySelector(s)).opacity); return { wobble: o('.hm-mouth-wobble'), tear: o('.hm-tear'), brows: o('.hm-brows-sad'), wail: o('.hm-mouth-wail') }; });
+  if (plead.wobble < .5 || plead.tear < .5 || plead.brows < .5 || plead.wail > .1) bad.push('the pleading face is not a trembling mouth, sad brows and a tear (' + JSON.stringify(plead) + ')');
+  if (four.mood !== 'scared') bad.push('four misses do not leave the resting mood scared');
+  if (four.face !== 'nervous' || four.wobble < .5 || four.sweat < .5) bad.push('a quiet miss deep in the game is not a nervous, sweating face');
+  if (four.on !== 4) bad.push('the parts are not drawn one per miss');
+  if (four.top !== one.top) bad.push('the gallows moved while he was reacting');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-expression-match', 'the stick man said "good work" while still shaking: the face and body must match the line, including on the last life', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const read = () => p.evaluate(() => {
+    const stage = document.querySelector('.hm-stage');
+    const B = window.__hangmanTest.banter;
+    const text = document.getElementById('bubble').textContent;
+    const op = (s) => Number(getComputedStyle(document.querySelector(s)).opacity);
+    return {
+      mood: stage.dataset.mood, face: stage.dataset.face || '', text,
+      faceOfLine: B.faceOf(text), shiver: getComputedStyle(document.getElementById('man')).animationName,
+      grin: op('.hm-mouth-grin'),
+    };
+  });
+  for (const c of 'ZXQJV') { await press(c); await p.waitForTimeout(120); }   // five misses: the last life
+  await p.waitForTimeout(700);
+  const lastLife = await read();
+  await press('C'); await p.waitForTimeout(700);                              // first hit on the last life
+  const surprise = await read();
+  await press('A'); await p.waitForTimeout(700);                              // second hit: praise
+  const praise = await read();
+  const bad = [];
+  if (lastLife.mood !== 'terrified') bad.push('five misses did not leave him terrified');
+  if (!lastLife.face || lastLife.face !== lastLife.faceOfLine) bad.push('the last-life line and face disagree');
+  if (surprise.face !== 'shocked' || surprise.face !== surprise.faceOfLine) bad.push('the last-life save surprise is not shocked');
+  if (surprise.shiver === 'hm-shiver') bad.push('he still shivers through the surprise line');
+  if (praise.face !== 'proud' || praise.face !== praise.faceOfLine) bad.push('the last-life praise line is not proud');
+  if (praise.shiver === 'hm-shiver') bad.push('he shivers while delivering praise');
+  if (praise.grin < .5) bad.push('the proud praise line does not show a grin');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-poke-idle', 'the stick man ignored a poke and never got impatient: both should use his speech bubble and the gallows should be keyboard-reachable', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click()");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  await press('Z'); await p.waitForTimeout(300);
+  const idle = await p.evaluate(() => {
+    const before = document.getElementById('bubble').textContent;
+    window.__hangmanTest.idle();
+    const after = document.getElementById('bubble').textContent;
+    return { before, after, pool: window.__hangmanTest.banter.pools.IDLE.includes(after) };
+  });
+  const poke = await p.evaluate(() => {
+    const g = document.getElementById('gallows');
+    g.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const text = document.getElementById('bubble').textContent;
+    const B = window.__hangmanTest.banter;
+    return {
+      text, react: document.querySelector('.hm-stage').dataset.react,
+      pool: B.pools.POKE.includes(text) || B.pools.POKE_SCARED.includes(text),
+    };
+  });
+  const key = await p.evaluate(() => {
+    const g = document.getElementById('gallows');
+    g.focus();
+    g.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    return { focused: document.activeElement === g, react: document.querySelector('.hm-stage').dataset.react };
+  });
+  const bad = [];
+  if (idle.before === idle.after || !idle.pool) bad.push('the idle trigger did not produce an IDLE line');
+  if (!poke.pool) bad.push('a poke did not produce a POKE line: ' + poke.text);
+  if (poke.react !== 'poke') bad.push('a poke did not make him react');
+  if (!key.focused) bad.push('the gallows cannot receive keyboard focus');
+  if (key.react !== 'poke') bad.push('Enter on the gallows did not poke him');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-saved-pose', 'a saved man stayed standing and the ghost came out on a win; a save should drop him, retract the rope and record the game', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click()");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const before = await p.evaluate(() => window.__hangmanTest.history.games);
+  for (const c of 'ZCAT') { await press(c); await p.waitForTimeout(120); }
+  await p.waitForTimeout(1300);
+  const r = await p.evaluate(() => {
+    const stage = document.querySelector('.hm-stage');
+    const B = window.__hangmanTest.banter;
+    const text = document.getElementById('bubble').textContent;
+    const man = getComputedStyle(document.getElementById('man')).transform;
+    const rope = getComputedStyle(document.getElementById('rope'));
+    const parts = [...document.querySelectorAll('#gallows .pt')].filter((e) => Number(getComputedStyle(e).opacity) > .5 && getComputedStyle(e).visibility !== 'hidden').length;
+    return {
+      mood: stage.dataset.mood, face: stage.dataset.face || '', text, man, ghost: !document.getElementById('ghost').hidden,
+      games: window.__hangmanTest.history.games, last: window.__hangmanTest.history.last, parts,
+      ropeOpacity: Number(rope.opacity), ropeTransform: rope.transform,
+      pool: [...B.pools.SAVED, ...B.pools.SAVED_BARELY, ...B.pools.SAVED_INTACT, ...B.pools.SAVED_STREAK, ...B.pools.SAVED_BEST, ...B.pools.SAVED_RETURN].includes(text),
+    };
+  });
+  const bad = [];
+  if (r.mood !== 'saved') bad.push('a win did not put him in the saved pose');
+  if (!/22\)$/.test(r.man)) bad.push('the saved man did not drop: ' + r.man);
+  if (r.ghost) bad.push('the ghost appeared on a win');
+  if (!r.pool) bad.push('the win line is not a saved line: ' + r.text);
+  if (r.face !== 'saved') bad.push('the win line is not delivered with a saved face: ' + r.face);
+  if (r.games !== before + 1) bad.push('a finished game was not recorded once');
+  if (r.last !== 'saved') bad.push('the last result was not saved');
+  if (r.parts !== 6) bad.push('the saved man is still missing parts: ' + r.parts + '/6');
+  if (r.ropeOpacity > .1) bad.push('the noose is still hanging at full strength');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-win-complete', 'a win with no misses left the man undrawn, so the saved animation moved an invisible body; a save must pull the whole man together before he hops down', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  for (const c of 'CAT') { await press(c); await p.waitForTimeout(120); }
+  await p.waitForTimeout(1300);
+  const r = await p.evaluate(() => {
+    const stage = document.querySelector('.hm-stage');
+    const B = window.__hangmanTest.banter;
+    const text = document.getElementById('bubble').textContent;
+    const parts = [...document.querySelectorAll('#gallows .pt')].filter((e) => Number(getComputedStyle(e).opacity) > .5 && getComputedStyle(e).visibility !== 'hidden').length;
+    return {
+      mood: stage.dataset.mood, face: stage.dataset.face || '', text, parts,
+      man: getComputedStyle(document.getElementById('man')).transform,
+      rope: Number(getComputedStyle(document.getElementById('rope')).opacity),
+      faceBox: Number(getComputedStyle(document.querySelector('.hm-face')).opacity),
+      ghost: !document.getElementById('ghost').hidden, status: document.getElementById('status').textContent,
+      savedPool: [...B.pools.SAVED_INTACT].includes(text),
+    };
+  });
+  const bad = [];
+  if (r.mood !== 'saved' || r.parts !== 6) bad.push('a flawless win left the man at ' + r.parts + '/6 parts');
+  if (r.faceBox < .5) bad.push('the face is still invisible after a flawless win');
+  if (!r.savedPool) bad.push('a flawless win did not use a SAVED_INTACT line: ' + r.text);
+  if (r.face !== 'proud') bad.push('a flawless win is not delivered with a proud face: ' + r.face);
+  if (!/22\)$/.test(r.man)) bad.push('the completed man did not drop to the ground: ' + r.man);
+  if (r.rope > .1) bad.push('the noose did not let go on a win');
+  if (r.ghost) bad.push('the ghost appeared on a win');
+  if (!/wins/i.test(r.status)) bad.push('the win status did not appear: ' + r.status);
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+check('hangman-reduced-motion', 'the stick man still animates when the phone asks for reduced motion; the face and a finished part should be visible without movement', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click()", { reducedMotion: 'reduce' });
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  await press('Z');
+  await p.waitForTimeout(300);
+  const r = await p.evaluate(() => {
+    const part = document.querySelector('.pt.on');
+    return {
+      man: getComputedStyle(document.getElementById('man')).animationName,
+      part: part ? getComputedStyle(part).animationName : 'missing',
+      dash: part ? getComputedStyle(part).strokeDashoffset : 'missing',
+      face: Number(getComputedStyle(document.querySelector('.hm-face')).opacity),
+      bubble: document.getElementById('bubble').textContent,
+    };
+  });
+  for (const c of 'CAT') { await press(c); await p.waitForTimeout(150); }
+  await p.waitForTimeout(600);
+  const win = await p.evaluate(() => {
+    const parts = [...document.querySelectorAll('#gallows .pt')].filter((e) => Number(getComputedStyle(e).opacity) > .5 && getComputedStyle(e).visibility !== 'hidden').length;
+    return {
+      mood: document.querySelector('.hm-stage').dataset.mood, parts,
+      rope: Number(getComputedStyle(document.getElementById('rope')).opacity),
+      man: getComputedStyle(document.getElementById('man')).transform,
+      manAnim: getComputedStyle(document.getElementById('man')).animationName,
+      partAnim: getComputedStyle(document.querySelector('.pt')).animationName,
+    };
+  });
+  const bad = [];
+  if (r.man !== 'none') bad.push('the man still breathes under reduced motion');
+  if (r.part !== 'none' || r.dash !== '0px') bad.push('the drawn part still depends on an animation');
+  if (r.face < .5) bad.push('the face is hidden under reduced motion');
+  if (!r.bubble) bad.push('no line under reduced motion');
+  if (win.mood !== 'saved' || win.parts !== 6) bad.push('the saved man is incomplete under reduced motion');
+  if (win.rope > .1) bad.push('the noose still hangs under reduced motion');
+  if (win.manAnim !== 'none' || win.partAnim !== 'none') bad.push('the save still animates under reduced motion');
+  if (!/22\)$/.test(win.man)) bad.push('the saved man is not standing on the ground under reduced motion: ' + win.man);
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+
+check('wa-panel-below-board', 'in WhatsApp mode the send-link panel grew above the board after the first move and pushed the game down; it now lives below the board', async () => {
+  const p = await open('tic-tac-toe');                   // WhatsApp mode is the default
+  const before = await p.evaluate(() => Math.round(document.getElementById('board').getBoundingClientRect().top + scrollY));
+  await p.locator('.cell').nth(0).click();
+  await p.waitForTimeout(350);
+  const after = await p.evaluate(() => {
+    const board = document.getElementById('board');
+    const ui = document.getElementById('wa-ui');
+    const br = board.getBoundingClientRect(), ur = ui.getBoundingClientRect();
+    return {
+      top: Math.round(br.top + scrollY), boardBottom: br.bottom + scrollY,
+      uiTop: ur.top + scrollY, shown: !ui.hidden && ur.height > 0,
+      hasSend: !!ui.querySelector('.wa-send'), following: !!(board.compareDocumentPosition(ui) & Node.DOCUMENT_POSITION_FOLLOWING),
+      sw: document.documentElement.scrollWidth,
+    };
+  });
+  const bad = [];
+  if (!after.shown || !after.hasSend) bad.push('the send-link panel did not appear after the first move');
+  if (after.top !== before) bad.push('the board moved ' + (after.top - before) + 'px when the share panel appeared');
+  if (!after.following || after.uiTop < after.boardBottom - 2) bad.push('the share panel is not below the board');
+  if (after.sw > 390) bad.push('page got wider than the phone');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['tic-tac-toe']);
+
 
 check('wa-finished-buttons', 'on a finished WhatsApp game "Copy link" was stacked above "New game"; they sit side by side under the Send button', async () => {
   const p = await open('tic-tac-toe');                   // WhatsApp mode is the default
@@ -991,7 +1810,7 @@ check('minesweeper-numbers-show', 'revealed minesweeper tiles had no numbers: th
 }, ['minesweeper']);
 
 check('resume-notice-icon', 'the "Picked up where you left off" pill showed a broken box and the letters BB in front of it', async () => {
-  const css = fs.readFileSync(path.join(ROOT, 'fun.css'), 'utf8');
+  const css = fs.readFileSync(path.join(ROOT, 'shared/fun.css'), 'utf8');
   const bad = [];
   if (/[\x00-\x08\x0b\x0e-\x1f]/.test(css)) bad.push('fun.css has a control character in it (a mangled escape)');
   const m = /\.game-notice::before \{([^}]*)\}/.exec(css);
@@ -1034,34 +1853,79 @@ check('water-sort-look-and-pour', 'water sort should have glass tubes with a shi
     const u = getComputedStyle(document.getElementById('undo-btn'), '::before'), h = document.getElementById('hint-btn').getBoundingClientRect(), un = document.getElementById('undo-btn').getBoundingClientRect();
     const full = [...document.querySelectorAll('.ws-tube')].find((x) => x.children.length === 4) || t;
     const fr = full.getBoundingClientRect(), fl = [...full.children].map((e) => e.getBoundingClientRect());
-    return { picture: /fun\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
+    const inlineUndo = [...document.querySelectorAll('#undo-btn .gk-undo-ico, #undo-btn .glyph')].filter((e) => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0).length;
+    const undoButtons = [...document.querySelectorAll('button')].filter((e) => e.id === 'undo-btn' || /(^|\s)undo(\s|$)/i.test(e.textContent.trim())).filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length;
+    return { picture: /assets\/ui\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
       inside: fl.length ? fl.every((r) => r.left >= fr.left + fr.width * 0.12 && r.right <= fr.right - fr.width * 0.12 && r.bottom <= fr.bottom - 1 && r.top >= fr.top + fr.height * 0.17) : true,
-      ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], vivid: Math.max(...[...document.querySelectorAll('.ws-l')].map((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); })), sw: document.documentElement.scrollWidth };
+      ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], inlineUndo, undoButtons,
+      vivid: Math.max(...[...document.querySelectorAll('.ws-l')].map((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); })), sw: document.documentElement.scrollWidth };
   });
-  if (!look.picture) bad.push('the tubes are not the glass picture from the reference (fun/tube.png)');
+  if (!look.picture) bad.push('the tubes are not the glass picture from the reference (assets/ui/tube.png)');
   if (look.ratio < 2.8 || look.ratio > 3.2) bad.push('tube proportions are off: height/width is ' + look.ratio.toFixed(2) + ', the picture is 2.98');
   if (!look.inside) bad.push('the liquid pokes outside the glass or into its neck');
   if (!look.ucircle) bad.push('Undo is not a big round button');
+  if (look.undoButtons !== 1) bad.push('expected one visible Undo button, saw ' + look.undoButtons);
+  if (look.inlineUndo) bad.push('the Undo button still draws the extra inline undo icon below the round one');
   if (look.hint[1] > 844 || look.undo[1] > 844) bad.push('Undo / Hint are below the fold');
   if (look.hint[0] < look.undo[0] + 200) bad.push('Hint should sit at the right, Undo at the left');
   if (look.sw > 390) bad.push('page got wider');
   if (look.vivid < 120) bad.push('liquid colours are washed out');
   // a pour: tap one tube, then another that accepts it, and look for the falling stream
   const n = await p.locator('.ws-tube').count();
-  let saw = false;
+  let saw = false, pour = null;
   for (let a = 0; a < n && !saw; a++) for (let c = 0; c < n && !saw; c++) {
     if (a === c) continue;
     await p.locator('.ws-tube').nth(a).click(); await p.waitForTimeout(60);
     await p.locator('.ws-tube').nth(c).click(); await p.waitForTimeout(150);
-    if (await p.locator('.ws-stream').count()) saw = true;
+    if (await p.locator('.ws-stream').count()) { saw = true; pour = { a, c }; }
   }
   if (!saw) bad.push('no pour animation: no stream appeared when a move was made');
   else {
-    await p.waitForTimeout(1200);
+    await p.waitForTimeout(220);                                             // the tube is now holding over its target
+    const geo = await p.evaluate(({ a }) => {
+      const src = document.querySelectorAll('.ws-tube')[a], stream = document.querySelector('.ws-stream');
+      if (!src || !stream) return null;
+      const r = src.getBoundingClientRect(), s = stream.getBoundingClientRect();
+      const m = new DOMMatrixReadOnly(getComputedStyle(src).transform), w = src.offsetWidth, h = src.offsetHeight;
+      // the transformed corners of the tube's top edge; the lower one is the pouring lip
+      const pts = [[-w / 2, 0], [w / 2, 0], [w / 2, h], [-w / 2, h]].map(([x, y]) => ({ x: m.a * x + m.c * y, y: m.b * x + m.d * y }));
+      const minX = Math.min(...pts.map((p) => p.x)), minY = Math.min(...pts.map((p) => p.y));
+      const ox = r.left - minX, oy = r.top - minY;
+      const lipA = { x: ox - m.a * w / 2, y: oy - m.b * w / 2 }, lipB = { x: ox + m.a * w / 2, y: oy + m.b * w / 2 };
+      const lip = lipA.y > lipB.y ? lipA : lipB;
+      return { lip, stream: { x: s.left + s.width / 2, y: s.top } };
+    }, pour);
+    if (!geo) bad.push('the stream or the pouring tube disappeared mid-pour');
+    else {
+      const dx = Math.abs(geo.lip.x - geo.stream.x), dy = Math.abs(geo.lip.y - geo.stream.y);
+      if (dx > 8 || dy > 8) bad.push('the pour stream starts ' + Math.round(dx) + 'px across and ' + Math.round(dy) + 'px away from the glass lip');
+    }
+    await p.waitForTimeout(1000);
     if (await p.locator('.ws-stream').count()) bad.push('the stream never went away');
     if ((await p.locator('#moves').textContent()).trim() !== '1') bad.push('the move was not counted after the pour');
   }
   await p.close();
+  return bad;
+}, ['water-sort']);
+
+check('water-sort-water-fits-desktop', 'on a PC-width page the liquid shrank to a thin strip inside the fixed-width glass (percentage padding was measured against the wide grid column, not the tube)', async () => {
+  const bad = [];
+  for (const width of [768, 1000, 1440]) {
+    const p = await open('water-sort', width);
+    const r = await p.evaluate(() => {
+      const tubes = [...document.querySelectorAll('.ws-tube')];
+      const full = tubes.find((t) => t.children.length === 4) || tubes.find((t) => t.children.length) || tubes[0];
+      const tr = full.getBoundingClientRect(), ls = [...full.children].map((e) => e.getBoundingClientRect());
+      return { tw: tr.width, th: tr.height, tl: tr.left, tt: tr.top, tb: tr.bottom, l: Math.min(...ls.map((x) => x.left)), r: Math.max(...ls.map((x) => x.right)), t: Math.min(...ls.map((x) => x.top)), b: Math.max(...ls.map((x) => x.bottom)), lh: ls[0] ? ls[0].height : 0, sw: document.documentElement.scrollWidth };
+    });
+    await p.close();
+    const wRatio = (r.r - r.l) / r.tw, hRatio = r.lh / r.th;
+    if (wRatio < 0.66 || wRatio > 0.76) bad.push(width + 'px: water is ' + (wRatio * 100).toFixed(0) + '% of the tube width');
+    if (hRatio < 0.18 || hRatio > 0.21) bad.push(width + 'px: each layer is ' + (hRatio * 100).toFixed(0) + '% of the tube height');
+    if (r.l < r.tl + r.tw * 0.12 || r.r > r.tl + r.tw - r.tw * 0.12) bad.push(width + 'px: water pokes outside the glass');
+    if (r.t < r.tt + r.th * 0.17 || r.b > r.tb - 1) bad.push(width + 'px: water pokes into the neck or past the bottom');
+    if (r.sw > width) bad.push(width + 'px: page got wider (' + r.sw + 'px)');
+  }
   return bad;
 }, ['water-sort']);
 
@@ -1089,6 +1953,168 @@ check('backgammon-dice-clear-of-checkers', 'on a double roll (four dice) the dic
   if (Math.abs(r.mid - r.boardMid) > 14) bad.push('dice are not centred on the board (' + Math.round(r.mid - r.boardMid) + 'px off)');
   return bad;
 }, ['backgammon']);
+
+check('slitherlink-loop', 'slitherlink: a drawn loop must be one closed loop whose numbers all match, and solving it must finish the puzzle', async () => {
+  const p = await open('slitherlink', 390); await p.waitForTimeout(400);
+  const bad = [];
+  const before = await p.evaluate(() => ({ clues: document.querySelectorAll('#board .sl-clue').length, lines: document.querySelectorAll('#board .sl-gridline').length }));
+  if (before.clues < 8) bad.push('too few clues on the board (' + before.clues + ')');
+  if (before.lines < 40) bad.push('the board has no grid lines (' + before.lines + ')');
+  await p.evaluate(() => window.__slitherTest.autoSolve());
+  await p.waitForTimeout(320);
+  const after = await p.evaluate(() => ({ won: window.__slitherTest.state().won, loop: document.querySelectorAll('#board .sl-loop').length, status: document.getElementById('status').textContent }));
+  if (!after.won) bad.push('the stored solution did not finish the puzzle');
+  if (after.loop < 8) bad.push('the solved board draws no loop (' + after.loop + ' line pieces)');
+  if (!/solved/i.test(after.status)) bad.push('the status does not say solved (' + after.status + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['slitherlink']);
+
+check('star-battle-stars', 'star battle: every row, column and region needs its stars, and the stored solution must finish the board', async () => {
+  const p = await open('star-battle', 390); await p.waitForTimeout(400);
+  const bad = [];
+  const before = await p.evaluate(() => ({ cells: document.querySelectorAll('#board .sb-cell').length, regions: new Set([...document.querySelectorAll('#board .sb-cell')].map((c) => c.className)).size }));
+  if (before.cells < 36) bad.push('too few cells on the board (' + before.cells + ')');
+  await p.evaluate(() => window.__starTest.solve());
+  await p.waitForTimeout(320);
+  const after = await p.evaluate(() => ({ won: window.__starTest.state().won, stars: document.querySelectorAll('#board .sb-star').length, status: document.getElementById('status').textContent }));
+  if (!after.won) bad.push('the stored solution did not finish the puzzle');
+  if (after.stars < 6) bad.push('the solved board draws no stars (' + after.stars + ')');
+  if (!/solved/i.test(after.status)) bad.push('the status does not say solved (' + after.status + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['star-battle']);
+
+check('connect6-two-stones', 'connect6: the opening turn places one stone, then the next player places two and the turn submits after the second', async () => {
+  const p = await open('connect6', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.evaluate(() => { const s = document.getElementById('mode'); s.value = 'local'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(300);
+  const cells = p.locator('#board .c6-cell');
+  if (await cells.count() !== 225) bad.push('expected a 15x15 board, saw ' + await cells.count());
+  await cells.nth(112).click(); await p.waitForTimeout(180);
+  const one = await p.evaluate(() => ({ b: document.querySelectorAll('#board .c6-cell.b').length, w: document.querySelectorAll('#board .c6-cell.w').length }));
+  if (one.b !== 1) bad.push('the opening turn did not place exactly one Black stone (' + one.b + ')');
+  await cells.nth(98).click(); await p.waitForTimeout(120);
+  await cells.nth(99).click(); await p.waitForTimeout(220);
+  const two = await p.evaluate(() => ({ b: document.querySelectorAll('#board .c6-cell.b').length, w: document.querySelectorAll('#board .c6-cell.w').length }));
+  if (two.w !== 2) bad.push('White did not place two stones (' + two.w + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['connect6']);
+
+check('tablut-move', 'tablut: tapping an attacker and then a destination must move it', async () => {
+  const p = await open('tablut', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.evaluate(() => { const s = document.getElementById('mode'); s.value = 'local'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(300);
+  const mine = p.locator('#board .tb-cell.mine').first();
+  if (!(await mine.count())) { bad.push('no movable attacker was offered'); await p.close(); return bad; }
+  await mine.click(); await p.waitForTimeout(160);
+  const dests = p.locator('#board .tb-cell.dest');
+  if (!(await dests.count())) { bad.push('selecting an attacker offered no destination'); await p.close(); return bad; }
+  await dests.first().click(); await p.waitForTimeout(220);
+  const after = await p.evaluate(() => ({ from: document.querySelectorAll('#board .tb-cell.from').length, last: document.querySelectorAll('#board .tb-cell.last').length, occ: document.querySelectorAll('#board .tb-cell.occ').length }));
+  if (!after.from || !after.last) bad.push('the move left no from/last marks');
+  if (after.occ !== 25) bad.push('the piece count changed (' + after.occ + ', expected 25)');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['tablut']);
+
+check('fanorona-move', 'fanorona: selecting a piece must offer a step and making it must move the piece', async () => {
+  const p = await open('fanorona', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.evaluate(() => { const s = document.getElementById('mode'); s.value = 'local'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(300);
+  const mines = p.locator('#board .mine');
+  if (!(await mines.count())) { bad.push('no movable piece was offered'); await p.close(); return bad; }
+  let picked = false;
+  for (let i = 0; i < await mines.count(); i++) {
+    await mines.nth(i).click(); await p.waitForTimeout(120);
+    if (await p.locator('#board .dest').count()) { picked = true; break; }
+  }
+  if (!picked) { bad.push('selecting a piece offered no destination'); await p.close(); return bad; }
+  const dests = p.locator('#board .dest');
+  await dests.first().click(); await p.waitForTimeout(260);
+  const after = await p.evaluate(() => ({ from: document.querySelectorAll('#board .from').length, last: document.querySelectorAll('#board .last').length, choice: !document.getElementById('choice').hidden }));
+  if (!after.from && !after.last && !after.choice) bad.push('the move left no from/last mark and no capture choice');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['fanorona']);
+
+check('cribbage-discard', 'cribbage: the first discard must take two cards from the hand and send them to the crib', async () => {
+  const p = await open('cribbage', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.waitForFunction(() => document.querySelectorAll('#cb-hand .cb-card.play').length >= 2, null, { timeout: 5000 }).catch(() => {});
+  const play = p.locator('#cb-hand .cb-card.play');
+  if (await play.count() < 2) { bad.push('the hand never reached the discard phase'); await p.close(); return bad; }
+  await play.nth(0).click(); await p.waitForTimeout(120);
+  await p.locator('#cb-hand .cb-card.play').nth(1).click(); await p.waitForTimeout(120);
+  const send = p.getByRole('button', { name: /Send 2 to crib/ });
+  if (!(await send.count())) { bad.push('discarding two cards did not offer Send 2 to crib'); await p.close(); return bad; }
+  await send.click(); await p.waitForTimeout(400);
+  const after = await p.evaluate(() => ({ hand: document.querySelectorAll('#cb-hand .cb-card').length, crib: document.getElementById('cb-crib').textContent, status: document.getElementById('status').textContent }));
+  if (after.hand !== 4) bad.push('the hand should be 4 after discarding 2 (saw ' + after.hand + ')');
+  if (!/crib/i.test(after.crib)) bad.push('the crib label is missing (' + after.crib + ')');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['cribbage']);
+
+check('skull-place', 'skull: the first placement must take one disc from your hand and put it on the table', async () => {
+  const p = await open('skull', 390); await p.waitForTimeout(500);
+  const bad = [];
+  await p.waitForFunction(() => document.querySelectorAll('#sk-hand .sk-disc.pick').length > 0, null, { timeout: 4000 }).catch(() => {});
+  const pick = p.locator('#sk-hand .sk-disc.pick').first();
+  if (!(await pick.count())) { bad.push('no placeable disc in hand'); await p.close(); return bad; }
+  const before = await p.locator('#sk-hand .sk-disc').count();
+  await pick.click(); await p.waitForTimeout(300);
+  const after = await p.evaluate(() => ({ hand: document.querySelectorAll('#sk-hand .sk-disc').length, placed: document.querySelectorAll('#sk-seats .sk-disc.up, #sk-seats .sk-disc.down').length }));
+  if (after.hand !== before - 1) bad.push('placing a disc did not reduce the hand (' + before + ' -> ' + after.hand + ')');
+  if (!after.placed) bad.push('no disc appeared on the table');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['skull']);
+
+check('skull-six-seats', 'skull: five computer players plus you must make a six-seat table without the page scrolling sideways', async () => {
+  const p = await open('skull', 390); await p.waitForTimeout(400);
+  const bad = [];
+  await p.evaluate(() => { const s = document.getElementById('bots'); s.value = '5'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(500);
+  const r = await p.evaluate(() => ({ seats: document.querySelectorAll('#sk-seats .sk-seat').length, over: document.documentElement.scrollWidth - innerWidth, hand: document.querySelectorAll('#sk-hand .sk-disc').length }));
+  if (r.seats !== 6) bad.push('expected 6 seats, saw ' + r.seats);
+  if (r.over > 0) bad.push('the page scrolls sideways by ' + r.over + 'px');
+  if (!r.hand) bad.push('your hand is missing at a six-seat table');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['skull']);
+
+check('ludo-moves-square-by-square', 'ludo: a token used to slide straight from its old square to the new one; a multi-square move must visit every square, while a one-square move glides', async () => {
+  const p = await open('ludo', 390);
+  await p.evaluate(() => { Math.random = () => 0.999; });     // every roll is a 6
+  const bad = [];
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(350);
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(40);
+  const anims = await p.evaluate(() => [...document.querySelectorAll('.ld-token')].flatMap((t) => t.getAnimations()).map((a) => ({ n: a.effect.getKeyframes().length, d: a.effect.getTiming().duration, frames: a.effect.getKeyframes().map((k) => (k.left || '') + '|' + (k.top || '')) })));
+  const walk = anims.find((a) => a.n >= 6);
+  if (!walk) bad.push('the six-square move did not animate through the squares (' + JSON.stringify(anims) + ')');
+  else {
+    if (walk.d < 500) bad.push('the six-square walk is too quick (' + walk.d + 'ms)');
+    if (new Set(walk.frames).size < 6) bad.push('the walk repeats a position instead of visiting six squares');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['ludo']);
 
 check('2048-slides-smoothly', 'tiles used to teleport to their new place; they should slide (ghost tiles travel from the old cell to the new one), and the board still ends up correct', async () => {
   const p = await open('2048');
@@ -1233,6 +2259,81 @@ check('liars-dice-look-and-fit', 'the liars dice page should have the green felt
   return bad;
 }, ['liars-dice']);
 
+check('car-park-look-and-play', 'the new Car Park puzzle must fit a phone, show the red car and exit, solve through the real game code, and offer the next level on the game-over card', async () => {
+  const p = await open('car-park');
+  const bad = [];
+  const r = await p.evaluate(() => {
+    const b = document.getElementById('board').getBoundingClientRect();
+    return {
+      sw: document.documentElement.scrollWidth, board: { w: b.width, h: b.height },
+      cells: document.querySelectorAll('#grid .cp-cell').length,
+      red: !!document.querySelector('.cp-car[data-red="1"]'),
+      level: document.getElementById('level-num').textContent,
+      options: document.querySelectorAll('#level-sel option').length,
+    };
+  });
+  if (r.sw > 390) bad.push('page is wider than the phone');
+  if (r.cells !== 36) bad.push('the grid is not 6x6 (saw ' + r.cells + ' cells)');
+  if (!r.red) bad.push('the red car is missing');
+  if (r.options !== 42) bad.push('the level menu should list 42 levels (saw ' + r.options + ')');
+  await p.evaluate(() => window.__carParkTest.autoSolve());
+  await p.waitForTimeout(1200);
+  const win = await p.evaluate(() => {
+    const card = document.querySelector('.gk-over');
+    return {
+      won: window.__carParkTest.state().won,
+      status: document.getElementById('status').textContent,
+      card: !!card, cardText: card ? card.textContent : '',
+      again: card ? (card.querySelector('.again') || {}).textContent : '',
+    };
+  });
+  if (!win.won) bad.push('the real solver path did not win');
+  if (!/Solved in \d+ moves/.test(win.status)) bad.push('the win status is wrong: ' + win.status);
+  if (!win.card) bad.push('no game-over card after the win');
+  if (!/next level/i.test(win.again || '')) bad.push('the card should offer Next level');
+  if (!/Solved in/.test(win.cardText)) bad.push('the card does not show the result');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['car-park']);
+
+check('back-home-feedback', 'the top-bar back button and the game-over Home button gave no pressed feedback, so a tap could feel ignored and a double-tap could zoom the page', async () => {
+  const p = await open('chess', 390);
+  const info = await p.evaluate(() => ({ touch: getComputedStyle(document.querySelector('.topbar .back')).touchAction }));
+  const backBox = await p.locator('.topbar .back').boundingBox();
+  await p.mouse.move(backBox.x + backBox.width / 2, backBox.y + backBox.height / 2);
+  await p.mouse.down();
+  await p.waitForTimeout(140);
+  const backPressed = await p.evaluate(() => getComputedStyle(document.querySelector('.topbar .back')).transform);
+  await p.mouse.move(1, 1);
+  await p.mouse.up();
+  await p.evaluate(() => { document.getElementById('status').textContent = 'You win! ' + Gamekit.taunt('win'); });
+  await p.waitForTimeout(700);
+  const home = await p.evaluate(() => {
+    const h = document.querySelector('.gk-over .home');
+    return h ? { touch: getComputedStyle(h).touchAction } : null;
+  });
+  let homePressed = 'missing';
+  if (home) {
+    const box = await p.locator('.gk-over .home').boundingBox();
+    await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await p.mouse.down();
+    await p.waitForTimeout(140);
+    homePressed = await p.evaluate(() => getComputedStyle(document.querySelector('.gk-over .home')).transform);
+    await p.mouse.move(1, 1);
+    await p.mouse.up();
+  }
+  const bad = [];
+  if (info.touch !== 'manipulation') bad.push('the back button still allows double-tap zoom (touch-action: ' + info.touch + ')');
+  if (backPressed === 'none') bad.push('the back button has no pressed state');
+  if (!home) bad.push('the game-over card has no Home button');
+  else if (home.touch !== 'manipulation') bad.push('Home still allows double-tap zoom (touch-action: ' + home.touch + ')');
+  if (home && homePressed === 'none') bad.push('Home has no pressed state');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['chess']);
+
 check('hub-look', 'the game hub should be the dark page with a top bar (your name, invite) and big rounded game tiles in two columns, every tile leading to a real page, nothing wider than the phone, and its scripts and styles stamped', async () => {
   const bad = [];
   for (const w of [320, 390]) {
@@ -1286,25 +2387,27 @@ check('battleship-look', 'battleship should look like the redesign: the enemy wa
   return bad;
 }, ['battleship']);
 
-check('app-icon-and-launch-images', 'the app icon, the launch images and the link banner must be the redesigned art (four tilted chunky tiles on the Sunset gradient), every launch image the exact size its file name says, the manifest in the Sunset colour, and no emoji in the favicon', async () => {
+check('app-icon-and-launch-images', 'the app icon, the launch images and the link banner must match the art the icon generator actually draws (four flat chunky tiles on cream), every launch image the exact size its file name says, the manifest in the same cream, and no emoji in the favicon', async () => {
   const bad = [];
   const sizes = { 'icon-192.png': [192, 192], 'icon-512.png': [512, 512], 'icon-maskable-512.png': [512, 512], 'apple-touch-icon.png': [180, 180], 'og-image.png': [1200, 300] };
   const png = (f) => { const b = fs.readFileSync(path.join(ROOT, f)); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
   for (const [f, [w, h]] of Object.entries(sizes)) { const i = png(f); if (i.w !== w || i.h !== h) bad.push(f + ' is ' + i.w + 'x' + i.h + ', wanted ' + w + 'x' + h); }
-  for (const f of fs.readdirSync(path.join(ROOT, 'splash'))) { const m = /^(\d+)x(\d+)\.png$/.exec(f); if (!m) continue; const i = png('splash/' + f); if (i.w !== Number(m[1]) || i.h !== Number(m[2])) bad.push('splash/' + f + ' is ' + i.w + 'x' + i.h); }
-  // the art itself: sample the icon in the browser (the four tile colours are all present)
+  for (const f of fs.readdirSync(path.join(ROOT, 'assets/splash'))) { const m = /^(\d+)x(\d+)\.png$/.exec(f); if (!m) continue; const i = png('assets/splash/' + f); if (i.w !== Number(m[1]) || i.h !== Number(m[2])) bad.push('splash/' + f + ' is ' + i.w + 'x' + i.h); }
+  // the art itself: sample the icon in the browser (the four tile colours are all present).
+  // NOTE: the generator (tools/gen-icons.py) draws the flat cream design; a final
+  // icon choice is still a user decision in docs/TODO.md. If the art changes, update
+  // this check together with the generator and manifest.
   const p = await browser.newPage({ viewport: { width: 600, height: 600 } });
   await p.goto(base + 'icon-512.png');
-  // the art itself: count the pixels of each Sunset tile colour (the tiles are tilted, so a fixed spot would miss) and check the coral-to-plum gradient behind them
-  const c = await p.evaluate(async () => { const img = document.images[0]; await img.decode(); const cv = document.createElement('canvas'); cv.width = cv.height = 512; const x = cv.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, 512, 512).data; const want = [[255, 200, 60], [255, 110, 170], [255, 150, 60], [150, 100, 230]]; const counts = want.map((w) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - w[0]) < 18 && Math.abs(d[i + 1] - w[1]) < 18 && Math.abs(d[i + 2] - w[2]) < 18 && d[i + 3] > 250) n++; return n; }); const px = (a, b) => [...x.getImageData(a, b, 1, 1).data]; return { counts, top: px(256, 40), bottom: px(256, 470) }; });
+  const c = await p.evaluate(async () => { const img = document.images[0]; await img.decode(); const cv = document.createElement('canvas'); cv.width = cv.height = 512; const x = cv.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, 512, 512).data; const want = [[244, 183, 64], [229, 88, 122], [224, 133, 65], [139, 111, 214]]; const counts = want.map((w) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - w[0]) < 18 && Math.abs(d[i + 1] - w[1]) < 18 && Math.abs(d[i + 2] - w[2]) < 18 && d[i + 3] > 250) n++; return n; }); const px = (a, b) => [...x.getImageData(a, b, 1, 1).data]; return { counts, top: px(256, 6), bottom: px(256, 506) }; });
   await p.close();
-  if (!c.counts.every((n) => n > 1500)) bad.push('the icon does not show the four Sunset tile colours (pixels per colour: ' + c.counts.join(', ') + ')');
-  const warm = (a) => a[0] > 200 && a[1] > 90 && a[2] < 150, plum = (a) => a[0] > 110 && a[0] < 190 && a[1] < 90 && a[2] > 90;
-  if (!warm(c.top) || !plum(c.bottom)) bad.push('the icon background is not the coral-to-plum Sunset gradient (' + JSON.stringify([c.top, c.bottom]) + ')');
+  if (!c.counts.every((n) => n > 1500)) bad.push('the icon does not show the four flat tile colours (pixels per colour: ' + c.counts.join(', ') + ')');
+  const cream = (a) => Math.abs(a[0] - 243) < 8 && Math.abs(a[1] - 238) < 8 && Math.abs(a[2] - 230) < 8;
+  if (!cream(c.top) || !cream(c.bottom)) bad.push('the icon background is not the flat cream (' + JSON.stringify([c.top, c.bottom]) + ')');
   const svg = fs.readFileSync(path.join(ROOT, 'favicon.svg'), 'utf8');
   if (/[\u{1F300}-\u{1FAFF}]/u.test(svg) || /<text/.test(svg)) bad.push('the favicon still uses an emoji or text');
   const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  if (man.background_color !== '#c6566e' || man.theme_color !== '#c6566e') bad.push('manifest colours should be the Sunset #c6566e');
+  if (man.background_color !== '#f3eee6' || man.theme_color !== '#f3eee6') bad.push('manifest colours should match the cream #f3eee6');
   return bad;
 }, ['icons']);
 
@@ -1326,7 +2429,7 @@ check('header-title-fits', 'a long page title (ultimate tic-tac-toe) ran into th
   await p.close();
   if (!r) return [];
   return r.textLeft < r.backRight - 1 || r.textRight > r.rightLeft + 1 ? ['the title (' + Math.round(r.textLeft) + '..' + Math.round(r.textRight) + ') runs into the header buttons (' + Math.round(r.backRight) + ' / ' + Math.round(r.rightLeft) + ')'] : [];
-}, ['ultimate-tic-tac-toe', 'letter-boxed', 'word-ladder', 'rock-paper-scissors']);
+}, ['ultimate-tic-tac-toe', 'letter-boxed', 'word-ladder', 'rock-paper-scissors', 'nine-mens-morris']);
 
 check('sudoku-look-and-play', 'sudoku and mini sudoku should be the redesign: the white grid in a heavy black frame edge to edge, thick box lines still visible, the number pad as chunky white keys, Time and Best in the header, and tapping a cell then a key must still write the digit', async (g) => {
   const p = await open(g);
@@ -1437,19 +2540,1034 @@ check('no-js-errors', 'a page threw an error while loading', async (g) => {
   return e;
 }, FUN);
 
+check('hearts-pass-and-play', 'hearts: the pass must take three cards and a highlighted card must play a trick; the hand has to deal 13 cards and show four scores', async () => {
+  const p = await open('hearts', 390);
+  const bad = [];
+  if (await p.locator('.ht-score').count() !== 4) bad.push('not four score slots');
+  const hand = p.locator('#ht-hand .ht-card');
+  if (await hand.count() !== 13) bad.push('dealt ' + (await hand.count()) + ' cards, not 13');
+  for (let i = 0; i < 3; i++) await hand.nth(i).click({ position: { x: 9, y: 40 } });   // the visible slice: the cards overlap
+  const pass = p.locator('#ht-actions button').first();
+  if (!(await pass.count())) bad.push('no pass button after choosing three cards');
+  else if (await pass.isDisabled()) bad.push('the pass button stayed disabled with three cards chosen');
+  else await pass.click();
+  let played = false;
+  try {
+    await p.locator('#ht-hand .ht-card.play').first().waitFor({ state: 'visible', timeout: 9000 });
+    const before = await hand.count();
+    await p.locator('#ht-hand .ht-card.play').first().click({ position: { x: 9, y: 40 } });
+    await p.waitForTimeout(500);
+    const after = await hand.count();
+    if (after !== before - 1) bad.push('the hand was ' + before + ' cards, then ' + after + ' after playing one');
+    played = true;
+  } catch (e) { /* reported below */ }
+  if (!played) bad.push('no playable card appeared after the pass');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['hearts']);
+
+check('ludo-board-and-roll', 'ludo: the cross board must have 225 cells, 52 track cells and 16 tokens inside it; a forced 6 must highlight all four tokens and a tap must move one', async () => {
+  const p = await open('ludo', 390);
+  const bad = [];
+  const board = await p.locator('#ld-board').boundingBox();
+  if (!board) bad.push('no board');
+  if (await p.locator('#ld-cells .ld-cell').count() !== 225) bad.push('the grid is not 15 by 15');
+  if (await p.locator('#ld-cells .track').count() !== 52) bad.push('the loop is not 52 cells');
+  if (await p.locator('#ld-tokens .ld-token').count() !== 16) bad.push('not 16 tokens on a four-player board');
+  if (await p.locator('.ld-player').count() !== 4) bad.push('not four player tabs');
+  if (board) {
+    const outside = await p.evaluate(() => {
+      const b = document.querySelector('#ld-board').getBoundingClientRect();
+      return [...document.querySelectorAll('.ld-token')].filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.left < b.left - 1 || r.right > b.right + 1 || r.top < b.top - 1 || r.bottom > b.bottom + 1;
+      }).length;
+    });
+    if (outside) bad.push(outside + ' token(s) drawn outside the board');
+  }
+  const before = await p.locator('.ld-token').first().evaluate((e) => e.style.left + '|' + e.style.top);
+  await p.evaluate(() => { Math.random = () => 0.999; });     // the next roll is a 6
+  await p.locator('#ld-roll').click();
+  await p.waitForTimeout(700);
+  const die = await p.locator('#ld-die').getAttribute('aria-label');
+  if (die !== 'Die showing 6') bad.push('the forced roll showed ' + die);
+  if (await p.locator('.ld-token.movable').count() !== 4) bad.push('a 6 did not make all four yard tokens playable');
+  else {
+    await p.locator('.ld-token.movable').first().click();
+    await p.waitForTimeout(500);
+    const after = await p.locator('.ld-token').first().evaluate((e) => e.style.left + '|' + e.style.top);
+    if (after === before) bad.push('the token did not move after it was tapped');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['ludo']);
+
+check('new-card-games-online-landing', 'the new card games must show the online landing screen (and Hearts must say it always fills four seats) when Online is chosen', async (g) => {
+  const p = await open(g, 390);
+  await p.evaluate(() => { const s = document.querySelector('#mode'); s.value = 'live'; s.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(350);
+  const text = (await p.locator('#ms-room').textContent()) || '';
+  const bad = [];
+  if (!/Play (Hearts|Ludo|Farkle|Lost Cities|Cribbage|Skull) online/.test(text)) bad.push('no online landing screen: ' + text.slice(0, 80));
+  if (await p.locator(g === 'hearts' ? '#ht.on' : g === 'ludo' ? '#ld.on' : g === 'farkle' ? '#board.on' : g === 'cribbage' ? '#cb.on' : g === 'skull' ? '#sk.on' : '#lc.on').count()) bad.push('the board is still showing on the landing screen');
+  if (g === 'hearts' && !/always has 4 seats/.test(text)) bad.push('the four-seat rule is not explained on the landing screen');
+  if (g === 'lost-cities' && !/always has 2 seats/.test(text)) bad.push('the two-seat rule is not explained on the landing screen');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['hearts', 'ludo', 'farkle', 'lost-cities', 'cribbage', 'skull']);
+
+check('online-to-computer-clears-room', 'switching from the online landing screen back to the computer left the room panel over the local board', async (g) => {
+  const p = await open(g, 390);
+  await p.evaluate(() => { const s = document.querySelector('#mode'); s.value = 'live'; s.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { const s = document.querySelector('#mode'); s.value = 'computer'; s.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(400);
+  const bad = [];
+  if (!(await p.locator('#ms-room').isHidden())) bad.push('the online room panel is still showing');
+  const board = { hearts: '#ht.on', ludo: '#ld.on', dominoes: '#dm.on', farkle: '#board.on', 'lost-cities': '#lc.on', cribbage: '#cb.on', skull: '#sk.on' }[g];
+  if (!(await p.locator(board).count())) bad.push('the local board did not come back');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['hearts', 'ludo', 'dominoes', 'farkle', 'lost-cities', 'cribbage', 'skull']);
+
+check('nine-mens-morris-places', 'Nine Men\'s Morris: tapping a point must place a piece and pass the turn', async () => {
+  const p = await open('nine-mens-morris', 390);
+  await p.evaluate(() => { const s = document.querySelector('#mode'); s.value = 'local'; s.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(250);
+  const bad = [];
+  if (await p.locator('#board .nmm-pt').count() !== 24) bad.push('not 24 points on the board');
+  if (!(await p.locator('#board .nmm-pc').count() === 0)) bad.push('the board did not start empty');
+  await p.locator('#board .nmm-pt').first().click();
+  await p.waitForTimeout(250);
+  if (await p.locator('#board .nmm-pc').count() !== 1) bad.push('a point did not take a new piece');
+  if (!/Blue|Red/.test((await p.locator('#status').textContent()) || '')) bad.push('the turn did not move on');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['nine-mens-morris']);
+
+check('breakthrough-moves', 'Breakthrough: tapping a piece must mark its destinations and tapping one must move it', async () => {
+  const p = await open('breakthrough', 390);
+  await p.evaluate(() => { const s = document.querySelector('#mode'); s.value = 'local'; s.dispatchEvent(new Event('change')); });
+  await p.waitForTimeout(250);
+  const bad = [];
+  if (await p.locator('#board .bt-cell').count() !== 64) bad.push('not an 8 by 8 board');
+  if (await p.locator('#board .bt-pc.p1').count() !== 16) bad.push('not sixteen red pieces');
+  await p.locator('#board .bt-pc.p1').first().click();
+  await p.waitForTimeout(200);
+  const dest = p.locator('#board .bt-cell.dest');
+  if (!(await dest.count())) bad.push('tapping a piece marked no destinations');
+  else {
+    await dest.first().click();
+    await p.waitForTimeout(250);
+    if (await p.locator('#board .bt-cell.dest').count()) bad.push('the destinations stayed up after a move');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['breakthrough']);
+
+check('farkle-rolls', 'Farkle: ROLL must deal six dice and ask which ones score', async () => {
+  const p = await open('farkle', 390);
+  const bad = [];
+  if (await p.locator('.fk-slot').count() !== 6) bad.push('not six dice slots');
+  await p.locator('#fk-primary').click();
+  await p.waitForTimeout(900);
+  if (await p.locator('.fk-slot').count() !== 6) bad.push('the dice tray changed size on a roll');
+  const labels = await p.locator('.fk-slot').evaluateAll((es) => es.map((e) => e.getAttribute('aria-label') || ''));
+  if (labels.filter((x) => /^Die showing [1-6]/.test(x)).length !== 6) bad.push('the roll did not show six faces');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['farkle']);
+
+check('hashiwokakero-board', 'Hashiwokakero: the daily board must draw its islands and offer a hint', async () => {
+  const p = await open('hashiwokakero', 390);
+  const bad = [];
+  if (await p.locator('.hk-isle').count() < 4) bad.push('not enough islands on the board');
+  if (await p.locator('#hint-btn').count() !== 1) bad.push('no hint button');
+  else { await p.locator('#hint-btn').click(); await p.waitForTimeout(300); }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['hashiwokakero']);
+
+check('flow-free-board', 'Flow Free: the daily board must have a full grid of cells and its coloured endpoints', async () => {
+  const p = await open('flow-free', 390);
+  await p.waitForSelector('.ff-cell', { timeout: 5000 }).catch(() => {});
+  const bad = [];
+  const cells = await p.locator('.ff-cell').count();
+  if (cells !== 36 && cells !== 49 && cells !== 64) bad.push('the grid has ' + cells + ' cells');
+  if (await p.locator('#svg circle').count() < 4) bad.push('the endpoint dots are missing');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['flow-free']);
+
+check('word-search-grid', 'Word Search: the daily grid and its word list must be drawn', async () => {
+  const p = await open('word-search', 390);
+  const bad = [];
+  const cells = await p.locator('.ws-cell').count();
+  if (cells !== 64 && cells !== 100 && cells !== 144) bad.push('the grid has ' + cells + ' cells');
+  if (await p.locator('.ws-word').count() < 5) bad.push('the word list is missing');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['word-search']);
+
+check('lost-cities-deal', 'Lost Cities: both expeditions and eight hand cards must be dealt, and a discard must lead to a draw', async () => {
+  const p = await open('lost-cities', 390);
+  const bad = [];
+  if (await p.locator('.lc-card').count() !== 8) bad.push('not eight cards in hand');
+  if (!(await p.locator('.lc-deck').count())) bad.push('no deck');
+  await p.locator('.lc-card').first().click();
+  await p.waitForTimeout(200);
+  const acts = p.locator('#lc-actions button');
+  if (await acts.count() < 2) bad.push('no Play/Discard controls');
+  else {
+    await acts.nth(1).click();
+    await p.waitForTimeout(250);
+    if (await p.locator('.lc-deck').count()) { await p.locator('.lc-deck').click(); await p.waitForTimeout(350); }
+    if (await p.locator('.lc-card').count() !== 8) bad.push('the hand did not return to eight after drawing');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['lost-cities']);
+
+/* ---------- online tables: table talk ---------- */
+// The Hype / Heckle lines were renamed (angel/devil, "a"/"d" -> "h"/"k") and Crazy 8's own copy of the
+// buttons was missed, so its table threw as soon as an online game was running. This serves each
+// multi-seat page a real, started room (worker/card-protocol.mjs) through a faked socket and checks the
+// table-talk buttons appear without a script error.
+const CARDP = await import(new URL('file:///' + path.join(ROOT, 'worker', 'card-protocol.mjs').replace(/\\/g, '/')));
+check('online-table-talk', 'Online tables: the Hype / Heckle buttons must draw (Crazy 8 still read the old angel/devil lists and threw an error as soon as a game was running)', async (g) => {
+  const room = CARDP.newRoom('ABCDEF', Date.now(), g);
+  let n = 0; const mint = () => 'tok' + ++n;
+  const me = CARDP.join(room, null, 'Ann', mint, Date.now(), Math.random);
+  CARDP.join(room, null, 'Bob', mint, Date.now(), Math.random);
+  if (g === 'skull') CARDP.setConfig(room, me.pid, { bots: 1 }, Date.now(), Math.random);
+  if (room.phase === 'lobby') CARDP.start(room, me.pid, Date.now(), Math.random);
+  const bad = [];
+  if (room.phase !== 'playing') return ['the test room did not start: ' + room.phase];
+  const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.routeWebSocket(/\/api\/card\//, (ws) => ws.onMessage((raw) => {
+    let m; try { m = JSON.parse(raw); } catch (e) { return; }
+    if (m.t !== 'hello') return;
+    ws.send(JSON.stringify({ t: 'welcome', pid: me.pid, token: me.token, code: room.code, game: g }));
+    ws.send(JSON.stringify({ t: 'room', v: CARDP.viewFor(room, me.pid, Date.now()) }));
+  }));
+  await p.goto(base + g + '/?live=ABCDEF');
+  await p.waitForTimeout(1500);
+  const hype = await p.evaluate(() => window.TAUNT_LINES.online.hype);
+  const shown = await p.evaluate((lines) => [...document.querySelectorAll('button')].filter((b) => b.offsetParent && lines.includes(b.textContent.trim())).length, hype);
+  if (shown < 1) bad.push('no table-talk button is visible');
+  if (errs.length) bad.push('errors: ' + errs.join(';'));
+  await p.close();
+  return bad;
+}, ['crazy-8', 'liars-dice', 'dominoes', 'ludo', 'hearts', 'farkle', 'lost-cities', 'cribbage', 'skull']);
+
+check('how-to-reachable', 'Hearts and Ludo hid their How to play button (CSS display:none on the top bar one), so the rules could not be opened at all; every game must offer it in the top bar or inside Options, and it must open the rules', async (g) => {
+  const p = await open(g, 390);
+  const vis = () => p.evaluate(() => [...document.querySelectorAll('.man-trigger')].filter((e) => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').length);
+  let n = await vis();
+  if (!n && await p.locator('.gk-optbtn').count()) { await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250); n = await vis(); }
+  const bad = [];
+  if (!n) bad.push('no visible How to play button, in the top bar or in Options');
+  else {
+    await p.locator('.man-trigger:visible').first().click(); await p.waitForTimeout(300);
+    if (!(await p.locator('.man-window:visible').count())) bad.push('the How to play button does not open the rules');
+  }
+  await p.close();
+  return bad;
+}, FUN);
+
+check('tests-stay-offline', 'running the suite loaded Google Analytics on every page, sending thousands of test visits to the real property; the test browser must block everything that is not local', async () => {
+  const p = await open('chess', 390);
+  const bad = [];
+  const seen = []; p.on('request', (r) => { if (!r.url().startsWith(base) && !r.url().startsWith('data:')) seen.push(r.url()); });
+  const reply = await p.evaluate(() => fetch('https://www.googletagmanager.com/gtag/js?id=test', { mode: 'no-cors' }).then(() => 'reached', () => 'blocked'));
+  if (reply !== 'blocked') bad.push('an outside request was not blocked (' + reply + ')');
+  await p.close();
+  return bad;
+}, ['chess']);
+
+check('ga-skips-localhost', 'opening the site locally (or running the tests) sent a Google Analytics hit to the real property for every page; a page on localhost must queue no hits and add no analytics script', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => ({ hits: (window.dataLayer || []).length, script: !!document.querySelector('script[src*="googletagmanager"]') }));
+  await p.close();
+  const bad = [];
+  if (r.hits) bad.push(r.hits + ' analytics hits were queued on localhost');
+  if (r.script) bad.push('the analytics library was added to a localhost page');
+  return bad;
+}, ['chess', 'hearts', 'sudoku']);
+
+check('lost-cities-no-ghost-letters', 'Lost Cities: a big faint colour letter sat behind every hand card and showed as ghost shapes where the overlapping cards cut it off; the small letter and the coloured band already say the colour', async () => {
+  const p = await open('lost-cities', 390);
+  const bad = [];
+  const cards = await p.locator('#lc-hand .lc-card').count();
+  if (cards !== 8) bad.push('expected 8 hand cards, found ' + cards);
+  const ghosts = await p.locator('#lc-hand .lc-card .big').count();
+  if (ghosts) bad.push(ghosts + ' hand cards still draw a big faint letter');
+  const unreadable = await p.evaluate(() => [...document.querySelectorAll('#lc-hand .lc-card')].filter((c) => !c.querySelector('.sub') || !c.querySelector('.sub').textContent.trim()).length);
+  if (unreadable) bad.push(unreadable + ' hand cards have no small colour letter or x2 mark');
+  await p.close();
+  return bad;
+}, ['lost-cities']);
+
+check('hearts-gear-in-header', 'Hearts: the Options gear sat alone on its own row under the header, which the redesign mockup does not have; it belongs in the header row, just left of restart, on a phone and in the desktop column', async () => {
+  const bad = [];
+  for (const [w, h] of [[320, 700], [390, 844], [1280, 900]]) {
+    const p = await open('hearts', w, null, { viewport: { width: w, height: h } });
+    const r = await p.evaluate(() => {
+      const box = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, cy: (b.top + b.bottom) / 2 }; };
+      const gear = document.querySelector('.gk-optbtn'), restart = document.querySelector('.fun-restart'), back = document.querySelector('.topbar .back');
+      return gear && restart && back ? { gear: box(gear), restart: box(restart), back: box(back) } : null;
+    });
+    if (!r) { bad.push(w + 'px: gear, restart or back is missing'); await p.close(); continue; }
+    if (Math.abs(r.gear.cy - r.restart.cy) > 4) bad.push(w + 'px: the gear is not on the header row (' + Math.round(r.gear.cy) + ' vs ' + Math.round(r.restart.cy) + ')');
+    if (r.gear.r > r.restart.l - 2) bad.push(w + 'px: the gear is not left of restart');
+    if (r.gear.l < r.back.r + 2) bad.push(w + 'px: the gear touches the back button');
+    await p.close();
+  }
+  return bad;
+}, ['hearts']);
+
+check('hearts-matches-reference', 'Hearts must look like the reference: the across hand above the table and the two side stacks outside it, cream name tags straddling the table rim, and big overlapping hand cards', async () => {
+  const p = await open('hearts', 390);
+  const r = await p.evaluate(() => {
+    const box = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, cx: (b.left + b.right) / 2, cy: (b.top + b.bottom) / 2 }; };
+    const card = document.querySelector('#ht-hand .ht-card');
+    return { ht: box('#ht'), stage: box('.ht-stage'), top: box('.ht-op .fan'), left: box('.ht-ol .fan'), right: box('.ht-or .fan'),
+      tTop: box('.ht-op .nm'), tLeft: box('.ht-ol .nm'), tRight: box('.ht-or .nm'), tMe: box('.ht-me'), card: card && card.getBoundingClientRect().width,
+      tagFont: parseFloat(getComputedStyle(document.querySelector('.ht-op .nm')).fontSize), tagBg: getComputedStyle(document.querySelector('.ht-op .nm')).backgroundColor,
+      heart: getComputedStyle(document.querySelector('.ht-stage'), '::before').backgroundImage !== 'none' };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.stage || !r.top || !r.left || !r.right) return ['table, or a hand, is missing'];
+  if (r.top.b > r.stage.t - 4) bad.push('the across hand is not above the table');
+  if (r.left.r > r.stage.l - 8) bad.push('the left hand is not outside the table');
+  if (r.right.l < r.stage.r + 8) bad.push('the right hand is not outside the table');
+  if (Math.abs(r.tTop.cy - r.stage.t) > 6) bad.push('the top name tag does not straddle the rim');
+  if (Math.abs(r.tMe.cy - r.stage.b) > 6) bad.push('your name tag does not straddle the bottom rim');
+  if (Math.abs(r.tLeft.cx - r.stage.l) > 6) bad.push('the left name tag does not straddle the rim');
+  if (Math.abs(r.tRight.cx - r.stage.r) > 6) bad.push('the right name tag does not straddle the rim');
+  if (r.card < 60) bad.push('hand cards are only ' + Math.round(r.card) + 'px wide');
+  if (r.tagFont < 18) bad.push('name tags are too small (' + r.tagFont + 'px)');
+  if (r.tagBg !== 'rgb(255, 210, 159)') bad.push('name tags are not the cream of the reference (' + r.tagBg + ')');
+  if (!r.heart) bad.push('the heart is missing from the table');
+  const share = r.stage.w / r.ht.w;                  // (the layout scales down on a short screen, so measure against its own width)
+  if (share < 0.7 || share > 0.8) bad.push('the table is ' + Math.round(100 * share) + '% of the layout width, the reference is about 77%');
+  return bad;
+}, ['hearts']);
+
+check('ludo-matches-reference', 'Ludo must look like the reference: saturated home lanes, star start squares, a four-triangle centre, tokens drawn as two overlapping discs, and a big ROLL label', async () => {
+  const p = await open('ludo', 390);
+  const r = await p.evaluate(() => {
+    const cs = (s, pseudo) => getComputedStyle(document.querySelector(s), pseudo || null);
+    const tok = document.querySelector('.ld-token');
+    return {
+      lane: cs('.ld-cell.home-red').backgroundColor, ref: cs('.ld-yard.yard-red').backgroundColor,
+      centre: cs('.ld-home').backgroundImage, border: parseFloat(cs('.ld-board').borderTopWidth),
+      back: getComputedStyle(tok, '::before').content, front: getComputedStyle(tok, '::after').content,
+      star: getComputedStyle(document.querySelector('.ld-cell[class*="entry-"]'), '::after').clipPath,
+      roll: parseFloat(cs('.ld-roll').fontSize), rollW: document.querySelector('.ld-roll').getBoundingClientRect().width,
+    };
+  });
+  await p.close();
+  const bad = [];
+  if (r.lane !== r.ref) bad.push('the red home lane (' + r.lane + ') is not the yard red (' + r.ref + '): pastel lanes');
+  if (!/conic-gradient/.test(r.centre)) bad.push('the centre is not four triangles');
+  if (r.border < 5) bad.push('the board frame is only ' + r.border + 'px');
+  if (r.back === 'none' || r.front === 'none') bad.push('a token is not two overlapping discs');
+  if (!/polygon/.test(r.star)) bad.push('the start squares have no star');
+  if (r.roll < 28) bad.push('the ROLL label is only ' + Math.round(r.roll) + 'px');
+  return bad;
+}, ['ludo']);
+
+check('car-park-matches-reference', 'Car Park must look like the reference: illustrated cars and trucks (not coloured bars), a grey frame round a dark lot with an exit tab, "Level N" in the header, and two round buttons for undo and hint', async () => {
+  const p = await open('car-park', 390);
+  const r = await p.evaluate(() => {
+    const cars = [...document.querySelectorAll('.cp-car')];
+    const box = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height) }; };
+    const cs = (s) => getComputedStyle(document.querySelector(s));
+    return {
+      n: cars.length, sprites: cars.filter((c) => c.querySelector('.cp-sprite svg')).length, red: !!document.querySelector('.cp-car[data-red="1"] .cp-sprite svg'),
+      title: document.querySelector('.topbar h1').textContent, pillsShown: document.querySelector('.fun-pills') ? getComputedStyle(document.querySelector('.fun-pills')).display : 'none',
+      undo: box('#undo-btn'), hint: box('#hint-btn'), restart: !!document.querySelector('.fun-restart'),
+      frame: cs('.cp-board').backgroundColor, lot: cs('.cp-inner').backgroundColor, page: getComputedStyle(document.body).backgroundColor,
+      exit: !!document.querySelector('.cp-exit') && getComputedStyle(document.querySelector('.cp-exit'), '::after').backgroundImage.startsWith('url'),
+    };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.n || r.sprites !== r.n) bad.push(r.sprites + ' of ' + r.n + ' vehicles are drawn as pictures');
+  if (!r.red) bad.push('the red key truck is not a picture');
+  if (!/^par \d+Level \d+$/i.test(r.title.trim())) bad.push('the header does not say Level N with a par tab (' + r.title + ')');
+  if (r.pillsShown !== 'none') bad.push('the old Level / Moves / Best boxes are still in the header');
+  for (const k of ['undo', 'hint']) if (!r[k] || r[k].w !== 56 || r[k].h !== 56) bad.push(k + ' is not a 56px round button (' + JSON.stringify(r[k]) + ')');
+  if (!r.restart) bad.push('no restart button in the header');
+  if (r.frame !== 'rgb(123, 125, 129)') bad.push('the frame is not the reference grey (' + r.frame + ')');
+  if (r.lot !== 'rgb(30, 32, 36)') bad.push('the lot is not near-black (' + r.lot + ')');
+  if (r.page !== 'rgb(37, 48, 42)') bad.push('the page is not the reference dark green (' + r.page + ')');
+  if (!r.exit) bad.push('the exit tab has no chevrons');
+  return bad;
+}, ['car-park']);
+
+check('hangman-neck-and-drawing', 'the stick man had no neck (the arms started right at the chin) and the torso began with a round nub below the head; now there is a neck, the torso grows out of the chin and the head is drawn from the top', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const g = await p.evaluate(() => {
+    const at = (e, n) => Number(e.getAttribute(n));
+    const head = document.querySelector('#man circle.pt'), lines = [...document.querySelectorAll('#man line.pt')];
+    return { cy: at(head, 'cy'), r: at(head, 'r'), torsoTop: at(lines[0], 'y1'), torsoX: at(lines[0], 'x1'), headX: at(head, 'cx'), armTop: at(lines[1], 'y1'), hip: at(lines[0], 'y2'), legTop: at(lines[3], 'y1'),
+      rot: getComputedStyle(head).transform, lens: [...document.querySelectorAll('#man .pt')].map((e) => parseFloat(e.style.getPropertyValue('--len'))), rope: document.getElementById('rope').getAttribute('d') };
+  });
+  await p.close();
+  const bad = [];
+  if (Math.abs(g.torsoTop - (g.cy + g.r)) > 1 || g.torsoX !== g.headX) bad.push('the torso does not start at the chin (' + g.torsoTop + ' vs ' + (g.cy + g.r) + ')');
+  if (g.armTop - g.torsoTop < 14) bad.push('no neck: the arms start only ' + (g.armTop - g.torsoTop) + 'px below the chin');
+  if (g.armTop > g.torsoTop + (g.hip - g.torsoTop) * 0.5) bad.push('the shoulders are lower than halfway down the body');
+  if (g.legTop !== g.hip) bad.push('the legs do not start at the hip');
+  if (g.rot === 'none') bad.push('the head ring is not turned to start at the top');
+  else { const m = g.rot.match(/matrix\(([^)]*)\)/); const v = m ? m[1].split(',').map(Number) : []; if (!(Math.abs(v[0]) < 0.01 && v[1] < -0.99)) bad.push('the head does not start from the top (' + g.rot + ')'); }
+  if (g.lens.length !== 6 || g.lens.some((n) => !(n > 5))) bad.push('the six parts do not all carry an explicit draw length (' + g.lens.join(',') + ')');
+  if (!/V40$/.test(g.rope.replace(/\s/g, ''))) bad.push('the rope no longer ends where the head begins (' + g.rope + ')');
+  return bad;
+}, ['hangman']);
+
+check('hangman-faces-distinct', 'the stick man faces were hairline marks on a dark disc that all looked alike; every expression must be a different, bold picture on a light face', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  await press('Z'); await press('X'); await p.waitForTimeout(900);
+  const r = await p.evaluate(async () => {
+    const st = document.querySelector('.hm-stage'), q = (s) => document.querySelector(s);
+    const o = (e) => Number(getComputedStyle(e).opacity);
+    const parts = ['.hm-mouth-calm', '.hm-mouth-worried', '.hm-mouth-gasp', '.hm-mouth-dead', '.hm-mouth-grin', '.hm-mouth-smirk', '.hm-mouth-flat', '.hm-mouth-wail', '.hm-mouth-o', '.hm-mouth-wobble', '.hm-brows-sad', '.hm-brows-raised', '.hm-brows-angry', '.hm-brows-flat', '.hm-eyes-happy', '.hm-xeyes', '.hm-blush', '.hm-tear', '.hm-sweat'];
+    const sig = {}; const faces = ['calm', 'worried', 'scared', 'terrified', 'dead', 'saved', 'shocked', 'pleading', 'smug', 'deadpan', 'proud', 'hopeful', 'relieved', 'nervous', 'annoyed'];
+    for (const f of faces) {
+      if (['calm', 'worried', 'scared', 'terrified', 'dead'].includes(f)) { delete st.dataset.face; st.dataset.mood = f; } else { st.dataset.mood = 'calm'; st.dataset.face = f; }
+      await new Promise((res) => setTimeout(res, 330));
+      const eyes = getComputedStyle(q('.hm-eyes-normal')).transform;
+      sig[f] = parts.filter((s) => o(q(s)) > 0.5).join(' ') + ' | ' + (o(q('.hm-eyes-normal')) > 0.5 ? eyes : 'no-eyes');
+    }
+    const w = (s) => parseFloat(getComputedStyle(q(s)).strokeWidth);
+    return { sig, skin: getComputedStyle(q('.hm-skin')).fill, mouth: w('.hm-mouth-calm'), brow: w('.hm-brows-sad path'), skinOp: o(q('.hm-skin')) };
+  });
+  await p.close();
+  const bad = [], seen = {};
+  for (const [f, s] of Object.entries(r.sig)) { if (seen[s]) bad.push(f + ' looks exactly like ' + seen[s]); else seen[s] = f; }
+  if (r.mouth < 2.3 || r.brow < 2.3) bad.push('the features are hairlines again (mouth ' + r.mouth + ', brow ' + r.brow + ')');
+  if (r.skin !== 'rgb(255, 241, 214)' || r.skinOp < 0.9) bad.push('the face is not the light skin colour the features sit on (' + r.skin + ')');
+  return bad;
+}, ['hangman']);
+
+check('hangman-talks-less', 'the stick man talked after nearly every guess and the bubble never went away; he now stays quiet for a few guesses after a line, the bubble fades, and the Splinter talks setting can silence him', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const bubble = () => p.evaluate(() => { const b = document.getElementById('bubble'); return { hidden: b.hidden, text: b.textContent }; });
+  const bad = [];
+  const opts = await p.evaluate(() => { const t = document.getElementById('talk'); return t ? [...t.options].map((o) => o.value).join() : 'missing'; });
+  if (opts !== 'some,lots,off') bad.push('the talk setting is missing or wrong (' + opts + ')');
+  await press('Z'); await p.waitForTimeout(150);
+  if ((await bubble()).hidden) bad.push('no line on the first miss');
+  const faded = await p.waitForFunction(() => document.getElementById('bubble').hidden, null, { timeout: 6500 }).then(() => true, () => false);   // an ordinary line fades by itself
+  if (!faded) bad.push('the bubble is still up 6.5 seconds later');
+  await press('X'); await p.waitForTimeout(150);
+  if (!(await bubble()).hidden) bad.push('a line straight after a line');
+  await p.evaluate(() => { const t = document.getElementById('talk'); t.value = 'off'; t.dispatchEvent(new Event('change')); });
+  let said = 0;
+  for (const c of 'QJ') { await press(c); await p.waitForTimeout(150); if (!(await bubble()).hidden) said++; }
+  if (said) bad.push('he spoke ' + said + ' times on silent');
+  await p.evaluate(() => document.getElementById('gallows').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await p.waitForTimeout(200);
+  if ((await bubble()).hidden) bad.push('a poke gets no answer on silent');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+/* ---------- online games: real pages talking to the real room code ---------- */
+// The Worker cannot run here, so each page's WebSocket is routed to the real CardRoom class running in this process under a
+// fake Cloudflare (worker/fake-cf.mjs). Two pages joined to one room play exactly as two phones would.
+const FAKE = await import(pathToFileURL(path.join(ROOT, 'worker', 'fake-cf.mjs')).href);
+const { CardRoom } = await import(pathToFileURL(path.join(ROOT, 'worker', 'card-room.mjs')).href);
+async function realRoom(game, code = 'ABCDEF') {
+  const h = FAKE.harness(CardRoom);
+  await h.init({ code, game });
+  const log = [];                                           // every frame the room sent to a page
+  return {
+    h, log,
+    async attach(page, who) {
+      await page.routeWebSocket(/\/api\/card\//, async (route) => {
+        const { ws } = await h.connect();
+        ws.onSend = (raw) => { log.push({ who, raw }); try { route.send(raw); } catch (e) { /* page gone */ } };
+        ws.onClose = (c, r) => { try { route.close({ code: c || 1000, reason: r || '' }); } catch (e) { /* page gone */ } };
+        route.onMessage((msg) => { const m = String(msg); if (m === 'ping') { try { route.send('pong'); } catch (e) { /* ignore */ } return; } h.say(ws, m).catch(() => {}); });
+        route.onClose(() => { h.room.webSocketClose(ws, 1000).catch(() => {}); });
+      });
+      await page.route('**/api/live/status', (r) => r.fulfill({ json: { enabled: true, games: [game] } }));
+    },
+    advance: async (ms) => { FAKE.clock.now += ms; await h.room.alarm(); },
+  };
+}
+
+check('hangman-online-two-players', 'online Hangman: two pages in one room play a whole match; the guesser never receives the secret word while a round is on, roles swap, first to three wins, and a rematch starts again', async () => {
+  const room = await realRoom('hangman');
+  const bad = [];
+  let step = 'joining';
+  const pagesOpen = [];
+  try {
+  const mk = async (who) => {
+    const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    p.errs = []; p.on('pageerror', (e) => p.errs.push(who + ': ' + e.message)); p.setDefaultTimeout(6000);
+    await room.attach(p, who); await p.goto(base + 'hangman/?live=ABCDEF'); await p.waitForTimeout(900);
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    await p.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
+    return p;
+  };
+  const A = await mk('A'), B = await mk('B'); pagesOpen.push(A, B);
+  await B.waitForTimeout(900);
+  const info = (p) => p.evaluate(() => { const t = window.__hangmanTest.live(); const tb = t && t.table; return { phase: tb && tb.phase, stage: tb && tb.stage, role: tb && tb.role, round: tb && tb.round, word: tb && tb.word, setupShown: !document.getElementById('setup').hidden, wordText: document.getElementById('word').textContent, misses: document.getElementById('misses').textContent, status: document.getElementById('status').textContent, score: document.getElementById('lv-score').textContent, keys: document.querySelectorAll('.hm-key:not([disabled])').length, room: !document.getElementById('ms-room').hidden, roomText: document.getElementById('ms-room').textContent }; });
+  const until = async (p, fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const i = await info(p); if (fn(i)) return i; await p.waitForTimeout(100); } return info(p); };
+  const pages = { A, B };
+  const sides = async () => { const [a, b] = [await info(A), await info(B)]; return a.setupShown || a.role === 'setter' ? { S: A, G: B, s: a, g: b } : { S: B, G: A, s: b, g: a }; };
+
+  let { S, G, s, g } = await until(A, (i) => i.stage === 'set').then(sides);
+  if (s.stage !== 'set' || s.role !== 'setter' || !s.setupShown) bad.push('the setter does not get the word form (' + JSON.stringify(s) + ')');
+  if (g.setupShown || !/picking a word/.test(g.status)) bad.push('the guesser sees the form or the wrong status (' + g.status + ')');
+
+  step = 'round 1';
+  // round 1: the guesser finds the word
+  const playRound = async (word, guesses, label) => {
+    ({ S, G } = await sides());
+    await S.fill('#setup-input', word); await S.click('#setup-btn');
+    const gi = await until(G, (i) => i.stage === 'guess');
+    const si = await info(S);
+    if (gi.word !== null) bad.push(label + ': the guesser\'s model holds the word');
+    if (!/^(_ )*_$/.test(gi.wordText) || gi.wordText.replace(/ /g, '').length !== word.length) bad.push(label + ': the guesser sees "' + gi.wordText + '" instead of blanks');
+    if (si.wordText.replace(/ /g, '') !== word.toUpperCase()) bad.push(label + ': the setter does not see the word (' + si.wordText + ')');
+    const before = room.log.length;
+    for (const [i, ch] of [...guesses].entries()) {
+      await G.keyboard.press(ch);
+      await G.waitForTimeout(170);
+      if (i === guesses.length - 2 || guesses.length < 2) { /* the last letter ends the round */ }
+    }
+    return before;
+  };
+  let before = await playRound('ladder', 'zlade', 'round 1');
+  // up to now (one letter short of the end) nothing sent to the guesser may contain the word
+  const leaked = room.log.slice(before).filter((f) => f.who === (G === A ? 'A' : 'B') && /LADDER/.test(f.raw));
+  if (leaked.length) bad.push('the room sent the guesser the word before the round ended (' + leaked.length + ' frames)');
+  const mid = await info(G);
+  if (!/_/.test(mid.wordText) || mid.misses.indexOf('Misses: 1 / 6') !== 0) bad.push('after Z, L, A, D, E the guesser should have 1 miss and a blank left (' + mid.wordText + ' | ' + mid.misses + ')');
+  await G.keyboard.press('r'); await G.waitForTimeout(400);
+  let gi = await until(G, (i) => i.phase === 'round_over'), si = await info(S);
+  if (gi.phase !== 'round_over' || gi.wordText.replace(/ /g, '') !== 'LADDER' || si.wordText.replace(/ /g, '') !== 'LADDER') bad.push('the round did not end with the word on both screens (' + gi.wordText + ' / ' + si.wordText + ')');
+  if (!/You 1 – 0/.test(gi.score) || !/You 0 – 1/.test(si.score)) bad.push('the score is wrong after round 1 (' + gi.score + ' / ' + si.score + ')');
+
+  step = 'round 2';
+  // round 2: the roles swap; this time the new guesser loses
+  await room.advance(7000);
+  await until(A, (i) => i.round === 2 && i.stage === 'set');
+  const before2 = await sides();
+  if (before2.S === S) bad.push('the roles did not swap for round 2');
+  ({ S, G } = before2);
+  await S.fill('#setup-input', 'dog'); await S.click('#setup-btn'); await until(G, (i) => i.stage === 'guess');
+  for (const ch of 'qxjkvw') { await G.keyboard.press(ch); await G.waitForTimeout(170); }
+  gi = await until(G, (i) => i.phase === 'round_over'); si = await info(S);
+  if (gi.phase !== 'round_over' || !/DOG/.test(gi.wordText.replace(/ /g, ''))) bad.push('six wrong letters did not end round 2 with the word shown (' + gi.wordText + ')');
+  if (!/You 2 – 0/.test(si.score + gi.score) || !/You 0 – 2/.test(si.score + gi.score)) bad.push('the score is not 2 – 0 / 0 – 2 after round 2 (' + si.score + ' / ' + gi.score + ')');
+
+  step = 'round 3';
+  // round 3: the first guesser wins again and takes the match
+  await room.advance(7000);
+  await until(A, (i) => i.round === 3 && i.stage === 'set');
+  ({ S, G } = await sides());
+  await S.fill('#setup-input', 'ant'); await S.click('#setup-btn'); await until(G, (i) => i.stage === 'guess');
+  for (const ch of 'ant') { await G.keyboard.press(ch); await G.waitForTimeout(170); }
+  gi = await until(G, (i) => i.phase === 'game_over'); si = await info(S);
+  const winnerPage = gi.phase === 'game_over' ? await info(G) : null;
+  if (!winnerPage) bad.push('the match did not end after the third point');
+  else {
+    const loseText = (await info(S)).status, winText = (await info(G)).status;
+    if (!/win/i.test(winText) && !/win/i.test(loseText)) bad.push('the end of the match is not announced (' + winText + ' / ' + loseText + ')');
+    if (!/rematch/i.test(winnerPage.roomText) && !/rematch/i.test((await info(S)).roomText)) bad.push('there is no Rematch button once the match is over');
+  }
+
+  step = 'rematch';
+  // a rematch: both tap it and a new match starts from 0 – 0
+  // the game over card covers the room panel; its Play again is the rematch vote
+  for (const p of [A, B]) { const btn = p.locator('.gk-over .again'); if (await btn.count()) await btn.first().click().catch(() => {}); else bad.push('no Play again on the game over card'); }
+  await A.waitForTimeout(700);
+  const ra = await until(A, (i) => i.phase === 'play' && i.stage === 'set', 5000);
+  if (ra.stage !== 'set') bad.push('the rematch did not start a new match (' + JSON.stringify({ phase: ra.phase, stage: ra.stage }) + ')');
+  else if (!/0 – 0/.test(ra.score)) bad.push('a rematch should start from 0 – 0 (' + ra.score + ')');
+
+  for (const p of [A, B]) { if (p.errs.length) bad.push('errors: ' + p.errs.join('; ')); }
+  } catch (e) { bad.push('stopped during ' + step + ': ' + e.message.split('\n')[0]); }
+  for (const p of pagesOpen) await p.close().catch(() => {});
+  return bad;
+}, ['hangman']);
+
+// Hand-edited links: a board that no two players could have reached must be refused ("Invalid link"), not played.
+// One table for every link game. `ok` is a real position (must open normally, so the check cannot pass by refusing everything);
+// each `bad` entry is a forged state over it, with the cheat written in plain words.
+const FORGED = {
+  'tic-tac-toe': { version: 2, ok: { turn: 'O', board: 'X........', moveCount: 1, last: 0 }, bad: {
+    'X moves twice in a row (turn left on X after X played)': { turn: 'X' },
+    'three X marks and no O': { board: 'XXX......', moveCount: 3, turn: 'O', last: 2 },
+    'O has more marks than X': { board: 'XOO......', moveCount: 3, turn: 'X', last: 1 },
+    'a won board still marked in progress': { board: 'XXXOO....', moveCount: 5, turn: 'O', last: 2 },
+    'a win claimed for O on a board with no O line': { board: 'XOX......', moveCount: 3, turn: 'O', status: 'won', winner: 'O', last: 2 },
+  } },
+  chess: { version: 1, ok: { turn: 'b', board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: 44, half: 0 }, moveCount: 1, last: [52, 36] }, bad: {
+    'White moves twice (turn left on White after White moved)': { turn: 'w' },
+    'nine white pawns': { board: { b: 'rnbqkbnrpppppppp' + 'P.......' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: null, half: 0 } },
+    'a pawn on the back rank': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'PNBQKBNR', castle: 'KQkq', ep: 44, half: 0 } },
+    'castling right kept after the rook is gone': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBN.', castle: 'KQkq', ep: 44, half: 0 } },
+    'checkmate claimed on a board that is not mate': { status: 'won', winner: 'w' },
+    'en passant square with no pawn behind it': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: 43, half: 0 } },
+  } },
+  'connect-four': { version: 2, ok: { turn: 2, board: '0'.repeat(38) + '1000', moveCount: 1, last: 38 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a disc floating in the top row': { board: '0001' + '0'.repeat(38), last: 3 },
+    'Yellow disc with no Red disc before it': { board: '0'.repeat(38) + '2000' },
+    'four Reds in a row but the game still "in progress"': { board: '0'.repeat(28) + '222' + '0000' + '1111' + '000', moveCount: 7, last: 38 },
+    'a win claimed for Red on a one-disc board': { status: 'won', winner: 1 },
+  } },
+  checkers: { version: 1, ok: { turn: 2, board: '0101010110101010000101011000000000000000202020200202020220202020', moveCount: 1, last: 24 }, bad: {
+    'Black moves twice (turn left on Black)': { turn: 1 },
+    'a piece on a light square': { board: '1101010110101010000101011000000000000000202020200202020220202020' },
+    'thirteen Black pieces': { board: '0101010110101010000101011000000001000000202020200202020220202020' },
+    'a Black man sitting on the crowning row': { board: '0101010110101010000101011000000000000000202020200202020210202020' },
+    'the last piece moved belongs to the side that is to move': { last: 40 },
+    'a win claimed while White still has moves': { status: 'won', winner: 1 },
+  } },
+  reversi: { version: 1, ok: { turn: 2, board: '0000000000000000000100000001100000012000000000000000000000000000', moveCount: 1, last: 19 }, bad: {
+    'Black moves twice (turn left on Black while White can move)': { turn: 1 },
+    'one disc more than the moves played': { board: '1000000000000000000100000001100000012000000000000000000000000000' },
+    'a centre square left empty': { board: '2000000000000000000100000001100000010000000000000000000000000000' },
+    'a win claimed on an opening position': { status: 'won', winner: 1 },
+    'a draw claimed on an opening position': { status: 'draw' },
+  } },
+  'dots-and-boxes': { version: 2, ok: { turn: 2, board: '420000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 0 }, bad: {
+    'Player 1 moves twice (turn left on 1 though no box was closed)': { turn: 1 },
+    'two edges drawn after one move': { board: '420200000000000000000000000000000000000000000000000000000' },
+    'a box owned with no edges around it': { board: '420000000000000000000000000000000000000001000000000000000' },
+    'a win claimed on a one-edge board': { status: 'won', winner: 1 },
+  } },
+  memory: { version: 1, ok: { turn: 2, board: { size: 4, seed: 12345, own: '10000000' }, moveCount: 1, last: [0] }, bad: {
+    'Player 1 moves twice (turn left on 1)': { turn: 1 },
+    'Player 2 owns a pair before ever moving': { board: { size: 4, seed: 12345, own: '10000002' } },
+    'the last matched pair belongs to nobody': { last: [3] },
+    'every pair matched but the game still in progress': { board: { size: 4, seed: 12345, own: '11111111' }, last: [0] },
+    'a win claimed with pairs still face down': { status: 'won', winner: 1 },
+  } },
+  'rock-paper-scissors': { version: 1, ok: { turn: 2, board: '300100', moveCount: 1, last: 1 }, bad: {
+    'Player 1 picks twice in a row (turn left on 1 with a pick waiting)': { turn: 1 },
+    'a match already won while a hidden pick is waiting': { board: '320100' },
+    'a win claimed before anyone has the wins': { status: 'won', winner: 1 },
+    'a move count that does not fit an open round': { moveCount: 2 },
+    'the pick in the link is not the one just made': { last: 3 },
+  } },
+  battleship: { version: 1, ok: { turn: 2, board: ['00h10h20h30h40h', '', '', ''], moveCount: 1, last: -1 }, bad: {
+    'a move count that does not match the fleets and shots in the link': { moveCount: 5 },
+    'both fleets placed after one move': { board: ['00h10h20h30h40h', '00v01v02v03v04v', '', ''] },
+    'Player 1 fires twice in a row': { board: ['00h10h20h30h40h', '00v01v02v03v04v', '5560', ''], moveCount: 4, turn: 2, last: 60 },
+    'a win claimed with no ship hit': { status: 'won', winner: 1 },
+  } },
+  pentago: { version: 1, ok: { turn: 2, board: '001000000000000000000000000000000000', moveCount: 1, last: 0 }, bad: {
+    'Player 1 moves twice (turn left on 1)': { turn: 1 },
+    'two marbles after one move': { board: '001000000000000000000000000000000012' },
+    'a marble count that does not fit the move count': { moveCount: 4 },
+    'a win claimed on a one-marble board': { status: 'won', winner: 1 },
+  } },
+  gomoku: { version: 1, ok: { turn: 2, board: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 112 }, bad: {
+    'Black moves twice (turn left on Black)': { turn: 1 },
+    'two Black stones in a row with White never moving': { board: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 2, last: 113 },
+    'five Black stones in a row but the game still in progress': { board: '222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 9, last: 116 },
+    'a win claimed on a one-stone board': { status: 'won', winner: 1 },
+  } },
+  mancala: { version: 1, ok: { turn: 1, board: '0404000505050104040404040400', moveCount: 1, last: 2 }, bad: {
+    'a seed more than the 48 in the game': { board: '0405000505050104040404040400' },
+    'a win claimed while seeds are still in the pits': { status: 'won', winner: 1 },
+    'a finished board still marked in progress': { board: '0000000000003000000000000018' },
+  } },
+  'lights-out': { version: 1, ok: { turn: 2, board: { bits: 2241 }, moveCount: 1, last: 0 }, bad: {
+    'Player 1 presses twice (turn left on 1)': { turn: 1 },
+    'a pattern no set of presses can clear': { board: { bits: 1 } },
+    'a win claimed with lights still on': { status: 'won', winner: 1 },
+    'a move count that puts Player 2 on the first press': { moveCount: 2 },
+  } },
+  mastermind: { version: 1, ok: { turn: 2, board: '0012', moveCount: 1, last: 0 }, bad: {
+    'the codemaker moves again before any guess (turn left on 1)': { turn: 1 },
+    'a move count that does not fit the guesses made': { moveCount: 3 },
+    'a win claimed before any guess': { status: 'won', winner: 2 },
+    'the code cracked but the game still in progress': { board: '00120012', moveCount: 2, last: 1 },
+  } },
+  pig: { version: 1, ok: { turn: 2, board: '7.0.34', moveCount: 1, last: 7 }, bad: {
+    'Player 1 plays twice (turn left on 1)': { turn: 1 },
+    'points banked that the rolls do not add up to': { last: 9 },
+    'a roll after a 1 in the same turn': { board: '7.0.314' },
+    'a 1 rolled but points banked': { board: '3.0.31', last: 3 },
+    'Player 2 already has points on the first move': { board: '7.5.34' },
+    'a win claimed at 7 points': { status: 'won', winner: 1 },
+  } },
+  'ultimate-tic-tac-toe': { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000000000000004', moveCount: 1, last: 40 }, bad: {
+    'X moves twice (turn left on X)': { turn: 1 },
+    'the next player sent to the wrong small board': { board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000000000000009' },
+    'a small board marked won with no line in it': { board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000001000000004' },
+    'an O mark as the opening move': { board: '0000000000000000000000000000000000000000200000000000000000000000000000000000000000000000004' },
+    'a win claimed after one mark': { status: 'won', winner: 1 },
+  } },
+  hex: { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 60 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a Blue stone as the opening move': { board: '0000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000' },
+    'a finished Red chain but the game still in progress': { board: '2000010000020000100000200001000002000010000020000100000200001000002000010000020000100000200001000002000010000000000100000', moveCount: 21, last: 115 },
+    'a win claimed after one stone': { status: 'won', winner: 1 },
+  } },
+  'blokus-duo': { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000', moveCount: 1, last: 60 }, bad: {
+    'Player 1 moves twice (turn left on 1 while Player 2 can move)': { turn: 1 },
+    'a piece marked used that is not on the board': { board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000000000000000000' },
+    'two squares on the board for a one-square piece': { board: '0000000000000000000000000000000000000000000000000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000' },
+    'a first piece that does not cover the start square': { board: '0000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  onitama: { version: 1, ok: { turn: 2, board: '33433000000000000100012117caf1', moveCount: 1, last: 17 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a fifth Red pawn': { board: '33433100000000000100012117caf1' },
+    'the last piece moved does not belong to the mover': { last: 0 },
+    'a win claimed with both masters on the board': { status: 'won', winner: 1 },
+  } },
+  quoridor: { version: 1, ok: { turn: 2, board: '6704aa', moveCount: 1, last: 67 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'two walls crossing each other': { board: '670499' + '0040', moveCount: 3, last: 100, turn: 1 },
+    'the last move is not where the pawn stands': { last: 66 },
+    'a win claimed with no pawn on the goal row': { status: 'won', winner: 1 },
+  } },
+  breakthrough: { version: 1, ok: { turn: 2, board: '2222222222222222000000000000000000000000100000000111111111111111201', moveCount: 1, last: 3112 }, bad: {
+    'the opening side moves again (turn left on it)': { turn: 1 },
+    'a seventeenth Red piece': { board: '2222222222222222100000000000000000000000100000000111111111111111201' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  tablut: { version: 1, ok: { turn: 2, board: '0000110000001100000000000001002220011102320111002220010000000000000100000001110002', moveCount: 1, last: 30 }, bad: {
+    'the attackers move again (turn left on them)': { turn: 1 },
+    'a seventeenth attacker': { board: '1000110000001100000000000001002220011102320111002220010000000000000100000001110002' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  fanorona: { version: 1, ok: { turn: 1, board: '2222222222222222222120101211111111111111111111M00', moveCount: 1, last: 967 }, bad: {
+    'the envelope names the other side to move': { turn: 2 },
+    'a twenty-third Red piece': { board: '2222222222222222222121101211111111111111111111M00' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  'nine-mens-morris': { version: 1, ok: { turn: 2, board: '100000000000000000000000p21000', moveCount: 1, last: 0 }, bad: {
+    'the envelope names the other side to move': { turn: 1 },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  connect6: { version: 1, ok: { turn: 2, board: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020', moveCount: 1, last: 28927 }, bad: {
+    'Black moves again (turn left on Black)': { turn: 1 },
+    'an extra stone for the opening move': { board: '10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  backgammon: { version: 1, ok: { turn: 2, board: 'Ba000d0c000Ee000C0E0000b000000310', moveCount: 1, last: 0 }, bad: {
+    'Red moves again (turn left on Red)': { turn: 1 },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+};
+check('forged-links-rejected', 'a hand-edited share link (wrong turn, impossible marks, a result the board does not show) was accepted and played, so one player could move twice or invent a win', async (g) => {
+  const F = FORGED[g], bad = [];
+  const p = await open(g, 390);
+  const verdict = async (st) => {
+    const enc = await p.evaluate(([game, version, st]) => AsyncShare.encode({ game, version, id: 'abc123', status: 'in_progress', winner: null, last: null, ...st }), [g, F.version, st]);
+    await p.goto(base + g + '/?s=' + enc);
+    await p.waitForFunction(() => ((document.getElementById('wa-ui') || {}).innerText || '').length > 5);
+    return p.evaluate(() => /looks invalid/.test(document.getElementById('wa-ui').innerText));
+  };
+  if (await verdict(F.ok)) bad.push('a genuine position was refused');
+  for (const [why, patch] of Object.entries(F.bad)) if (!(await verdict({ ...F.ok, ...patch }))) bad.push('accepted: ' + why);
+  await p.close();
+  return bad;
+}, Object.keys(FORGED));
+
+check('same-link-in-two-tabs', 'the same received link open in two tabs of one browser let BOTH tabs make a move from it (two different replies to one move); the second tab must show the old-link notice instead', async (g) => {
+  const bad = [];
+  const a = await open(g, 390);
+  await a.locator('#board > *').nth(0).click({ force: true }); await a.waitForTimeout(200);
+  const L1 = await a.evaluate(() => location.search);
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort());
+  const t1 = await ctx.newPage(), t2 = await ctx.newPage();
+  for (const t of [t1, t2]) { await t.goto(base + g + '/' + L1); await t.waitForTimeout(300); }
+  for (const t of [t1, t2]) await t.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
+  await t1.locator('#board > *').nth(1).click({ force: true }); await t1.waitForTimeout(200);
+  await t2.locator('#board > *').nth(2).click({ force: true }); await t2.waitForTimeout(200);
+  const after = await t2.evaluate(() => ({ q: location.search, panel: (document.getElementById('wa-ui') || {}).innerText || '' }));
+  if (after.q !== L1 && !/old link/i.test(after.panel)) bad.push('the second tab moved from a link the first tab already answered');
+  await a.close(); await ctx.close();
+  return bad;
+}, ['tic-tac-toe']);
+
+check('connect-four-tap-board', 'Connect Four only reacted to the small arrows above the board; tapping the discs / column itself did nothing, and the arrows were 40px tall', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const box = await p.locator('#board > *').nth(38).boundingBox();
+  await p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await p.waitForTimeout(250);
+  if (!(await p.evaluate(() => location.search.length))) bad.push('tapping a disc in the board did not drop a checker');
+  const h = (await p.locator('.c4-col-btn').first().boundingBox()).height;
+  if (h < 44) bad.push('the column arrows are ' + h + 'px tall');
+  await p.close();
+  return bad;
+}, ['connect-four']);
+
+check('forged-minesweeper', 'a hand-edited Minesweeper link (a mine shown open, a hole in an opened area, tiles claimed by the wrong player, a win nobody earned) was accepted and played', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  // Rebuild a real first move with the page's own functions: seed 12345, first tap in the middle of the easy board.
+  const states = await p.evaluate(() => {
+    const d = document.getElementById('diff'); d.value = 'easy'; reset();
+    placeMines(4, 4, Gamekit.mulberry32(12345)); firstClick = false;
+    reveal(4, 4);
+    const own = Array.from(revealed, (v) => (v ? '1' : '0')).join('');
+    const mine = Array.from(mines).findIndex((m) => m), zero = Array.from(cells).findIndex((c, i) => c === 0 && revealed[i] && i !== 40);
+    const nb = [-1, 1, -9, 9].map((o) => zero + o).find((j) => own[j] === '1' && j !== 40);
+    const st = (o, extra) => ({ game: 'minesweeper', version: 1, id: 'abc123', turn: 2, status: 'in_progress', winner: null, moveCount: 1, last: 40, ...extra, board: { d: 'easy', seed: 12345, first: 40, own: o } });
+    const set = (s, i, ch) => s.slice(0, i) + ch + s.slice(i + 1);
+    return {
+      ok: st(own),
+      bad: {
+        'a mine shown open that is not the last tile': st(set(own, mine, '1')),
+        'a hole next to an opened empty tile': st(set(own, nb, '0')),
+        'the last tile belongs to the wrong player': st(set(own, 40, '2')),
+        'Player 1 moves twice (turn left on 1)': st(own, { turn: 1 }),
+        'a win claimed with tiles still hidden': st(own, { status: 'won', winner: 1 }),
+        'a move count with more moves than tiles opened': st(own, { moveCount: 500 }),
+      },
+    };
+  });
+  const verdict = async (st) => {
+    const enc = await p.evaluate((st) => AsyncShare.encode(st), st);
+    await p.goto(base + g + '/?s=' + enc);
+    await p.waitForFunction(() => ((document.getElementById('wa-ui') || {}).innerText || '').length > 5);
+    return p.evaluate(() => /looks invalid/.test(document.getElementById('wa-ui').innerText));
+  };
+  if (await verdict(states.ok)) bad.push('a genuine first move was refused');
+  for (const [why, st] of Object.entries(states.bad)) if (!(await verdict(st))) bad.push('accepted: ' + why);
+  await p.close();
+  return bad;
+}, ['minesweeper']);
+
+check('minesweeper-score-pill-fits', 'the two-player Minesweeper header showed "P1 0 · ..." : the Tiles pill cut off the second player\'s score on a phone', async (g) => {
+  const bad = [];
+  for (const w of [320, 360, 390]) {
+    const p = await open(g, w);
+    const r = await p.evaluate(() => { document.getElementById('score').innerHTML = '<span class="ms-key1">130</span> <span class="ms-key2">118</span>'; const e = document.getElementById('score'); return { sw: e.scrollWidth, cw: e.clientWidth, t: e.parentElement.getBoundingClientRect().width, hidden: e.parentElement.hidden }; });
+    if (r.hidden) bad.push(w + 'px: the Tiles pill is hidden in WhatsApp mode');
+    else if (r.sw > r.cw + 1) bad.push(w + 'px: the score is clipped (' + r.sw + ' > ' + r.cw + ')');
+    await p.close();
+  }
+  return bad;
+}, ['minesweeper']);
+
+check('rps-best-of-in-whatsapp', 'choosing Best of 5 or 7 in WhatsApp mode did nothing: the score header and the match stayed at best of 3', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  for (const n of [5, 7]) {
+    await p.evaluate((n) => { const s = document.getElementById('bestof'); s.value = String(n); s.dispatchEvent(new Event('change')); }, n);
+    await p.waitForTimeout(150);
+    const head = await p.evaluate(() => document.getElementById('score').innerText.replace(/\s+/g, ' '));
+    if (!new RegExp('best of ' + n, 'i').test(head)) bad.push('Best of ' + n + ' chosen but the header says: ' + head);
+    await p.locator('#choices button').first().click({ force: true }); await p.waitForTimeout(200);
+    const first = await p.evaluate(() => AsyncShare.decode(new URLSearchParams(location.search).get('s')).board[0]);
+    if (first !== String(n)) bad.push('the link carries best of ' + first + ' instead of ' + n);
+    await p.evaluate(() => document.getElementById('reset-btn').click()); await p.waitForTimeout(150);
+  }
+  await p.close();
+  return bad;
+}, ['rock-paper-scissors']);
+
+check('dots-and-boxes-edge-hit-area', 'the Dots and Boxes lines are about 13px thick, so a thumb tap beside a line missed it; the tap area must reach about 37px (12px each side) without changing the look', async (g) => {
+  const bad = [];
+  const p = await open(g, 320);
+  for (const n of [3, 6]) {
+    await p.evaluate((n) => { const s = document.getElementById('size'); s.value = String(n); s.dispatchEvent(new Event('change')); }, n);
+    await p.waitForTimeout(200);
+    const r = await p.evaluate(() => {
+      const hit = (sel, dx, dy) => { const b = document.querySelector(sel).getBoundingClientRect(); const e = document.elementFromPoint(b.left + b.width / 2 + dx, b.top + b.height / 2 + dy); return e && e.getAttribute('aria-label'); };
+      return { h: [hit('button[aria-label="Horizontal edge row 2 col 1"]', 0, -11), hit('button[aria-label="Horizontal edge row 2 col 1"]', 0, 11)], v: [hit('button[aria-label="Vertical edge row 1 col 2"]', -11, 0), hit('button[aria-label="Vertical edge row 1 col 2"]', 11, 0)] };
+    });
+    for (const x of r.h) if (x !== 'Horizontal edge row 2 col 1') bad.push(n + 'x' + n + ': 11px above or below a horizontal line is not part of it (' + x + ')');
+    for (const x of r.v) if (x !== 'Vertical edge row 1 col 2') bad.push(n + 'x' + n + ': 11px left or right of a vertical line is not part of it (' + x + ')');
+  }
+  await p.close();
+  return bad;
+}, ['dots-and-boxes']);
+
+check('next-level-clears-solved', 'after solving a puzzle and tapping "Next level" the old "Solved in ..." text stayed in the status line and the game-over card popped straight back over the new puzzle (Sudoku, Mini Sudoku, Queens, Tango; Lights Out kept the text)', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  await p.evaluate(() => { document.getElementById('status').textContent = 'Solved in 0:10.'; });
+  try { await p.waitForSelector('.gk-over .again', { timeout: 4000 }); } catch (e) { bad.push('no game over card after a solved status'); await p.close(); return bad; }
+  await p.locator('.gk-over .again').click(); await p.waitForTimeout(1500);
+  if (await p.locator('.gk-over').count()) bad.push('the game over card is back after tapping the button');
+  const st = await p.evaluate(() => document.getElementById('status').textContent);
+  if (/solved/i.test(st)) bad.push('the status still says "' + st + '" over a new puzzle');
+  await p.close();
+  return bad;
+}, ['sudoku', 'mini-sudoku', 'queens', 'tango', 'lights-out', 'zip', 'patches', 'nonogram', 'sliding-puzzle', 'word-ladder', 'letter-boxed', 'cross-sums', 'car-park', 'flow-free', 'hashiwokakero', 'slitherlink', 'star-battle', 'word-search']);
+
+check('queens-one-answer', 'the Queens generator almost never made a puzzle with exactly one solution (a 7x7 board usually had dozens), so the puzzle could not be reasoned out and the hint could contradict a correct board', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  for (let k = 0; k < 8; k++) {
+    const r = await p.evaluate(() => {
+      const cells = [...document.querySelectorAll('#board > *')], N = Math.round(Math.sqrt(cells.length));
+      const reg = cells.map((c) => { const m = /\br(\d+)\b/.exec(c.className); return m ? +m[1] : -1; });
+      let count = 0; const cols = [];
+      const rec = (row, colMask, regMask) => {
+        if (row === N) { count++; return; }
+        for (let c = 0; c < N; c++) {
+          if ((colMask >> c) & 1) continue;
+          if (row > 0 && Math.abs(cols[row - 1] - c) <= 1) continue;
+          const rg = reg[row * N + c];
+          if ((regMask >> rg) & 1) continue;
+          cols[row] = c; rec(row + 1, colMask | (1 << c), regMask | (1 << rg));
+          if (count > 1) return;
+        }
+      };
+      rec(0, 0, 0);
+      return { N, count };
+    });
+    if (r.count !== 1) bad.push('puzzle ' + (k + 1) + ' (' + r.N + 'x' + r.N + ') has ' + (r.count > 1 ? 'more than one solution' : 'no solution'));
+    await p.evaluate(() => document.getElementById('new-btn').click()); await p.waitForTimeout(150);
+  }
+  await p.close();
+  return bad;
+}, ['queens']);
+
+check('word-guess-loss-card', 'running out of guesses in Word Guess showed only a status line: no game over card and no taunt, unlike every other game (the wording did not match what the card looks for)', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  await p.evaluate(() => document.getElementById('new-btn').click()); await p.waitForTimeout(300);
+  for (const w of ['about', 'other', 'which', 'their', 'there', 'first']) {
+    for (const ch of w) await p.evaluate((c) => document.querySelector('.wg-key[data-k="' + c + '"]').click(), ch);
+    await p.evaluate(() => document.getElementById('submit-btn').click()); await p.waitForTimeout(600);
+  }
+  await p.waitForTimeout(1500);
+  const st = await p.evaluate(() => document.getElementById('status').textContent);
+  const won = /solved/i.test(st);
+  if (!won && !(await p.locator('.gk-over').count())) bad.push('no game over card after six wrong guesses (status: ' + st.slice(0, 50) + ')');
+  await p.close();
+  return bad;
+}, ['word-guess']);
+
+check('word-search-capsules', 'found words and the word being dragged are drawn as rounded capsules laid along the letters (like the reference picture), not as a coloured box on every cell', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const info = await p.evaluate(() => { const cells = [...document.querySelectorAll('.ws-cell')]; return { n: Math.round(Math.sqrt(cells.length)), g: cells.map((c) => c.textContent.toLowerCase()), words: [...document.querySelectorAll('.ws-word')].map((w) => w.dataset.word) }; });
+  const { n, g: letters, words } = info;
+  const at = (r, c) => (r >= 0 && r < n && c >= 0 && c < n ? letters[r * n + c] : '');
+  let pos = null, word = null;
+  for (const w of words) { for (let r = 0; r < n && !pos; r++) for (let c = 0; c < n && !pos; c++) for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [-1, 1]]) { let ok = true; for (let i = 0; i < w.length && ok; i++) if (at(r + dr * i, c + dc * i) !== w[i]) ok = false; if (ok) { pos = { r, c, dr, dc, len: w.length }; word = w; break; } } if (pos) break; }
+  if (!pos) { bad.push('could not find a word on the board to drag across'); await p.close(); return bad; }
+  const a = await p.locator('.ws-cell[data-row="' + pos.r + '"][data-col="' + pos.c + '"]').boundingBox();
+  const z = await p.locator('.ws-cell[data-row="' + (pos.r + pos.dr * (pos.len - 1)) + '"][data-col="' + (pos.c + pos.dc * (pos.len - 1)) + '"]').boundingBox();
+  await p.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await p.mouse.down(); await p.mouse.move(z.x + z.width / 2, z.y + z.height / 2, { steps: 6 });
+  if ((await p.locator('.ws-hl .ws-sel').count()) !== 1) bad.push('no capsule follows the finger while dragging');
+  await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await p.locator('.ws-hl .ws-sel').count()) !== 0) bad.push('the drag capsule stays after letting go');
+  const caps = await p.evaluate(() => [...document.querySelectorAll('.ws-hl .ws-cap')].map((l) => { const b = l.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), cap: getComputedStyle(l).strokeLinecap }; }));
+  if (caps.length !== 1) bad.push('found "' + word + '" but ' + caps.length + ' capsules are drawn');
+  else if (caps[0].cap !== 'round') bad.push('the capsule ends are not rounded (' + caps[0].cap + ')');
+  const bg = await p.evaluate((q) => getComputedStyle(document.querySelector('.ws-cell[data-row="' + q.r + '"][data-col="' + q.c + '"]')).backgroundColor, pos);
+  if (!/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bad.push('a found letter still has a solid box behind it (' + bg + ')');
+  await p.close();
+  return bad;
+}, ['word-search']);
+
+check('car-park-drag', 'in Car Park a car is dragged itself: it follows the finger along its row or column, stops at other cars and the edge, settles on the nearest square on release (one slide = one move), and there are no tap-then-arrow buttons', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const st = () => p.evaluate(() => window.__carParkTest.state());
+  const cell = await p.evaluate(() => document.getElementById('inner').clientWidth / 6);
+  const box = (id) => p.locator('.cp-car[data-id="' + id + '"]').boundingBox();
+  const colOf = async (id) => ((await st()).cars.find((c) => c.id === id) || {}).c;
+  // level 1: the car in the row below the red one has four free squares to its right
+  const b0 = await box(1), x = b0.x + b0.width / 2, y = b0.y + b0.height / 2;
+  await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x + cell * 1.5, y, { steps: 6 });
+  const mid = await box(1);
+  if (Math.abs((mid.x - b0.x) / cell - 1.5) > 0.2) bad.push('the car does not follow the finger (moved ' + ((mid.x - b0.x) / cell).toFixed(2) + ' squares for 1.5)');
+  await p.mouse.up(); await p.waitForTimeout(300);
+  const s1 = await st();
+  if (s1.moves !== 1 || (await colOf(1)) !== 2) bad.push('after letting go it should sit on the nearest square, one move (moves ' + s1.moves + ', column ' + (await colOf(1)) + ')');
+  const b1 = await box(1), x1 = b1.x + b1.width / 2;
+  await p.mouse.move(x1, y); await p.mouse.down(); await p.mouse.move(x1 + cell * 5, y, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await colOf(1)) !== 4) bad.push('a drag past the end should stop at the last free square (column ' + (await colOf(1)) + ')');
+  const m0 = (await st()).moves;
+  const b2 = await box(1); await p.mouse.move(b2.x + b2.width / 2, y); await p.mouse.down(); await p.mouse.move(b2.x + b2.width / 2 + cell * 0.3, y, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await st()).moves !== m0) bad.push('a drag of less than half a square counted as a move');
+  // the red car is boxed in at the start: dragging it goes nowhere
+  const r0 = await box(0); await p.mouse.move(r0.x + r0.width / 2, r0.y + r0.height / 2); await p.mouse.down(); await p.mouse.move(r0.x + r0.width / 2 + cell * 3, r0.y + r0.height / 2, { steps: 6 });
+  const r1 = await box(0); if (Math.abs(r1.x - r0.x) > 2) bad.push('a blocked car moved when dragged');
+  await p.mouse.up(); await p.waitForTimeout(200);
+  if (await p.locator('.cp-arrow').count()) bad.push('the tap-then-arrow buttons are back');
+  await p.close();
+  return bad;
+}, ['car-park']);
+
+
 /* ---------- run ---------- */
-let failed = 0;
+// Checks run in parallel (each opens its own page). --quick runs each check on 2 sample pages only:
+// a fast smoke pass while working; run the full thing before a deploy.
+// A check that fails under load is run once more on its own: a pass then counts, marked "flaky".
+const jobs = [];
 for (const c of checks) {
   if (ONLY && !c.id.includes(ONLY)) continue;
-  for (const g of c.pages) {
-    if (!wantPage(g)) continue;
-    let bad;
-    try { bad = await c.fn(g); } catch (e) { bad = ['threw: ' + e.message.split('\n')[0]]; }
-    if (bad.length) { failed++; console.log('FAIL  ' + c.id + ' · ' + g + '\n      ' + bad.join('\n      ') + '\n      (' + c.issue + ')'); }
-    else console.log('pass  ' + c.id + ' · ' + g);
-    results.push({ id: c.id, g, ok: !bad.length });
+  const pages = c.pages.filter(wantPage);
+  for (const g of QUICK && !PAGE ? [pages[0], pages[Math.floor(pages.length / 2)]].filter((x, i, a) => x && a.indexOf(x) === i) : pages) jobs.push({ c, g });
+}
+if (!jobs.length) { console.log('no checks matched --only / --page'); await browser.close(); srv.close(); process.exit(1); }
+const times = [];
+const attempt = async ({ c, g }) => {
+  const t = Date.now();
+  // one stuck check must not hang the whole run: each gets three minutes
+  const limit = new Promise((r) => setTimeout(() => r(['timed out after 180 s (a page or a wait is stuck)']), 180000));
+  try { return await Promise.race([c.fn(g), limit]); } catch (e) { return ['threw: ' + e.message.split('\n')[0]]; } finally { times.push({ id: c.id, g, ms: Date.now() - t }); }
+};
+const out = new Array(jobs.length);
+let next = 0, printed = 0;
+async function worker() {
+  while (next < jobs.length) {
+    const i = next++;
+    out[i] = await attempt(jobs[i]);
+    while (out[printed]) { // print in order as results arrive
+      const bad = out[printed], { c, g } = jobs[printed++];
+      console.log(bad.length ? 'retry ' + c.id + ' · ' + g + ' (failed, will run once more alone)' : 'pass  ' + c.id + ' · ' + g);
+    }
   }
 }
+const t0 = Date.now();
+await Promise.all(Array.from({ length: JOBS }, worker));
+let failed = 0, flaky = 0;
+for (let i = 0; i < jobs.length; i++) {
+  if (!out[i].length) { results.push({ id: jobs[i].c.id, g: jobs[i].g, ok: true }); continue; }
+  const again = await attempt(jobs[i]), { c, g } = jobs[i];
+  if (!again.length) { flaky++; console.log('flaky ' + c.id + ' · ' + g + ' (failed under load, passed alone)'); }
+  else { failed++; console.log('FAIL  ' + c.id + ' · ' + g + '\n      ' + again.join('\n      ') + '\n      (' + c.issue + ')'); }
+  results.push({ id: c.id, g, ok: !again.length });
+}
 await browser.close(); srv.close();
-console.log('\n' + (results.length - failed) + '/' + results.length + ' passed' + (failed ? ', ' + failed + ' FAILED' : ''));
+if (args.includes('--slow')) {                       // where the time goes: total per check id, and the slowest single runs
+  const per = {}; for (const t of times) { per[t.id] = per[t.id] || { ms: 0, n: 0 }; per[t.id].ms += t.ms; per[t.id].n++; }
+  console.log('\nslowest check ids (total seconds, runs):');
+  for (const [id, v] of Object.entries(per).sort((a, b) => b[1].ms - a[1].ms).slice(0, 15)) console.log('  ' + (v.ms / 1000).toFixed(0).padStart(5) + 's  ' + String(v.n).padStart(3) + '  ' + id);
+  console.log('slowest single runs:');
+  for (const t of times.sort((a, b) => b.ms - a.ms).slice(0, 8)) console.log('  ' + (t.ms / 1000).toFixed(1).padStart(5) + 's  ' + t.id + ' · ' + t.g);
+}
+console.log('\n' + (results.length - failed) + '/' + results.length + ' passed' + (flaky ? ', ' + flaky + ' flaky' : '') + (failed ? ', ' + failed + ' FAILED' : '') + ' in ' + Math.round((Date.now() - t0) / 1000) + 's');
 process.exit(failed ? 1 : 0);

@@ -169,8 +169,15 @@
       if (typeof b !== "string" || b.length !== 28 || !/^[0-9]{28}$/.test(b)) return false;
       const arr = strToBoard(b);
       if (arr.reduce((a, x) => a + x, 0) !== SEEDS_PER_PIT * 12) return false; // seeds are conserved
-      const validLast = [0,1,2,3,4,5,7,8,9,10,11,12];
-      return validLast.includes(s.last);
+      if (![0,1,2,3,4,5,7,8,9,10,11,12].includes(s.last)) return false;
+      // a hand-edited link must still be a position two players could have reached: a game is over exactly when a row is empty
+      // (and then both rows are, since the other side sweeps its seeds into its store), and the result is the one the stores show
+      if (s.resigned) return true;
+      const e1 = rowEmpty(arr, P1), e2 = rowEmpty(arr, P2);
+      if (s.status === "in_progress") return !e1 && !e2;
+      if (!e1 || !e2) return false;
+      const a = arr[P1_STORE], c = arr[P2_STORE];
+      return a === c ? s.status === "draw" : s.status === "won" && s.winner === (a > c ? P1 : P2);
     },
     onState: loadLink,
     detail: (s) => {
@@ -263,7 +270,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)

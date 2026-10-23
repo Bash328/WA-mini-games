@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>farkle · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Farkle (10,000) — roll six dice, set aside the ones that score, and push your luck or bank. First to 10,000 wins. Against the computer, or in an online room with up to four players.">
+<meta property="og:title" content="Farkle · push your luck to 10,000">
+<meta property="og:description" content="Keep the scorers, roll the rest, and don't farkle. First to 10,000 wins.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
+<style>
+  /* ---------- the board ---------- */
+  .fk { display: none; max-width: 440px; margin: 0 auto; }
+  .fk.on { display: block; }
+  .fk-scores { display: grid; grid-template-columns: repeat(var(--seats, 2), minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .fk-seat { min-width: 0; padding: 7px 4px 6px; border-radius: 12px; background: rgba(0,0,0,.24); text-align: center; }
+  .fk-seat.on { box-shadow: 0 0 0 3px rgba(255,191,46,.9); }
+  .fk-seat.won { background: #fff; }
+  .fk-nm { display: block; font-size: 12px; line-height: 1.1; color: rgba(255,255,255,.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fk-seat.on .fk-nm { color: #ffd76b; }
+  .fk-sc { display: block; font-size: clamp(17px, 5vw, 21px); line-height: 1.2; color: #fff; }
+  .fk-seat.won .fk-nm, .fk-seat.won .fk-sc { color: #173d30; }
+  .fk-bar { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: rgba(255,255,255,.16); overflow: hidden; }
+  .fk-seat.won .fk-bar { background: rgba(0,0,0,.12); }
+  .fk-bar i { display: block; height: 100%; border-radius: 2px; background: #ffbf2e; transition: width .3s; }
+
+  .fk-tray { padding: 10px; margin-bottom: 10px; border-radius: 22px; background: rgba(0,0,0,.24); }
+  .fk-dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 330px; margin: 0 auto; }
+  /* the dice cells are buttons, so they must beat fun.css's chunky button fill */
+  html body.fun.g-farkle .panel .fk-slot {
+    position: relative; display: block; box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1;
+    min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 20%; background: transparent; box-shadow: none; color: inherit; font: inherit;
+  }
+  html body.fun.g-farkle .panel .fk-slot:hover { background: transparent; filter: none; }
+  html body.fun.g-farkle .panel .fk-slot:active { transform: none; box-shadow: none; }
+  html body.fun.g-farkle .panel .fk-slot.empty { border: 2px dashed rgba(255,255,255,.16); background: rgba(0,0,0,.08); border-radius: 20%; }
+  .fk-die { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 100%; height: 100%; padding: 13%; box-sizing: border-box; border-radius: 20%; background: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.22); }
+  .fk-die i { margin: 12%; border-radius: 50%; background: transparent; }
+  .fk-die i.on { background: #20302b; }
+  .fk-die.one i.on { background: #d8362c; }
+  .fk-slot.sel .fk-die { box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 rgba(0,0,0,.22); transform: translateY(-3px); }
+  .fk-slot.kept .fk-die { background: #d9ffe6; box-shadow: 0 0 0 3px #2fb44a, 0 3px 0 rgba(0,0,0,.18); }
+  .fk-slot.set .fk-die { box-shadow: 0 0 0 2px rgba(47,180,74,.55), 0 2px 0 rgba(0,0,0,.18); }
+  .fk-slot.loose .fk-die { opacity: .6; }
+
+  .fk-turnrow { display: flex; align-items: baseline; justify-content: center; gap: 4px 8px; flex-wrap: wrap; min-height: 36px; margin: 0 0 2px; color: rgba(255,255,255,.7); font-size: 13px; letter-spacing: .05em; text-transform: uppercase; }
+  .fk-turnrow b { color: #fff; font-size: 30px; font-weight: 400; line-height: 1; letter-spacing: .02em; }
+  .fk-msg { min-height: 2.7em; display: flex; align-items: center; justify-content: center; padding: 0 4px; text-align: center; font-size: 15px; line-height: 1.25; color: rgba(255,255,255,.82); }
+  .fk-msg.bad { color: #ffb3a6; }
+  .fk-msg.good { color: #ffd76b; }
+  .fk-hint { min-height: 2.7em; margin: 0 0 2px; padding: 0 4px; text-align: center; font-size: 13px; line-height: 1.25; color: rgba(255,255,255,.6); }
+  .fk-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
+  html body.fun.g-farkle .panel .fk-actions button {
+    height: 62px; min-height: 0; min-width: 0; padding: 4px 8px; border-radius: 16px;
+    font-size: clamp(18px, 5.6vw, 24px); line-height: 1; letter-spacing: .04em; white-space: nowrap;
+  }
+  html body.fun.g-farkle .panel .fk-actions #fk-primary { background: #d95a4e; box-shadow: 0 6px 0 #a8403a; }
+  html body.fun.g-farkle .panel .fk-actions #fk-bank { background: #2fb44a; box-shadow: 0 6px 0 #1c7a31; }
+  html body.fun.g-farkle .panel .fk-actions #fk-primary:disabled { background: #d95a4e; box-shadow: 0 6px 0 #a8403a; opacity: .42; }
+  html body.fun.g-farkle .panel .fk-actions #fk-bank:disabled { background: #2fb44a; box-shadow: 0 6px 0 #1c7a31; opacity: .42; }
+
+  /* the room screens and taunt row sit where the shared ones expect them */
+  .fk .ms-taunts { margin-top: 8px; }
+
+  /* a wider screen can put all six dice in one row and shorten the board */
+  @media (min-width: 420px) {
+    .fk-dice { grid-template-columns: repeat(6, minmax(0, 1fr)); max-width: 430px; }
+  }
+
+  /* chunky look: a deep green table, white dice, a red ROLL and a green BANK */
+  html body.fun.g-farkle { --fun-bg: #17594a; --fun-btn: #2f9e6e; --fun-chip: rgba(255,255,255,.12); --vs-bg: #0f3f34; }
+  html body.fun.g-farkle .panel { max-width: none; }
+  html body.fun.g-farkle .panel .status { font-size: 20px; }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-farkle fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>farkle</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Roll the dice to begin</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="farkle" data-man-title="FARKLE(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="players" aria-label="Players">
+        <option data-short="2 players" value="2" selected>2 players · 1 computer</option>
+        <option data-short="3 players" value="3">3 players · 2 computers</option>
+        <option data-short="4 players" value="4">4 players · 3 computers</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="board" class="fk" data-board data-reserve>
+      <div class="fk-scores" id="fk-scores" aria-label="Scores"></div>
+      <div class="fk-tray">
+        <div class="fk-dice" id="fk-dice" aria-label="Dice"></div>
+      </div>
+      <div class="fk-turnrow"><span>This turn</span><b id="fk-turnscore">0</b></div>
+      <div class="fk-msg" id="fk-msg" role="status" aria-live="polite"></div>
+      <div class="fk-hint" id="fk-hint"></div>
+      <div class="fk-actions">
+        <button class="btn" id="fk-primary" type="button" disabled>Roll</button>
+        <button class="btn" id="fk-bank" type="button" disabled>Bank</button>
+      </div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-farkle">
+  <h2>Name</h2>
+  <p>farkle — also called 10,000. Six dice, a score to chase, and one bad roll between you and the lot.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>On your turn, <strong>roll</strong> the dice in play. After a roll you must <strong>set aside at least one scoring die</strong> (tap the dice, then <strong>Keep</strong>).</li>
+    <li>Then either <strong>bank</strong> the turn's points into your score, or <strong>roll</strong> the dice that are left.</li>
+    <li>A roll with <strong>no scoring die at all</strong> is a <strong>farkle</strong>: the turn's points are lost and the dice pass on.</li>
+    <li>Set aside all six and it is <strong>hot dice</strong>: all six are rolled again and your turn continues.</li>
+    <li>The first player to bank <strong>10,000</strong> or more wins.</li>
+  </ul>
+
+  <h2>Scoring</h2>
+  <ul>
+    <li><strong>1</strong> = 100, <strong>5</strong> = 50.</li>
+    <li><strong>Three 1s</strong> = 1,000. <strong>Three 2s to 6s</strong> = 200 to 600 (the face × 100).</li>
+    <li><strong>Four of a kind</strong> = 1,000, <strong>five</strong> = 2,000, <strong>six</strong> = 3,000.</li>
+    <li><strong>A straight 1 to 6</strong> = 1,500. <strong>Three pairs</strong> = 1,500.</li>
+    <li>A kept set has to score all through: you cannot tuck a 2 or a 3 in with a 1 to get it off the table.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Roll</strong> starts the turn and rolls the rest. When the dice are down, tap the scoring ones and press <strong>Keep</strong>.</li>
+    <li><strong>Bank</strong> adds the turn's score to your total and ends the turn. It is only available after you have kept at least one die.</li>
+    <li>Against the computer, choose 2 to 4 players and <strong>Easy / Medium / Hard</strong> in Options.</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Choose <strong>Online room</strong>, create a room and send the invite link. Up to four seats; the host can fill any with computer players and start the game.</li>
+    <li>The server rolls every die and keeps the game: a phone only ever sends "roll", "keep these" or "bank". If you drop out for 90 seconds a computer plays your seat until you come back.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Keep every scoring die most of the time — it leaves fewer dice to farkle. Bank earlier when only a die or two would be rolled, and push harder when you are behind and someone is close to 10,000.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/account.js?v=160336a8"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/multiseat.js?v=eca9364b"></script>
+<script defer src="engine.js?v=f840a00c"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=c96e716e"></script>
+</body>
+</html>

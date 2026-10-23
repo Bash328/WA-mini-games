@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>word search · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Word Search — drag a straight line across the letters to find every hidden word. Eight directions, forwards and backwards, a new daily puzzle and three grid sizes.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<style>
+  /* the board: a white paper grid in a heavy black frame, letters straight on it.
+     The cell size (and font) follow the grid size, so 12x12 still fits a 320px phone. */
+  .ws-board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n, 8), 1fr);
+    grid-template-rows: repeat(var(--n, 8), 1fr);
+    width: min(430px, 100%);
+    aspect-ratio: 1;
+    margin: 4px auto 0;
+    background: #fff;
+    border: 5px solid #000;
+    border-radius: 20px;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ws-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    font-size: clamp(12px, calc(min(430px, 100vw - 22px) / var(--n, 8) * 0.62), 28px);
+    line-height: 1;
+    color: #2f3a46;
+    text-transform: uppercase;
+    box-shadow: inset -1px -1px 0 #e3e8ef;
+    transition: background-color .08s linear, color .08s linear;
+    cursor: pointer;
+  }
+  /* found words and the word being dragged are rounded capsules laid along the letters (the SVG under the cells), in a
+     soft version of the word's colour with the letters still dark; the dragged word is a dark capsule with light letters */
+  .ws-hl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .ws-hl line { stroke-width: .78; stroke-linecap: round; fill: none; }
+  .ws-hl .ws-cap { opacity: .42; }
+  .ws-hl .ws-sel { opacity: .88; }
+  .ws-cell { z-index: 1; }
+  .ws-cell.sel, .ws-cell.found.sel { color: #fff; }
+  .ws-cell.found { color: #1f2933; box-shadow: none; }
+  .ws-cell.found.sel { box-shadow: none; }
+  .ws-cell.hint::before { content: ""; position: absolute; inset: 14%; border-radius: 50%; border: 3px solid #ffbf2e; }
+
+  /* the words to find: a plain list of pills, filled in when found */
+  .ws-count {
+    margin: 9px 0 0;
+    text-align: center;
+    color: rgba(255,255,255,.75);
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .ws-count b { color: #fff; font-weight: 400; }
+  .ws-words {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: min(430px, 100%);
+    margin: 6px auto 0;
+  }
+  .ws-word {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.2;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .ws-word.found { background: var(--wc, #2f8f63); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .ws-word.hinted { box-shadow: 0 0 0 2px #ffbf2e; }
+
+  /* the three size chips share the row, so "Med 10×10" still fits the Options popover on a 320px phone */
+  #chips { display: flex; width: 100%; max-width: 360px; }
+  #chips .chip { flex: 1 1 0; min-width: 0; padding: 6px 4px; font-size: 12px; white-space: nowrap; }
+
+  /* chunky look: a green page, a white board with a black frame, amber for a hint */
+  html body.fun.g-word-search { --fun-bg: #234e3b; --fun-btn: #3f8a5f; --fun-chip: rgba(255,255,255,.1); }
+  /* the header keeps the restart and how-to circles, so the two pills get a narrow share of 320px */
+  body.fun.g-word-search .fun-pills div { padding: 0 2px; }
+  body.fun.g-word-search .fun-pills b { font-size: 18px; }
+
+  @media (prefers-reduced-motion: reduce) { .ws-cell { transition: none; } }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-word-search fun" data-fun-zone="mini" data-fun-reset data-next="Next puzzle">
+<main class="wrap">
+  <div class="topbar">
+    <h1>word search</h1>
+    <a class="back" href="../">← all games</a>
+    <div class="fun-pills">
+      <div><small>Time</small><b id="time">0:00</b></div>
+      <div class="best"><small>Best</small><b id="best">—</b></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status" aria-live="polite">Find the words.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="word-search" data-man-title="WORD-SEARCH(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="mode-chips" role="tablist" aria-label="Daily or random">
+        <button class="chip" data-diff="daily" role="tab" type="button">Daily</button>
+        <button class="chip" data-diff="random" role="tab" type="button">Random</button>
+      </div>
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy 8×8</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med 10×10</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard 12×12</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="ws-board" id="board" aria-label="Word search board"></div>
+    <p class="ws-count">Found <b id="found">0/0</b></p>
+    <div class="ws-words" id="words" aria-label="Words to find"></div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="hint-btn" type="button">hint</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> restart</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-word-search">
+  <h2>Name</h2>
+  <p>word search — find every word hidden in the grid.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Every word in the list is in the grid exactly once.</li>
+    <li>Words run in a <strong>straight line</strong>: across, down or diagonally, and either forwards or backwards.</li>
+    <li>Words may cross each other, and two words can share a letter.</li>
+    <li>Find them all to finish. The timer stops when the last word is found.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Press the first letter of a word and <strong>drag</strong> to its last letter, then let go. The dragged line is always the straight row, column or diagonal nearest your finger.</li>
+    <li>You can drag a word backwards too, from its last letter to its first.</li>
+    <li><code>hint</code> rings the first letter of one word you haven't found, up to three times. <code>↻ restart</code> clears the board and the clock for another go at the same puzzle.</li>
+    <li>Your best time at each grid size is kept on this device.</li>
+  </ul>
+
+  <h2>Daily and random</h2>
+  <ul>
+    <li><strong>Daily</strong> is the same puzzle for everyone on the same day, at each size. <strong>Random</strong> gives a fresh one whenever you like.</li>
+    <li><strong>Easy</strong> is 8×8 with six words, <strong>Medium</strong> is 10×10 with eight, and <strong>Hard</strong> is 12×12 with ten.</li>
+    <li>Leaving or refreshing the page keeps the puzzle, the words you have found and your time.</li>
+  </ul>
+
+  <h2>Word list</h2>
+  <p class="muted">About 500 common English words of four to seven letters, grouped by theme. No proper nouns, no rude words.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="words.js?v=4675dc4c"></script>
+<script defer src="puzzle.js?v=60a00e2e"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=05f16f4a"></script>
+</body>
+</html>

@@ -146,8 +146,8 @@
   function afterMove() {
     if (mode === "ai" && cur !== humanIs) {
       thinking = true;
-      Gamekit.turn(cur, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(cur, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 450);
       return;
@@ -177,7 +177,7 @@
     cancelAI();
     Gamekit.turn(null);
     if (!winner) statusEl.textContent = "Draw. Nobody can move. " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = `${NAMES[winner]} wins. ${NAMES[other(winner)]} — ${Gamekit.taunt("loss")}`;
     render();
   }
@@ -210,8 +210,17 @@
   // ---------- 2 players over WhatsApp, and live online ----------
   // board: the string described in rules.js. Red opens.
   function validateQuoridor(s) {
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < 228;
+    const P = R.parse(s.board);
+    if (!P || !(Number.isInteger(s.last) && s.last >= 0 && s.last < 228)) return false;
+    // a hand-edited link must still be a position two players could have reached: no wall crossing or overlapping another,
+    // neither pawn shut in, Red moving on odd moves, the last action matches the board, and the result is the one it shows
+    for (const id of P.walls) if (!R.wallOk({ p: P.p, w: [1, 1], walls: P.walls.filter(x => x !== id) }, 1, id)) return false;
+    if (s.resigned) return true;
+    const mover = s.moveCount % 2 ? RED : BLUE;
+    if (s.turn === mover || (s.last >= 100 ? !P.walls.includes(s.last - 100) : P.p[mover - 1] !== s.last)) return false;
+    const w = R.winnerOf(P);
+    if (w) return w === mover && s.status === "won" && s.winner === mover;
+    return s.status === (R.stuck(P, other(mover)) ? "draw" : "in_progress") && s.winner === null;
   }
   const shared = {
     game: "quoridor", version: 1, players: [RED, BLUE],

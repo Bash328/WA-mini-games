@@ -42,7 +42,7 @@
   let liveBoard = null, liveId = null, liveCount = 0, bustShown = false;
 
   const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Computer") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
+  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Bot") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
 
   // Pip positions on a 3x3 grid, per face.
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -144,8 +144,8 @@
     turnTotal = 0; rolls = [];
     if (mode === "ai" && current !== humanIs) {
       canAct = false;
-      Gamekit.turn(current, "Computer is playing…", true);
-      statusEl.textContent = "Computer is playing…";
+      Gamekit.turn(current, "Bot is playing…", true);
+      statusEl.textContent = "Bot is playing…";
       render();
       timer = setTimeout(aiStep, 700);
       return;
@@ -193,7 +193,7 @@
     clearTimeout(timer); timer = null;
     canAct = false; busy = false;
     Gamekit.turn(null);
-    if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! 🎉 " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = `${nameOf(winner)} wins. ${nameOf(other(winner))} — ${Gamekit.taunt("loss")}`;
     render();
   }
@@ -216,7 +216,19 @@
   function validatePig(s) {
     const m = BOARD_RE.exec(String(s.board));
     if (!m) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= 600;
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last <= 600)) return false;
+    if (s.resigned) return true;
+    // a hand-edited link must still be a game two players could have played: one turn per move (Player 1 first), a turn is
+    // rolls with a 1 only as the last one (a bust banks nothing), a hold banks exactly the rolls, scores add up and the game
+    // ends exactly when the mover reaches the goal. (The dice themselves are rolled on the phone, so a made-up roll list
+    // cannot be told from a lucky one; only the online mode rolls on the server.)
+    const rs = m[3].split("").map(Number), s1 = +m[1], s2 = +m[2], mover = s.moveCount % 2 ? P1 : P2;
+    if (!rs.length || s.turn === mover || rs.slice(0, -1).includes(1)) return false;
+    const banked = rs[rs.length - 1] === 1 ? 0 : rs.reduce((a, b) => a + b, 0);
+    const mine = mover === P1 ? s1 : s2, theirs = mover === P1 ? s2 : s1;
+    if (s.last !== banked || mine < banked || theirs >= GOAL) return false;
+    if (s.moveCount === 1 && (s2 !== 0 || s1 !== banked)) return false;
+    return mine >= GOAL ? s.status === "won" && s.winner === mover : s.status === "in_progress";
   }
   const link = AsyncShare.start({
     game: "pig", version: 1, title: "pig", players: [P1, P2],
@@ -330,7 +342,7 @@
     score = { [P1]: s.s[P1], [P2]: s.s[P2] };
     current = s.cur; turnTotal = s.tt; rolls = s.rs.slice(); over = false; winner = null;
     lastFace = rolls.length ? rolls[rolls.length - 1] : 0;
-    if (mode === "ai" && current !== humanIs) { canAct = false; Gamekit.turn(current, "Computer is playing…", true); render(); timer = setTimeout(aiStep, 700); }
+    if (mode === "ai" && current !== humanIs) { canAct = false; Gamekit.turn(current, "Bot is playing…", true); render(); timer = setTimeout(aiStep, 700); }
     else { canAct = true; showTurn(); render(); }
     return true;
   });

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>hashiwokakero · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Hashiwokakero (Bridges) — join the numbered islands with one or two bridges so every island has as many bridges as its number, no bridges cross and every island joins up. A new daily puzzle, three levels.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<style>
+  /* the board: a sand-coloured chart with dark islands and green bridges */
+  .hk-board { --n: 7; --cell: 40px; --pad: 6px; position: relative; width: 100%; max-width: 460px; aspect-ratio: 1 / 1; box-sizing: border-box; margin: 8px auto 6px; padding: var(--pad); user-select: none; touch-action: manipulation; }
+  .hk-grid { position: absolute; inset: var(--pad); display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-template-rows: repeat(var(--n), minmax(0, 1fr)); z-index: 2; }
+  .hk-cell { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+  .hk-lines { position: absolute; top: var(--pad); left: var(--pad); width: calc(100% - 2 * var(--pad)); height: calc(100% - 2 * var(--pad)); z-index: 1; overflow: visible; pointer-events: none; }
+  .hk-line { stroke: #1a574c; stroke-width: 1.45; stroke-linecap: round; }
+  .hk-line.two { stroke-width: 1.05; }
+  .hk-line.ghost { stroke: #e08a05; stroke-dasharray: 2.3 1.9; stroke-width: 1.45; }
+  .hk-line.ghost.two { stroke-width: 1.05; }
+  .hk-hint { min-height: 2.7em; max-width: 460px; margin: 4px auto 0; padding: 0 4px; text-align: center; font-size: clamp(13px, 4.1vw, 15px); line-height: 1.3; color: var(--muted); }
+  .hk-opts { display: flex; gap: 8px; max-width: 460px; margin: 6px auto 0; }
+
+  /* chunky look: deep teal page, a heavy sand board, dark round islands */
+  html body.fun.g-hashiwokakero { --fun-bg: #143f39; --fun-btn: #2f7d6c; --fun-chip: rgba(255,255,255,.1); }
+  html body.fun.g-hashiwokakero .panel .hk-board {
+    border: 6px solid #05100d; border-radius: 26px; background-color: #efe4c9;
+    background-image: linear-gradient(rgba(26,87,76,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(26,87,76,.10) 1px, transparent 1px);
+    background-origin: content-box; background-size: var(--cell) var(--cell);
+    box-shadow: 0 5px 0 #0a201b; overflow: hidden;
+  }
+  html body.fun.g-hashiwokakero .panel .hk-isle {
+    width: min(94%, 58px); height: min(94%, 58px); min-width: 0; min-height: 0; margin: 0; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #08231e; border-radius: 50%;
+    background: #174f45; color: #fff;
+    font-family: inherit; font-size: min(calc(var(--cell) * .5), 30px); font-weight: 400; line-height: 1; letter-spacing: 0; text-transform: none;
+    box-shadow: 0 3px 0 #08231e; cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color .15s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  html body.fun.g-hashiwokakero .panel .hk-isle:hover { filter: brightness(1.1); }
+  html body.fun.g-hashiwokakero .panel .hk-isle.sel { background: #ffbf2e; color: #3b2600; border-color: #8a5a00; box-shadow: 0 0 0 4px rgba(255,191,46,.5), 0 3px 0 #8a5a00; transform: translateY(-1px); }
+  html body.fun.g-hashiwokakero .panel .hk-isle.nbr { background: #2c7768; box-shadow: 0 0 0 3px #a9ead9, 0 3px 0 #08231e; }
+  html body.fun.g-hashiwokakero .panel .hk-isle.hinted { box-shadow: 0 0 0 4px #ff9f1a, 0 0 18px rgba(255,159,26,.8), 0 3px 0 #08231e; }
+  html body.fun.g-hashiwokakero .panel .hk-isle.over { background: #b93b2c; box-shadow: 0 0 0 3px #ffb4a6, 0 3px 0 #5f1c13; }
+  html body.fun.g-hashiwokakero .panel .hk-isle.short { box-shadow: 0 0 0 3px #f0b64a, 0 3px 0 #08231e; }
+  html body.fun.g-hashiwokakero .panel .hk-isle:active { transform: translateY(2px); box-shadow: 0 1px 0 #08231e; }
+  html body.fun.g-hashiwokakero .panel .hk-opts .btn {
+    flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 8px;
+    background: var(--fun-chip); color: #fff; box-shadow: none; border-radius: 999px; font-size: 15px;
+  }
+  html body.fun.g-hashiwokakero .panel .hk-opts .btn:hover { background: var(--fun-chip); filter: brightness(1.2); }
+  html body.fun.g-hashiwokakero .panel .hk-opts .btn:active { transform: translateY(2px); box-shadow: none; }
+  /* keep the Options bar, the message strip and the toolbar the same width as the board on a desktop */
+  html body.fun.g-hashiwokakero .panel .gk-optwrap,
+  html body.fun.g-hashiwokakero .panel .gk-slot,
+  html body.fun.g-hashiwokakero .panel .toolbar { max-width: 460px; margin-left: auto; margin-right: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    html body.fun.g-hashiwokakero .panel .hk-isle { transition: none; }
+    html body.fun.g-hashiwokakero .panel .hk-isle:active { transform: none; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-hashiwokakero fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>hashiwokakero</h1>
+    <a class="back" href="../">← all games</a>
+    <div class="fun-pills"><div><small>Time</small><b id="time">0:00</b></div><div class="best"><small>Best</small><b id="best">—</b></div></div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Link every island.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="hashiwokakero" data-man-title="HASHIWOKAKERO(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy · 5×5</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Med · 7×7</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard · 9×9</button>
+      </div>
+      <button class="btn ghost tool-btn" id="new-btn" type="button"><span class="glyph">↻</span> new</button>
+    </div>
+    <div class="hk-board" id="board" data-board role="group" aria-label="Hashiwokakero board"></div>
+    <div class="hk-hint" id="hint" aria-live="polite"></div>
+    <div class="hk-opts">
+      <button class="btn ghost" id="hint-btn" type="button">Hint</button>
+      <button class="btn ghost" id="check-btn" type="button">Check</button>
+      <button class="btn ghost" id="solve-btn" type="button">Solve</button>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> restart</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-hashiwokakero">
+  <h2>Name</h2>
+  <p>hashiwokakero — Japanese for "let us build bridges". Every circle is an island.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The <strong>number on an island</strong> is how many bridges must meet there (1 to 8).</li>
+    <li>Two islands can be joined when they are in the <strong>same row or column</strong> with no other island between them. A pair can have <strong>one bridge or two</strong>, never more.</li>
+    <li>Bridges run only straight across or straight up and down, and they <strong>may not cross</strong>.</li>
+    <li>When you finish, <strong>every island must be joined into one network</strong>.</li>
+    <li>Every puzzle has exactly one solution.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>Tap an island: it glows, and the islands it can reach light up. Tap a lit island to put <strong>one bridge</strong> there; tap it again for a <strong>second bridge</strong>; once more to take them both away.</li>
+    <li><code>Hint</code> shows one bridge from the solution as a dashed line. <code>Check</code> marks islands with too many or too few bridges. <code>↶ undo</code> takes back your last bridge; <code>restart</code> clears the board and the clock.</li>
+    <li>The puzzle is the same for everyone each day, at each level. The round <code>↻</code> button in the header gives a random one; the level chips under Options pick 5×5, 7×7 or 9×9.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Start with islands that have only one possible direction, or with a 1 or a 2. An 8 needs two bridges in every direction it can see. Islands in the middle of a long line are best left for later: they usually get their bridges from both sides.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="puzzle.js?v=beaa0e0f"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=6323e667"></script>
+</body>
+</html>

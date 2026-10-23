@@ -124,7 +124,18 @@
   function validateReversi(s) {
     const b = s.board;
     if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: the four centre squares are never empty,
+    // every move adds exactly one disc, and whose turn it is (and whether the game is over) follows from who can move
+    if (["27", "28", "35", "36"].some(i => b[i] === "0")) return false;
+    const filled = b.split("").filter(c => c !== "0").length;
+    if (s.resigned) return filled === 4 + s.moveCount - 1 || filled === 4 + s.moveCount;
+    if (filled !== 4 + s.moveCount) return false;
+    const cells = b.split("").map(Number), mover = cells[s.last], opp = other(mover);
+    if (legalMoves(cells, opp).length) return s.status === "in_progress" && s.turn === opp;
+    if (legalMoves(cells, mover).length) return s.status === "in_progress" && s.turn === mover;
+    const cnt = counts(cells);
+    return cnt[BLACK] === cnt[WHITE] ? s.status === "draw" : s.status === "won" && s.winner === (cnt[BLACK] > cnt[WHITE] ? BLACK : WHITE);
   }
   function finalCount(s) {
     const cnt = counts(s.board.split("").map(Number));
@@ -270,7 +281,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when link play hides it.
+  resetBtn.addEventListener("click", () => (["whatsapp", "live"].includes(modeSel.value) ? activeLink().newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)

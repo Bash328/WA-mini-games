@@ -173,6 +173,9 @@
       const cracked = guesses.length > 0 && isCracked(secret, guesses[guesses.length - 1]);
       // a code can only be cracked by the final guess
       if (guesses.slice(0, -1).some(g => isCracked(secret, g))) return false;
+      // one move to set the code, one per guess (a resignation adds one); the Codebreaker keeps the turn until the game ends
+      if (s.moveCount !== guesses.length + 1 + (s.resigned ? 1 : 0)) return false;
+      if (!s.resigned && s.turn !== (s.status === "in_progress" ? P2 : P1)) return false;
       if (s.status === "in_progress") return !cracked && guesses.length < MAX_GUESSES;
       if (s.resigned) return !cracked && guesses.length < MAX_GUESSES;
       if (cracked) return s.winner === P2;

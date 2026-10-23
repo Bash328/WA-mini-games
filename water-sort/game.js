@@ -49,27 +49,43 @@
     animating = true;
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     const side = rb.left >= ra.left ? 1 : -1;
-    const pivotX = rb.left + rb.width / 2 - side * rb.width * 0.5;                 // the lip ends up just over the target's near rim
-    const dx = pivotX - (ra.left + ra.width / 2), pivotY = rb.top - 22, dy = pivotY - ra.top;
+    // The selected tube is lifted by a CSS transform. Work from its untransformed box, and start the
+    // animation from wherever it currently is so a quick tap cannot make it jump.
+    const tf = getComputedStyle(a).transform;
+    const m = tf && tf !== "none" ? new DOMMatrixReadOnly(tf) : null;
+    const startX = m ? m.m41 : 0, startY = m ? m.m42 : 0;
+    const baseLeft = ra.left - startX, baseTop = ra.top - startY;
+    // When the tube tips, its rim turns about the top-centre origin. The lower corner of that rim
+    // (the pouring lip) is what the stream must start from, not a point at the target's top.
+    const tip = 62 * Math.PI / 180;
+    const lipShiftX = side * (ra.width / 2) * Math.cos(tip);
+    const lipShiftY = (ra.width / 2) * Math.sin(tip);
+    const lipX = rb.left + rb.width / 2, lipY = rb.top - 8;                        // the lip hovers over the middle of the glass
+    const dx = lipX - (baseLeft + ra.width / 2) - lipShiftX;
+    const dy = lipY - baseTop - lipShiftY;
     const layer = rb.height * 0.185, surface = rb.bottom - rb.height * 0.015 - b.children.length * layer;   // four layers fill the glass to about 3/4 of its height
     const stream = document.createElement("div");
     stream.className = "ws-stream";
-    stream.style.cssText = "left:" + (rb.left + rb.width / 2 - 4) + "px;top:" + pivotY + "px;background:" + colour + ";height:0";
+    stream.style.cssText = "left:" + (lipX - 4) + "px;top:" + lipY + "px;background:" + colour + ";height:0";
     document.body.append(stream);
-    const lifted = a.classList.contains("sel") ? -16 : 0;
     a.style.zIndex = "5"; a.style.transformOrigin = "50% 0";
     const hold = "translate(" + dx + "px," + dy + "px) rotate(" + side * 62 + "deg)";
     const run = a.animate([
-      { transform: "translate(0," + lifted + "px) rotate(0deg)" },
-      { transform: hold, offset: 0.36 }, { transform: hold, offset: 0.8 },
-      { transform: "translate(0,0) rotate(0deg)" },
-    ], { duration: 760, easing: "ease-in-out" });
-    const h = Math.max(10, surface - pivotY);
-    const T = pivotY + "px", S = surface + "px";
+      { transform: "translate(" + startX + "px," + startY + "px) rotate(0deg)", offset: 0, easing: "cubic-bezier(.35,.05,.25,1)" },
+      { transform: hold, offset: 0.34, easing: "linear" },
+      { transform: hold, offset: 0.78, easing: "cubic-bezier(.45,0,.3,1)" },
+      { transform: "translate(0,0) rotate(0deg)", offset: 1 },
+    ], { duration: 820 });
+    const h = Math.max(10, surface - lipY);
+    const T = lipY + "px", S = surface + "px";
     stream.animate([                                                   // a stream that grows down to the liquid, holds, then drains away
-      { height: "0px", top: T }, { height: "0px", top: T, offset: 0.34 }, { height: h + "px", top: T, offset: 0.46 },
-      { height: h + "px", top: T, offset: 0.78 }, { height: "0px", top: S, offset: 0.9 }, { height: "0px", top: S },
-    ], { duration: 760 });
+      { height: "0px", top: T, opacity: 0, offset: 0 },
+      { height: "0px", top: T, opacity: 1, offset: 0.31, easing: "cubic-bezier(.2,.7,.3,1)" },
+      { height: h + "px", top: T, opacity: 1, offset: 0.46 },
+      { height: h + "px", top: T, opacity: 1, offset: 0.76, easing: "cubic-bezier(.4,0,.5,1)" },
+      { height: "0px", top: S, opacity: 0, offset: 0.9 },
+      { height: "0px", top: S, opacity: 0, offset: 1 },
+    ], { duration: 820 });
     run.onfinish = run.oncancel = () => { stream.remove(); a.style.zIndex = ""; a.style.transformOrigin = ""; animating = false; done(); };
   }
 

@@ -17,7 +17,10 @@ wrangler.toml
 worker/
 *.test.mjs
 README.md
-TODO.md
+AGENTS.md
+docs/
+# local design scratch pages (also in .git/info/exclude)
+art-*.html
 LICENSE
 .gitattributes
 .gitignore
@@ -30,3 +33,8 @@ CNAME
 tests/
 CLAUDE.md
 tools/
+
+# play-test report and the launch image source (the launch images in assets/splash are cut from it)
+PLAYTEST.md
+assets/launch-image.png
+.playwright-mcp/

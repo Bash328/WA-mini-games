@@ -95,16 +95,16 @@ const wc = await next(C, ofType("closed"));
 check("third client is refused", wc.reason === "full");
 
 console.log("\ntaunts:");
-send(A, { t: "taunt", k: "a", i: 3 });
+send(A, { t: "taunt", k: "h", i: 3 });
 const got = await next(B, ofType("taunt"));
-check("a taunt reaches the other seat as a bare id", got.k === "a" && got.i === 3 && Object.keys(got).length === 3, JSON.stringify(got));
+check("a taunt reaches the other seat as a bare id", got.k === "h" && got.i === 3 && Object.keys(got).length === 3, JSON.stringify(got));
 await sleep(200);
 check("the sender is not sent its own taunt back", !A.inbox.some(ofType("taunt")));
-send(A, { t: "taunt", k: "d", i: 1 });
+send(A, { t: "taunt", k: "k", i: 1 });
 check("a second taunt inside 3 seconds is rate limited", (await next(A, ofType("reject"))).reason === "rate-limit");
-send(B, { t: "taunt", k: "d", i: 999 });
+send(B, { t: "taunt", k: "k", i: 999 });
 check("an id past the list is refused", (await next(B, ofType("reject"))).reason === "illegal");
-send(B, { t: "taunt", k: "d", i: "hello there" });
+send(B, { t: "taunt", k: "k", i: "hello there" });
 check("free text is refused", (await next(B, ofType("reject"))).reason === "illegal");
 
 console.log("\nplaying:");

@@ -1,0 +1,207 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>nine men's morris Â· games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Nine Men's Morris â€” place nine pieces, make mills and take one back, then slide, fly and trap. Over WhatsApp, live online, against the computer, or on one device.">
+<meta property="og:title" content="Nine Men's Morris Â· two players over WhatsApp">
+<meta property="og:description" content="Line up three for a mill, take a piece, then trap what is left. Send the link back.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
+<style>
+  /* the board: a 7x7 grid of points, with the 16 mill lines drawn under them */
+  /* the wrap breaks out of the page padding; the board is centred inside it and
+     shrinks on short screens so its bottom edge stays above the fold */
+  .nmm-wrap { width: calc(100% + 22px); margin: 10px -11px 0; }
+  .nmm-board {
+    position: relative; display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    width: min(100%, max(264px, calc(100svh - 300px))); margin: 0 auto;
+    aspect-ratio: 1; box-sizing: border-box; overflow: hidden;
+    background: #e8d3a8; border: 6px solid #000; border-radius: 22px;
+  }
+  .nmm-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .nmm-lines line { stroke: #755733; stroke-width: .07; stroke-linecap: round; }
+
+  /* every point is a button the size of its whole grid cell, so it is easy to tap */
+  html body.fun.g-nine-mens-morris #board .nmm-pt {
+    position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; padding: 0;
+    border: 0; border-radius: 50%; background: transparent; box-shadow: none;
+    color: inherit; font-size: 0; transform: none; cursor: default;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  html body.fun.g-nine-mens-morris #board .nmm-pt:hover,
+  html body.fun.g-nine-mens-morris #board .nmm-pt:active {
+    background: transparent; color: inherit; border: 0; box-shadow: none; transform: none; filter: none;
+  }
+  html body.fun.g-nine-mens-morris #board .nmm-pt:disabled { opacity: 1; }
+  html body.fun.g-nine-mens-morris #board .nmm-pt.mine,
+  html body.fun.g-nine-mens-morris #board .nmm-pt.dest,
+  html body.fun.g-nine-mens-morris #board .nmm-pt.take,
+  html body.fun.g-nine-mens-morris #board .nmm-pt.place { cursor: pointer; }
+  #board .nmm-pt::before {
+    content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 15%; aspect-ratio: 1; border-radius: 50%; background: #6b4f2f; opacity: .55;
+  }
+  #board .nmm-pt.last::before { background: #ffbf2e; opacity: 1; box-shadow: 0 0 0 4px rgba(255,191,46,.28); }
+  #board .nmm-pt.from::before { background: #ffbf2e; opacity: .7; }
+  #board .nmm-pt.dest::after {
+    content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 22%; aspect-ratio: 1; border-radius: 50%; background: #2f6b47; opacity: .9;
+  }
+
+  #board .nmm-pc {
+    position: relative; z-index: 1; width: 74%; height: 74%; box-sizing: border-box;
+    border: 3px solid #14100c; border-radius: 50%;
+    display: grid; place-items: center; pointer-events: none;
+  }
+  #board .nmm-pc::after {
+    content: ""; width: 40%; height: 40%; box-sizing: border-box; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.72);
+  }
+  #board .nmm-pc.p1 { background: #e05248; }
+  #board .nmm-pc.p2 { background: #4a7fd8; }
+  #board .nmm-pt.mill .nmm-pc { box-shadow: 0 0 0 2px #ffbf2e; }
+  #board .nmm-pt.sel .nmm-pc { outline: 2px solid #fff; outline-offset: 2px; }
+  #board .nmm-pt.take .nmm-pc { outline: 2px solid #ff5a52; outline-offset: 2px; box-shadow: none; }
+  #board .nmm-pt.last .nmm-pc { outline: 2px dashed rgba(255,255,255,.9); outline-offset: 2px; }
+
+  .nmm-hint { margin: 12px 0 0; text-align: center; color: var(--muted); font-size: 15px; line-height: 1.3; min-height: 2.6em; }
+
+  /* the deep-green table, and a cooler tint while the computer thinks */
+  html body.fun.g-nine-mens-morris {
+    --fun-bg: #2d4a3e; --fun-btn: #4d7f63; --fun-chip: rgba(255,255,255,.1); --vs-bg: #1d332b;
+    transition: background-color .35s;
+  }
+  html body.fun.g-nine-mens-morris:has(.turn.wait) { --fun-bg: #303a5a; }
+  html body.fun.g-nine-mens-morris .turn { width: fit-content; max-width: 100%; box-sizing: border-box; }
+  html body.fun.g-nine-mens-morris .topbar h1 { font-size: 19px; }
+  @media (max-width: 380px) { html body.fun.g-nine-mens-morris .topbar h1 { font-size: 15px; } }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-nine-mens-morris fun" data-fun-zone data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>nine men's morris</h1>
+    <a class="back" href="../">â†ï¸Ž all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status">Red to place.</p>
+      <button class="btn ghost tool-btn man-trigger" data-man="nine-mens-morris" data-man-title="NINE MEN'S MORRIS(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty" hidden>
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="WhatsApp" value="whatsapp" selected>2 players Â· WhatsApp</option>
+        <option data-short="Online" value="live" hidden>2 players Â· online</option>
+        <option data-short="Computer" value="ai">vs computer</option>
+        <option data-short="Local" value="local">2 players Â· same device</option>
+      </select>
+      <select id="side" aria-label="Your colour" hidden>
+        <option data-short="Play Red" value="1" selected>Play Red (first)</option>
+        <option data-short="Play Blue" value="2">Play Blue (second)</option>
+      </select>
+    </div>
+    <div id="wa-ui" class="wa-ui" hidden></div>
+    <div class="nmm-wrap">
+      <div class="nmm-board" id="board" role="group" aria-label="Nine Men's Morris board, 24 points"></div>
+    </div>
+    <p class="nmm-hint" id="hint"></p>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">â†¶ï¸Ž</span> undo</button>
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">â†»ï¸Ž</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-nine-mens-morris">
+  <h2>Name</h2>
+  <p>nine men's morris â€” three rings, nine pieces each, and one spare move to trap a friend.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>The board has <strong>24 points</strong>: three concentric squares joined at the middle of each side. <strong>Red</strong> has the first turn, <strong>Blue</strong> the second, and each has <strong>nine pieces</strong>.</li>
+    <li><strong>Placement.</strong> Take turns putting one piece on an empty point. A straight row of three of your pieces is a <strong>mill</strong>: at once remove one of your opponent's pieces. You may not take a piece that is in a mill unless every opponent piece is in a mill.</li>
+    <li>After all eighteen pieces are placed, each turn <strong>moves one piece</strong> to an empty point next to it. A piece may never land on another piece.</li>
+    <li><strong>Flying.</strong> A player with exactly three pieces left may move to any empty point, not only a neighbouring one.</li>
+    <li><strong>Win</strong> by reducing your opponent to fewer than three pieces, or by leaving them with no legal move on their turn. This version has no draw rule: play on until one side is trapped.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li><strong>Placing:</strong> tap any empty point.</li>
+    <li><strong>Moving:</strong> tap one of your pieces, then a marked point. Tap it again to put it back down.</li>
+    <li><strong>After a mill:</strong> tap a ringed opponent piece to remove it. Pieces in mills are not ringed unless every piece is in one.</li>
+    <li>Mills glow gold; the last piece moved is ringed in white. <code>undo</code> is there in the computer and same-device modes.</li>
+  </ul>
+
+  <h2>Playing over WhatsApp</h2>
+  <ul>
+    <li>Whoever starts the game is <strong>Red</strong> and moves first; your friend is <strong>Blue</strong>.</li>
+    <li>Make your move, then tap <code>Send on WhatsApp</code>. If your move made a mill, choose the piece to remove first: both parts of the turn are yours, then send the link. <code>Copy link</code> works for any other messenger.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">Every mill costs you a piece of your own shape: watch which lines you leave open. Blocking an opponent's mill is often worth more than making one, and in the endgame keep a spare point to move to â€” being shut in loses just as surely as being two pieces short.</p>
+
+  <h2>Live online</h2>
+  <ul>
+    <li>Tap <strong>Online</strong>, create a room and send the invite link. You play in real time, with no link-passing. Rooms are deleted a day after the last move, or an hour after the game ends.</li>
+  </ul>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
+<script defer src="../shared/async-share.js?v=d4254c50"></script>
+<script defer src="../shared/account.js?v=160336a8"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="rules.js?v=a5cf85e6"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=0473d1ba"></script>
+</body>
+</html>

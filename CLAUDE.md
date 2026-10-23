@@ -12,7 +12,9 @@ Run it before telling the user something is fixed, and again before every deploy
 
 ```
 npm i --no-save playwright      # once; node_modules is git-ignored
-node tests/regression.mjs       # all checks
+node tests/run.mjs changed      # while working: unit tests + the games you changed
+node tests/run.mjs              # before a deploy: unit tests + every browser check
+node tests/regression.mjs       # the browser checks alone
 node tests/regression.mjs --page chess --only steady
 ```
 
@@ -34,10 +36,10 @@ code moved, update the check; do not delete it. Say in your reply which new chec
   the board bounces (`status-matches-pill`).
 - On Windows the Bash tool chokes on long heredocs with apostrophes: write scripts with the Write tool.
 - Deploy with `npx wrangler deploy`; it fails now and then on a network blip, so retry once.
-- Motion lives in `gamekit.js`: `Gamekit.popFilled(boardEl)` (a newly filled square pops) and `Gamekit.glidePieces(boardEl, sel)` (a moved piece glides). Add the one-line call to a new game; do not hand-roll a pop. All motion must skip under `prefers-reduced-motion`.
+- Motion lives in `shared/gamekit.js`: `Gamekit.popFilled(boardEl)` (a newly filled square pops) and `Gamekit.glidePieces(boardEl, sel)` (a moved piece glides). Add the one-line call to a new game; do not hand-roll a pop. All motion must skip under `prefers-reduced-motion`.
 - A page that animates its win first sets `data-over-delay="ms"` on the body (the game over card waits); the card test waits for it. Puzzle pages set `data-next="Next level"` so the card offers the next puzzle.
 - Opening Options must not move the board or add scrolling (`options-opens-without-moving` checks every page). Anything inside the popover is absolutely positioned.
 - A board measured from absolute children (walls, paths, overlays) must subtract the frame: use `clientLeft/clientTop` (zip, tango, patches had this bug).
 - Online games share one rules file between the page and the Worker (`<game>/rules.js` + `worker/rules/<game>.mjs`); a game where dice are rolled needs the `stamp` hook so the server rolls.
-- Visible cells that are buttons need their page selector to beat fun.css (an id prefix or `html body.fun.g-<game>`): fun.css gives every button a fill, padding and a chunky bottom shadow.
+- Visible cells that are buttons need their page selector to beat shared/fun.css (an id prefix or `html body.fun.g-<game>`): shared/fun.css gives every button a fill, padding and a chunky bottom shadow.
 

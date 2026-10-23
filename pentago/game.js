@@ -141,7 +141,16 @@
     validateBoard: (s) => {
       const b = s.board;
       if (typeof b !== "string" || b.length !== N * N || !/^[012]+$/.test(b)) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0";
+      // `last` is where the marble was placed; the quadrant turn can move it away, so that square may well be empty now
+      if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < N * N)) return false;
+      // a hand-edited link must still be a position two players could have reached: one marble per move, the colours alternate
+      // (Player 1 opens), the right side to move, and the result is the one the board shows
+      const cells = Array.from(b, Number), n1 = cells.filter(v => v === P1).length, n2 = cells.filter(v => v === P2).length;
+      if (n1 + n2 !== (s.resigned ? s.moveCount - 1 : s.moveCount) || (n1 !== n2 && n1 !== n2 + 1)) return false;
+      if (s.resigned) return true;
+      if (s.turn === (n1 > n2 ? P1 : P2)) return false;
+      const o = outcomeFor(cells);
+      return o.status === s.status && o.winner === s.winner;
     },
     onState: loadLink,
   });
@@ -251,7 +260,8 @@
     resetLocal();
   }
 
-  resetBtn.addEventListener("click", resetLocal);
+  // The top-bar restart clicks this button even when WhatsApp mode hides it.
+  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
   modeSel.addEventListener("change", applyMode);
   // A refresh keeps a same-device game: rebuilt from a saved snapshot.
   // (Link games live in the URL, so they are not saved here.)

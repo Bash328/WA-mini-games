@@ -65,9 +65,9 @@ check("only the host can change settings", reasons(B).includes("not-host"));
 send(A, { t: "config", bots: 1, mode: "normal", level: "easy" });
 await until(() => A.view.config.bots === 1 && B.view.config.level === "easy", 3000, "config");
 check("the host sets a computer player; everyone sees it", B.view.config.bots === 1 && B.view.config.mode === "normal");
-send(B, { t: "taunt", k: "d", i: 2 });
+send(B, { t: "taunt", k: "k", i: 2 });
 await until(() => A.taunts.length === 1, 3000, "taunt");
-check("a taunt reaches the others as a bare id", A.taunts[0].k === "d" && A.taunts[0].i === 2 && B.taunts.length === 0);
+check("a taunt reaches the others as a bare id", A.taunts[0].k === "k" && A.taunts[0].i === 2 && B.taunts.length === 0);
 
 console.log("\nthe game:");
 send(B, { t: "start" });

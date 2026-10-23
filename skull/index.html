@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../shared/ga.js?v=29f6c01f"></script>
+<title>skull · games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Skull — place roses and one skull face down, bid how many discs you can turn without finding a skull, and bluff your friends. Play the computer or online.">
+<meta property="og:title" content="Skull · bluff with roses and a skull">
+<meta property="og:description" content="Place discs face down, bid, and turn. Find a skull and lose a disc.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://wa-minigames.online/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="300">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WA games">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="../assets/splash/1320x2868.png" media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1206x2622.png" media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1284x2778.png" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2688.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1242x2208.png" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/640x1136.png" media="(device-width:320px) and (device-height:568px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2388.png" media="(device-width:834px) and (device-height:1194px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/2048x2732.png" media="(device-width:1024px) and (device-height:1366px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1620x2160.png" media="(device-width:810px) and (device-height:1080px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1640x2360.png" media="(device-width:820px) and (device-height:1180px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1488x2266.png" media="(device-width:744px) and (device-height:1133px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
+<link rel="manifest" href="../manifest.json">
+<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
+<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
+<style>
+  /* Skull: a plum table, bone discs and a rose-red hand. 320px first. */
+  html body.fun.g-skull {
+    --fun-bg: #33263f;
+    --fun-btn: #7a4a8f;
+    --fun-chip: rgba(255,255,255,.1);
+    background: radial-gradient(circle at 50% 0%, #463457 0%, #31243e 52%, #241a2d 100%);
+    background-attachment: fixed;
+  }
+  #sk { display: none; }
+  #sk.on { display: block; }
+
+  .sk-seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0 10px; }
+  .sk-seat {
+    position: relative; min-height: 98px; box-sizing: border-box; padding: 8px 9px 6px;
+    border-radius: 16px; border: 2px solid transparent; background: rgba(0,0,0,.24);
+    display: flex; flex-direction: column;
+  }
+  .sk-seat.act { border-color: #ffbf2e; background: rgba(255,191,46,.12); }
+  .sk-seat.you { background: rgba(255,255,255,.09); }
+  .sk-seat.you.act { background: rgba(255,191,46,.16); }
+  .sk-seat.gone { opacity: .55; }
+  .sk-seat.win { border-color: #2fb44a; }
+  .sk-seat-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .sk-nm { font-size: 14px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sk-pts { font-size: 12px; color: #ffd24a; white-space: nowrap; }
+  .sk-meta { font-size: 11px; color: rgba(255,255,255,.62); min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sk-stack { display: flex; align-items: center; gap: 3px; min-height: 26px; margin-top: 4px; flex-wrap: nowrap; }
+  .sk-none { font-size: 11px; color: rgba(255,255,255,.42); }
+  .sk-tag { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.55); min-height: 1.2em; margin-top: auto; }
+
+  /* A disc: a face-down ring of plum, or a cream face with a drawn rose / skull. */
+  .sk-disc { position: relative; width: 26px; height: 26px; flex: none; border-radius: 50%; box-sizing: border-box; display: grid; place-items: center; }
+  .sk-disc svg { width: 76%; height: 76%; display: block; }
+  .sk-disc.down { background: repeating-linear-gradient(135deg, #5b3d70 0 3px, #4a305c 3px 6px); border: 2px solid #291936; box-shadow: 0 2px 0 rgba(0,0,0,.32); }
+  .sk-disc.down::after { content: ""; width: 34%; height: 34%; border-radius: 50%; border: 2px solid rgba(255,255,255,.22); }
+  .sk-disc.up.rose { background: #f6e7cd; color: #b83b4b; border: 2px solid #d8c19e; box-shadow: 0 2px 0 #a88a63; }
+  .sk-disc.up.skull { background: #efe9dc; color: #2b2433; border: 2px solid #cfc5b1; box-shadow: 0 2px 0 #a89e8a; }
+  .sk-disc.sm { width: 24px; height: 24px; }
+  .sk-disc.lg { width: 46px; height: 46px; }
+  .sk-disc.lg.up.rose, .sk-disc.lg.up.skull { border-width: 3px; }
+
+  /* Every strip has one fixed height: a status change, a result or the controls
+     swapping never moves the table. */
+  .sk-banner {
+    display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+    height: 58px; min-height: 58px; margin: 0 0 6px; padding: 7px 14px; border-radius: 999px;
+    background: rgba(0,0,0,.26); border: 2px solid rgba(255,255,255,.18);
+    font-size: 17px; line-height: 1.15; text-align: center; text-wrap: balance; overflow: hidden;
+  }
+  .sk-banner.you { background: #e07a5f; border-color: #fff; }
+  .sk-log { height: 34px; min-height: 34px; margin: 0 0 4px; text-align: center; font-size: 12px; line-height: 1.2; color: rgba(255,255,255,.6); overflow: hidden; }
+
+  .sk-handwrap { margin: 0 -11px; padding: 9px 12px 11px; background: #6d2b3c; border-radius: 24px 24px 0 0; }
+  .sk-handlabel { min-height: 1.3em; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.65); }
+  .sk-hand { display: flex; align-items: center; gap: 8px; height: 52px; min-height: 52px; overflow: hidden; }
+  .sk-note { font-size: 13px; line-height: 1.25; color: rgba(255,255,255,.8); }
+
+  .sk-controls { height: 108px; min-height: 108px; margin: 6px 0 2px; display: flex; flex-direction: column; justify-content: center; gap: 8px; box-sizing: border-box; }
+  .sk-controls > .btn { width: 100%; }
+  .sk-qty { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .sk-qty .n { min-width: 2em; text-align: center; font-size: 30px; line-height: 1; }
+  .sk-actions { display: flex; gap: 8px; }
+  .sk-actions .btn { flex: 1; min-height: 50px; }
+  .sk-hint { height: 36px; min-height: 36px; margin: 0; text-align: center; font-size: 13px; line-height: 1.2; color: rgba(255,255,255,.7); overflow: hidden; }
+
+  /* Beat fun.css's button fill for the discs in the hand. */
+  html body.fun.g-skull .panel .sk-disc.pick {
+    min-height: 0; min-width: 0; padding: 0; border-radius: 50%;
+    background: #f6e7cd; color: #b83b4b; border: 3px solid #d8c19e;
+    box-shadow: 0 3px 0 #a88a63; transition: transform .09s ease-out, box-shadow .09s ease-out;
+  }
+  html body.fun.g-skull .panel .sk-disc.pick:hover { background: #fff3dd; color: #b83b4b; filter: none; }
+  html body.fun.g-skull .panel .sk-disc.pick.up.skull { color: #2b2433; }
+  html body.fun.g-skull .panel .sk-disc.pick:active { transform: translateY(3px); box-shadow: 0 0 0 #a88a63; }
+  html body.fun.g-skull .panel .sk-step { min-height: 48px; min-width: 56px; padding: 0; font-size: 24px; border-radius: 14px; }
+  html body.fun.g-skull .panel .sk-actions .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+  html body.fun.g-skull .panel .sk-actions .btn.ghost { background: rgba(255,255,255,.12); }
+  html body.fun.g-skull .panel .sk-controls > .btn.primary { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+  html body.fun.g-skull .sk-pts { color: #ffd24a; }
+
+  @media (max-width: 359px) {
+    .sk-seat { min-height: 94px; padding: 7px 8px 5px; }
+    .sk-nm { font-size: 13px; }
+    .sk-pts { font-size: 11px; }
+    .sk-disc { width: 24px; height: 24px; }
+    .sk-disc.sm { width: 22px; height: 22px; }
+    .sk-disc.lg { width: 42px; height: 42px; }
+    .sk-banner { font-size: 16px; }
+  }
+</style>
+<script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body class="g-skull fun" data-fun-zone="slim" data-fun-reset>
+<main class="wrap">
+  <div class="topbar">
+    <h1>skull</h1>
+    <a class="back" href="../">← all games</a>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <p class="status" id="status"></p>
+      <button class="btn ghost tool-btn man-trigger" data-man="skull" data-man-title="SKULL(1)" type="button">
+        how to <span class="q">?</span>
+      </button>
+    </div>
+    <div class="game-controls">
+      <div class="chips" id="chips" role="tablist" aria-label="Computer difficulty">
+        <button class="chip" data-diff="easy" role="tab" type="button">Easy</button>
+        <button class="chip" data-diff="medium" role="tab" type="button">Medium</button>
+        <button class="chip" data-diff="hard" role="tab" type="button">Hard</button>
+      </div>
+      <select id="mode" aria-label="Mode">
+        <option data-short="Computer" value="computer" selected>vs computer</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="bots" aria-label="Computer players">
+        <option data-short="2 computers" value="2" selected>2 computer players</option>
+        <option data-short="3 computers" value="3">3 computer players</option>
+        <option data-short="4 computers" value="4">4 computer players</option>
+        <option data-short="5 computers" value="5">5 computer players</option>
+      </select>
+    </div>
+    <div id="ms-room" class="ms-room"></div>
+    <div id="sk" data-board>
+      <div class="sk-seats" id="sk-seats"></div>
+      <div class="sk-banner" id="sk-banner" role="status" aria-live="polite"></div>
+      <div class="sk-log" id="sk-log"></div>
+      <div class="sk-handwrap">
+        <div class="sk-handlabel" id="sk-handlabel">Your hand</div>
+        <div class="sk-hand" id="sk-hand" aria-label="Your hand"></div>
+      </div>
+      <div class="sk-controls" id="sk-controls"></div>
+      <div class="sk-hint" id="sk-hint"></div>
+      <div class="ms-taunts" id="ms-taunts" hidden></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
+    </div>
+  </div>
+</main>
+
+<template id="man-skull">
+  <h2>Name</h2>
+  <p>skull — the pure bluffing game of roses, skulls and one brave bid.</p>
+
+  <h2>Rules</h2>
+  <ul>
+    <li>Every player starts with <strong>4 discs</strong>: <strong>3 roses</strong> and <strong>1 skull</strong>. The backs are identical. You only see the faces of your own discs (a challenge turns discs face up for everyone to see).</li>
+    <li><strong>Place:</strong> in turn, everyone places at least one disc face down. Once everyone has placed one, a player may add another disc (one per turn, up to all four) or open the bidding. A player with no discs in hand must bid.</li>
+    <li><strong>Bid:</strong> a bid says how many discs you can turn without finding a skull. The first bid is <strong>1 or more</strong>; every raise must be higher, and no bid may be more than the discs on the table. A player may pass, and then sits out the rest of the bidding.</li>
+    <li>Bidding ends when everyone but one has passed, or when a bid reaches the number of discs on the table. That highest bidder must <strong>turn their bid</strong>.</li>
+    <li><strong>Turn:</strong> the bidder turns their own discs first, from the most recently placed down. If the bid is bigger than their own stack, they then turn other players' discs in clockwise order. A <strong>skull</strong> ends the challenge at once: the bidder loses one random disc, permanently. No skull in the bid = the bidder wins the challenge and <strong>scores 1 point</strong>.</li>
+    <li><strong>First to 2 points wins.</strong> A player who loses all discs is out; the last player with discs also wins.</li>
+  </ul>
+
+  <h2>Controls</h2>
+  <ul>
+    <li>On your placement turn, <strong>tap a disc in your hand</strong> to put it face down. Tap a skull by mistake? It is placed face down; the page never tells the others.</li>
+    <li>Once everyone has placed one, use <code>−</code> and <code>+</code> and <code>Bid</code> to open or raise. <code>Pass</code> leaves the bidding.</li>
+    <li>If you win the bid, tap <code>Flip a disc</code> one disc at a time. The table shows every disc that has been turned.</li>
+    <li>Against the computer, pick <strong>Easy / Medium / Hard</strong> and 2 to 5 computer players (3 to 6 at the table).</li>
+  </ul>
+
+  <h2>Playing online</h2>
+  <ul>
+    <li>Tap <strong>Online room</strong>, create a room and send the invite link. The room has 6 seats; computers fill any empty seats. The host starts the game.</li>
+    <li>The server keeps every disc secret and sends you only your own. If you drop out for 90 seconds a computer plays for you until you return.</li>
+  </ul>
+
+  <h2>Strategy</h2>
+  <p class="muted">A rose on top is a safe disc; a skull underneath is a bluff. Put a skull down early and roses over it, then bid only what you can safely turn. The tension is the bid that is one higher than your own roses: to win it you must reach into someone else's stack.</p>
+</template>
+
+<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script defer src="../shared/taunts.js?v=de2cfe57"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/account.js?v=160336a8"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/multiseat.js?v=eca9364b"></script>
+<script defer src="engine.js?v=32cdf04b"></script>
+<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="game.js?v=968a78fe"></script>
+</body>
+</html>

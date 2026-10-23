@@ -230,6 +230,7 @@
   }
 
   function newPuzzle(seedOverride) {
+    document.getElementById("status").textContent = "Fill with suns and moons.";   // a finished puzzle's "Solved in ..." must not follow you to the next one
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("tango", diff);
     curSeed = seed;
     const p = generate(seed);

@@ -66,6 +66,7 @@
   let curSeed = 0;       // the solo puzzle on screen can be rebuilt from this + diff
 
   function newPuzzle(seedOverride) {
+    document.getElementById("status").textContent = "Turn every light off.";   // a finished puzzle's "Solved in ..." must not follow you to the next one
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("lights-out", diff);
     curSeed = seed;
     initial = generate(seed, DIFFS[diff]);
@@ -134,6 +135,7 @@
     board = history.pop();
     moves = Math.max(0, moves - 1);
     won = false;
+    document.getElementById("status").textContent = "Turn every light off.";
     syncLights();
     updateStatus();
   });
@@ -149,7 +151,7 @@
   });
 
   newBtn.addEventListener("click", () => {
-    if (isLinked()) return;
+    if (isLinked()) { activeLink().newGame(); return; }   // the game over card's button starts a new two-player game
     newPuzzle(Gamekit.randomSeed());
   });
 
@@ -176,9 +178,24 @@
   function bitsToInt(b) { let n = 0; for (let i = 0; i < N*N; i++) if (b[i]) n |= (1 << i); return n; }
   function intToBits(n) { const b = new Uint8Array(N*N); for (let i = 0; i < N*N; i++) b[i] = (n >> i) & 1; return b; }
 
+  // One press toggles a light and its neighbours: as a bit mask over the 25 lights.
+  const pressMask = (i) => { const r = Math.floor(i / N), c = i % N; let m = 1 << i; if (r > 0) m ^= 1 << (i - N); if (r < N - 1) m ^= 1 << (i + N); if (c > 0) m ^= 1 << (i - 1); if (c < N - 1) m ^= 1 << (i + 1); return m; };
+  // Only some patterns can ever be cleared: those a set of presses can reach from all-off (about one in four of the 33 million).
+  const PRESS_BASIS = (() => { const basis = []; for (let i = 0; i < N * N; i++) { let v = pressMask(i); for (const b of basis) v = Math.min(v, v ^ b); if (v) basis.push(v); } return basis; })();
+  const solvable = (bits) => { for (const b of PRESS_BASIS) bits = Math.min(bits, bits ^ b); return bits === 0; };
+
   function validateLo(s) {
-    return !!s.board && Number.isInteger(s.board.bits) && s.board.bits >= 0 && s.board.bits < (1 << (N*N)) &&
-      Number.isInteger(s.last) && s.last >= 0 && s.last < N*N;
+    if (!(!!s.board && Number.isInteger(s.board.bits) && s.board.bits >= 0 && s.board.bits < (1 << (N*N)) &&
+      Number.isInteger(s.last) && s.last >= 0 && s.last < N*N)) return false;
+    // a hand-edited link must still be a game two players could have played: a pattern that can be cleared at all, Player 1
+    // pressing on odd moves, the right side to move, a lit board before the first press, and the result the board shows
+    const bits = s.board.bits;
+    if (!solvable(bits)) return false;
+    if (s.resigned) return true;
+    const mover = s.moveCount % 2 ? 1 : 2;
+    if (s.turn === mover || (s.moveCount === 1 && pressMask(s.last) === bits)) return false;
+    if (bits === 0) return s.status === "won" && s.winner === mover;
+    return s.status === (s.moveCount >= MOVE_CAP ? "draw" : "in_progress");
   }
   const drawDetail = (s) => s.status === "draw" ? `Called a draw after ${MOVE_CAP} presses without clearing the board.` : "";
 

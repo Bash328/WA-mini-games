@@ -64,18 +64,37 @@ function render() {
 }
 
 const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-// Timed against the reference ("smooth 2048", frame by frame): the whole slide takes about 130ms with a quick ease-out and
-// no fading, so two tiles that meet simply overlap and are swapped for the doubled tile, which gives one small pop (about
-// 150ms); the new tile starts to grow the moment the slide ends and is full size 150ms later.
-const SLIDE = 130;
+
+// Timing from the reference (Z048Controller prefab values):
+//   travel = 0.20s, scaled by Manhattan distance (1 cell = 0.8x, 2 cells = 0.9x);
+//   movement uses DOTween's default OutQuad; the merged tile bulges to 1.14x
+//   with InOutSine, 0.08s per half (0.16s total); a new tile grows from zero
+//   with InOutSine over 0.30s. The prefab's anim speed multiplier is 1.0.
+// No audio: the reference plays slide/merge clips, the web page stays silent.
+const TRAVEL = 200;                 // _travelTime 0.20s
+const TRAVEL_1 = 0.8;               // TravelScaleDistance1
+const TRAVEL_2 = 0.9;               // TravelScaleDistance2
+const BULGE = 80;                   // _bulgeOnMergeTime 0.08s per half
+const MERGE_SCALE = 1.14;           // MergeBulgeScale
+const SPAWN = 300;                  // _newPiecePopInTime 0.30s
+const MOVE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // OutQuad (DOTween default)
+const POP_EASE = 'cubic-bezier(0.37, 0, 0.63, 1)';        // InOutSine
 function animateSlide(el, moves, spawn, merged) {
   const cells = el.children, token = ++animToken;
   if (calm() || !el.animate || cells.length < N * N) return;
   const br = el.getBoundingClientRect();
   const moving = moves.filter(m => m.from[0] !== m.to[0] || m.from[1] !== m.to[1]);
+  if (!moving.length) return;
+  // Blocks closest to the movement edge move first, as in OrderBlocksForDirection.
+  const dRow = moving[0].to[0] - moving[0].from[0], dCol = moving[0].to[1] - moving[0].from[1];
+  if (dCol > 0) moving.sort((a, b) => b.from[1] - a.from[1] || a.from[0] - b.from[0]);
+  else if (dCol < 0) moving.sort((a, b) => a.from[1] - b.from[1] || a.from[0] - b.from[0]);
+  else if (dRow > 0) moving.sort((a, b) => b.from[0] - a.from[0] || a.from[1] - b.from[1]);
+  else if (dRow < 0) moving.sort((a, b) => a.from[0] - b.from[0] || a.from[1] - b.from[1]);
   const dests = new Set(moving.map(m => m.to[0] * N + m.to[1]));
   dests.forEach(i => { cells[i].style.visibility = 'hidden'; });
   const anims = [];
+  let maxDuration = TRAVEL;
   const ghosts = moving.map(m => {
     const a = cells[m.from[0] * N + m.from[1]].getBoundingClientRect(), b = cells[m.to[0] * N + m.to[1]].getBoundingClientRect();
     const t = document.createElement('div');
@@ -83,10 +102,15 @@ function animateSlide(el, moves, spawn, merged) {
     t.textContent = m.v;
     t.style.cssText = 'position:absolute;margin:0;z-index:2;will-change:transform;left:' + (a.left - br.left - el.clientLeft) + 'px;top:' + (a.top - br.top - el.clientTop) + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
     el.append(t);
-    anims.push(t.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px)' }], { duration: SLIDE, easing: 'cubic-bezier(.25,.8,.35,1)', fill: 'forwards' }));
+    const dx = b.left - a.left, dy = b.top - a.top;
+    const travel = 'translate(' + dx + 'px,' + dy + 'px)';
+    const distance = Math.abs(m.from[0] - m.to[0]) + Math.abs(m.from[1] - m.to[1]);
+    const duration = TRAVEL * (distance === 1 ? TRAVEL_1 : distance === 2 ? TRAVEL_2 : 1);
+    maxDuration = Math.max(maxDuration, duration);
+    anims.push(t.animate([{ transform: 'translate(0,0)' }, { transform: travel }], { duration, easing: MOVE_EASE, fill: 'forwards' }));
     return t;
   });
-  if (spawn) cells[spawn[0] * N + spawn[1]].animate([{ transform: 'scale(.2)', opacity: 0.4 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 1 }], { duration: 160, delay: SLIDE - 10, fill: 'backwards', easing: 'cubic-bezier(.2,.9,.3,1)' });
+  if (spawn) cells[spawn[0] * N + spawn[1]].style.visibility = 'hidden';
   let done = false;
   const land = () => {
     if (done || token !== animToken) return;
@@ -94,12 +118,25 @@ function animateSlide(el, moves, spawn, merged) {
     ghosts.forEach(t => t.remove());
     dests.forEach(i => {
       cells[i].style.visibility = '';
-      if (merged && merged.has(i)) cells[i].animate([{ transform: 'scale(1)' }, { transform: 'scale(1.13)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' });
+      if (merged && merged.has(i)) {
+        cells[i].animate(
+          [{ transform: 'scale(1)' }, { transform: 'scale(' + MERGE_SCALE + ')' }],
+          { duration: BULGE, easing: POP_EASE, iterations: 2, direction: 'alternate' }
+        );
+      }
     });
+    if (spawn) {
+      const born = cells[spawn[0] * N + spawn[1]];
+      born.style.visibility = '';
+      born.animate(
+        [{ transform: 'scale(0)' }, { transform: 'scale(1)' }],
+        { duration: SPAWN, easing: POP_EASE }
+      );
+    }
   };
-  // swap exactly when the slides have finished (not on a timer that a busy phone can run late); the timer is only a backstop
+  // swap exactly when the longest slide has finished (not on a timer that a busy phone can run late); the timer is only a backstop
   Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => requestAnimationFrame(land));
-  setTimeout(land, SLIDE + 60);
+  setTimeout(land, maxDuration + 80);
 }
 
 // where every tile goes in one row slid towards index 0: dest[i] is the column tile i ends up in (two merging tiles share one)
@@ -163,7 +200,7 @@ function move(dir) {
   if (score > best) store.set(bestKey(), score);
   addTile();
   render();
-  if (!canMove()) { over = true; document.getElementById('over-msg').textContent = '· Game over. ' + Gamekit.taunt('over-' + diff); }
+  if (!canMove()) { over = true; document.getElementById('over-msg').textContent = 'Game over. Final score: ' + score + '.'; }
 }
 
 function rot(m) {
