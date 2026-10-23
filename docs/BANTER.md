@@ -10,7 +10,7 @@ systems under it, and they are not the same thing:
 
 - **Commentary** — automatic lines on your own screen, fired by game outcomes
   (win, loss, draw, near-miss, streaks). Internally this is still
-  `taunts.js` + `Gamekit.taunt()`. It works in solo, vs-computer, pass-and-play
+  `shared/taunts.js` + `Gamekit.taunt()`. It works in solo, vs-computer, pass-and-play
   and link play.
 - **Table Talk** — player-sent lines in a live or card room, with two tones:
   - **Hype** — supportive, complimentary, good sportsmanship.
@@ -43,7 +43,7 @@ Ultimate Tic-Tac-Toe, Blokus Duo).
 
 ## Load-time budget
 
-- Current `taunts.js`: 64 KB raw, 20.5 KB gzip, 17.8 KB Brotli, loaded with
+- Current `shared/taunts.js`: 64 KB raw, 20.5 KB gzip, 17.8 KB Brotli, loaded with
   `defer` on every game page, so it never blocks rendering.
 - The rename itself costs nothing at runtime — one cache refresh of ~18 KB
   compressed, then cached again.
@@ -82,7 +82,7 @@ behaviour all argue against it.
 
 Hangman keeps its commentary in its own file, [hangman/banter.js](hangman/banter.js),
 loaded only on the hangman page: the stick man's persona and speech bubble are
-specific to that game, so this is not a `taunts.js` block. `hangman/game.js` is
+specific to that game, so this is not a `shared/taunts.js` block. `hangman/game.js` is
 now page plumbing only.
 
 ### What changed
@@ -247,11 +247,11 @@ delivered while he was still shaking. The line now carries the expression.
 
 ## Implemented — four missing Commentary blocks (2026-10-23)
 
-`taunts.js` gained dedicated blocks for the last four "best fit" games that had
+`shared/taunts.js` gained dedicated blocks for the last four "best fit" games that had
 none: **Liar's Dice** (loss 10, win 10), **Hearts** (loss 10, win 10),
 **Farkle** (loss 10, win 10) and **Backgammon** (loss 10, win 10, forfeit 8,
 resigned 8). Only categories the games actually call were added, so no line can
-fire in a situation the game does not report. `node taunts.test.mjs` passes.
+fire in a situation the game does not report. `node shared/taunts.test.mjs` passes.
 Context tags, the safe-slot picker and template slots are still open (plan
 steps 3-4).
 

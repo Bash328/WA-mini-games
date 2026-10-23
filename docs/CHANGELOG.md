@@ -21,6 +21,9 @@ Scope: this review session only. Nothing was committed or deployed.
 - **Test runner.** `tests/regression.mjs` runs 6 checks in parallel (`--jobs N`), has `--quick`
   (2 sample pages per check), exits 1 when no check matched, and reruns a failed check once alone
   (a pass then counts as "flaky"). Full run: 1043/1043 passed, 6 flaky, 955 s.
+- **Repo regrouped** (decision 0005): shared code in `shared/`, fonts/vendor/splash/ui images in `assets/`, loose docs in `docs/`. Removed the unused `assets/ui/hint.png`; moved the unreferenced `previews/` screenshots out of the repo.
+- **Tests:** `tests/run.mjs` is the one entry point (units, changed, quick, full); `tests/links.mjs` checks every local link; `tools/deepseek.mjs` hands a bounded task to DeepSeek (text or diff back, nothing executed). The three viewport-matrix checks reuse one page per game (resize instead of reload: 2036 to 676 job-seconds); the test browser blocks every non-local request (it was sending Google Analytics hits for each test page).
+- **Not done:** `shared/ga.js` still sends hits from localhost when a person browses locally (one-line guard, not applied).
 - **Not fixed, for a decision:** Hearts and Ludo use a lone gear instead of the Options bar; Lost Cities
   hand cards show large faint colour letters; the hub card for Pig does not say Online although it is.
 

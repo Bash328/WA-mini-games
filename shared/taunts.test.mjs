@@ -1,4 +1,4 @@
-// Sanity checks for taunts.js. Run: node taunts.test.mjs
+// Sanity checks for taunts.js. Run: node shared/taunts.test.mjs
 // Fails on: duplicate lines in a pool, over-long lines, a catchphrase (a whole
 // sentence) reused in 3+ different pools, or an unknown/empty category.
 import { readFileSync } from "node:fs";
@@ -34,7 +34,7 @@ for (const [s, pools] of phraseUse) {
 }
 
 // the server validates taunt ids by count; it must match the lists here
-const proto = readFileSync(new URL("./worker/live-protocol.mjs", import.meta.url), "utf8");
+const proto = readFileSync(new URL("../worker/live-protocol.mjs", import.meta.url), "utf8");
 const count = (name) => Number((proto.match(new RegExp("export const " + name + " = (\\d+)")) || [])[1]);
 if (count("HYPE_COUNT") !== T.online.hype.length) problems.push("HYPE_COUNT does not match online.hype");
 if (count("HECKLE_COUNT") !== T.online.heckle.length) problems.push("HECKLE_COUNT does not match online.heckle");

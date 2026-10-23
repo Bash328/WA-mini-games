@@ -2,7 +2,7 @@
 // Search the repository's agent-memory event log.
 //
 //   node tools/memory/search.mjs --text "water sort"
-//   node tools/memory/search.mjs --file fun.css --limit 10
+//   node tools/memory/search.mjs --file shared/fun.css --limit 10
 //   node tools/memory/search.mjs --tag pc-layout
 //   node tools/memory/search.mjs --type limitation_discovered
 //   node tools/memory/search.mjs --text desktop --json

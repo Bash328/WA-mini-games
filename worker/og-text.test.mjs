@@ -2,7 +2,7 @@
    Exercises the preview text against states encoded exactly the way
    async-share.js encodes them. */
 
-import LZString from "../vendor/lz-string.min.js";
+import LZString from "../assets/vendor/lz-string.min.js";
 import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
 
 const enc = (o) =>

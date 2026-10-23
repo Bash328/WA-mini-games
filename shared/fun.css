@@ -14,7 +14,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(fonts/lilita-one-latin-400-normal.woff2) format('woff2');
+  src: url(../assets/fonts/lilita-one-latin-400-normal.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -59,7 +59,7 @@ body.fun[class*="g-"] .topbar .back {
 }
 body.fun[class*="g-"] .topbar .back::before {      /* the chevron, cut from the reference screenshot */
   content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 26px; transform: translate(-58%, -50%);
-  background: #fff; -webkit-mask: url(fun/back.png) center / contain no-repeat; mask: url(fun/back.png) center / contain no-repeat;
+  background: #fff; -webkit-mask: url(../assets/ui/back.png) center / contain no-repeat; mask: url(../assets/ui/back.png) center / contain no-repeat;
 }
 body.fun[class*="g-"] .topbar .back:hover { background: var(--fun-chip); filter: brightness(1.15); }
 body.fun[class*="g-"] .topbar .back:active,
@@ -78,7 +78,7 @@ body.fun[class*="g-"] .gk-top-r .man-trigger, body.fun[class*="g-"] .fun-restart
 body.fun[class*="g-"] .gk-top-r .man-trigger .q { font-size: 28px; color: var(--fun-ink); }
 body.fun[class*="g-"] .fun-restart::before {
   content: ""; position: absolute; inset: 0; margin: auto; width: 34px; height: 30px; background: #fff;
-  -webkit-mask: url(fun/restart.png) center / contain no-repeat; mask: url(fun/restart.png) center / contain no-repeat;
+  -webkit-mask: url(../assets/ui/restart.png) center / contain no-repeat; mask: url(../assets/ui/restart.png) center / contain no-repeat;
 }
 body.fun[class*="g-"] .fun-restart:active { transform: scale(.94); }
 body[data-fun-reset].fun .gk-new { display: none; }
@@ -220,7 +220,7 @@ body.fun .game-notice {
   box-shadow: 0 6px 0 rgba(0,0,0,.25), 0 12px 24px rgba(0,0,0,.25); animation: fun-drop .4s cubic-bezier(.2,1.4,.4,1);
 }
 body.fun .game-notice::before { content: ""; display: inline-block; width: 24px; height: 22px; margin-right: 12px; vertical-align: -4px; background: var(--accent);
-  -webkit-mask: url(fun/restart.png) center / contain no-repeat; mask: url(fun/restart.png) center / contain no-repeat; }
+  -webkit-mask: url(../assets/ui/restart.png) center / contain no-repeat; mask: url(../assets/ui/restart.png) center / contain no-repeat; }
 body.fun .game-notice.fade { opacity: 0; transition: opacity .5s; }
 @keyframes fun-drop { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 

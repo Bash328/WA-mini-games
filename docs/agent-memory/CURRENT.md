@@ -7,7 +7,7 @@ Worktree: dirty; nothing from this session has been committed or deployed.
 ## What this is
 
 A static collection of 58 phone-first browser games plus a hub, shared UI
-(`fun.css`, `gamekit.js`, `shared.css`) and a Cloudflare Worker for online rooms.
+(`shared/fun.css`, `shared/gamekit.js`, `shared/shared.css`) and a Cloudflare Worker for online rooms.
 There is no build step. Pages are served directly; Playwright under
 `node_modules` drives the browser checks.
 
@@ -47,9 +47,9 @@ Recently verified:
   was 350/352, with only the two duplicate pointer-keyboard runs failing; after
   opening Options first, that check passes. `desktop-large-viewports` and
   `phone-landscape-700` pass on their own.
-- `node taunts.test.mjs` — passes with the four new per-game blocks.
+- `node shared/taunts.test.mjs` — passes with the four new per-game blocks.
 
-The normal desktop rule is in `fun.css` under `@media (min-width: 760px)`: the
+The normal desktop rule is in `shared/fun.css` under `@media (min-width: 760px)`: the
 wrap is `clamp(440px, calc(100svh - 460px), 640px)`, with page-specific budgets
 for Crazy 8, Cribbage, Lost Cities, Blokus Duo, Onitama and Quoridor.
 
@@ -74,8 +74,8 @@ keeps landscape phones on the phone layout. Phone widths do not match the
    `car-park/rules.js`, drag/tap/keyboard play, undo, hint, best per level and a
    hub card. `node car-park/rules.test.mjs` checks every level and its exact
    par. README and sitemap updated.
-3. **Share panel and strip order.** `async-share.js` parks `#wa-ui` below the
-   board; `gamekit.js` anchors `#gk-slot` before the board so the strip does not
+3. **Share panel and strip order.** `shared/async-share.js` parks `#wa-ui` below the
+   board; `shared/gamekit.js` anchors `#gk-slot` before the board so the strip does not
    add page height. See decision 0004.
 4. **Interaction polish.** `.topbar .back` and `.gk-over .home` get
    `touch-action: manipulation` and a pressed class from `pointerdown` because
@@ -90,7 +90,7 @@ keeps landscape phones on the phone layout. Phone widths do not match the
 
 ## What is left
 
-`TODO.md` is the source of truth. In short: cover real game-over flows for more
+`docs/TODO.md` is the source of truth. In short: cover real game-over flows for more
 games, check the share panel in the remaining modes and live rooms, decide on
 hub prefetch, test browser zoom/real Safari, finish the desktop keyboard
 shortcuts, build the Banter tag/picker, and port Crazy 8 to the shared multiseat
@@ -126,4 +126,4 @@ node tests/load-timing.mjs
 ```
 
 Then read the relevant decision in `docs/agent-memory/decisions/` and the
-specific backlog item in `TODO.md`. Do not commit or deploy unless the user asks.
+specific backlog item in `docs/TODO.md`. Do not commit or deploy unless the user asks.

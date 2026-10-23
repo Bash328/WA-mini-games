@@ -99,7 +99,7 @@ const END = {
 const results = [];
 const checks = [];
 function check(id, issue, fn, pages) { checks.push({ id, issue, fn, pages }); }
-const wantPage = (g) => !PAGE || PAGE === g;
+const wantPage = (g) => !PAGE || PAGE.split(',').includes(g);          // --page chess  or  --page chess,hearts
 
 function serve() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
@@ -122,13 +122,17 @@ function chromePath() {
 const srv = await serve();
 const base = 'http://localhost:' + srv.address().port + '/';
 const browser = await chromium.launch({ executablePath: chromePath() });
+// Nothing leaves this machine during a run: every page loads Google Analytics, and thousands of test visits must not
+// reach the real property. (It also lets the suite run offline.) Local pages and data: URLs are untouched.
+const newPage = browser.newPage.bind(browser);
+browser.newPage = async (o) => { const p = await newPage(o); await p.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort()); return p; };
 
 async function open(game, width = 390, setup, opts = {}) {
   const page = await browser.newPage({ viewport: { width, height: 844 }, ...opts });
   page.errs = [];
   page.on('pageerror', (e) => page.errs.push(e.message));
   await page.goto(base + game + '/');
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(400);
   // measure the settled page: a late webfont swap could otherwise add a few
   // pixels to the page height and make a layout check flaky.
   await page.evaluate(() => (document.fonts ? document.fonts.ready : null));
@@ -137,10 +141,26 @@ async function open(game, width = 390, setup, opts = {}) {
   // the page has settled, and clear a leftover backdrop if one survived a
   // late auto-open (it used to steal focus from the keyboard checks).
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(120);
   await page.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
   if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
   return page;
+}
+
+// Open a page once and measure it at several viewport sizes. A resize gives the same layout as a fresh load
+// (compared on 22 pages x 12 sizes: identical but for 5px of timing noise on one page), at a fifth of the cost.
+async function sweep(game, sizes, measure) {
+  const [w0, h0] = sizes[0];
+  const p = await open(game, w0, null, { viewport: { width: w0, height: h0 } });
+  const out = [];
+  for (const [w, h] of sizes) {
+    const cur = p.viewportSize();
+    if (cur.width !== w || cur.height !== h) { await p.setViewportSize({ width: w, height: h }); await p.waitForTimeout(150); }
+    await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    out.push(await measure(p, w, h));
+  }
+  await p.close();
+  return out;
 }
 const top = (page, game) => page.evaluate((s) => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : -1; }, BOARD[game] || '#board');
 
@@ -148,15 +168,14 @@ const top = (page, game) => page.evaluate((s) => { const e = document.querySelec
 
 check('no-sideways-scroll', 'a page that is wider than the phone lets you drag it sideways (waiting page pill, check pill, header at 320px)', async (g) => {
   const bad = [];
-  for (const w of [320, 360, 375, 390, 430]) {
-    const p = await open(g, w);
+  const sizes = [320, 360, 375, 390, 430].map((w) => [w, 844]);
+  const rows = await sweep(g, sizes, async (p, w) => {
     // the longest things the pill ever says
     await p.evaluate(() => { try { Gamekit.turn(2, 'Waiting for your opponent', true); } catch (e) {} });
-    await p.waitForTimeout(150);
-    const sw = await p.evaluate(() => document.documentElement.scrollWidth);
-    if (sw > w) bad.push(w + 'px page is ' + sw + 'px wide');
-    await p.close();
-  }
+    await p.waitForTimeout(100);
+    return { w, sw: await p.evaluate(() => document.documentElement.scrollWidth) };
+  });
+  for (const r of rows) if (r.sw > r.w) bad.push(r.w + 'px page is ' + r.sw + 'px wide');
   return bad;
 }, FUN);
 
@@ -177,11 +196,9 @@ check('desktop-column', 'on a PC the phone-first boards stretched to the 960px w
 
 check('desktop-height', 'on a 1280x1000 or 1280x900 PC window the page still scrolled; the desktop column should end above the fold', async (g) => {
   const bad = [];
-  for (const h of [1000, 900]) {
-    const p = await open(g, 1280, null, { viewport: { width: 1280, height: h } });
-    await p.waitForTimeout(250);
-    const r = await p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth }));
-    await p.close();
+  const rows = await sweep(g, [[1280, 1000], [1280, 900]], (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth })));
+  for (const [i, h] of [1000, 900].entries()) {
+    const r = rows[i];
     if (r.sh > r.ih + 1) bad.push(h + 'px window needs ' + (r.sh - r.ih) + 'px of scroll');
     if (r.sw > r.iw) bad.push(h + 'px window is ' + r.sw + 'px wide');
   }
@@ -190,16 +207,14 @@ check('desktop-height', 'on a 1280x1000 or 1280x900 PC window the page still scr
 
 check('desktop-large-viewports', 'wide PC windows and tablets (1440x900, 1920x1080, 834x1112, 1024x768) were never checked; the height-aware column should still end above the fold and stay narrow', async (g) => {
   const bad = [];
-  for (const [w, h] of [[1440, 900], [1920, 1080], [834, 1112], [1024, 768]]) {
-    const p = await open(g, w, null, { viewport: { width: w, height: h } });
-    await p.waitForTimeout(250);
-    await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    const r = await p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth, wrap: document.querySelector('.wrap').getBoundingClientRect().width }));
-    await p.close();
+  const sizes = [[1440, 900], [1920, 1080], [834, 1112], [1024, 768]];
+  const rows = await sweep(g, sizes, (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth, wrap: document.querySelector('.wrap').getBoundingClientRect().width })));
+  rows.forEach((r, i) => {
+    const [w, h] = sizes[i];
     if (r.sh > r.ih + 2) bad.push(w + 'x' + h + ' needs ' + (r.sh - r.ih) + 'px of scroll');
     if (r.sw > r.iw) bad.push(w + 'x' + h + ' is ' + r.sw + 'px wide');
     if (r.wrap > 641) bad.push(w + 'x' + h + ' column is ' + Math.round(r.wrap) + 'px wide');
-  }
+  });
   return bad;
 }, FUN);
 
@@ -1787,7 +1802,7 @@ check('minesweeper-numbers-show', 'revealed minesweeper tiles had no numbers: th
 }, ['minesweeper']);
 
 check('resume-notice-icon', 'the "Picked up where you left off" pill showed a broken box and the letters BB in front of it', async () => {
-  const css = fs.readFileSync(path.join(ROOT, 'fun.css'), 'utf8');
+  const css = fs.readFileSync(path.join(ROOT, 'shared/fun.css'), 'utf8');
   const bad = [];
   if (/[\x00-\x08\x0b\x0e-\x1f]/.test(css)) bad.push('fun.css has a control character in it (a mangled escape)');
   const m = /\.game-notice::before \{([^}]*)\}/.exec(css);
@@ -1832,12 +1847,12 @@ check('water-sort-look-and-pour', 'water sort should have glass tubes with a shi
     const fr = full.getBoundingClientRect(), fl = [...full.children].map((e) => e.getBoundingClientRect());
     const inlineUndo = [...document.querySelectorAll('#undo-btn .gk-undo-ico, #undo-btn .glyph')].filter((e) => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0).length;
     const undoButtons = [...document.querySelectorAll('button')].filter((e) => e.id === 'undo-btn' || /(^|\s)undo(\s|$)/i.test(e.textContent.trim())).filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length;
-    return { picture: /fun\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
+    return { picture: /assets\/ui\/tube\.png/.test(af.backgroundImage), ratio: tr.height / tr.width,
       inside: fl.length ? fl.every((r) => r.left >= fr.left + fr.width * 0.12 && r.right <= fr.right - fr.width * 0.12 && r.bottom <= fr.bottom - 1 && r.top >= fr.top + fr.height * 0.17) : true,
       ucircle: parseFloat(u.width) >= 60 && parseFloat(u.borderTopLeftRadius) >= 30, hint: [h.left, h.bottom], undo: [un.left, un.bottom], inlineUndo, undoButtons,
       vivid: Math.max(...[...document.querySelectorAll('.ws-l')].map((e) => { const m = getComputedStyle(e).backgroundColor.match(/\d+/g).map(Number); return Math.max(...m) - Math.min(...m); })), sw: document.documentElement.scrollWidth };
   });
-  if (!look.picture) bad.push('the tubes are not the glass picture from the reference (fun/tube.png)');
+  if (!look.picture) bad.push('the tubes are not the glass picture from the reference (assets/ui/tube.png)');
   if (look.ratio < 2.8 || look.ratio > 3.2) bad.push('tube proportions are off: height/width is ' + look.ratio.toFixed(2) + ', the picture is 2.98');
   if (!look.inside) bad.push('the liquid pokes outside the glass or into its neck');
   if (!look.ucircle) bad.push('Undo is not a big round button');
@@ -2369,10 +2384,10 @@ check('app-icon-and-launch-images', 'the app icon, the launch images and the lin
   const sizes = { 'icon-192.png': [192, 192], 'icon-512.png': [512, 512], 'icon-maskable-512.png': [512, 512], 'apple-touch-icon.png': [180, 180], 'og-image.png': [1200, 300] };
   const png = (f) => { const b = fs.readFileSync(path.join(ROOT, f)); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
   for (const [f, [w, h]] of Object.entries(sizes)) { const i = png(f); if (i.w !== w || i.h !== h) bad.push(f + ' is ' + i.w + 'x' + i.h + ', wanted ' + w + 'x' + h); }
-  for (const f of fs.readdirSync(path.join(ROOT, 'splash'))) { const m = /^(\d+)x(\d+)\.png$/.exec(f); if (!m) continue; const i = png('splash/' + f); if (i.w !== Number(m[1]) || i.h !== Number(m[2])) bad.push('splash/' + f + ' is ' + i.w + 'x' + i.h); }
+  for (const f of fs.readdirSync(path.join(ROOT, 'assets/splash'))) { const m = /^(\d+)x(\d+)\.png$/.exec(f); if (!m) continue; const i = png('assets/splash/' + f); if (i.w !== Number(m[1]) || i.h !== Number(m[2])) bad.push('splash/' + f + ' is ' + i.w + 'x' + i.h); }
   // the art itself: sample the icon in the browser (the four tile colours are all present).
   // NOTE: the generator (tools/gen-icons.py) draws the flat cream design; a final
-  // icon choice is still a user decision in TODO.md. If the art changes, update
+  // icon choice is still a user decision in docs/TODO.md. If the art changes, update
   // this check together with the generator and manifest.
   const p = await browser.newPage({ viewport: { width: 600, height: 600 } });
   await p.goto(base + 'icon-512.png');
@@ -2764,6 +2779,16 @@ check('how-to-reachable', 'Hearts and Ludo hid their How to play button (CSS dis
   return bad;
 }, FUN);
 
+check('tests-stay-offline', 'running the suite loaded Google Analytics on every page, sending thousands of test visits to the real property; the test browser must block everything that is not local', async () => {
+  const p = await open('chess', 390);
+  const bad = [];
+  const seen = []; p.on('request', (r) => { if (!r.url().startsWith(base) && !r.url().startsWith('data:')) seen.push(r.url()); });
+  const reply = await p.evaluate(() => fetch('https://www.googletagmanager.com/gtag/js?id=test', { mode: 'no-cors' }).then(() => 'reached', () => 'blocked'));
+  if (reply !== 'blocked') bad.push('an outside request was not blocked (' + reply + ')');
+  await p.close();
+  return bad;
+}, ['chess']);
+
 /* ---------- run ---------- */
 // Checks run in parallel (each opens its own page). --quick runs each check on 2 sample pages only:
 // a fast smoke pass while working; run the full thing before a deploy.
@@ -2775,7 +2800,11 @@ for (const c of checks) {
   for (const g of QUICK && !PAGE ? [pages[0], pages[Math.floor(pages.length / 2)]].filter((x, i, a) => x && a.indexOf(x) === i) : pages) jobs.push({ c, g });
 }
 if (!jobs.length) { console.log('no checks matched --only / --page'); await browser.close(); srv.close(); process.exit(1); }
-const attempt = async ({ c, g }) => { try { return await c.fn(g); } catch (e) { return ['threw: ' + e.message.split('\n')[0]]; } };
+const times = [];
+const attempt = async ({ c, g }) => {
+  const t = Date.now();
+  try { return await c.fn(g); } catch (e) { return ['threw: ' + e.message.split('\n')[0]]; } finally { times.push({ id: c.id, g, ms: Date.now() - t }); }
+};
 const out = new Array(jobs.length);
 let next = 0, printed = 0;
 async function worker() {
@@ -2799,5 +2828,12 @@ for (let i = 0; i < jobs.length; i++) {
   results.push({ id: c.id, g, ok: !again.length });
 }
 await browser.close(); srv.close();
+if (args.includes('--slow')) {                       // where the time goes: total per check id, and the slowest single runs
+  const per = {}; for (const t of times) { per[t.id] = per[t.id] || { ms: 0, n: 0 }; per[t.id].ms += t.ms; per[t.id].n++; }
+  console.log('\nslowest check ids (total seconds, runs):');
+  for (const [id, v] of Object.entries(per).sort((a, b) => b[1].ms - a[1].ms).slice(0, 15)) console.log('  ' + (v.ms / 1000).toFixed(0).padStart(5) + 's  ' + String(v.n).padStart(3) + '  ' + id);
+  console.log('slowest single runs:');
+  for (const t of times.sort((a, b) => b.ms - a.ms).slice(0, 8)) console.log('  ' + (t.ms / 1000).toFixed(1).padStart(5) + 's  ' + t.id + ' · ' + t.g);
+}
 console.log('\n' + (results.length - failed) + '/' + results.length + ' passed' + (flaky ? ', ' + flaky + ' flaky' : '') + (failed ? ', ' + failed + ' FAILED' : '') + ' in ' + Math.round((Date.now() - t0) / 1000) + 's');
 process.exit(failed ? 1 : 0);

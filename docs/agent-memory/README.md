@@ -29,7 +29,7 @@ Every line in `events.jsonl` is one JSON object.
   "type": "implementation_completed",
   "summary": "Short, factual statement of what happened",
   "reason": "Why it was needed",
-  "files_changed": ["fun.css", "tests/regression.mjs"],
+  "files_changed": ["shared/fun.css", "tests/regression.mjs"],
   "decisions": ["Reuse the existing desktop breakpoint"],
   "tests": [
     { "command": "node tests/regression.mjs --only desktop", "result": "passed", "details": "227/227" }
@@ -39,7 +39,7 @@ Every line in `events.jsonl` is one JSON object.
   "worktree_state": "dirty",
   "confidence": "verified",
   "tags": ["pc-layout", "desktop"],
-  "evidence": ["fun.css", "tests/regression.mjs"],
+  "evidence": ["shared/fun.css", "tests/regression.mjs"],
   "supersedes": []
 }
 ```
@@ -84,7 +84,7 @@ approaches, limitations and handoffs.
 
 ```powershell
 node tools/memory/search.mjs --text "water sort"
-node tools/memory/search.mjs --file fun.css --limit 10
+node tools/memory/search.mjs --file shared/fun.css --limit 10
 node tools/memory/search.mjs --tag pc-layout
 node tools/memory/search.mjs --type limitation_discovered
 node tools/memory/search.mjs --text "desktop" --json

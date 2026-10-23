@@ -45,7 +45,7 @@ Opening a shared link always switches the page to WhatsApp mode. The newer games
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 
 - **Server:** one Durable Object per room (`worker/live-room.mjs`) holds the authoritative state and relays moves over a hibernating WebSocket. All room logic is pure and unit-tested in `worker/live-protocol.mjs`; each game's server-side move rules live in `worker/rules/<game>.mjs` and are registered in `worker/live-games.mjs`. A game without a rules module can't be played live.
-- **Client:** `live-share.js` mirrors `AsyncShare`'s controller (`show / hide / commit / newGame / canMove`), so a game adds live mode by pointing its existing link code at it. It waits for the server's echo instead of applying moves optimistically, and on every reconnect the server replays the whole state.
+- **Client:** `shared/live-share.js` mirrors `AsyncShare`'s controller (`show / hide / commit / newGame / canMove`), so a game adds live mode by pointing its existing link code at it. It waits for the server's echo instead of applying moves optimistically, and on every reconnect the server replays the whole state.
 - **API** (same origin only): `GET /api/live/status`, `GET /api/live/exists?room=`, `POST /api/live/create {game}`, `GET /api/live/ws?room=` (WebSocket).
 - **Limits:** 2 seats, 2 KB messages, a per-socket rate limit, 20 new rooms per minute per IP, rooms deleted after 24 h idle / 1 h after finishing.
 - **Kill switch:** set `LIVE_ENABLED = "0"` in `wrangler.toml` and deploy: the API answers 503, open rooms close, and games hide the option.
@@ -67,7 +67,7 @@ The URL is the save file. There is no game server, lobby, or lookup.
 
 ### Link format
 
-`?s=` holds a compressed envelope, with `+` swapped for `_`. That keeps links to `A–Z a–z 0–9 _ -`; a raw `+` in a query string turns into a space. lz-string is vendored in [vendor/](vendor/), so the game makes no CDN requests.
+`?s=` holds a compressed envelope, with `+` swapped for `_`. That keeps links to `A–Z a–z 0–9 _ -`; a raw `+` in a query string turns into a space. lz-string is vendored in [assets/vendor/](assets/vendor/), so the game makes no CDN requests.
 
 Every game works with the same **logical** envelope — this is the shape `AsyncShare.encode()` takes and `AsyncShare.decode()` returns, and what every game's `board`/`validateBoard`/`commit()` code sees:
 
@@ -89,7 +89,7 @@ Every game works with the same **logical** envelope — this is the shape `Async
 | `last` | Game-specific index (or indices) of the last move, used for highlighting. |
 | `resigned` | `true` when `status: "won"` was reached by the loser hitting "Admit defeat (coward)" instead of playing it out. Absent (not `false`) on every ordinary move, so it costs nothing in the link until it's actually used. |
 
-On the wire, `encode()`/`decode()` in [async-share.js](async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l/r`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above.
+On the wire, `encode()`/`decode()` in [shared/async-share.js](shared/async-share.js) shrink that to single-letter keys and single-letter status codes (`g/v/i/t/b/s/w/n/l/r`, `status` → `p`/`w`/`d`) before `lz-string` compresses it — purely a transport detail, invisible to every game and to `AsyncShare.encode()`/`decode()` callers, which always use the full field names above.
 
 Every game's `board` is also a compact string rather than a JSON array/object with punctuation — one character per cell (or per pair, for Memory) instead of `["X",null,...]`-style array syntax. That plus the key/status shrinking above keeps a tic-tac-toe link to around 140 characters and Connect Four to around 150 — well under half the size of the original array-of-cells, full-field-name encoding this project shipped with initially. Further shrinking is possible (e.g. dropping envelope fields the board itself already implies, like `moveCount`), but only helps the simplest games and would mean each game's link no longer follows one shared, easy-to-extend format — not worth it while links are already this far under any real WhatsApp limit.
 
@@ -198,7 +198,7 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Liar's Dice (Perudo)**
 - 2 to 4 players, 5 dice each, ones wild. A bid is "at least Q dice show F" over everyone's dice and must go up (more dice, or the same number of a higher face; to 1s you may halve the number, from 1s you must double and add one; no opening on 1s). **Dudo** reveals everything: a true bid costs the caller a die, a lie costs the bidder one. The loser opens the next round; no dice means out; the last player with dice wins.
-- **Online rooms and vs computer only.** Same room server as Crazy 8 (`worker/card-protocol.mjs` now takes a game and its engine): the dice are rolled and kept in the Durable Object, each person is sent only their own, and everyone's dice are revealed only after a dudo. Rooms of 2 to 4 seats with 0 to 3 computer players, a computer fills in for someone offline 90 seconds, an idle turn is played for you. The rules and the computers are one file, `liars-dice/engine.js` (the computers count the odds with a binomial tail from their own dice). The room screens (landing, lobby, rematch, taunts, reconnect) are the shared `multiseat.js`.
+- **Online rooms and vs computer only.** Same room server as Crazy 8 (`worker/card-protocol.mjs` now takes a game and its engine): the dice are rolled and kept in the Durable Object, each person is sent only their own, and everyone's dice are revealed only after a dudo. Rooms of 2 to 4 seats with 0 to 3 computer players, a computer fills in for someone offline 90 seconds, an idle turn is played for you. The rules and the computers are one file, `liars-dice/engine.js` (the computers count the odds with a binomial tail from their own dice). The room screens (landing, lobby, rematch, taunts, reconnect) are the shared `shared/multiseat.js`.
 - There is no link or same-device mode: a link or one shared screen cannot keep the dice secret.
 
 **Letter Boxed**
@@ -217,7 +217,7 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Ludo**
 - The cross-board race: four tokens each, a 6 brings one out of the yard, a 6 earns another roll (three 6s in a row forfeit the turn), and a token needs the exact roll to finish. Landing on an opponent on an ordinary square sends them back to the yard; entry squares and the star squares are safe, and there are no blockades. Two play red against blue diagonally; three and four fill in turn order. 2 to 4 players, against Easy / Medium / Hard computers, or an online room.
-- Rules and computers are one file, `ludo/engine.js`, loaded by the page and imported by the Worker. **Online the server rolls the die** inside the engine, so nobody can choose a face; rooms of 2 to 4 seats with 0 to 3 computers use the shared `multiseat.js` screens. The board is drawn from the engine's 15×15 cell map (`CELLS`, `YARDS`), so a token's drawn square and its rule square cannot disagree. The token buttons keep their elements between renders, so a move glides instead of jumping; skipped under `prefers-reduced-motion`.
+- Rules and computers are one file, `ludo/engine.js`, loaded by the page and imported by the Worker. **Online the server rolls the die** inside the engine, so nobody can choose a face; rooms of 2 to 4 seats with 0 to 3 computers use the shared `shared/multiseat.js` screens. The board is drawn from the engine's 15×15 cell map (`CELLS`, `YARDS`), so a token's drawn square and its rule square cannot disagree. The token buttons keep their elements between renders, so a move glides instead of jumping; skipped under `prefers-reduced-motion`.
 
 **Hearts**
 - Standard four-player Hearts: 13 cards each, pass three left / right / across / nobody, the two of clubs leads, follow suit, every heart is 1 point and the queen of spades 13. Shooting the moon gives everyone else 26. The first player to 100 ends the game and the **lowest** score wins.
@@ -233,7 +233,7 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Farkle (10,000)**
 - Six dice and a decision every roll: keep at least one scoring die, then bank the turn total or roll the rest. A roll with no scoring die loses the turn; all six scoring is hot dice and rolls all six again. Ones are 100, fives 50, three of a kind 1000 (three 1s) or face×100, four/five/six of a kind 1000/2000/3000, a 1-6 straight 1500 and three pairs 1500. First to 10,000 wins.
-- **Online rooms and vs computer.** The dice are rolled inside `farkle/engine.js` on the server, so a room cannot choose a face; rooms of 2 to 4 seats with computers use the shared `multiseat.js` screens.
+- **Online rooms and vs computer.** The dice are rolled inside `farkle/engine.js` on the server, so a room cannot choose a face; rooms of 2 to 4 seats with computers use the shared `shared/multiseat.js` screens.
 
 **Hashiwokakero (Bridges)**
 - Join the numbered islands with horizontal or vertical bridges: an island's number is its bridge count, a pair may have one or two bridges, bridges cannot cross, and every island must end connected. Solo only, with a daily puzzle per level, random puzzles, three sizes, undo, check, hints, timer and refresh resume.
@@ -249,7 +249,7 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Lost Cities**
 - Two players, five expeditions and 60 cards: play a card onto one of your expeditions (numbers must rise; handshakes only before a number), discard onto its colour pile, then draw from the deck or a discard pile. An expedition scores its numbers minus 20, doubled once per handshake, and a negative expedition counts negative. The deck running out ends the round; the higher total wins.
-- **Online rooms and vs computer only** (hidden hands). The server deals and holds both hands and sends each person only their own. Rules and computers are one file, `lost-cities/engine.js`; the room uses the shared `multiseat.js` screens.
+- **Online rooms and vs computer only** (hidden hands). The server deals and holds both hands and sends each person only their own. Rules and computers are one file, `lost-cities/engine.js`; the room uses the shared `shared/multiseat.js` screens.
 
 **Slitherlink**
 - Draw one closed loop along the grid lines. A number says how many of its four sides the loop uses; the loop cannot cross or branch, and every line must be part of the same loop. Three sizes (5×5, 7×7, 10×10), daily per level, random puzzles, undo, X marks, hints, check, timer and refresh resume. Solo only.
@@ -273,11 +273,11 @@ These play by the same standard rules as the real games — no reinterpretation 
 
 **Cribbage**
 - Two players, six cards each: discard two to the dealer's crib, cut a starter, then peg to 31 (fifteens, pairs, runs, go) and count hands and crib (fifteens, pairs, runs, flush, nobs). First to 121 wins; the deal repeats until someone gets there.
-- **Online rooms and vs computer only** (hidden hands). The server deals and holds both hands and the crib, and each person sees only their own cards. Rules and computers are one file, `cribbage/engine.js`; the room uses the shared `multiseat.js` screens.
+- **Online rooms and vs computer only** (hidden hands). The server deals and holds both hands and the crib, and each person sees only their own cards. Rules and computers are one file, `cribbage/engine.js`; the room uses the shared `shared/multiseat.js` screens.
 
 **Skull**
 - Three to six players, four discs each (three roses, one skull). Place discs face down, bid how many you can flip without finding a skull, and the highest bidder turns their own stack first, then other players' discs. A skull costs a disc; a clean bid scores a point. First to two points wins, and a player who loses all four discs is out.
-- **Online rooms and vs computer.** The server holds every face-down stack and sends each person only their own discs. Rules and computers are one file, `skull/engine.js`; the room uses the shared `multiseat.js` screens.
+- **Online rooms and vs computer.** The server holds every face-down stack and sends each person only their own discs. Rules and computers are one file, `skull/engine.js`; the room uses the shared `shared/multiseat.js` screens.
 
 **Yatzy (Yahtzee scoring)**
 - 13 turns: roll five dice, re-roll up to twice keeping any you like, then fill one of 13 boxes (Ones to Sixes with a 35 bonus at 63; three and four of a kind and chance score all five dice; full house 25, small straight 30, large straight 40, Yatzy 50; a crossed-out box scores 0). A second Yatzy over a 50 earns +100 and plays as a joker (its own upper box if open, else any open lower box scoring in full, else any upper box). Solo only: two-tap scoring (pick a box, tap again), a best score, and refresh resume.
@@ -354,7 +354,7 @@ With `VAPID_PUBLIC_KEY` empty the site simply hides every notification control. 
 
 | Command | Covers |
 |---|---|
-| `node taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
+| `node shared/taunts.test.mjs` | taunt pools (length, duplicates, the server's taunt count matches the lists) |
 | `node worker/live-protocol.test.mjs` | the live-room rules, including taunt validation |
 | `node worker/rules/wave1.test.mjs` | thousands of random games per live game, Dots and Boxes at every size |
 | `node worker/rules/crazy-8.test.mjs`, `node worker/card-protocol.test.mjs` | the Crazy 8 engine (every rule, 720 computer games, cards never lost or duplicated) and the room rules with a fake clock |
@@ -400,7 +400,7 @@ First-time setup, in order:
 
 To go back to GitHub Pages: point the nameservers (or the A records) at GitHub again, per the section below, and restore the `CNAME` file — it was deleted once Cloudflare took over the domain, so recover it with `git checkout 837ee16 -- CNAME` (it contained one line: the bare domain). `.nojekyll` is still in the repo and still needed for that path.
 
-Caching is in [_headers](_headers) — fonts and `vendor/` are immutable for a year; the site's own CSS and JS stay on ETag revalidation, because their filenames carry no content hash and a long `max-age` would strand players on a stale `game.js`. GitHub Pages allowed none of this: it serves a fixed `max-age=600`.
+Caching is in [_headers](_headers) — fonts and `assets/vendor/` are immutable for a year; the site's own CSS and JS stay on ETag revalidation, because their filenames carry no content hash and a long `max-age` would strand players on a stale `game.js`. GitHub Pages allowed none of this: it serves a fixed `max-age=600`.
 
 ## Deploy to GitHub Pages (fallback)
 
@@ -441,56 +441,45 @@ Don't mix an A record and a CNAME on the same host (`@`) — the apex takes A/AA
 ## Project structure
 
 ```
-├── index.html          hub page
-├── async-share.js      play-by-link: encode/decode, validation, share panel, old-link detection
-├── async-share.css     share panel styles (shared tokens)
-├── vendor/             lz-string 1.5.0 + its MIT license
-├── fonts/              self-hosted Fira Mono (woff2) + its OFL license
-├── shared.css          design tokens, @font-face, buttons, panels, light mode, game-page theme, help overlay
-├── manpage.js          "? man" help overlay
-├── gamekit.js          shared helpers (PRNG, storage, chips) AND the standard page layout, taunt strip, custom select, theme toggle
-├── manifest.json       PWA manifest (+ icon-*.png, apple-touch-icon.png)
-├── live-share.js       live online play client (WebSocket rooms, online taunts, poke a friend)
-├── account.js, account-ui.js, sw.js   username, notifications, install (see above)
-├── taunts.js           every taunt line, including the computer-only pool and the online angel/devil lines
-├── worker/             Cloudflare Worker: link previews, live rooms (Durable Object), + node tests
-├── wrangler.toml       Workers config (the assets directory is the repo root)
-├── _headers            Cache-Control for static assets
-├── .assetsignore       repo files that are not part of the published site
-├── tic-tac-toe/        ┐
-├── connect-four/       │
-├── minesweeper/        ├ WhatsApp two-player + solo/computer modes (adapted from wavde/games)
-├── chess/              │
-├── memory/             │
-├── lights-out/         ┘
-├── reversi/            ┐
-├── checkers/           │
-├── dots-and-boxes/     ├ WhatsApp two-player + local modes (built from scratch)
-├── mancala/            │
-├── pentago/            │
-├── rock-paper-scissors/│
-├── hangman/            │
-├── battleship/         │
-├── mastermind/         ┘
-├── gomoku/ pig/ ultimate-tic-tac-toe/ hex/ blokus-duo/   ← WhatsApp + computer + local (all but Pig also live)
-├── crazy-8/                                              ← engine.js (shared rules and computer players), page, rooms
-├── sudoku/ nonogram/ word-guess/ word-ladder/            ← solo puzzles (word lists come from MIT / Unlicense sources)
-└── 2048/ mini-sudoku/ tango/ queens/ zip/ patches/   (unchanged solo games)
+index.html, sw.js, manifest.json, icon-*.png, apple-touch-icon.png, favicon.svg, og-image.png,
+robots.txt, sitemap.xml          the hub page and the files browsers expect at the site root
+_headers, wrangler.toml, .assetsignore    hosting: cache rules, Worker config, repo files kept out of the site
+<game>/                          one folder per game (58): index.html + game.js, and where they exist
+                                 engine.js / rules.js (rules shared with the Worker), puzzle.js, words.js, banter.js
+shared/                          code every page loads
+    shared.css, fun.css, fun.js      design tokens, the chunky look and its behaviour
+    gamekit.js                       helpers, standard page layout, taunts, end-of-game card, motion
+    async-share.js/.css              play-by-link: encode/decode, validation, share panel
+    live-share.js                    live online play client (rooms, table talk, poke a friend)
+    multiseat.js/.css                online-room screens for the multi-seat card and dice games
+    account.js, account-ui.js        username, notifications, install
+    manpage.js, taunts.js, ga.js     help overlay, every commentary line, analytics
+    taunts.test.mjs                  checks the commentary lists
+assets/                          static files
+    fonts/, vendor/, splash/, ui/    Fira Mono and Lilita One, lz-string, iOS splash screens, button images
+worker/                          Cloudflare Worker: link previews, live and card rooms (Durable Objects), user registry
+    rules/                           per-game rules the server checks live moves against
+    *.test.mjs                       unit tests, run under plain Node (room-glue.test.mjs runs the real rooms)
+tests/                           regression.mjs (browser checks), cache-bust.mjs (?v= stamps), load-timing.mjs
+tools/                           gen-sitemap.mjs, gen-icons.py, memory/ (agent memory scripts)
+docs/                            TODO.md, CHANGELOG.md, BANTER.md, agent-memory/ (state, decisions, event log)
+README.md, AGENTS.md, CLAUDE.md, LICENSE
 ```
 
-Each game folder is self-contained: `index.html` + `game.js`.
+Each game folder is self-contained apart from `shared/` and `assets/`. Tests that belong to one game
+(`car-park/rules.test.mjs`, `hangman/banter.test.mjs`) live next to the code they test.
 
 ## License
 
-[MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([vendor/lz-string.LICENSE](vendor/lz-string.LICENSE)). Fira Mono © The Mozilla Corporation and Telefonica S.A., SIL Open Font License 1.1 ([fonts/fira-mono.LICENSE](fonts/fira-mono.LICENSE)).
+[MIT](LICENSE). Original games © Tejas Wavde. lz-string © pieroxy, MIT ([assets/vendor/lz-string.LICENSE](assets/vendor/lz-string.LICENSE)). Fira Mono © The Mozilla Corporation and Telefonica S.A., SIL Open Font License 1.1 ([assets/fonts/fira-mono.LICENSE](assets/fonts/fira-mono.LICENSE)).
 
 ## The look, the motion and the tests
 
-Every game page uses the chunky look (`fun.css` + `fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page uses the same chunky look (violet page, round back button, one rounded card). `art-*.html` are unlinked previews of the hub tile art, not part of the site.
+Every game page uses the chunky look (`shared/fun.css` + `shared/fun.js`, `class="fun"` on the body); the hub has its own dark page and the privacy page uses the same chunky look (violet page, round back button, one rounded card). `art-*.html` are unlinked previews of the hub tile art, not part of the site.
 
 - **Steady layout:** pages with `data-fun-zone` have a header, one fixed message zone, an Options bar and then the board. Options opens as a popover over the board, so nothing moves when it opens, a status changes or a mode changes (`data-fun-zone="slim"` / `"mini"` shrink the zone). Choosing from a dropdown inside Options folds it away again.
-- **Motion** is in `gamekit.js`, so a page opts in with one line: `Gamekit.popFilled(boardEl)` pops any square that newly fills (stones, marks, numbers); `Gamekit.glidePieces(boardEl, selector)` glides a piece that has moved. Games with their own motion: Connect Four drops, Reversi flips, Chess/Checkers slides (multi-jumps follow their path), Mancala sows seed by seed, Minesweeper ripples and explodes, Battleship has a cannon, Zip glides a head with a halo, tic-tac-toe draws its win line, 2048 blends merges, Ludo tokens glide from square to square. Everything is skipped under `prefers-reduced-motion`.
-- **End of game card:** `gamekit.js` builds it when the status line says someone won. `data-next="Next level"` on the body makes puzzle pages offer the next puzzle; `data-over-delay="ms"` holds the card back while a win animation plays.
+- **Motion** is in `shared/gamekit.js`, so a page opts in with one line: `Gamekit.popFilled(boardEl)` pops any square that newly fills (stones, marks, numbers); `Gamekit.glidePieces(boardEl, selector)` glides a piece that has moved. Games with their own motion: Connect Four drops, Reversi flips, Chess/Checkers slides (multi-jumps follow their path), Mancala sows seed by seed, Minesweeper ripples and explodes, Battleship has a cannon, Zip glides a head with a halo, tic-tac-toe draws its win line, 2048 blends merges, Ludo tokens glide from square to square. Everything is skipped under `prefers-reduced-motion`.
+- **End of game card:** `shared/gamekit.js` builds it when the status line says someone won. `data-next="Next level"` on the body makes puzzle pages offer the next puzzle; `data-over-delay="ms"` holds the card back while a win animation plays.
 - **Shared rules:** a game that is played online keeps its rules in one file the page and the Worker both load (`backgammon/rules.js`, `onitama/rules.js`, `pig/rules.js`, `nine-mens-morris/rules.js`, `breakthrough/rules.js`, `connect6/rules.js`, `tablut/rules.js`, `fanorona/rules.js`, and the card engines `crazy-8/engine.js`, `liars-dice/engine.js`, `dominoes/engine.js`, `ludo/engine.js`, `hearts/engine.js`, `farkle/engine.js`, `lost-cities/engine.js`, `cribbage/engine.js`, `skull/engine.js`), so they cannot disagree. Pig and Backgammon are online with the server rolling (`stamp` hook); Ludo's and Farkle's dice are rolled inside their engines, so the online room never trusts a browser with them.
 - **Tests:** `node tests/regression.mjs` drives Chrome at phone widths over every fixed issue and every redesigned page (`--page chess --only steady` narrows it). The best-value batch checks are `nine-mens-morris-places`, `breakthrough-moves`, `farkle-rolls`, `hashiwokakero-board`, `flow-free-board`, `word-search-grid` and `lost-cities-deal`; the next batch adds `slitherlink-loop`, `star-battle-stars`, `connect6-two-stones`, `tablut-move`, `fanorona-move`, `cribbage-discard`, `skull-place` and `skull-six-seats`, plus the earlier `hearts-pass-and-play`, `ludo-board-and-roll`, `new-card-games-online-landing` and `online-to-computer-clears-room`. After changing any script or stylesheet a game loads, run `node tests/cache-bust.mjs` to re-stamp the `?v=` hashes. The Worker has its own tests: `node worker/rules/pig.test.mjs`, `node worker/live-protocol.test.mjs`, `node worker/rules/nine-mens-morris.test.mjs`, `node worker/rules/breakthrough.test.mjs`, `node worker/rules/connect6.test.mjs`, `node worker/rules/tablut.test.mjs`, `node worker/rules/fanorona.test.mjs`, `node worker/farkle.test.mjs`, `node worker/lost-cities.test.mjs`, `node worker/cribbage.test.mjs`, `node worker/skull.test.mjs`, `node worker/hearts.test.mjs`, `node worker/ludo.test.mjs`, and the other `worker/**/*.test.mjs`.
 

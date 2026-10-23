@@ -38,7 +38,7 @@ flakes, hardened and rechecked.
   Still open: context tags → picker with memory/pacing, then safe `{margin}` /
   `{moves}` / `{opponent}` slots (BANTER.md plan steps 3–4).
 - [ ] **Crazy 8 room screens.** It still uses its private room copy in
-  `crazy-8/game.js` and `#c8-room` instead of the shared `multiseat.js` screens
+  `crazy-8/game.js` and `#c8-room` instead of the shared `shared/multiseat.js` screens
   used by Hearts, Ludo, Farkle, Lost Cities, Cribbage and Skull.
 
 ## Blocked or needs a user decision

@@ -11,7 +11,7 @@
    this part is plain JS so it can be tested in node.
    ============================================================ */
 
-import LZString from "../vendor/lz-string.min.js";
+import LZString from "../assets/vendor/lz-string.min.js";
 import { liveGame } from "./live-games.mjs";
 import { CARD_GAMES } from "./card-protocol.mjs";
 

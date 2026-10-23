@@ -41,6 +41,12 @@ Do not read the whole event log for a small change. Search by file, tag or text.
 ## Useful commands
 
 ```powershell
+# One entry point: static checks + every unit test, then the browser suite
+node tests/run.mjs units     # about a minute: no browser
+node tests/run.mjs changed   # units + only the games you changed (a quick pass if shared/ changed)
+node tests/run.mjs quick     # units + smoke pass, about 3 minutes
+node tests/run.mjs           # units + the full browser suite: the gate before a deploy
+
 # All desktop layout checks (column, large viewports, modes, compact, overlays, phone guard)
 node tests/regression.mjs --only desktop
 

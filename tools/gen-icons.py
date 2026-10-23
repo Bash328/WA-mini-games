@@ -14,7 +14,7 @@ SCR = tempfile.gettempdir()
 # Lilita One: PIL wants a ttf, the repo has a woff2
 ttf = os.path.join(SCR, 'lilita.ttf')
 if not os.path.exists(ttf):
-    f = TTFont(os.path.join(ROOT, 'fonts', 'lilita-one-latin-400-normal.woff2'))
+    f = TTFont(os.path.join(ROOT, 'assets', 'fonts', 'lilita-one-latin-400-normal.woff2'))
     f.flavor = None
     f.save(ttf)
 
