@@ -208,8 +208,14 @@
     // The board's own turn can differ from the envelope after a resignation
     // (the board is unchanged, the envelope names the winner next), so only
     // the position and the move mark are checked here.
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= 80 * 9 + 80;
+    const S = R.parse(s.board);
+    if (!S || !(Number.isInteger(s.last) && s.last >= 0 && s.last <= 80 * 9 + 80)) return false;
+    // a hand-edited link must still be a position two players could have reached: the side to move named in the board is the
+    // one in the envelope, no side has more pieces than it started with, and the result is the one the board shows
+    if (S.b.filter(v => v === R.ATTACKER).length > 16 || S.b.filter(v => v === R.DEFENDER).length > 8) return false;
+    if (s.resigned) return true;
+    const o = R.outcome(S, R.other(S.t));
+    return s.turn === S.t && s.status === o.status && s.winner === (o.winner || null);
   }
   const shared = {
     game: "tablut", version: 1, players: [ATK, DEF],

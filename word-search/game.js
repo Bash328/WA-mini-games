@@ -73,6 +73,13 @@
         cellEls.push(cell);
       }
     }
+    hlEl = document.createElementNS(SVGNS, "svg");
+    hlEl.setAttribute("class", "ws-hl");
+    hlEl.setAttribute("viewBox", "0 0 " + n + " " + n);
+    hlEl.setAttribute("preserveAspectRatio", "none");
+    hlEl.setAttribute("aria-hidden", "true");
+    boardEl.prepend(hlEl);
+    selLine = null;
   }
 
   function buildWords() {
@@ -98,6 +105,18 @@
 
   const cellAt = (row, col) => cellEls[row * puzzle.n + col];
 
+  // Found words and the word being dragged are drawn as rounded capsules laid along the letters (one SVG line with round caps
+  // under the letters), not as boxes on each cell. The board is square and the SVG stretches to it, so one cell is one unit.
+  const SVGNS = "http://www.w3.org/2000/svg";
+  let hlEl = null, selLine = null;
+  function capsule(r1, c1, r2, c2, color, cls) {
+    const l = document.createElementNS(SVGNS, "line");
+    l.setAttribute("x1", String(c1 + 0.5)); l.setAttribute("y1", String(r1 + 0.5));
+    l.setAttribute("x2", String(c2 + 0.5 + (r1 === r2 && c1 === c2 ? 0.001 : 0))); l.setAttribute("y2", String(r2 + 0.5));
+    l.setAttribute("stroke", color); l.setAttribute("class", cls);
+    return l;
+  }
+
   function paintFound(word) {
     const item = itemOf.get(word);
     if (!item) return;
@@ -109,6 +128,8 @@
         cell.style.setProperty("--wc", color);
       }
     }
+    const last = item.word.length - 1;
+    if (hlEl) hlEl.insertBefore(capsule(item.row, item.col, item.row + item.dr * last, item.col + item.dc * last, color, "ws-cap"), selLine);
     const el = wordEls.get(word);
     if (el) el.classList.add("found");
   }
@@ -129,6 +150,7 @@
       cell.style.removeProperty("--wc");
     });
     wordEls.forEach((el) => el.classList.remove("found", "hinted"));
+    if (hlEl) { hlEl.replaceChildren(); selLine = null; }
     found.forEach(paintFound);
     hinted.forEach(paintHint);
     renderCount();
@@ -145,6 +167,12 @@
       const cell = cellAt(pos.row, pos.col);
       if (cell) cell.classList.add("sel");
     });
+    if (selLine) { selLine.remove(); selLine = null; }
+    if (hlEl && selection.length) {
+      const a = selection[0], z = selection[selection.length - 1];
+      selLine = capsule(a.row, a.col, z.row, z.col, "#243b55", "ws-sel");
+      hlEl.append(selLine);
+    }
   }
 
   const setStatus = (text) => { statusEl.textContent = text; };

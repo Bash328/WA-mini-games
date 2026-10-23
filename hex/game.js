@@ -227,7 +227,15 @@
     if (typeof b !== "string" || b.length !== CELLS || !/^[012]+$/.test(b)) return false;
     const stones = b.length - b.replace(/[12]/g, "").length;
     if (stones !== s.moveCount && !(s.resigned && stones === s.moveCount - 1)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && b[s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < CELLS && b[s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: Red opens and the colours alternate, the
+    // last stone belongs to the side that just moved, only the mover can have a winning chain, and the result matches
+    const g = Uint8Array.from(b, Number), red = g.filter(v => v === RED).length, blue = stones - red;
+    if (red !== blue && red !== blue + 1) return false;
+    if (s.resigned) return true;
+    const mover = g[s.last];
+    if (mover !== (red > blue ? RED : BLUE) || s.turn === mover || winningChain(g, other(mover))) return false;
+    return winningChain(g, mover) ? s.status === "won" && s.winner === mover : s.status === "in_progress";
   }
   const shared = {
     game: "hex", version: 1, players: [RED, BLUE], label: (p) => NAMES[p],

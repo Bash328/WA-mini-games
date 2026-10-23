@@ -248,6 +248,9 @@
       if (!canMove()) return;
       const prev = view.state;
       const mover = view.viewer;
+      // the same link open in a second tab already moved on: this tab is now looking at an old link, not a live board
+      const seen = prev && recall(prev);
+      if (seen && seen.n > prev.moveCount) { view = classify(view.enc); paint(); return; }
       const enc = encode({
         game: opts.game,
         version: opts.version,

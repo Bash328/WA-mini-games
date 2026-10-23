@@ -122,7 +122,25 @@
     const edges = edgeCountOf(n);
     if (b.length !== 1 + edges + n * n) return false;
     if (!/^[0-3]+$/.test(b.slice(1, 1 + edges)) || !/^[012]+$/.test(b.slice(1 + edges))) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < edges && b[1 + s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < edges && b[1 + s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: one edge per move, a box is owned exactly
+    // when its four edges are drawn, and who moves next (and whether the game is over) follows from the last edge
+    const e = b.slice(1, 1 + edges).split("").map(Number), bx = b.slice(1 + edges).split("").map(Number);
+    const drawn = e.filter(Boolean).length, dots = n + 1, hCount = dots * n;
+    if (drawn !== (s.resigned ? s.moveCount - 1 : s.moveCount)) return false;
+    const done = (r, c) => [r * n + c, (r + 1) * n + c, hCount + r * dots + c, hCount + r * dots + c + 1].every(i => e[i]);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (!!bx[r * n + c] !== !!done(r, c)) return false;
+    if (s.resigned) return true;
+    const hv = s.last < hCount, lr = hv ? Math.floor(s.last / n) : Math.floor((s.last - hCount) / dots), lc = hv ? s.last % n : (s.last - hCount) % dots;
+    const touching = hv ? [[lr - 1, lc], [lr, lc]] : [[lr, lc - 1], [lr, lc]];
+    const claimed = touching.filter(([r, c]) => r >= 0 && r < n && c >= 0 && c < n && done(r, c));
+    const mover = e[s.last] > 1 ? e[s.last] - 1 : null;     // 1 = a line from before lines had owners
+    if (mover && claimed.some(([r, c]) => bx[r * n + c] !== mover)) return false;
+    if (drawn === edges) {
+      const cnt = counts(bx);
+      return cnt[P1] === cnt[P2] ? s.status === "draw" : s.status === "won" && s.winner === (cnt[P1] > cnt[P2] ? P1 : P2);
+    }
+    return s.status === "in_progress" && (!mover || s.turn === (claimed.length ? mover : other(mover)));
   }
   function finalBoxes(s) {
     const n = Number(s.board[0]);

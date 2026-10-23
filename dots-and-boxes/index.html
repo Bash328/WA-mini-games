@@ -65,6 +65,11 @@
   #board .db-h { width: 100%; height: 6px; background: var(--border-hi); }
   #board .db-v { width: 6px; height: 100%; background: var(--border-hi); }
   #board .db-edge:disabled { cursor: default; }
+  /* the lines are about 13px thick: an invisible band around each one brings the tap area to about 44px without changing how it looks */
+  #board .db-edge { position: relative; }
+  #board .db-edge.db-h::after { content: ""; position: absolute; left: 0; right: 0; top: -12px; bottom: -12px; }
+  #board .db-edge.db-v::after { content: ""; position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
+  #board .db-edge:disabled::after { pointer-events: none; }
   #board .db-edge:not(.drawn):not(:disabled):hover { background: var(--border-hi); }
   /* Drawn edges are disabled buttons, which the shared CSS fades; keep them solid. */
   #board .db-edge.drawn, #board .db-edge.drawn:disabled { background: var(--fg); opacity: 1; }
@@ -189,10 +194,10 @@
 <script src="../shared/taunts.js?v=de2cfe57"></script>
 <script src="../shared/gamekit.js?v=3678b5be"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../shared/async-share.js?v=ed2b02b5"></script>
+<script src="../shared/async-share.js?v=d4254c50"></script>
 <script src="../shared/account.js?v=160336a8"></script>
 <script src="../shared/live-share.js?v=2267f8ba"></script>
-<script src="game.js?v=7d01c9a1"></script>
+<script src="game.js?v=5eb3fb42"></script>
 <script src="../shared/fun.js?v=0db388a6"></script>
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 </body>

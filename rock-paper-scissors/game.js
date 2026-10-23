@@ -83,7 +83,20 @@
     if (o.p1Wins < 0 || o.p1Wins > rtw || o.p2Wins < 0 || o.p2Wins > rtw) return false;
     if (o.pending < 0 || o.pending > 3) return false;
     if (o.lastP1 < 0 || o.lastP1 > 3 || o.lastP2 < 0 || o.lastP2 > 3) return false;
-    return Number.isInteger(s.last) && s.last >= 1 && s.last <= 3;
+    if (!(Number.isInteger(s.last) && s.last >= 1 && s.last <= 3)) return false;
+    if (s.resigned) return true;
+    // a hand-edited link must still be a match two players could have played: Player 1 opens a round (a hidden pick is waiting,
+    // move count odd, Player 2 to answer), Player 2 closes it (no pick waiting, move count even, Player 1 next), every finished
+    // round is a move pair, and the match is over exactly when someone has the wins it takes
+    const open = o.pending > 0;
+    if (open !== (s.turn === P2) || open !== (s.moveCount % 2 === 1)) return false;
+    if (s.moveCount < 2 * (o.p1Wins + o.p2Wins) + (open ? 1 : 0)) return false;
+    const done = o.p1Wins === rtw || o.p2Wins === rtw;
+    if (done && (open || o.p1Wins === o.p2Wins)) return false;
+    if (s.status === "won" ? !done || s.winner !== (o.p1Wins === rtw ? P1 : P2) : s.status !== "in_progress" || done) return false;
+    if (open) return s.last === o.pending;
+    if (s.last !== o.lastP2 || !o.lastP1 || !o.lastP2) return false;
+    return o.lastP1 === o.lastP2 || (beats(o.lastP1, o.lastP2) ? o.p1Wins : o.p2Wins) > 0;
   }
   function finalScore(s) {
     const o = strToBoard(s.board);
@@ -292,6 +305,7 @@
 
   bestofSel.addEventListener("change", () => {
     if (modeSel.value === "local") resetLocal();
+    if (modeSel.value === "whatsapp") link.newGame();   // the new length applies to the match that has not started yet
     if (modeSel.value === "live" && live) live.rewarm();   // the spare room has the old best-of
   });
 

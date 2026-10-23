@@ -216,7 +216,19 @@
   function validatePig(s) {
     const m = BOARD_RE.exec(String(s.board));
     if (!m) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= 600;
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last <= 600)) return false;
+    if (s.resigned) return true;
+    // a hand-edited link must still be a game two players could have played: one turn per move (Player 1 first), a turn is
+    // rolls with a 1 only as the last one (a bust banks nothing), a hold banks exactly the rolls, scores add up and the game
+    // ends exactly when the mover reaches the goal. (The dice themselves are rolled on the phone, so a made-up roll list
+    // cannot be told from a lucky one; only the online mode rolls on the server.)
+    const rs = m[3].split("").map(Number), s1 = +m[1], s2 = +m[2], mover = s.moveCount % 2 ? P1 : P2;
+    if (!rs.length || s.turn === mover || rs.slice(0, -1).includes(1)) return false;
+    const banked = rs[rs.length - 1] === 1 ? 0 : rs.reduce((a, b) => a + b, 0);
+    const mine = mover === P1 ? s1 : s2, theirs = mover === P1 ? s2 : s1;
+    if (s.last !== banked || mine < banked || theirs >= GOAL) return false;
+    if (s.moveCount === 1 && (s2 !== 0 || s1 !== banked)) return false;
+    return mine >= GOAL ? s.status === "won" && s.winner === mover : s.status === "in_progress";
   }
   const link = AsyncShare.start({
     game: "pig", version: 1, title: "pig", players: [P1, P2],

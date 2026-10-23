@@ -111,8 +111,7 @@
   html body.fun.g-minesweeper .panel .c.n7 { color: #fff; } html body.fun.g-minesweeper .panel .c.n8 { color: #bbb; }
   html body.fun.g-minesweeper .panel .c.open.by1 { box-shadow: inset 0 -3px 0 #ff7a7a; } html body.fun.g-minesweeper .panel .c.open.by2 { box-shadow: inset 0 -3px 0 #3fd0c0; }
   html body.fun.g-minesweeper .kbd { display: none; }
-  html body.fun.g-minesweeper .fun-pills b .ms-key1, html body.fun.g-minesweeper .fun-pills b .ms-key2 { font-size: .7em; }
-  html body.fun.g-minesweeper .fun-pills #score { font-size: 14px; }
+  html body.fun.g-minesweeper .fun-pills #score { font-size: 13px; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -166,6 +165,7 @@
     <li>If every safe tile gets revealed, whoever opened <strong>more tiles</strong> wins — a flood counts for the player who set it off. Equal counts are a draw.</li>
     <li>Tiles are underlined in the colour of the player who opened them. No flags in this mode.</li>
     <li>Pick the size before the first move; it's fixed after that.</li>
+    <li>The mine layout is rebuilt from a number inside the link. The page never shows it, but a determined friend could decode the link and work out where every mine is, so play this one with friends you trust.</li>
   </ul>
 
   <h2>Solo</h2>
@@ -187,9 +187,9 @@
 <script src="../shared/taunts.js?v=de2cfe57"></script>
 <script src="../shared/gamekit.js?v=3678b5be"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../shared/async-share.js?v=ed2b02b5"></script>
+<script src="../shared/async-share.js?v=d4254c50"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script src="game.js?v=ec14b627"></script>
+<script src="game.js?v=2c095a09"></script>
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("minesweeper"));</script>
 </body>

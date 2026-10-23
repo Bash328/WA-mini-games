@@ -642,6 +642,8 @@
     if (!Number.isInteger(s.last) || s.last < -1 || s.last >= CELLS) return false;
     const sunk1 = allSunk(f2, s1), sunk2 = allSunk(f1, s2);   // sunk1: Player 1 has won
     if (sunk1 && sunk2) return false;
+    // every move is a fleet placed or a shot fired, so the move count must add up (a resignation adds one)
+    if (s.moveCount !== (f2 ? 2 : 1) + s1.length + s2.length + (s.resigned ? 1 : 0)) return false;
     if (s.status === "in_progress") {
       if (sunk1 || sunk2) return false;
       if (!f2) return s.turn === P2 && s.last === -1;

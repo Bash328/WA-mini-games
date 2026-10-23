@@ -142,39 +142,6 @@
     z-index: 1;
   }
 
-  /* direction arrows: real buttons, placed in the first free cell of each legal direction */
-  html body.fun.g-car-park .panel .cp-arrow {
-    position: absolute;
-    width: 38px;
-    height: 38px;
-    min-width: 0;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: #ffbf2e;
-    color: #1b1b1d;
-    box-shadow: 0 3px 0 #a97700;
-    transform: translate(-50%, -50%);
-    z-index: 8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    touch-action: none;
-  }
-  html body.fun.g-car-park .panel .cp-arrow:hover,
-  html body.fun.g-car-park .panel .cp-arrow:active {
-    background: #ffbf2e;
-    box-shadow: 0 3px 0 #a97700;
-    transform: translate(-50%, -50%);
-    filter: brightness(1.06);
-  }
-  .cp-arrow::before { content: ""; width: 0; height: 0; border: 8px solid transparent; }
-  .cp-arrow.a-left::before { border-right-color: #1b1b1d; border-left-width: 0; }
-  .cp-arrow.a-right::before { border-left-color: #1b1b1d; border-right-width: 0; }
-  .cp-arrow.a-up::before { border-bottom-color: #1b1b1d; border-top-width: 0; }
-  .cp-arrow.a-down::before { border-top-color: #1b1b1d; border-bottom-width: 0; }
 
   /* the exit gate sits in the right-hand frame, level with the red car's row */
   .cp-exit {
@@ -329,8 +296,8 @@
 
   <h2>Controls</h2>
   <ul>
-    <li><strong>Tap a car</strong> to select it. Yellow arrows appear where it can go — tap one to slide all the way that way.</li>
-    <li>Or tap a free square in the car's row or column to slide it exactly to that square. Drag a car in its own direction to slide it too.</li>
+    <li><strong>Drag a car</strong> along its row or column. It follows your finger, stops where another car or the edge is in the way, and settles on the nearest square when you let go. One slide, however far, is one move.</li>
+    <li>Or tap a car, then tap a free square in its row or column to slide it exactly there.</li>
     <li>Keyboard: <span class="k">Tab</span> to a car, press <span class="k">Enter</span> (or Space) to select it, then the arrow keys slide it. <span class="k">Esc</span> clears the selection.</li>
     <li><code>Hint</code> highlights one car and its next move from the solver. <code>Undo</code> takes back a slide; <code>↻ reset</code> puts the same level back.</li>
     <li>The menu in <strong>Options</strong> picks any of the 42 levels. Completing one offers the next level; <strong>Next level</strong> in Options jumps ahead at any time.</li>
@@ -345,6 +312,6 @@
 <script defer src="../shared/gamekit.js?v=3678b5be"></script>
 <script defer src="rules.js?v=5fd430b9"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=2214f196"></script>
+<script defer src="game.js?v=26918049"></script>
 </body>
 </html>

@@ -145,6 +145,53 @@
     return count;
   }
 
+  // Regions grown at random leave many valid queen placements (a 7x7 board usually has dozens), so the puzzle cannot be
+  // reasoned out and the hint can contradict a correct board. Repair: move single cells (never a queen's cell) to a neighbouring
+  // region, keeping both regions in one piece, keeping the move that cuts the number of solutions most, until only the hidden one is left.
+  function repairRegions(reg0, qCols, rng) {
+    const reg = reg0.slice();
+    const isQ = (i) => qCols[Math.floor(i / N)] === i % N;
+    const connected = (id) => {
+      const cells = [];
+      for (let i = 0; i < N * N; i++) if (reg[i] === id) cells.push(i);
+      if (!cells.length) return false;
+      const seen = new Set([cells[0]]), q = [cells[0]];
+      for (let h = 0; h < q.length; h++) {
+        const r = Math.floor(q[h] / N), c = q[h] % N;
+        for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const rr = r + dr, cc = c + dc, j = rr * N + cc;
+          if (rr >= 0 && rr < N && cc >= 0 && cc < N && reg[j] === id && !seen.has(j)) { seen.add(j); q.push(j); }
+        }
+      }
+      return seen.size === cells.length;
+    };
+    let cur = countSolutions(reg, 400);
+    for (let it = 0; it < 400 && cur > 1; it++) {
+      const moves = [];
+      for (let i = 0; i < N * N; i++) {
+        if (isQ(i)) continue;
+        const r = Math.floor(i / N), c = i % N;
+        for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && rr < N && cc >= 0 && cc < N && reg[rr * N + cc] !== reg[i]) moves.push([i, reg[rr * N + cc]]);
+        }
+      }
+      if (!moves.length) return null;
+      let best = null, bestCount = cur;
+      for (let k = 0; k < 30; k++) {
+        const [i, to] = moves[Math.floor(rng() * moves.length)], from = reg[i];
+        reg[i] = to;
+        if (connected(from) && connected(to)) {
+          const n = countSolutions(reg, 400);
+          if (n < bestCount || (n === bestCount && !best)) { bestCount = n; best = [i, to]; }
+        }
+        reg[i] = from;
+      }
+      if (best) { reg[best[0]] = best[1]; cur = bestCount; }
+    }
+    return cur === 1 ? reg : null;
+  }
+
   function generate(seed) {
     const rng = Gamekit.mulberry32(seed);
     for (let attempt = 0; attempt < 60; attempt++) {
@@ -156,6 +203,8 @@
       if (n === 1) {
         return { regions: reg, solution: qCols };
       }
+      const fixed = repairRegions(reg, qCols, rng);       // random regions almost never leave exactly one answer: nudge cell colours until they do
+      if (fixed) return { regions: fixed, solution: qCols };
     }
     // Fallback: just return last attempt even if not unique.
     const qCols = placeQueens(rng) || new Array(N).fill(0).map((_, i) => i);
@@ -164,6 +213,7 @@
   }
 
   function newPuzzle(seedOverride) {
+    document.getElementById("status").textContent = "One queen per row, column, and color.";   // a finished puzzle's "Solved in ..." must not follow you to the next one
     N = DIFFS[diff];
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("queens", diff);
     curSeed = seed;

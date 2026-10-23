@@ -6,9 +6,10 @@
    keys, keeps Undo, shows hints, stores the best per level and puts the
    game back after a refresh.
 
-   A drag or an arrow slides a car all the way in that direction; tapping a
-   free square slides it exactly to that square. A car only moves along its
-   own row or column, and one slide counts as one move.
+   A car is dragged: it follows the finger along its own row or column,
+   stopping where another car or the edge is in the way, and settles on the
+   nearest square when you let go. (Tapping a car and then a free square in its
+   row or column also slides it there.) One slide, however far, is one move.
    ============================================================ */
 (function () {
   "use strict";
@@ -152,38 +153,6 @@
     return g;
   }
 
-  function renderArrows() {
-    if (won || selected < 0 || !cars[selected]) return;
-    const v = cars[selected], id = selected;
-    for (const dir of CP.DIRS) {
-      const n = CP.maxSlide(cars, id, dir);
-      if (!n) continue;
-      let x, y;
-      if (v.dir === "h") {
-        x = dir === "left" ? v.c - 0.5 : v.c + v.len + 0.5;
-        y = v.r + 0.5;
-      } else {
-        y = dir === "up" ? v.r - 0.5 : v.r + v.len + 0.5;
-        x = v.c + 0.5;
-      }
-      if (x < 0 || x > CP.SIZE || y < 0 || y > CP.SIZE) continue;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "cp-arrow a-" + dir;
-      b.dataset.dir = dir;
-      b.style.left = (x / CP.SIZE) * 100 + "%";
-      b.style.top = (y / CP.SIZE) * 100 + "%";
-      b.setAttribute("aria-label", "Slide the " + NAMES[id % NAMES.length] + " car " + dir);
-      b.addEventListener("pointerdown", (e) => { e.stopPropagation(); document.body.classList.add("gk-play"); });
-      b.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const max = CP.maxSlide(cars, id, dir);
-        if (max) slide(id, dir, hintMove && hintMove.id === id && hintMove.dir === dir ? hintMove.steps : max);
-      });
-      carsEl.appendChild(b);
-    }
-  }
-
   function renderCars() {
     const focused = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("cp-car")
       ? document.activeElement.dataset.id : null;
@@ -194,7 +163,6 @@
       if (g) frag.appendChild(g);
     }
     carsEl.replaceChildren(frag);
-    renderArrows();
     if (focused !== null) {
       const el = carsEl.querySelector('.cp-car[data-id="' + focused + '"]');
       if (canFocus(el)) { try { el.focus({ preventScroll: true }); } catch (_) { /* older browsers */ } }
@@ -277,7 +245,7 @@
     if (!next) return;
     cars = next;
     moves++;
-    selected = id;
+    selected = selected === id ? id : -1;          // a dragged car is not left outlined
     clearHint();
     renderCars();
     updateHud();
@@ -358,18 +326,22 @@
     return row * CP.SIZE + c;
   }
 
+  // Pressing a car picks it up: it can then be dragged along its own row or column, as far as the cars and walls around it allow.
   function onDown(e) {
     if (won) return;
     if (e.pointerType === "mouse" && e.button > 0) return;
     if (e.isPrimary === false) return;
-    if (e.target.closest(".cp-arrow")) return;
     document.body.classList.add("gk-play");          // a tap on the board puts the Options menu away
     const carEl = e.target.closest(".cp-car");
     const id = carEl && carsEl.contains(carEl) ? Number(carEl.dataset.id) : -1;
     if (e.cancelable) e.preventDefault();
-    const was = id >= 0 && selected === id;
-    if (id >= 0 && selected !== id) selectCar(id);
-    drag = { id: id, x: e.clientX, y: e.clientY, moved: false, wasSelected: was, pointerId: e.pointerId };
+    const v = id >= 0 ? cars[id] : null;
+    drag = {
+      id: id, x: e.clientX, y: e.clientY, moved: false, wasSelected: id >= 0 && selected === id, pointerId: e.pointerId,
+      el: v ? carEl : null, h: !!v && v.dir === "h", off: 0,
+      back: v ? CP.maxSlide(cars, id, v.dir === "h" ? "left" : "up") : 0,      // how many squares it can go back / forward
+      fwd: v ? CP.maxSlide(cars, id, v.dir === "h" ? "right" : "down") : 0,
+    };
     try { boardEl.setPointerCapture(e.pointerId); } catch (_) { /* not fatal */ }
   }
 
@@ -387,12 +359,32 @@
     renderCars();
   }
 
+  const cellPx = () => innerEl.clientWidth / CP.SIZE;
+  const showOffset = (d, squares) => {
+    d.el.style.transform = "translate" + (d.h ? "X" : "Y") + "(" + squares * cellPx() + "px)";
+  };
+
   function onMove(e) {
     if (!drag) return;
     if (!drag.moved) {
       const dx = Math.abs(e.clientX - drag.x), dy = Math.abs(e.clientY - drag.y);
-      if (dx + dy > 8) drag.moved = true;
+      if (dx + dy <= 6) return;
+      drag.moved = true;
+      if (drag.el) { drag.el.style.transition = "none"; drag.el.style.zIndex = "6"; clearHint(); }
     }
+    if (!drag.el) return;
+    const delta = drag.h ? e.clientX - drag.x : e.clientY - drag.y;
+    drag.off = Math.max(-drag.back, Math.min(drag.fwd, delta / cellPx()));    // the car follows the finger, but not through anything
+    showOffset(drag, drag.off);
+  }
+
+  // put a car that was let go without moving a square back on its square
+  function settle(d) {
+    if (!d.el || !d.el.isConnected) return;
+    const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    d.el.style.transition = calm ? "none" : "transform .12s ease-out";
+    d.el.style.transform = "";
+    d.el.style.zIndex = "";
   }
 
   function onUp(e) {
@@ -404,25 +396,12 @@
     } catch (_) { /* ignore */ }
     if (d.id >= 0 && cars[d.id]) {
       if (d.moved) {
-        const v = cars[d.id];
-        const dx = e.clientX - d.x, dy = e.clientY - d.y;
-        const cell = innerEl.clientWidth / CP.SIZE;
-        if (v.dir === "h" && Math.abs(dx) > Math.abs(dy)) {
-          const dir = dx > 0 ? "right" : "left";
-          const max = CP.maxSlide(cars, d.id, dir);
-          if (max) slide(d.id, dir, Math.max(1, Math.min(max, Math.round(Math.abs(dx) / cell))));
-          else badCar(d.id);
-        } else if (v.dir === "v" && Math.abs(dy) > Math.abs(dx)) {
-          const dir = dy > 0 ? "down" : "up";
-          const max = CP.maxSlide(cars, d.id, dir);
-          if (max) slide(d.id, dir, Math.max(1, Math.min(max, Math.round(Math.abs(dy) / cell))));
-          else badCar(d.id);
-        } else {
-          setNote(v.dir === "h" ? "This car only moves left and right." : "This car only moves up and down.", 1600);
-        }
+        const steps = Math.round(Math.abs(d.off));
+        if (steps >= 1) slide(d.id, d.h ? (d.off > 0 ? "right" : "left") : (d.off > 0 ? "down" : "up"), steps);
+        else settle(d);
         return;
       }
-      if (d.wasSelected) deselect();
+      if (d.wasSelected) deselect(); else selectCar(d.id);       // a tap picks the car for the keyboard or a tap on a free square
       return;
     }
     if (d.moved) return;
@@ -436,7 +415,9 @@
 
   function onCancel(e) {
     if (!drag) return;
+    const d = drag;
     drag = null;
+    settle(d);
     try {
       if (boardEl.hasPointerCapture && boardEl.hasPointerCapture(e.pointerId)) boardEl.releasePointerCapture(e.pointerId);
     } catch (_) { /* ignore */ }

@@ -328,8 +328,14 @@
   // board: the 49-character string described in rules.js; last is from * 45 + to,
   // so both ends of the move can be marked on the board the link opens.
   function validateBoard(s) {
-    if (!s || !R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= R.CELLS * R.CELLS - 1;
+    const S = s && R.parse(s.board);
+    if (!S || !(Number.isInteger(s.last) && s.last >= 0 && s.last <= R.CELLS * R.CELLS - 1)) return false;
+    // a hand-edited link must still be a position two players could have reached: the side to move named in the board is the
+    // one in the envelope, no side has more pieces than it started with, and the result is the one the board shows
+    if (S.b.filter(v => v === 1).length > 22 || S.b.filter(v => v === 2).length > 22) return false;
+    if (s.resigned) return true;
+    const o = R.outcome(S, R.other(S.t));
+    return s.turn === S.t && s.status === o.status && s.winner === (o.winner || null);
   }
   const shared = {
     game: "fanorona", version: 1, players: [RED, BLUE],

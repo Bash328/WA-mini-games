@@ -162,6 +162,7 @@
     <li>There's no way to pick at the exact same instant over a link, so picks are hidden instead: <strong>Player 1</strong> picks first each round and sends the link without anyone seeing their pick rendered anywhere — <strong>Player 2</strong> then picks, which reveals both and resolves the round.</li>
     <li>Choose the match length before the first pick; it's fixed after that.</li>
     <li>Like Minesweeper's mine positions, the hidden pick technically travels inside the link's data — a determined player could dig it out of devtools. The UI just never shows it, which is enough for a normal game between friends.</li>
+    <li>Your hidden pick travels inside the link until your opponent answers. The page never shows it, but a determined friend could decode the link and read it, so play this one with friends you trust.</li>
   </ul>
 
   <h2>Same device</h2>
@@ -177,11 +178,11 @@
 <script src="../shared/taunts.js?v=de2cfe57"></script>
 <script src="../shared/gamekit.js?v=3678b5be"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../shared/async-share.js?v=ed2b02b5"></script>
+<script src="../shared/async-share.js?v=d4254c50"></script>
 <script src="../shared/account.js?v=160336a8"></script>
 <script src="../shared/live-share.js?v=2267f8ba"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script src="game.js?v=7d29854c"></script>
+<script src="game.js?v=5fd599e6"></script>
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

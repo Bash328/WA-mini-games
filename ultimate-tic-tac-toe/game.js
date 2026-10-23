@@ -281,7 +281,23 @@
     if (typeof b !== "string" || !/^[012]{81}[0-3]{9}[0-9]$/.test(b)) return false;
     const stones = b.slice(0, 81).replace(/0/g, "").length;
     if (stones !== s.moveCount && !(s.resigned && stones === s.moveCount - 1)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < 81 && b[s.last] !== "0";
+    if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < 81 && b[s.last] !== "0")) return false;
+    // a hand-edited link must still be a position two players could have reached: X opens and the marks alternate, each small
+    // board's result is the one its nine cells show, the last mark belongs to the side that just moved, the next forced board
+    // follows from where it went, and the game result is the one the small boards show
+    const g = Uint8Array.from(b.slice(0, 81), Number), x = g.filter(v => v === X).length, o = stones - x;
+    if (x !== o && x !== o + 1) return false;
+    const res = Array.from({ length: 9 }, (_, k) => {
+      const w = lineWin(i => g[k * 9 + i]);
+      return w || (g.slice(k * 9, k * 9 + 9).every(v => v) ? 3 : 0);
+    });
+    if (res.join("") !== b.slice(81, 90)) return false;
+    if (s.resigned) return true;
+    const mover = g[s.last];
+    if (mover !== (x > o ? X : O) || s.turn === mover) return false;
+    if (Number(b[90]) !== (res[s.last % 9] === 0 ? s.last % 9 : 9)) return false;
+    const bw = bigWinner(res);
+    return s.status === (bw ? "won" : anyOpen(res) ? "in_progress" : "draw") && s.winner === (bw || null);
   }
   const shared = {
     game: "ultimate-tic-tac-toe", version: 1, players: [X, O],

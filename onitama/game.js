@@ -229,8 +229,18 @@
   // ---------- 2 players over WhatsApp, and live online ----------
   // board: the 30-character string described in rules.js. Red opens and deals.
   function validateOnitama(s) {
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= 25;
+    const P = R.parse(s.board);
+    if (!P || !(Number.isInteger(s.last) && s.last >= 0 && s.last <= 25)) return false;
+    // a hand-edited link must still be a position two players could have reached: at most four pawns and one master a side,
+    // no more pieces lost than moves made, Red moving on odd moves, the last piece moved belongs to the mover, and the result
+    // is the one the board shows
+    const count = (v) => P.b.filter(x => x === v).length;
+    if (count(1) > 4 || count(3) > 4 || count(2) > 1 || count(4) > 1) return false;
+    if (s.resigned) return true;
+    const lost = 10 - P.b.filter(x => x).length, mover = s.moveCount % 2 ? RED : BLUE;
+    if (lost > s.moveCount || s.turn === mover || (s.last < 25 && R.ownerOf(P.b[s.last]) !== mover)) return false;
+    const w = R.winnerOf(P, mover);
+    return s.status === (w ? "won" : "in_progress") && s.winner === (w || null);
   }
   const shared = {
     game: "onitama", version: 1, players: [RED, BLUE],

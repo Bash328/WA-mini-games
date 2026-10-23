@@ -210,8 +210,17 @@
   // ---------- 2 players over WhatsApp, and live online ----------
   // board: the string described in rules.js. Red opens.
   function validateQuoridor(s) {
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < 228;
+    const P = R.parse(s.board);
+    if (!P || !(Number.isInteger(s.last) && s.last >= 0 && s.last < 228)) return false;
+    // a hand-edited link must still be a position two players could have reached: no wall crossing or overlapping another,
+    // neither pawn shut in, Red moving on odd moves, the last action matches the board, and the result is the one it shows
+    for (const id of P.walls) if (!R.wallOk({ p: P.p, w: [1, 1], walls: P.walls.filter(x => x !== id) }, 1, id)) return false;
+    if (s.resigned) return true;
+    const mover = s.moveCount % 2 ? RED : BLUE;
+    if (s.turn === mover || (s.last >= 100 ? !P.walls.includes(s.last - 100) : P.p[mover - 1] !== s.last)) return false;
+    const w = R.winnerOf(P);
+    if (w) return w === mover && s.status === "won" && s.winner === mover;
+    return s.status === (R.stuck(P, other(mover)) ? "draw" : "in_progress") && s.winner === null;
   }
   const shared = {
     game: "quoridor", version: 1, players: [RED, BLUE],

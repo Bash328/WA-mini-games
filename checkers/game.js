@@ -324,7 +324,20 @@
     validateBoard: (s) => {
       const b = s.board;
       if (typeof b !== "string" || b.length !== N * N || !/^[0-4]+$/.test(b)) return false;
-      return Number.isInteger(s.last) && s.last >= 0 && s.last < N * N;
+      if (!(Number.isInteger(s.last) && s.last >= 0 && s.last < N * N && b[s.last] !== "0")) return false;
+      // a hand-edited link must still be a position two players could have reached: pieces on dark squares, at most 12 each,
+      // no man left on the row where it would have been crowned, the last piece belongs to the side that just moved, and the result matches
+      const cells = b.split("").map(Number), n = { [P1]: 0, [P2]: 0 };
+      for (let i = 0; i < N * N; i++) {
+        const v = cells[i]; if (!v) continue;
+        const r = Math.floor(i / N);
+        if ((r + i % N) % 2 !== 1 || ++n[colorOf(v)] > 12) return false;
+        if ((v === MAN[P1] && r === N - 1) || (v === MAN[P2] && r === 0)) return false;
+      }
+      if (s.resigned) return true;
+      const mover = colorOf(cells[s.last]);
+      if (s.turn === mover) return false;
+      return s.status === "won" ? s.winner === mover && !hasAnyMove(cells, s.turn) : s.status === "in_progress" && hasAnyMove(cells, s.turn);
     },
     onState: loadLink,
   });

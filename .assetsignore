@@ -33,3 +33,8 @@ CNAME
 tests/
 CLAUDE.md
 tools/
+
+# play-test report and the launch image source (the launch images in assets/splash are cut from it)
+PLAYTEST.md
+assets/launch-image.png
+.playwright-mcp/

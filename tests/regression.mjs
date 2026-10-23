@@ -3115,6 +3115,411 @@ check('hangman-online-two-players', 'online Hangman: two pages in one room play 
   return bad;
 }, ['hangman']);
 
+// Hand-edited links: a board that no two players could have reached must be refused ("Invalid link"), not played.
+// One table for every link game. `ok` is a real position (must open normally, so the check cannot pass by refusing everything);
+// each `bad` entry is a forged state over it, with the cheat written in plain words.
+const FORGED = {
+  'tic-tac-toe': { version: 2, ok: { turn: 'O', board: 'X........', moveCount: 1, last: 0 }, bad: {
+    'X moves twice in a row (turn left on X after X played)': { turn: 'X' },
+    'three X marks and no O': { board: 'XXX......', moveCount: 3, turn: 'O', last: 2 },
+    'O has more marks than X': { board: 'XOO......', moveCount: 3, turn: 'X', last: 1 },
+    'a won board still marked in progress': { board: 'XXXOO....', moveCount: 5, turn: 'O', last: 2 },
+    'a win claimed for O on a board with no O line': { board: 'XOX......', moveCount: 3, turn: 'O', status: 'won', winner: 'O', last: 2 },
+  } },
+  chess: { version: 1, ok: { turn: 'b', board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: 44, half: 0 }, moveCount: 1, last: [52, 36] }, bad: {
+    'White moves twice (turn left on White after White moved)': { turn: 'w' },
+    'nine white pawns': { board: { b: 'rnbqkbnrpppppppp' + 'P.......' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: null, half: 0 } },
+    'a pawn on the back rank': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'PNBQKBNR', castle: 'KQkq', ep: 44, half: 0 } },
+    'castling right kept after the rook is gone': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBN.', castle: 'KQkq', ep: 44, half: 0 } },
+    'checkmate claimed on a board that is not mate': { status: 'won', winner: 'w' },
+    'en passant square with no pawn behind it': { board: { b: 'rnbqkbnrpppppppp........' + '........' + '....P...' + '........' + 'PPPP.PPP' + 'RNBQKBNR', castle: 'KQkq', ep: 43, half: 0 } },
+  } },
+  'connect-four': { version: 2, ok: { turn: 2, board: '0'.repeat(38) + '1000', moveCount: 1, last: 38 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a disc floating in the top row': { board: '0001' + '0'.repeat(38), last: 3 },
+    'Yellow disc with no Red disc before it': { board: '0'.repeat(38) + '2000' },
+    'four Reds in a row but the game still "in progress"': { board: '0'.repeat(28) + '222' + '0000' + '1111' + '000', moveCount: 7, last: 38 },
+    'a win claimed for Red on a one-disc board': { status: 'won', winner: 1 },
+  } },
+  checkers: { version: 1, ok: { turn: 2, board: '0101010110101010000101011000000000000000202020200202020220202020', moveCount: 1, last: 24 }, bad: {
+    'Black moves twice (turn left on Black)': { turn: 1 },
+    'a piece on a light square': { board: '1101010110101010000101011000000000000000202020200202020220202020' },
+    'thirteen Black pieces': { board: '0101010110101010000101011000000001000000202020200202020220202020' },
+    'a Black man sitting on the crowning row': { board: '0101010110101010000101011000000000000000202020200202020210202020' },
+    'the last piece moved belongs to the side that is to move': { last: 40 },
+    'a win claimed while White still has moves': { status: 'won', winner: 1 },
+  } },
+  reversi: { version: 1, ok: { turn: 2, board: '0000000000000000000100000001100000012000000000000000000000000000', moveCount: 1, last: 19 }, bad: {
+    'Black moves twice (turn left on Black while White can move)': { turn: 1 },
+    'one disc more than the moves played': { board: '1000000000000000000100000001100000012000000000000000000000000000' },
+    'a centre square left empty': { board: '2000000000000000000100000001100000010000000000000000000000000000' },
+    'a win claimed on an opening position': { status: 'won', winner: 1 },
+    'a draw claimed on an opening position': { status: 'draw' },
+  } },
+  'dots-and-boxes': { version: 2, ok: { turn: 2, board: '420000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 0 }, bad: {
+    'Player 1 moves twice (turn left on 1 though no box was closed)': { turn: 1 },
+    'two edges drawn after one move': { board: '420200000000000000000000000000000000000000000000000000000' },
+    'a box owned with no edges around it': { board: '420000000000000000000000000000000000000001000000000000000' },
+    'a win claimed on a one-edge board': { status: 'won', winner: 1 },
+  } },
+  memory: { version: 1, ok: { turn: 2, board: { size: 4, seed: 12345, own: '10000000' }, moveCount: 1, last: [0] }, bad: {
+    'Player 1 moves twice (turn left on 1)': { turn: 1 },
+    'Player 2 owns a pair before ever moving': { board: { size: 4, seed: 12345, own: '10000002' } },
+    'the last matched pair belongs to nobody': { last: [3] },
+    'every pair matched but the game still in progress': { board: { size: 4, seed: 12345, own: '11111111' }, last: [0] },
+    'a win claimed with pairs still face down': { status: 'won', winner: 1 },
+  } },
+  'rock-paper-scissors': { version: 1, ok: { turn: 2, board: '300100', moveCount: 1, last: 1 }, bad: {
+    'Player 1 picks twice in a row (turn left on 1 with a pick waiting)': { turn: 1 },
+    'a match already won while a hidden pick is waiting': { board: '320100' },
+    'a win claimed before anyone has the wins': { status: 'won', winner: 1 },
+    'a move count that does not fit an open round': { moveCount: 2 },
+    'the pick in the link is not the one just made': { last: 3 },
+  } },
+  battleship: { version: 1, ok: { turn: 2, board: ['00h10h20h30h40h', '', '', ''], moveCount: 1, last: -1 }, bad: {
+    'a move count that does not match the fleets and shots in the link': { moveCount: 5 },
+    'both fleets placed after one move': { board: ['00h10h20h30h40h', '00v01v02v03v04v', '', ''] },
+    'Player 1 fires twice in a row': { board: ['00h10h20h30h40h', '00v01v02v03v04v', '5560', ''], moveCount: 4, turn: 2, last: 60 },
+    'a win claimed with no ship hit': { status: 'won', winner: 1 },
+  } },
+  pentago: { version: 1, ok: { turn: 2, board: '001000000000000000000000000000000000', moveCount: 1, last: 0 }, bad: {
+    'Player 1 moves twice (turn left on 1)': { turn: 1 },
+    'two marbles after one move': { board: '001000000000000000000000000000000012' },
+    'a marble count that does not fit the move count': { moveCount: 4 },
+    'a win claimed on a one-marble board': { status: 'won', winner: 1 },
+  } },
+  gomoku: { version: 1, ok: { turn: 2, board: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 112 }, bad: {
+    'Black moves twice (turn left on Black)': { turn: 1 },
+    'two Black stones in a row with White never moving': { board: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 2, last: 113 },
+    'five Black stones in a row but the game still in progress': { board: '222200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', moveCount: 9, last: 116 },
+    'a win claimed on a one-stone board': { status: 'won', winner: 1 },
+  } },
+  mancala: { version: 1, ok: { turn: 1, board: '0404000505050104040404040400', moveCount: 1, last: 2 }, bad: {
+    'a seed more than the 48 in the game': { board: '0405000505050104040404040400' },
+    'a win claimed while seeds are still in the pits': { status: 'won', winner: 1 },
+    'a finished board still marked in progress': { board: '0000000000003000000000000018' },
+  } },
+  'lights-out': { version: 1, ok: { turn: 2, board: { bits: 2241 }, moveCount: 1, last: 0 }, bad: {
+    'Player 1 presses twice (turn left on 1)': { turn: 1 },
+    'a pattern no set of presses can clear': { board: { bits: 1 } },
+    'a win claimed with lights still on': { status: 'won', winner: 1 },
+    'a move count that puts Player 2 on the first press': { moveCount: 2 },
+  } },
+  mastermind: { version: 1, ok: { turn: 2, board: '0012', moveCount: 1, last: 0 }, bad: {
+    'the codemaker moves again before any guess (turn left on 1)': { turn: 1 },
+    'a move count that does not fit the guesses made': { moveCount: 3 },
+    'a win claimed before any guess': { status: 'won', winner: 2 },
+    'the code cracked but the game still in progress': { board: '00120012', moveCount: 2, last: 1 },
+  } },
+  pig: { version: 1, ok: { turn: 2, board: '7.0.34', moveCount: 1, last: 7 }, bad: {
+    'Player 1 plays twice (turn left on 1)': { turn: 1 },
+    'points banked that the rolls do not add up to': { last: 9 },
+    'a roll after a 1 in the same turn': { board: '7.0.314' },
+    'a 1 rolled but points banked': { board: '3.0.31', last: 3 },
+    'Player 2 already has points on the first move': { board: '7.5.34' },
+    'a win claimed at 7 points': { status: 'won', winner: 1 },
+  } },
+  'ultimate-tic-tac-toe': { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000000000000004', moveCount: 1, last: 40 }, bad: {
+    'X moves twice (turn left on X)': { turn: 1 },
+    'the next player sent to the wrong small board': { board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000000000000009' },
+    'a small board marked won with no line in it': { board: '0000000000000000000000000000000000000000100000000000000000000000000000000000000001000000004' },
+    'an O mark as the opening move': { board: '0000000000000000000000000000000000000000200000000000000000000000000000000000000000000000004' },
+    'a win claimed after one mark': { status: 'won', winner: 1 },
+  } },
+  hex: { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000', moveCount: 1, last: 60 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a Blue stone as the opening move': { board: '0000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000' },
+    'a finished Red chain but the game still in progress': { board: '2000010000020000100000200001000002000010000020000100000200001000002000010000020000100000200001000002000010000000000100000', moveCount: 21, last: 115 },
+    'a win claimed after one stone': { status: 'won', winner: 1 },
+  } },
+  'blokus-duo': { version: 1, ok: { turn: 2, board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000', moveCount: 1, last: 60 }, bad: {
+    'Player 1 moves twice (turn left on 1 while Player 2 can move)': { turn: 1 },
+    'a piece marked used that is not on the board': { board: '0000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000000000000000000' },
+    'two squares on the board for a one-square piece': { board: '0000000000000000000000000000000000000000000000000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000' },
+    'a first piece that does not cover the start square': { board: '0000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  onitama: { version: 1, ok: { turn: 2, board: '33433000000000000100012117caf1', moveCount: 1, last: 17 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'a fifth Red pawn': { board: '33433100000000000100012117caf1' },
+    'the last piece moved does not belong to the mover': { last: 0 },
+    'a win claimed with both masters on the board': { status: 'won', winner: 1 },
+  } },
+  quoridor: { version: 1, ok: { turn: 2, board: '6704aa', moveCount: 1, last: 67 }, bad: {
+    'Red moves twice (turn left on Red)': { turn: 1 },
+    'two walls crossing each other': { board: '670499' + '0040', moveCount: 3, last: 100, turn: 1 },
+    'the last move is not where the pawn stands': { last: 66 },
+    'a win claimed with no pawn on the goal row': { status: 'won', winner: 1 },
+  } },
+  breakthrough: { version: 1, ok: { turn: 2, board: '2222222222222222000000000000000000000000100000000111111111111111201', moveCount: 1, last: 3112 }, bad: {
+    'the opening side moves again (turn left on it)': { turn: 1 },
+    'a seventeenth Red piece': { board: '2222222222222222100000000000000000000000100000000111111111111111201' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  tablut: { version: 1, ok: { turn: 2, board: '0000110000001100000000000001002220011102320111002220010000000000000100000001110002', moveCount: 1, last: 30 }, bad: {
+    'the attackers move again (turn left on them)': { turn: 1 },
+    'a seventeenth attacker': { board: '1000110000001100000000000001002220011102320111002220010000000000000100000001110002' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  fanorona: { version: 1, ok: { turn: 1, board: '2222222222222222222120101211111111111111111111M00', moveCount: 1, last: 967 }, bad: {
+    'the envelope names the other side to move': { turn: 2 },
+    'a twenty-third Red piece': { board: '2222222222222222222121101211111111111111111111M00' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  'nine-mens-morris': { version: 1, ok: { turn: 2, board: '100000000000000000000000p21000', moveCount: 1, last: 0 }, bad: {
+    'the envelope names the other side to move': { turn: 1 },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  connect6: { version: 1, ok: { turn: 2, board: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020', moveCount: 1, last: 28927 }, bad: {
+    'Black moves again (turn left on Black)': { turn: 1 },
+    'an extra stone for the opening move': { board: '10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020' },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+  backgammon: { version: 1, ok: { turn: 2, board: 'Ba000d0c000Ee000C0E0000b000000310', moveCount: 1, last: 0 }, bad: {
+    'Red moves again (turn left on Red)': { turn: 1 },
+    'a win claimed on the first move': { status: 'won', winner: 1 },
+  } },
+};
+check('forged-links-rejected', 'a hand-edited share link (wrong turn, impossible marks, a result the board does not show) was accepted and played, so one player could move twice or invent a win', async (g) => {
+  const F = FORGED[g], bad = [];
+  const p = await open(g, 390);
+  const verdict = async (st) => {
+    const enc = await p.evaluate(([game, version, st]) => AsyncShare.encode({ game, version, id: 'abc123', status: 'in_progress', winner: null, last: null, ...st }), [g, F.version, st]);
+    await p.goto(base + g + '/?s=' + enc);
+    await p.waitForFunction(() => ((document.getElementById('wa-ui') || {}).innerText || '').length > 5);
+    return p.evaluate(() => /looks invalid/.test(document.getElementById('wa-ui').innerText));
+  };
+  if (await verdict(F.ok)) bad.push('a genuine position was refused');
+  for (const [why, patch] of Object.entries(F.bad)) if (!(await verdict({ ...F.ok, ...patch }))) bad.push('accepted: ' + why);
+  await p.close();
+  return bad;
+}, Object.keys(FORGED));
+
+check('same-link-in-two-tabs', 'the same received link open in two tabs of one browser let BOTH tabs make a move from it (two different replies to one move); the second tab must show the old-link notice instead', async (g) => {
+  const bad = [];
+  const a = await open(g, 390);
+  await a.locator('#board > *').nth(0).click({ force: true }); await a.waitForTimeout(200);
+  const L1 = await a.evaluate(() => location.search);
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort());
+  const t1 = await ctx.newPage(), t2 = await ctx.newPage();
+  for (const t of [t1, t2]) { await t.goto(base + g + '/' + L1); await t.waitForTimeout(300); }
+  for (const t of [t1, t2]) await t.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
+  await t1.locator('#board > *').nth(1).click({ force: true }); await t1.waitForTimeout(200);
+  await t2.locator('#board > *').nth(2).click({ force: true }); await t2.waitForTimeout(200);
+  const after = await t2.evaluate(() => ({ q: location.search, panel: (document.getElementById('wa-ui') || {}).innerText || '' }));
+  if (after.q !== L1 && !/old link/i.test(after.panel)) bad.push('the second tab moved from a link the first tab already answered');
+  await a.close(); await ctx.close();
+  return bad;
+}, ['tic-tac-toe']);
+
+check('connect-four-tap-board', 'Connect Four only reacted to the small arrows above the board; tapping the discs / column itself did nothing, and the arrows were 40px tall', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const box = await p.locator('#board > *').nth(38).boundingBox();
+  await p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await p.waitForTimeout(250);
+  if (!(await p.evaluate(() => location.search.length))) bad.push('tapping a disc in the board did not drop a checker');
+  const h = (await p.locator('.c4-col-btn').first().boundingBox()).height;
+  if (h < 44) bad.push('the column arrows are ' + h + 'px tall');
+  await p.close();
+  return bad;
+}, ['connect-four']);
+
+check('forged-minesweeper', 'a hand-edited Minesweeper link (a mine shown open, a hole in an opened area, tiles claimed by the wrong player, a win nobody earned) was accepted and played', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  // Rebuild a real first move with the page's own functions: seed 12345, first tap in the middle of the easy board.
+  const states = await p.evaluate(() => {
+    const d = document.getElementById('diff'); d.value = 'easy'; reset();
+    placeMines(4, 4, Gamekit.mulberry32(12345)); firstClick = false;
+    reveal(4, 4);
+    const own = Array.from(revealed, (v) => (v ? '1' : '0')).join('');
+    const mine = Array.from(mines).findIndex((m) => m), zero = Array.from(cells).findIndex((c, i) => c === 0 && revealed[i] && i !== 40);
+    const nb = [-1, 1, -9, 9].map((o) => zero + o).find((j) => own[j] === '1' && j !== 40);
+    const st = (o, extra) => ({ game: 'minesweeper', version: 1, id: 'abc123', turn: 2, status: 'in_progress', winner: null, moveCount: 1, last: 40, ...extra, board: { d: 'easy', seed: 12345, first: 40, own: o } });
+    const set = (s, i, ch) => s.slice(0, i) + ch + s.slice(i + 1);
+    return {
+      ok: st(own),
+      bad: {
+        'a mine shown open that is not the last tile': st(set(own, mine, '1')),
+        'a hole next to an opened empty tile': st(set(own, nb, '0')),
+        'the last tile belongs to the wrong player': st(set(own, 40, '2')),
+        'Player 1 moves twice (turn left on 1)': st(own, { turn: 1 }),
+        'a win claimed with tiles still hidden': st(own, { status: 'won', winner: 1 }),
+        'a move count with more moves than tiles opened': st(own, { moveCount: 500 }),
+      },
+    };
+  });
+  const verdict = async (st) => {
+    const enc = await p.evaluate((st) => AsyncShare.encode(st), st);
+    await p.goto(base + g + '/?s=' + enc);
+    await p.waitForFunction(() => ((document.getElementById('wa-ui') || {}).innerText || '').length > 5);
+    return p.evaluate(() => /looks invalid/.test(document.getElementById('wa-ui').innerText));
+  };
+  if (await verdict(states.ok)) bad.push('a genuine first move was refused');
+  for (const [why, st] of Object.entries(states.bad)) if (!(await verdict(st))) bad.push('accepted: ' + why);
+  await p.close();
+  return bad;
+}, ['minesweeper']);
+
+check('minesweeper-score-pill-fits', 'the two-player Minesweeper header showed "P1 0 · ..." : the Tiles pill cut off the second player\'s score on a phone', async (g) => {
+  const bad = [];
+  for (const w of [320, 360, 390]) {
+    const p = await open(g, w);
+    const r = await p.evaluate(() => { document.getElementById('score').innerHTML = '<span class="ms-key1">130</span> <span class="ms-key2">118</span>'; const e = document.getElementById('score'); return { sw: e.scrollWidth, cw: e.clientWidth, t: e.parentElement.getBoundingClientRect().width, hidden: e.parentElement.hidden }; });
+    if (r.hidden) bad.push(w + 'px: the Tiles pill is hidden in WhatsApp mode');
+    else if (r.sw > r.cw + 1) bad.push(w + 'px: the score is clipped (' + r.sw + ' > ' + r.cw + ')');
+    await p.close();
+  }
+  return bad;
+}, ['minesweeper']);
+
+check('rps-best-of-in-whatsapp', 'choosing Best of 5 or 7 in WhatsApp mode did nothing: the score header and the match stayed at best of 3', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  for (const n of [5, 7]) {
+    await p.evaluate((n) => { const s = document.getElementById('bestof'); s.value = String(n); s.dispatchEvent(new Event('change')); }, n);
+    await p.waitForTimeout(150);
+    const head = await p.evaluate(() => document.getElementById('score').innerText.replace(/\s+/g, ' '));
+    if (!new RegExp('best of ' + n, 'i').test(head)) bad.push('Best of ' + n + ' chosen but the header says: ' + head);
+    await p.locator('#choices button').first().click({ force: true }); await p.waitForTimeout(200);
+    const first = await p.evaluate(() => AsyncShare.decode(new URLSearchParams(location.search).get('s')).board[0]);
+    if (first !== String(n)) bad.push('the link carries best of ' + first + ' instead of ' + n);
+    await p.evaluate(() => document.getElementById('reset-btn').click()); await p.waitForTimeout(150);
+  }
+  await p.close();
+  return bad;
+}, ['rock-paper-scissors']);
+
+check('dots-and-boxes-edge-hit-area', 'the Dots and Boxes lines are about 13px thick, so a thumb tap beside a line missed it; the tap area must reach about 37px (12px each side) without changing the look', async (g) => {
+  const bad = [];
+  const p = await open(g, 320);
+  for (const n of [3, 6]) {
+    await p.evaluate((n) => { const s = document.getElementById('size'); s.value = String(n); s.dispatchEvent(new Event('change')); }, n);
+    await p.waitForTimeout(200);
+    const r = await p.evaluate(() => {
+      const hit = (sel, dx, dy) => { const b = document.querySelector(sel).getBoundingClientRect(); const e = document.elementFromPoint(b.left + b.width / 2 + dx, b.top + b.height / 2 + dy); return e && e.getAttribute('aria-label'); };
+      return { h: [hit('button[aria-label="Horizontal edge row 2 col 1"]', 0, -11), hit('button[aria-label="Horizontal edge row 2 col 1"]', 0, 11)], v: [hit('button[aria-label="Vertical edge row 1 col 2"]', -11, 0), hit('button[aria-label="Vertical edge row 1 col 2"]', 11, 0)] };
+    });
+    for (const x of r.h) if (x !== 'Horizontal edge row 2 col 1') bad.push(n + 'x' + n + ': 11px above or below a horizontal line is not part of it (' + x + ')');
+    for (const x of r.v) if (x !== 'Vertical edge row 1 col 2') bad.push(n + 'x' + n + ': 11px left or right of a vertical line is not part of it (' + x + ')');
+  }
+  await p.close();
+  return bad;
+}, ['dots-and-boxes']);
+
+check('next-level-clears-solved', 'after solving a puzzle and tapping "Next level" the old "Solved in ..." text stayed in the status line and the game-over card popped straight back over the new puzzle (Sudoku, Mini Sudoku, Queens, Tango; Lights Out kept the text)', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  await p.evaluate(() => { document.getElementById('status').textContent = 'Solved in 0:10.'; });
+  try { await p.waitForSelector('.gk-over .again', { timeout: 4000 }); } catch (e) { bad.push('no game over card after a solved status'); await p.close(); return bad; }
+  await p.locator('.gk-over .again').click(); await p.waitForTimeout(1500);
+  if (await p.locator('.gk-over').count()) bad.push('the game over card is back after tapping the button');
+  const st = await p.evaluate(() => document.getElementById('status').textContent);
+  if (/solved/i.test(st)) bad.push('the status still says "' + st + '" over a new puzzle');
+  await p.close();
+  return bad;
+}, ['sudoku', 'mini-sudoku', 'queens', 'tango', 'lights-out', 'zip', 'patches', 'nonogram', 'sliding-puzzle', 'word-ladder', 'letter-boxed', 'cross-sums', 'car-park', 'flow-free', 'hashiwokakero', 'slitherlink', 'star-battle', 'word-search']);
+
+check('queens-one-answer', 'the Queens generator almost never made a puzzle with exactly one solution (a 7x7 board usually had dozens), so the puzzle could not be reasoned out and the hint could contradict a correct board', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  for (let k = 0; k < 8; k++) {
+    const r = await p.evaluate(() => {
+      const cells = [...document.querySelectorAll('#board > *')], N = Math.round(Math.sqrt(cells.length));
+      const reg = cells.map((c) => { const m = /\br(\d+)\b/.exec(c.className); return m ? +m[1] : -1; });
+      let count = 0; const cols = [];
+      const rec = (row, colMask, regMask) => {
+        if (row === N) { count++; return; }
+        for (let c = 0; c < N; c++) {
+          if ((colMask >> c) & 1) continue;
+          if (row > 0 && Math.abs(cols[row - 1] - c) <= 1) continue;
+          const rg = reg[row * N + c];
+          if ((regMask >> rg) & 1) continue;
+          cols[row] = c; rec(row + 1, colMask | (1 << c), regMask | (1 << rg));
+          if (count > 1) return;
+        }
+      };
+      rec(0, 0, 0);
+      return { N, count };
+    });
+    if (r.count !== 1) bad.push('puzzle ' + (k + 1) + ' (' + r.N + 'x' + r.N + ') has ' + (r.count > 1 ? 'more than one solution' : 'no solution'));
+    await p.evaluate(() => document.getElementById('new-btn').click()); await p.waitForTimeout(150);
+  }
+  await p.close();
+  return bad;
+}, ['queens']);
+
+check('word-guess-loss-card', 'running out of guesses in Word Guess showed only a status line: no game over card and no taunt, unlike every other game (the wording did not match what the card looks for)', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  await p.evaluate(() => document.getElementById('new-btn').click()); await p.waitForTimeout(300);
+  for (const w of ['about', 'other', 'which', 'their', 'there', 'first']) {
+    for (const ch of w) await p.evaluate((c) => document.querySelector('.wg-key[data-k="' + c + '"]').click(), ch);
+    await p.evaluate(() => document.getElementById('submit-btn').click()); await p.waitForTimeout(600);
+  }
+  await p.waitForTimeout(1500);
+  const st = await p.evaluate(() => document.getElementById('status').textContent);
+  const won = /solved/i.test(st);
+  if (!won && !(await p.locator('.gk-over').count())) bad.push('no game over card after six wrong guesses (status: ' + st.slice(0, 50) + ')');
+  await p.close();
+  return bad;
+}, ['word-guess']);
+
+check('word-search-capsules', 'found words and the word being dragged are drawn as rounded capsules laid along the letters (like the reference picture), not as a coloured box on every cell', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const info = await p.evaluate(() => { const cells = [...document.querySelectorAll('.ws-cell')]; return { n: Math.round(Math.sqrt(cells.length)), g: cells.map((c) => c.textContent.toLowerCase()), words: [...document.querySelectorAll('.ws-word')].map((w) => w.dataset.word) }; });
+  const { n, g: letters, words } = info;
+  const at = (r, c) => (r >= 0 && r < n && c >= 0 && c < n ? letters[r * n + c] : '');
+  let pos = null, word = null;
+  for (const w of words) { for (let r = 0; r < n && !pos; r++) for (let c = 0; c < n && !pos; c++) for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [-1, 1]]) { let ok = true; for (let i = 0; i < w.length && ok; i++) if (at(r + dr * i, c + dc * i) !== w[i]) ok = false; if (ok) { pos = { r, c, dr, dc, len: w.length }; word = w; break; } } if (pos) break; }
+  if (!pos) { bad.push('could not find a word on the board to drag across'); await p.close(); return bad; }
+  const a = await p.locator('.ws-cell[data-row="' + pos.r + '"][data-col="' + pos.c + '"]').boundingBox();
+  const z = await p.locator('.ws-cell[data-row="' + (pos.r + pos.dr * (pos.len - 1)) + '"][data-col="' + (pos.c + pos.dc * (pos.len - 1)) + '"]').boundingBox();
+  await p.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await p.mouse.down(); await p.mouse.move(z.x + z.width / 2, z.y + z.height / 2, { steps: 6 });
+  if ((await p.locator('.ws-hl .ws-sel').count()) !== 1) bad.push('no capsule follows the finger while dragging');
+  await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await p.locator('.ws-hl .ws-sel').count()) !== 0) bad.push('the drag capsule stays after letting go');
+  const caps = await p.evaluate(() => [...document.querySelectorAll('.ws-hl .ws-cap')].map((l) => { const b = l.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), cap: getComputedStyle(l).strokeLinecap }; }));
+  if (caps.length !== 1) bad.push('found "' + word + '" but ' + caps.length + ' capsules are drawn');
+  else if (caps[0].cap !== 'round') bad.push('the capsule ends are not rounded (' + caps[0].cap + ')');
+  const bg = await p.evaluate((q) => getComputedStyle(document.querySelector('.ws-cell[data-row="' + q.r + '"][data-col="' + q.c + '"]')).backgroundColor, pos);
+  if (!/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bad.push('a found letter still has a solid box behind it (' + bg + ')');
+  await p.close();
+  return bad;
+}, ['word-search']);
+
+check('car-park-drag', 'in Car Park a car is dragged itself: it follows the finger along its row or column, stops at other cars and the edge, settles on the nearest square on release (one slide = one move), and there are no tap-then-arrow buttons', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  const st = () => p.evaluate(() => window.__carParkTest.state());
+  const cell = await p.evaluate(() => document.getElementById('inner').clientWidth / 6);
+  const box = (id) => p.locator('.cp-car[data-id="' + id + '"]').boundingBox();
+  const colOf = async (id) => ((await st()).cars.find((c) => c.id === id) || {}).c;
+  // level 1: the car in the row below the red one has four free squares to its right
+  const b0 = await box(1), x = b0.x + b0.width / 2, y = b0.y + b0.height / 2;
+  await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x + cell * 1.5, y, { steps: 6 });
+  const mid = await box(1);
+  if (Math.abs((mid.x - b0.x) / cell - 1.5) > 0.2) bad.push('the car does not follow the finger (moved ' + ((mid.x - b0.x) / cell).toFixed(2) + ' squares for 1.5)');
+  await p.mouse.up(); await p.waitForTimeout(300);
+  const s1 = await st();
+  if (s1.moves !== 1 || (await colOf(1)) !== 2) bad.push('after letting go it should sit on the nearest square, one move (moves ' + s1.moves + ', column ' + (await colOf(1)) + ')');
+  const b1 = await box(1), x1 = b1.x + b1.width / 2;
+  await p.mouse.move(x1, y); await p.mouse.down(); await p.mouse.move(x1 + cell * 5, y, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await colOf(1)) !== 4) bad.push('a drag past the end should stop at the last free square (column ' + (await colOf(1)) + ')');
+  const m0 = (await st()).moves;
+  const b2 = await box(1); await p.mouse.move(b2.x + b2.width / 2, y); await p.mouse.down(); await p.mouse.move(b2.x + b2.width / 2 + cell * 0.3, y, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(300);
+  if ((await st()).moves !== m0) bad.push('a drag of less than half a square counted as a move');
+  // the red car is boxed in at the start: dragging it goes nowhere
+  const r0 = await box(0); await p.mouse.move(r0.x + r0.width / 2, r0.y + r0.height / 2); await p.mouse.down(); await p.mouse.move(r0.x + r0.width / 2 + cell * 3, r0.y + r0.height / 2, { steps: 6 });
+  const r1 = await box(0); if (Math.abs(r1.x - r0.x) > 2) bad.push('a blocked car moved when dragged');
+  await p.mouse.up(); await p.waitForTimeout(200);
+  if (await p.locator('.cp-arrow').count()) bad.push('the tap-then-arrow buttons are back');
+  await p.close();
+  return bad;
+}, ['car-park']);
+
 
 /* ---------- run ---------- */
 // Checks run in parallel (each opens its own page). --quick runs each check on 2 sample pages only:

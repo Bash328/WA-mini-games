@@ -219,7 +219,16 @@ const link = AsyncShare.start({
     const pairs = (b.size * b.size) / 2;
     if (!Number.isInteger(b.seed) || b.seed < 0 || b.seed > 0xFFFFFFFF) return false;
     if (typeof b.own !== 'string' || b.own.length !== pairs || !/^[012]+$/.test(b.own)) return false;
-    return Array.isArray(s.last) && s.last.every(x => Number.isInteger(x) && x >= 0 && x < pairs);
+    if (!(Array.isArray(s.last) && s.last.every(x => Number.isInteger(x) && x >= 0 && x < pairs))) return false;
+    if (s.resigned) return true;
+    // a hand-edited link must still be a board two players could have reached: the pairs matched in the last turn belong to the
+    // player who just moved (the one NOT to move now), the result matches the board, and Player 2 cannot own a pair before moving
+    const own = b.own.split('').map(Number), mover = s.turn === 1 ? 2 : 1;
+    if (new Set(s.last).size !== s.last.length || s.last.some(x => own[x] !== mover)) return false;
+    if (own.includes(2) && s.moveCount < 2) return false;
+    if (own.includes(0)) return s.status === 'in_progress';
+    const c1 = own.filter(x => x === 1).length, c2 = own.length - c1;
+    return c1 === c2 ? s.status === 'draw' : s.status === 'won' && s.winner === (c1 > c2 ? 1 : 2);
   },
   onState: loadLink,
   detail: (s) => {

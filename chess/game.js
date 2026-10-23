@@ -681,6 +681,31 @@ function resetSolo() {
   if (humanColor === 'b') aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
 }
 
+// A hand-edited link must still be a position two players could have reached: sane piece counts, flags that match the
+// board, the side that just moved not in check, and the stated result equal to what the board says.
+function reachable(s) {
+  const b = s.board, str = b.b, n = (ch) => str.split(ch).length - 1;
+  for (const [P, N, B, R, Q, K] of [['P','N','B','R','Q','K'], ['p','n','b','r','q','k']]) {
+    const extra = Math.max(0, n(Q) - 1) + Math.max(0, n(R) - 2) + Math.max(0, n(B) - 2) + Math.max(0, n(N) - 2);
+    if (n(P) > 8 || extra > 8 - n(P) || [P,N,B,R,Q,K].reduce((t, c) => t + n(c), 0) > 16) return false;
+  }
+  if (/[pP]/.test(str.slice(0, 8) + str.slice(56))) return false;
+  const rights = [['K', 60, 'K', 63, 'R'], ['Q', 60, 'K', 56, 'R'], ['k', 4, 'k', 7, 'r'], ['q', 4, 'k', 0, 'r']];
+  for (const [f, ks, kc, rs, rc] of rights) if (b.castle.includes(f) && (str[ks] !== kc || str[rs] !== rc)) return false;
+  if (b.ep !== null) {
+    const c = b.ep & 7;
+    const ok = b.ep >> 3 === 5 ? s.turn === 'b' && str[32 + c] === 'P' && str[48 + c] === '.' : b.ep >> 3 === 2 && s.turn === 'w' && str[24 + c] === 'p' && str[8 + c] === '.';
+    if (!ok || str[b.ep] !== '.') return false;
+  }
+  const st = stateFromLinkBoard(b, s.turn);
+  if (s.resigned) return true;             // a resignation leaves the board as it was
+  const mover = str[s.last[1]];
+  if (mover === '.' || str[s.last[0]] !== '.' || (mover === mover.toUpperCase() ? 'b' : 'w') !== s.turn) return false;
+  if (inCheck(st, opp(s.turn))) return false;
+  const o = outcome(st);
+  return o.status === s.status && o.winner === s.winner;
+}
+
 // ---------- 2 players over WhatsApp ----------
 // Whoever opens the game (no link yet) plays White and moves first. Castling,
 // en passant, and auto-queen promotion all work as in solo mode. There's no
@@ -701,8 +726,8 @@ const link = AsyncShare.start({
     if (typeof b.castle !== 'string' || !/^(-|[KQkq]{1,4})$/.test(b.castle)) return false;
     if (!(b.ep === null || (Number.isInteger(b.ep) && b.ep >= 0 && b.ep < 64))) return false;
     if (!Number.isInteger(b.half) || b.half < 0 || b.half > 150) return false;
-    return Array.isArray(s.last) && s.last.length === 2 &&
-      s.last.every(i => Number.isInteger(i) && i >= 0 && i < 64);
+    if (!(Array.isArray(s.last) && s.last.length === 2 && s.last.every(i => Number.isInteger(i) && i >= 0 && i < 64))) return false;
+    return reachable(s);
   },
   onState: loadLink,
   detail: () => lastReason || '',

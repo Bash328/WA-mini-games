@@ -310,8 +310,14 @@
   // ---------- 2 players over WhatsApp, and live online ----------
   // board: the 33-character string described in rules.js. Red opens. Online the server rolls (and re-rolls for a pass).
   function validateBackgammon(s) {
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last <= 99;
+    const S = R.parse(s.board);
+    if (!S || !(Number.isInteger(s.last) && s.last >= 0 && s.last <= 99)) return false;
+    // a hand-edited link must still be a position two players could have reached: Red opens and the turns alternate, and the
+    // game is over exactly when a side has borne off all 15. (The dice are rolled on the phone, so the position after a turn
+    // cannot be checked against the roll.)
+    if (s.resigned) return true;
+    const w = R.winnerOf(S), mover = s.moveCount % 2 ? RED : WHITE;
+    return s.turn !== mover && s.status === (w ? "won" : "in_progress") && s.winner === (w || null);
   }
   const shared = {
     game: "backgammon", version: 1, players: [RED, WHITE],

@@ -1,7 +1,7 @@
 """Draws the app icon, the launch images and the link-preview banner: the flat cream look (four flat tiles on cream).
 
    python tools/gen-icons.py   (needs Pillow and fonttools+brotli; rewrites icon-*.png, apple-touch-icon.png,
-   splash/*.png, og-image.png and favicon.svg)
+   assets/splash/*.png, og-image.png and favicon.svg; the launch images are cut from assets/launch-image.png)
 """
 import os, glob
 from fontTools.ttLib import TTFont
@@ -90,28 +90,34 @@ save_png(icon(512, False, 0.62), 'icon-maskable-512.png', 'RGB')    # the mark s
 
 
 # ---------- launch images ----------
+# The launch image is drawn once, by hand, at 1170x2532 (assets/launch-image.png: the four tiles, the name and the tagline on
+# cream). Every size is that artwork cut out and set on flat cream, scaled to the short side of the screen and centred where
+# the original sits (a little above the middle). A new tagline or look means replacing that one file and running this script.
+LAUNCH_SRC = os.path.join(ROOT, 'assets', 'launch-image.png')
+LAUNCH_W = 1170
+
+
 def splash(w, h):
-    """Flat cream, the four tiles, the name in ink and a quiet line under it."""
-    im = Image.new('RGBA', (w, h), CREAM + (255,))
-    short = min(w, h)
-    size = int(short * 0.62)
-    cx, cy = w // 2, int(h * 0.43)
-    im.alpha_composite(mark(size, 0.9), (cx - size // 2, cy - size // 2))
-    d = ImageDraw.Draw(im)
-    fs = int(short * 0.09)
-    f = ImageFont.truetype(ttf, fs)
-    text = 'WA MINI GAMES'
-    tw = d.textlength(text, font=f)
-    ty = cy + size // 2 + int(short * 0.06)
-    d.text(((w - tw) / 2, ty), text, font=f, fill=INK)
-    f2 = ImageFont.truetype(ttf, int(fs * 0.5))
-    sub = 'Play a friend over WhatsApp'
-    sw = d.textlength(sub, font=f2)
-    d.text(((w - sw) / 2, ty + fs * 1.3), sub, font=f2, fill=MUTED)
-    return im.convert('RGB')
+    import numpy as np
+    src = Image.open(LAUNCH_SRC).convert('RGB')
+    arr = np.asarray(src).astype(int)
+    bg = arr[5, 5]
+    ys, xs = np.where(np.abs(arr - bg).sum(axis=2) > 12)
+    center = (ys.min() + ys.max() + 1) / 2 / src.height          # where the artwork sits, as a share of the height and of the width
+    centerx = (xs.min() + xs.max() + 1) / 2 / src.width
+    art = src.crop((xs.min() - 8, ys.min() - 8, xs.max() + 9, ys.max() + 9))
+    k = min(w, h) / LAUNCH_W
+    art = art.resize((max(1, round(art.width * k)), max(1, round(art.height * k))), Image.LANCZOS)
+    # the artwork's background is a hair off the site cream: make it the exact cream so the edge of the cut-out never shows
+    a2 = np.asarray(art).astype(int)
+    a2[np.abs(a2 - bg).sum(axis=2) <= 6] = CREAM
+    art = Image.fromarray(a2.astype('uint8'))
+    im = Image.new('RGB', (w, h), CREAM)
+    im.paste(art, (round(w * centerx - art.width / 2), round(h * center - art.height / 2)))
+    return im
 
 
-for f in sorted(glob.glob(os.path.join(ROOT, 'splash', '*.png'))):
+for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'splash', '*.png'))):
     wh = os.path.basename(f)[:-4].split('x')
     w, h = int(wh[0]), int(wh[1])
     splash(w, h).save(f, optimize=True)
@@ -163,7 +169,7 @@ print('favicon.svg')
 # preview sheet
 sheet = Image.new('RGB', (1500, 560), (40, 40, 44))
 sheet.paste(icon(512, True).convert('RGBA'), (20, 20), icon(512, True))
-sp = Image.open(os.path.join(ROOT, 'splash', '1170x2532.png')).resize((236, 512))
+sp = Image.open(os.path.join(ROOT, 'assets', 'splash', '1170x2532.png')).resize((236, 512))
 sheet.paste(sp, (560, 20))
 bn = Image.open(os.path.join(ROOT, 'og-image.png')).convert('RGB')
 sheet.paste(bn, (820, 20))

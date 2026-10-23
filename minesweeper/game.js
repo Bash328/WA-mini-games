@@ -83,7 +83,7 @@ function updateHud() {
   if (mode === 'whatsapp') {
     const [a, b] = scores();
     document.getElementById('mines').textContent = String(M);
-    document.getElementById('score').innerHTML = `<span class="ms-key1">■</span> P1 ${a} · <span class="ms-key2">■</span> P2 ${b}`;
+    document.getElementById('score').innerHTML = `<span class="ms-key1">${a}</span> <span class="ms-key2">${b}</span>`;
     return;
   }
   let flagged=0; for (let i=0;i<H*W;i++) if (flags[i]) flagged++;
@@ -221,6 +221,35 @@ function flag(r,c) {
 // last: index of the most recent reveal.
 const PLAYER_NAMES = { 1: 'Player 1', 2: 'Player 2' };
 
+// A hand-edited link must still be a board two players could have reached. The mines are rebuilt from the seed (same RNG
+// calls as placeMines), then: only the last tile may be a mine, every open tile with no mines around has all its
+// neighbours open (a flood fill leaves no gaps), the last tile belongs to the player who just moved, each player owns at
+// least as many tiles as they had moves, and the result is the one the board says.
+function consistent(s) {
+  const b = s.board, [h, w, m] = DIFFS[b.d], n = h * w, rng = Gamekit.mulberry32(b.seed), mine = new Uint8Array(n);
+  const fr = Math.floor(b.first / w), fc = b.first % w;
+  for (let placed = 0; placed < m;) {
+    const i = Math.floor(rng() * n);
+    if (mine[i] || (Math.abs(Math.floor(i / w) - fr) <= 1 && Math.abs(i % w - fc) <= 1)) continue;
+    mine[i] = 1; placed++;
+  }
+  const ring = (i) => { const r = Math.floor(i / w), c = i % w, a = []; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if ((dr || dc) && r + dr >= 0 && r + dr < h && c + dc >= 0 && c + dc < w) a.push((r + dr) * w + c + dc); return a; };
+  let c1 = 0, c2 = 0, hit = false;
+  for (let i = 0; i < n; i++) {
+    if (b.own[i] === '0') continue;
+    if (b.own[i] === '1') c1++; else c2++;
+    if (mine[i]) { if (i !== s.last) return false; hit = true; continue; }
+    const around = ring(i);
+    if (!around.some((j) => mine[j]) && around.some((j) => b.own[j] === '0')) return false;
+  }
+  if (s.resigned) return true;
+  if (+b.own[s.last] !== (s.turn === 1 ? 2 : 1)) return false;
+  if (c1 < Math.ceil(s.moveCount / 2) || c2 < Math.floor(s.moveCount / 2)) return false;
+  if (hit) return s.status === 'won' && s.winner === s.turn;
+  if (c1 + c2 < n - m) return s.status === 'in_progress';
+  return s.status === (c1 === c2 ? 'draw' : 'won') && s.winner === (c1 === c2 ? null : c1 > c2 ? 1 : 2);
+}
+
 const link = AsyncShare.start({
   game: 'minesweeper',
   version: 1,
@@ -237,7 +266,8 @@ const link = AsyncShare.start({
       Number.isInteger(b.first) && b.first >= 0 && b.first < n &&
       typeof b.own === 'string' && b.own.length === n && /^[012]+$/.test(b.own) &&
       b.own[b.first] !== '0' &&
-      Number.isInteger(s.last) && s.last >= 0 && s.last < n && b.own[s.last] !== '0';
+      Number.isInteger(s.last) && s.last >= 0 && s.last < n && b.own[s.last] !== '0' &&
+      b.own[b.first] === '1' && consistent(s);
   },
   onState: loadLink,
   detail: s => {

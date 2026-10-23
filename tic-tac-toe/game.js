@@ -212,6 +212,14 @@
     // a resignation adds a move to the count without adding a mark
     const filled = b.split("").filter(c => c !== ".").length;
     if (filled !== s.moveCount && !(s.resigned && filled === s.moveCount - 1)) return false;
+    // a hand-edited link must still be a position two players could have reached: X first, marks alternate, the right side to move, a result that matches the board
+    const x = (b.match(/X/g) || []).length, o = filled - x;
+    if (x !== o && x !== o + 1) return false;
+    if (s.status === "in_progress" && s.turn !== (x === o ? "X" : "O")) return false;
+    if (!s.resigned) {
+      const w = winner(strToBoard(b));
+      if ((s.status === "in_progress") !== !w || (w && w.player !== (s.status === "draw" ? "draw" : s.winner))) return false;
+    }
     return Number.isInteger(s.last) && s.last >= 0 && s.last < 9 && b[s.last] !== ".";
   }
 

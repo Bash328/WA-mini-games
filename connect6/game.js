@@ -275,6 +275,19 @@
     if (!s || typeof s.board !== "string") return false;
     const st = R.parse(s.board);
     if (!st) return false;
+    // a hand-edited link must still be a position two players could have reached: a finished turn (nothing half placed), the
+    // side to move is the one in the envelope, the stones add up to the turns played (one for the opening, two after) unless the
+    // board is nearly full, and the result is the one the board shows
+    if (!s.resigned) {
+      const n1 = st.b.filter(v => v === 1).length, n2 = st.b.filter(v => v === 2).length, left = CELLS - n1 - n2;
+      const o = R.outcome(st, R.other(st.t));
+      if (s.status !== o.status || s.winner !== (o.winner || null)) return false;
+      // (a game that ends part-way through a turn leaves the board mid-turn, so these only apply while it is going)
+      if (o.status === "in_progress") {
+        if (st.p !== 0 || s.turn !== st.t) return false;
+        if (left > 2 && (n1 !== 2 * Math.ceil(s.moveCount / 2) - 1 || n2 !== 2 * Math.floor(s.moveCount / 2))) return false;
+      }
+    }
     if (s.last !== null && s.last !== undefined) {
       const pts = R.decodeLast(s.last);
       if (!pts) return false;

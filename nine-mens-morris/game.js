@@ -280,8 +280,13 @@
   // ---------- 2 players over WhatsApp, and live online ----------
   // board: the 30-character string described in rules.js. Red opens.
   function validateNineMensMorris(s) {
-    if (!R.parse(s.board)) return false;
-    return Number.isInteger(s.last) && s.last >= 0 && s.last < R.CELLS * 2;
+    const S = R.parse(s.board);
+    if (!S || !(Number.isInteger(s.last) && s.last >= 0 && s.last < R.CELLS * 2)) return false;
+    // a hand-edited link must still be a position two players could have reached: the side to move is the one in the board,
+    // and the game is over exactly when the rules say so
+    if (s.resigned) return true;
+    const w = R.winner(S);
+    return s.turn === S.turn && s.status === (w ? "won" : "in_progress") && s.winner === (w || null);
   }
   const shared = {
     game: "nine-mens-morris", version: 1, players: [RED, BLUE],

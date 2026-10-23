@@ -129,7 +129,7 @@
     if (!over) { say(""); return; }
     recordResult();
     say(won ? ["Genius!", "Magnificent!", "Impressive!", "Splendid!", "Great!", "Phew!"][guesses.length - 1] + " Solved in " + guesses.length + "/" + ROWS + "."
-      : "The word was " + answer.toUpperCase() + ". " + Gamekit.taunt("loss"));
+      : "Out of guesses. The word was " + answer.toUpperCase() + ". " + Gamekit.taunt("loss"));
     render();
   }
   function recordResult() {

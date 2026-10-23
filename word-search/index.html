@@ -70,11 +70,17 @@
     transition: background-color .08s linear, color .08s linear;
     cursor: pointer;
   }
-  .ws-cell.sel { background: #243b55; color: #fff; }
-  .ws-cell.found { background: var(--wc, #2f8f63); color: #fff; }
-  .ws-cell.found.sel { background: #243b55; color: #fff; }
-  .ws-cell.hint { box-shadow: inset 0 0 0 3px #ffbf2e, inset -1px -1px 0 #e3e8ef; }
-  .ws-cell.found.hint { box-shadow: inset 0 0 0 3px #ffbf2e, inset 0 0 0 5px rgba(255,255,255,.55); }
+  /* found words and the word being dragged are rounded capsules laid along the letters (the SVG under the cells), in a
+     soft version of the word's colour with the letters still dark; the dragged word is a dark capsule with light letters */
+  .ws-hl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .ws-hl line { stroke-width: .78; stroke-linecap: round; fill: none; }
+  .ws-hl .ws-cap { opacity: .42; }
+  .ws-hl .ws-sel { opacity: .88; }
+  .ws-cell { z-index: 1; }
+  .ws-cell.sel, .ws-cell.found.sel { color: #fff; }
+  .ws-cell.found { color: #1f2933; box-shadow: none; }
+  .ws-cell.found.sel { box-shadow: none; }
+  .ws-cell.hint::before { content: ""; position: absolute; inset: 14%; border-radius: 50%; border: 3px solid #ffbf2e; }
 
   /* the words to find: a plain list of pills, filled in when found */
   .ws-count {
@@ -197,6 +203,6 @@
 <script defer src="words.js?v=4675dc4c"></script>
 <script defer src="puzzle.js?v=60a00e2e"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=ca924f7a"></script>
+<script defer src="game.js?v=05f16f4a"></script>
 </body>
 </html>

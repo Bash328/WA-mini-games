@@ -120,6 +120,7 @@
   }
 
   function newPuzzle(seedOverride) {
+    document.getElementById("status").textContent = "Fill each row, column, and 2×3 box with 1–6.";   // a finished puzzle's "Solved in ..." must not follow you to the next one
     const seed = seedOverride !== undefined ? seedOverride : Gamekit.dailySeed("mini-sudoku", diff);
     curSeed = seed;
     givens = generate(seed);
