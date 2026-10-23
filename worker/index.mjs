@@ -59,26 +59,44 @@ function roomConfig(game, raw) {
   return cfg || false;
 }
 
-/* Picks a free code and initialises its room. Returns { code, stub } or null. */
-async function createRoom(env, game, config) {
+/* Picks a free code in a room namespace (env.ROOMS or env.CARDS) and initialises
+   that room with `init` plus the code. Returns { code, stub } or null. */
+async function makeRoom(ns, init) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newCode();
-    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-    const res = await stub.fetch("https://room/init", {
-      method: "POST",
-      body: JSON.stringify({ game: game, code: code, config: config || null }),
-    });
+    const stub = ns.get(ns.idFromName(code));
+    const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ ...init, code: code }) });
     if (res.status === 200) return { code: code, stub: stub };
     if (res.status !== 409) break;          // 409 = code taken, try another
   }
   return null;
 }
 
-async function underCreateLimit(request, env) {
-  if (!env.CREATE_LIMITER) return true;
-  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const { success } = await env.CREATE_LIMITER.limit({ key: ip });
+/* Is this IP under one of the per-minute limits (CREATE_LIMITER, LOOKUP_LIMITER...)? No binding: no limit. */
+async function underLimit(limiter, request) {
+  if (!limiter) return true;
+  const { success } = await limiter.limit({ key: request.headers.get("CF-Connecting-IP") || "unknown" });
   return success;
+}
+
+/* Browsers always send Origin on WebSocket and POST requests, so requiring it to match the site is what stops
+   another site driving the API from a visitor's browser. Local scripts may opt out with LIVE_ALLOW_NO_ORIGIN. */
+function sameOrigin(request, env, url) {
+  const origin = request.headers.get("Origin");
+  return origin === url.origin || (origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1");
+}
+
+/* A body is refused before it is read when it says it is bigger than the endpoint takes (all bodies here are tiny). */
+const tooBig = (request, max) => Number(request.headers.get("Content-Length") || 0) > max;
+
+/* GET exists?room=CODE for a room namespace. Read-only and secret-free, so no Origin check (browsers do not send
+   Origin on same-origin GETs), but rate limited: every lookup wakes a room object. */
+async function roomExists(ns, request, env, url) {
+  const code = url.searchParams.get("room") || "";
+  if (!CODE_RE.test(code)) return json({ exists: false });
+  if (!(await underLimit(env.LOOKUP_LIMITER, request))) return json({ error: "rate-limit" }, 429);
+  const res = await ns.get(ns.idFromName(code)).fetch("https://room/exists");
+  return json({ exists: res.status === 200 });
 }
 
 async function handleLive(request, env, url) {
@@ -90,33 +108,19 @@ async function handleLive(request, env, url) {
   }
   if (!enabled) return json({ error: "disabled" }, 503);
 
-  // Read-only and carries no secrets, so it needs no Origin check: browsers
-  // do not send Origin on same-origin GET requests, so requiring it would
-  // make every legitimate lookup fail.
-  if (sub === "exists" && request.method === "GET") {
-    const code = url.searchParams.get("room") || "";
-    if (!CODE_RE.test(code)) return json({ exists: false });
-    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-    const res = await stub.fetch("https://room/exists");
-    return json({ exists: res.status === 200 });
-  }
-
-  // Same-origin only. (Local scripts without a browser can opt out with
-  // LIVE_ALLOW_NO_ORIGIN, set only in local dev.)
-  const origin = request.headers.get("Origin");
-  if (origin !== url.origin && !(origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1")) {
-    return json({ error: "forbidden" }, 403);
-  }
+  if (sub === "exists" && request.method === "GET") return roomExists(env.ROOMS, request, env, url);
+  if (!sameOrigin(request, env, url)) return json({ error: "forbidden" }, 403);
 
   if (sub === "create" && request.method === "POST") {
+    if (tooBig(request, 2048)) return json({ error: "too-big" }, 413);
     let body;
     try { body = await request.json(); } catch (e) { return json({ error: "bad-request" }, 400); }
     if (!body || !liveGame(body.game)) return json({ error: "unknown-game" }, 400);
 
     const cfg = roomConfig(body.game, body);
     if (cfg === false) return json({ error: "bad-options" }, 400);
-    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
-    const made = await createRoom(env, body.game, cfg);
+    if (!(await underLimit(env.CREATE_LIMITER, request))) return json({ error: "rate-limit" }, 429);
+    const made = await makeRoom(env.ROOMS, { game: body.game, config: cfg || null });
     return made ? json({ room: made.code }) : json({ error: "unavailable" }, 503);
   }
 
@@ -130,8 +134,8 @@ async function handleLive(request, env, url) {
     if (!liveGame(game)) return json({ error: "unknown-game" }, 400);
     const cfg = roomConfig(game, { bestOf: url.searchParams.get("bestof") || undefined });
     if (cfg === false) return json({ error: "bad-options" }, 400);
-    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
-    const made = await createRoom(env, game, cfg);
+    if (!(await underLimit(env.CREATE_LIMITER, request))) return json({ error: "rate-limit" }, 429);
+    const made = await makeRoom(env.ROOMS, { game: game, config: cfg || null });
     if (!made) return json({ error: "unavailable" }, 503);
     return made.stub.fetch(new Request("https://room/ws", request));
   }
@@ -153,34 +157,17 @@ async function handleLive(request, env, url) {
    new   GET  ?game=SLUG (default crazy-8), WebSocket upgrade: makes a room AND connects, like /api/live/new
    ws    GET  ?room=CODE, WebSocket upgrade
    exists GET ?room=CODE */
-async function createCardRoom(env, game) {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = newCode();
-    const stub = env.CARDS.get(env.CARDS.idFromName(code));
-    const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code: code, game: game }) });
-    if (res.status === 200) return { code: code, stub: stub };
-    if (res.status !== 409) break;
-  }
-  return null;
-}
-
 async function handleCard(request, env, url) {
   if (env.LIVE_ENABLED === "0") return json({ error: "disabled" }, 503);
   const sub = url.pathname.slice("/api/card/".length);
-  if (sub === "exists" && request.method === "GET") {
-    const code = url.searchParams.get("room") || "";
-    if (!CODE_RE.test(code)) return json({ exists: false });
-    const res = await env.CARDS.get(env.CARDS.idFromName(code)).fetch("https://room/exists");
-    return json({ exists: res.status === 200 });
-  }
-  const origin = request.headers.get("Origin");
-  if (origin !== url.origin && !(origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1")) return json({ error: "forbidden" }, 403);
+  if (sub === "exists" && request.method === "GET") return roomExists(env.CARDS, request, env, url);
+  if (!sameOrigin(request, env, url)) return json({ error: "forbidden" }, 403);
   if (sub === "new" && request.method === "GET") {
     if (request.headers.get("Upgrade") !== "websocket") return json({ error: "upgrade-required" }, 426);
-    if (!(await underCreateLimit(request, env))) return json({ error: "rate-limit" }, 429);
+    if (!(await underLimit(env.CREATE_LIMITER, request))) return json({ error: "rate-limit" }, 429);
     const game = url.searchParams.get("game") || "crazy-8";
     if (!CARD_GAMES.includes(game)) return json({ error: "bad-game" }, 400);
-    const made = await createCardRoom(env, game);
+    const made = await makeRoom(env.CARDS, { game: game });
     if (!made) return json({ error: "unavailable" }, 503);
     return made.stub.fetch(new Request("https://room/ws", request));
   }
@@ -215,21 +202,15 @@ async function handleUser(request, env, url) {
   if (!USER_ACTIONS.has(sub)) return json({ error: "not-found" }, 404);
   if (request.method !== "POST") return json({ error: "method" }, 405);
 
-  const origin = request.headers.get("Origin");
-  if (origin !== url.origin && !(origin === null && env.LIVE_ALLOW_NO_ORIGIN === "1")) {
-    return json({ error: "forbidden" }, 403);
-  }
+  if (!sameOrigin(request, env, url)) return json({ error: "forbidden" }, 403);
+  if (tooBig(request, 2048)) return json({ error: "too-big" }, 413);
   const text = await request.text();
   if (text.length > 2048) return json({ error: "too-big" }, 413);
   let body;
   try { body = JSON.parse(text); } catch (e) { return json({ error: "bad-request" }, 400); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "bad-request" }, 400);
 
-  if ((sub === "claim" || sub === "check") && env.CLAIM_LIMITER) {
-    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-    const { success } = await env.CLAIM_LIMITER.limit({ key: ip });
-    if (!success) return json({ error: "rate-limit" }, 429);
-  }
+  if ((sub === "claim" || sub === "check") && !(await underLimit(env.CLAIM_LIMITER, request))) return json({ error: "rate-limit" }, 429);
 
   if (sub === "poke") {
     // The room has to be a real, open one for a game that can be played live,

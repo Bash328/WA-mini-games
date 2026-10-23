@@ -39,5 +39,13 @@ const count = (name) => Number((proto.match(new RegExp("export const " + name + 
 if (count("HYPE_COUNT") !== T.online.hype.length) problems.push("HYPE_COUNT does not match online.hype");
 if (count("HECKLE_COUNT") !== T.online.heckle.length) problems.push("HECKLE_COUNT does not match online.heckle");
 
+// Table Talk is shelved (2026-10-23): the flag must stay false, and every room
+// implementation must still honour it, so flipping the flag back is the only
+// change needed to bring Hype / Heckle back.
+if (win.TABLE_TALK !== false) problems.push("TABLE_TALK must be false while Table Talk is shelved");
+for (const f of ["./live-share.js", "./multiseat.js", "../crazy-8/game.js"]) {
+  if (!/TABLE_TALK\s*!==\s*true/.test(readFileSync(new URL(f, import.meta.url), "utf8"))) problems.push(f + " does not honour the TABLE_TALK shelf");
+}
+
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 console.log("taunts.js ok");

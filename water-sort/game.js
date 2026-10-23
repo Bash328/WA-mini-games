@@ -14,7 +14,7 @@
   let diff = store.get("diff", "medium");
   if (!WS.LEVELS[diff]) diff = "medium";
   let showLetters = store.get("letters", "0") === "1";
-  let curSeed = 0, first = [], tubes = [], log = [], won = false, sel = null, hintMove = null, hintTimer = null, lastTo = null;
+  let curSeed = 0, first = [], tubes = [], log = [], won = false, sel = null, hintMove = null, hintTimer = null, lastTo = null, hintUsed = false;
   let plan = null;                      // the rest of a solution the hint button found; followed while the player follows it, so hints never go in circles
 
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -34,7 +34,7 @@
     });
     movesEl.textContent = String(log.length);
     undoBtn.disabled = !log.length || won;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     symBtn.classList.toggle("on", showLetters);
     symBtn.textContent = showLetters ? "Hide letters" : "Show letters";
   }
@@ -43,7 +43,7 @@
   // The pour: the source tube lifts, tips over the target and a coloured stream falls into it; the new state is drawn when it ends.
   let animating = false;
   const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
-  function pourAnim(from, to, colour, done) {
+  function pourAnim(from, to, colour, n, done) {
     const a = tubesEl.children[from], b = tubesEl.children[to];
     if (!a || !b || !a.animate || calm()) return done();
     animating = true;
@@ -86,6 +86,20 @@
       { height: "0px", top: S, opacity: 0, offset: 0.9 },
       { height: "0px", top: S, opacity: 0, offset: 1 },
     ], { duration: 820 });
+    // The water moves while the stream runs: the poured layers drain out of the source, top first, and the same
+    // number fill the target, bottom first. Before, both tubes kept their old water until the end and then jumped.
+    const src = Array.from(a.children).slice(-n).reverse(), code = LETTERS[COLORS.indexOf(colour)];
+    const step = 0.4 / n;                                              // the stream is full from 0.36 to 0.76 of the pour
+    src.forEach((l, k) => {
+      l.style.transformOrigin = "50% 100%";
+      l.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }], { duration: 820 * step, delay: 820 * (0.36 + k * step), fill: "forwards", easing: "linear" });
+    });
+    for (let k = 0; k < n; k++) {
+      const l = el("div", "ws-l", showLetters ? code : "");
+      l.style.background = colour; l.style.transformOrigin = "50% 100%"; l.style.transform = "scaleY(0)";
+      b.append(l);
+      l.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 820 * step, delay: 820 * (0.36 + k * step), fill: "forwards", easing: "linear" });
+    }
     run.onfinish = run.oncancel = () => { stream.remove(); a.style.zIndex = ""; a.style.transformOrigin = ""; animating = false; done(); };
   }
 
@@ -101,7 +115,7 @@
       return render();
     }
     const from = sel, colour = COLORS[tubes[from][tubes[from].length - 1]];
-    pourAnim(from, i, colour, () => {
+    pourAnim(from, i, colour, m.n, () => {
       plan = plan && plan.length && plan[0].from === from && plan[0].to === i ? plan.slice(1) : null;
       tubes = WS.pour(tubes, m); log.push([from, i]); lastTo = i; sel = null;
       hintEl.textContent = "";
@@ -129,10 +143,11 @@
   function replay() { tubes = WS.clone(first); for (const [a, b] of log) { const m = WS.legal(tubes, a, b); if (!m) break; tubes = WS.pour(tubes, m); } }
 
   hintBtn.addEventListener("click", () => {
-    if (won) return;
+    if (won || hintUsed) return;
     sel = null; clearHint();
     if (!plan || !plan.length) plan = WS.solve(tubes, 60000);
     if (!plan || !plan.length) { plan = null; hintEl.textContent = "I can't find a way out from here. Try undo."; return render(); }
+    hintUsed = true;
     hintMove = plan[0];
     hintEl.textContent = "Pour the green tube into the yellow one.";
     hintTimer = setTimeout(clearHint, 4000);
@@ -144,7 +159,7 @@
     curSeed = seed;
     const p = WS.generate(seed, diff) || WS.generate(seed + 1, diff);
     first = p.tubes.map((t) => t.slice()); tubes = WS.clone(first);
-    log = []; won = false; sel = null; lastTo = null; plan = null; clearHint();
+    log = []; won = false; sel = null; lastTo = null; plan = null; clearHint(); hintUsed = false;
     bestEl.textContent = store.get("best:" + diff, "—");
     statusEl.textContent = "Sort the colours.";
     render();
@@ -159,7 +174,7 @@
   newBtn.addEventListener("click", () => start(Gamekit.randomSeed()));
 
   // ---------- keeping the game across a refresh: the puzzle is rebuilt from its seed and the pours replayed ----------
-  const resumer = Gamekit.resume("water-sort", () => (won || !log.length) ? null : { seed: curSeed, diff, log }, (s) => {
+  const resumer = Gamekit.resume("water-sort", () => (won || (!log.length && !hintUsed)) ? null : { seed: curSeed, diff, log, hintUsed }, (s) => {
     if (!WS.LEVELS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.log) || s.log.length > 2000) return false;
     diff = s.diff; chips.show(diff);
     start(s.seed);
@@ -169,6 +184,7 @@
       if (!mv) break;
       tubes = WS.pour(tubes, mv); log.push([m[0], m[1]]);
     }
+    hintUsed = !!s.hintUsed;
     render();
     return true;
   });

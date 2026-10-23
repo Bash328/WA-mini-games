@@ -24,7 +24,7 @@
   let Lc = null;                                  // the game against the computer: { st, cfg, events, timer }
   let tokenEls = [];                              // [seat][token] buttons, kept so a move glides
   let tokenRel = [];                              // [seat][token] last board index, for step-by-step moves
-  let lastDie = null, faceShown = null, dieTimer = null, rollTimer = null, busy = false, statusKey = "";
+  let lastDie = null, faceShown = null, dieRolling = false, rollTimer = null, busy = false, statusKey = "";
 
   const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -97,7 +97,7 @@
     }
   }
 
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
   function dieSvg(n) {
     let pips = "";
     (PIPS[n] || []).forEach((k) => { pips += '<circle cx="' + (26 + (k % 3) * 24) + '" cy="' + (26 + Math.floor(k / 3) * 24) + '" r="7.5"/>'; });
@@ -127,43 +127,51 @@
     };
   }
 
-  function moveFrames(yard, i, from, to) {
-    const frames = [];
-    if (from === to) return frames;
-    if (to < from) {
-      const p = basePos(yard, to, i);
-      frames.push(tokenPercent(p, 0, 0));
-      return frames;
-    }
-    for (let rel = from + 1; rel <= to; rel++) {
-      const p = basePos(yard, rel, i);
-      frames.push(tokenPercent(p, 0, 0));
-    }
+  // The path of a move in board percent: from where the token stands now, through every square, to where it settles.
+  // A forward move hops square by square (up and over, like the reference); a token sent home glides straight back.
+  const HOP = 140;                                     // ms per square
+  function moveFrames(b, yard, i, from, to, end) {
+    if (from === to) return [];
+    const pct = (p) => ({ x: (p.x / 15) * 100, y: (p.y / 15) * 100 });
+    const here = { x: parseFloat(b.style.left), y: parseFloat(b.style.top) };
+    const pts = [isNaN(here.x) || isNaN(here.y) ? pct(basePos(yard, from, i)) : here];
+    if (to > from) for (let rel = from + 1; rel < to; rel++) pts.push(pct(basePos(yard, rel, i)));
+    pts.push({ x: parseFloat(end.left), y: parseFloat(end.top) });
+    const n = pts.length - 1, hop = to > from, frames = [];
+    const at = (q, scale, offset, easing) => ({ left: q.x + "%", top: q.y + "%", transform: "translate(-50%, -50%) scale(" + scale + ")", offset, easing });
+    pts.forEach((q, k) => {
+      if (k && hop) {
+        const a = pts[k - 1];
+        frames.push(at({ x: (a.x + q.x) / 2, y: (a.y + q.y) / 2 }, 1.3, (k - 0.5) / n, "ease-in"));
+      }
+      frames.push(at(q, 1, k / n, hop ? "ease-out" : "ease-in-out"));
+    });
     return frames;
   }
 
-  // A one-square move glides; a longer move visits every square in turn.
   function animateToken(b, yard, i, from, to, end) {
-    const frames = moveFrames(yard, i, from, to);
+    if (b.__moveAnim) b.__moveAnim.cancel();           // a move still running settles first, so the next one starts from its end
+    const frames = reduceMotion ? [] : moveFrames(b, yard, i, from, to, end);
     if (!frames.length) {
       b.style.left = end.left; b.style.top = end.top; b.style.zIndex = end.z;
       return;
     }
-    if (b.__moveAnim) b.__moveAnim.cancel();
+    // The token is put on its end square first, with its CSS slide switched off, and the hop plays over that. Setting the
+    // end square only when the hop finished let the CSS slide run again from the old square (on iPhones the move repeated).
     b.style.transition = "none";
+    b.style.left = end.left; b.style.top = end.top;
     b.style.zIndex = "9";
-    const steps = to > from ? to - from : 1;
+    void b.offsetWidth;
     const motion = b.animate(frames, {
-      duration: steps === 1 ? 210 : Math.min(760, steps * 95),
-      easing: steps === 1 ? "ease-out" : "linear",
+      duration: to > from ? (frames.length - 1) / 2 * HOP : 320,
       fill: "none",
     });
     b.__moveAnim = motion;
     const settle = () => {
       if (b.__moveAnim !== motion) return;
       b.__moveAnim = null;
-      b.style.left = end.left; b.style.top = end.top; b.style.zIndex = end.z;
-      b.style.transition = "";
+      b.style.zIndex = end.z;
+      requestAnimationFrame(() => { if (!b.__moveAnim) b.style.transition = ""; });
     };
     motion.addEventListener("finish", settle);
     motion.addEventListener("cancel", settle);
@@ -241,26 +249,29 @@
   }
 
   function renderDie() {
-    if (M.table.moves === 0 && !M.table.die) faceShown = null;   // a fresh race starts with an empty die
-    let face = M.table.die;
+    // the roll just made: a roll with no move (say a 3 with every token in the yard) passes the turn at once, so the
+    // table's die is already empty; the roll event still says what was rolled, and it must be shown
+    const ev = (M.lastEvents || []).filter((e) => e.e === "roll").pop();
+    if (M.table.moves === 0 && !M.table.die && !ev) faceShown = null;   // a fresh race starts with an empty die
+    let face = M.table.die || (ev && ev.die) || null;
     if (!face && faceShown) face = faceShown;      // keep the last roll up until the next one
     if (!face) {
+      clearInterval(dieEl.__gkRoll); dieEl.__gkRoll = null; dieRolling = false;
       dieEl.innerHTML = '<span class="ld-q">?</span>';
       dieEl.setAttribute("aria-label", "Die");
       lastDie = null;
       return;
     }
     faceShown = face;
-    dieEl.innerHTML = dieSvg(face);
     dieEl.setAttribute("aria-label", "Die showing " + face);
-    if (face !== lastDie && !reduceMotion) {
-      dieEl.classList.remove("rolling");
-      void dieEl.offsetWidth;
-      dieEl.classList.add("rolling");
-      clearTimeout(dieTimer);
-      dieTimer = setTimeout(() => dieEl.classList.remove("rolling"), 480);
-    }
-    lastDie = face;
+    // A roll turns the die box over while its faces flick past (the shared roll every dice game uses); the turn is on
+    // the box, so swapping the face inside does not restart it (it used to, and the die jerked).
+    // Each roll rolls once, keyed by the roll itself (two 3s in a row both roll; a redraw of the same roll does not).
+    const key = ev ? M.table.moves + ":" + ev.seat + ":" + ev.die : null;
+    if (key && key !== lastDie) {
+      lastDie = key; dieRolling = true;
+      Gamekit.rollDice([{ el: dieEl, v: face }], (e, n) => { e.innerHTML = dieSvg(n); }).then(() => { dieRolling = false; });
+    } else if (!dieRolling) dieEl.innerHTML = dieSvg(face);   // a redraw while it rolls leaves the roll alone
   }
 
   function renderRoll() {
@@ -388,7 +399,7 @@
       if (!res.ok) res = L.act(st, seat, L.fallback(st, seat), Math.random);
       if (res.ok) Lc.events = res.events;
       localRender(); localSchedule();
-    }, 900 + Math.random() * 400);
+    }, 1200 + Math.random() * 400);                 // a little slower than before, so each bot roll can be seen
   }
 
   /* ============================================================

@@ -78,6 +78,7 @@
       c.setAttribute("role", "gridcell");
       c.setAttribute("aria-label", "cell " + (i + 1));
       c.dataset.i = String(i);
+      c.innerHTML = '<span class="mk"></span>';
       c.addEventListener("click", () => play(i));
       boardEl.appendChild(c);
       cellEls.push(c);
@@ -117,7 +118,7 @@
     for (let i = 0; i < 9; i++) {
       const v = board[i];
       const el = cellEls[i];
-      el.textContent = v || "";
+      el.firstChild.textContent = v || "";             // the mark's span (see build): the pop scales it, not the cell
       el.classList.toggle("taken", !!v);
       el.classList.toggle("x", v === "X");
       el.classList.toggle("o", v === "O");
@@ -336,4 +337,4 @@
   if (!new URLSearchParams(location.search).has("s") && !invited) resumer.restore();
 })();
 
-if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"));   // new squares pop in
+if (window.Gamekit && Gamekit.popFilled) Gamekit.popFilled(document.getElementById("board"), { inner: ".mk" });   // new squares pop in

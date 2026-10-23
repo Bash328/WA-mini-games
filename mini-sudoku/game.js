@@ -344,16 +344,18 @@
   eraseBtn.addEventListener("click", () => onDigit(0));
   pencilBtn.addEventListener("click", togglePencil);
   resetBtn.addEventListener("click", () => {
-    if (!confirm("Clear all your entries?")) return;
-    grid = new Uint8Array(givens);
-    notes = notes.map(() => new Set());
-    history = [];
-    won = false;
-    sel = -1;
-    timerStart = Date.now();
-    startTimer();
-    statusEl.textContent = "Fill each row, column, and 2×3 box with 1–6.";
-    renderAll();
+    Gamekit.ask({ title: "Clear all your entries?", text: "This cannot be undone.", ok: "Clear", cancel: "Keep", danger: true }).then((yes) => {
+      if (!yes) return;
+      grid = new Uint8Array(givens);
+      notes = notes.map(() => new Set());
+      history = [];
+      won = false;
+      sel = -1;
+      timerStart = Date.now();
+      startTimer();
+      statusEl.textContent = "Fill each row, column, and 2×3 box with 1–6.";
+      renderAll();
+    });
   });
   newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
 

@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
 <style>
   /* the board: a white paper grid in a heavy black frame, letters straight on it.
      The cell size (and font) follow the grid size, so 12x12 still fits a 320px phone. */
@@ -45,7 +45,10 @@
     width: min(430px, 100%);
     aspect-ratio: 1;
     margin: 4px auto 0;
-    background: #fff;
+    background-color: #fff;
+    /* the faint grid lines are the board's background, so a capsule laid over them hides them (on a diagonal they used to cut across it) */
+    background-image: linear-gradient(to right, #e3e8ef 1px, transparent 1px), linear-gradient(to bottom, #e3e8ef 1px, transparent 1px);
+    background-size: calc(100% / var(--n, 8)) calc(100% / var(--n, 8));
     border: 5px solid #000;
     border-radius: 20px;
     overflow: hidden;
@@ -66,7 +69,6 @@
     line-height: 1;
     color: #2f3a46;
     text-transform: uppercase;
-    box-shadow: inset -1px -1px 0 #e3e8ef;
     transition: background-color .08s linear, color .08s linear;
     cursor: pointer;
   }
@@ -74,12 +76,9 @@
      soft version of the word's colour with the letters still dark; the dragged word is a dark capsule with light letters */
   .ws-hl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
   .ws-hl line { stroke-width: .78; stroke-linecap: round; fill: none; }
-  .ws-hl .ws-cap { opacity: .42; }
-  .ws-hl .ws-sel { opacity: .88; }
   .ws-cell { z-index: 1; }
   .ws-cell.sel, .ws-cell.found.sel { color: #fff; }
-  .ws-cell.found { color: #1f2933; box-shadow: none; }
-  .ws-cell.found.sel { box-shadow: none; }
+  .ws-cell.found { color: #1f2933; }
   .ws-cell.hint::before { content: ""; position: absolute; inset: 14%; border-radius: 50%; border: 3px solid #ffbf2e; }
 
   /* the words to find: a plain list of pills, filled in when found */
@@ -182,7 +181,7 @@
   <ul>
     <li>Press the first letter of a word and <strong>drag</strong> to its last letter, then let go. The dragged line is always the straight row, column or diagonal nearest your finger.</li>
     <li>You can drag a word backwards too, from its last letter to its first.</li>
-    <li><code>hint</code> rings the first letter of one word you haven't found, up to three times. <code>↻ restart</code> clears the board and the clock for another go at the same puzzle.</li>
+    <li><code>hint</code> rings the first letter of one word you haven't found: one hint per puzzle, and restarting does not give it back. <code>↻ restart</code> clears the board's found words and the clock for another go at the same puzzle.</li>
     <li>Your best time at each grid size is kept on this device.</li>
   </ul>
 
@@ -197,12 +196,12 @@
   <p class="muted">About 500 common English words of four to seven letters, grouped by theme. No proper nouns, no rude words.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="words.js?v=4675dc4c"></script>
 <script defer src="puzzle.js?v=60a00e2e"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=05f16f4a"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=0c6f622d"></script>
 </body>
 </html>

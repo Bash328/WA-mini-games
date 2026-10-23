@@ -1,5 +1,62 @@
 # Change log
 
+## 2026-10-24 — phone-video fixes, one dice roll everywhere, Battleship on PC, audit fixes
+
+Scope: fixes found by watching the user's phone recordings (the `/watch` skill, local engine), feature asks, and a ponytail audit of the whole repo. Deployed to wa-minigames.online.
+
+- **Car Park drag lag.** `Gamekit.glidePieces` remembered a piece where it was before the drag, so a dropped car jumped back to its start and slid again. It now re-reads the board on `pointerup` while a piece is being dragged (`car-park-drop-stays`).
+- **Tic-Tac-Toe board twitch.** The grid lines are the cells' borders, and `popFilled` scaled the whole cell when a mark landed. The mark now sits in a `.mk` span and only that pops (`tic-tac-toe-pop-keeps-grid`).
+- **Ludo.** Tokens hop square by square from where they stand (`ludo-hops-from-its-square`); the end square is set before the hop with the CSS slide off, so iPhones no longer replay the move (`ludo-move-does-not-replay`); the disc under a token is its own colour (`ludo-under-disc-colour`); a roll that cannot move (a 3 with all tokens home) stays on the die (`ludo-stuck-roll-shown`); bots wait 1.2–1.6 s; the page is slate blue `#3a4f7a` (the user's pick), with a darker disabled Roll button.
+- **Water Sort.** The water drains out of one tube and fills the other while the stream runs, instead of jumping after the pour (`water-sort-water-moves-during-pour`).
+- **Hearts.** The hand rule `#ht .ht-card` (width and negative margin) also hit the played cards, so every trick card sat 11cqw left of its place and Bot 1's hid under its tag; the side stacks were clipped by `#ht` short of the screen edge (now clipped by `.wrap`) (`hearts-trick-cards-and-side-stacks`).
+- **Battleship.** Against the computer, the bot's cannon drops in from the top, fires at your fleet and leaves (`battleship-bot-cannon-fires`). On a PC the battle screen is a centred phone-shaped column (`--bw`) instead of the whole window: no more stretched cells or 700px cannon (`battleship-pc-column`).
+- **2048 merge.** The two tiles that meet fade out over the doubled tile while it swells once (0.26 s) instead of vanishing in one frame; the two older merge checks were updated to the new look.
+- **One dice roll.** `Gamekit.rollDice(dice, paint)` (the die turns over while its faces flick, then lands) is used by Ludo, Farkle, Yatzy, Greed, Liar's Dice and Backgammon (`dice-roll-same-everywhere`, `farkle-dice-throw`). Farkle keeps a bust's dice on the table (red ring) until the next roll. `Gamekit.PIPS` / `Gamekit.paintPips` replace six copies of the pip table.
+- **Pig is now Greed** wherever a player sees the name (hub, page, how-to, share title, link previews, taunts). The URL and the internal id stay `pig`, so old links, rooms and saves keep working.
+- **Audit fixes (server).** A Skull rematch with fewer than 3 people tried to start, the engine threw, and the room stuck on "Waiting"; `vote()` now uses the engine's `MIN_SEATS` (new test in `worker/skull.test.mjs`). A push service that cannot be reached no longer turns a poke into a server error (the poke counts and reports "not delivered"), and the registry now uses the tested `canDeliver` / new `silenced` rules instead of an inline copy. API bodies over 2 KB are refused before they are read. `exists` lookups are rate limited (new `LOOKUP_LIMITER`, 120/min per IP). `worker/index.mjs` has one `sameOrigin`, one `makeRoom` and one `roomExists` instead of copies; the rooms reuse `users.newToken`. `og-text.test.mjs` now checks every preview title against the game's own `AsyncShare.start` title (28 games).
+- **Audit fixes (pages).** Crazy 8's game-over card uses `Gamekit.ICON_TROPHY`, `ICON_HOME` and `winCounts` instead of its own copies.
+- **Checks.** Unit tests 47/47 files; browser checks for every changed page passed (dice games, Crazy 8, Tic-Tac-Toe 170/170; Battleship 27/27; Ludo 28/28; 2048 21/21; Hearts, Water Sort, Car Park, Greed and the hub). The full browser suite was not run.
+
+## 2026-10-23 (late) — Flow Free board no longer clipped on Safari
+
+- **The bottom row was cut in Safari/WebKit.** `.ff-inner` used `height: 100%` inside the square `.ff-board`; WebKit resolved that percentage against the board's border box, making the grid 20px taller than the content box, and `overflow: hidden` clipped the bottom row. It now uses `height: auto; aspect-ratio: 1 / 1`, so the grid matches the content box in both engines.
+- **Checks.** `flow-free-board` now asserts the grid height matches the board content box, the grid does not overflow, and no endpoint falls below the board. `--only flow-free-board` is 1/1; `--page flow-free` is 17/17; `node tests/run.mjs changed` passed 200/200 browser checks and 47/47 unit files. WebKit was checked at 390×664, 390×844, 375×667, 320×568 and 430×932 on medium and hard boards; Chromium at 390×844, 375×667, 320×568 and 1280×900.
+
+## 2026-10-23 (late) — solid orange game-over Home buttons
+
+- **The game-over Home button is the same solid orange everywhere.** The shared card's Home button was a see-through white chip; Crazy 8's custom card used solid red. Both now use `#e07a5f` with a `0 5px 0 #a8543e` lip, so the house icon reads as one action style across games. The top-bar back button is a separate navigation control and keeps its theme chip.
+- **Check.** New `home-buttons-orange` reads the real shared card on Chess and Crazy 8's card rule; `--only home-buttons-orange` is 1/1, Chess is 35/35 and Crazy 8 is 16/16. `node tests/run.mjs changed` passed 200/200 browser checks and 47/47 unit files; cache stamps and links are clean.
+
+## 2026-10-23 (late) — one hint a puzzle, and one amber hint button
+
+- **The last repeatable hints are gone.** Tango, Letter Boxed and Word Ladder now give one hint per puzzle, like Word Search, Flow Free, Hashiwokakero, Slitherlink, Star Battle, Queens, Water Sort, Car Park and Word Guess already did. The button disables after use; Restart keeps the hint spent on the same puzzle (Tango clears the revealed cell, Letter Boxed keeps its hint line, Word Ladder clears the filled word), and a new puzzle gets its own hint. Tango stores `hintUsed` in its resume; Letter Boxed and Word Ladder clamp a saved count to one.
+- **Letter Boxed's hint is one word.** It shows only the first word of the solving pair (`A way in two: WORD → …`), not both.
+- **One hint look.** Every hint button now uses Flow Free's filled amber action style: `#ffbf2e` with `#4a2f00` text, a `0 4px 0 #c98a00` lip, pill radius and the same hover/active/disabled states. The bulb-only buttons in Word Ladder and Word Guess became word buttons; Word Guess keeps its inline count badge. Chess's puzzle `#puz-hint` uses the same style, but its two-stage per-move puzzle logic is unchanged. Car Park and Water Sort keep their reference-driven round amber icon buttons.
+- **Checks.** New `tango-one-hint`, `letter-boxed-one-hint` and `word-ladder-one-hint`; `node tests/regression.mjs --only one-hint` is 4/4. Page suites passed for every page with a hint (Tango 21/21, Letter Boxed 19/19, Word Ladder 20/20, Word Guess 12/12, Flow Free 17/17, Hashiwokakero 17/17, Slitherlink 17/17, Star Battle 17/17, Queens 18/18, Word Search 19/19, Car Park 20/20, Water Sort 19/19, Chess 34/34 with one flaky timing check). `node tests/run.mjs changed` passed 199/199 browser checks (one known flaky `zip-path-glides` passed on rerun); the only unit failure was the existing Cross Sums hard-puzzle time limit (2020 ms against 2000 ms), which passed on an isolated rerun (1018 ms).
+
+## 2026-10-23 (late) — Word Search: one hint a puzzle
+
+- **One hint, not three.** `HINTS` in `word-search/game.js` is now 1. The button disables after it is used, and Restart no longer hands it back: the hint belongs to the puzzle, so the ring stays and `hinted`/`hintsLeft` are kept across a restart. A new puzzle (or a new daily) starts with its one hint. The how-to text says so.
+- **Check.** `word-search-one-hint` covers the first hint, the disabled button, Restart on the same puzzle and a new puzzle.
+
+## 2026-10-23 (late) — Table Talk shelved
+
+- **Table Talk (Hype / Heckle) is off.** `window.TABLE_TALK = false` in `shared/taunts.js` hides the two live-room buttons and the Mute banter toggle, and makes the room code ignore an incoming taunt. The lines, the room UI, the delivery code and the Worker's `taunt` protocol are all kept; flipping the flag back to `true` re-enables the feature. Commentary and Hangman's own banter are unchanged.
+- **Checks.** `shared/taunts.test.mjs` now guards the shelved flag and that the three room implementations still honour it. `online-table-talk` now asserts the buttons are absent and an incoming taunt is ignored while shelved (and still asserts the buttons draw when the flag is on).
+
+## 2026-10-23 (evening) — full play-test pass, deployed
+
+Scope: every game except Hangman was play-tested on desktop Chrome, iPhone 15 (WebKit) and a 360 px Android profile; the report is `PLAYTEST.md`. Deployed to wa-minigames.online and merged to `main`; the side branches were deleted (all were fully merged).
+
+- **Link fairness.** About 30 link games now reject hand-edited links no two players could have reached (wrong side to move, impossible piece counts, a result the board does not show). Minesweeper rebuilds the mines from the seed to check the board. A forged-link table in `tests/regression.mjs` (`forged-links-rejected`) covers every game that got a check. `shared/async-share.js` also stops a second tab from moving from a link the first tab already answered.
+- **Real bugs fixed.** Pentago refused genuine links when the turned quadrant emptied the placed square; Connect Four ignored taps on the board (only the small arrows worked); Rock-Paper-Scissors ignored Best of 5 and 7 in WhatsApp mode; Minesweeper cut off the second player's score; Sudoku, Mini Sudoku, Queens, Tango and Lights Out kept the old "Solved" text and brought the card straight back after Next level; Queens almost never made a one-answer puzzle (and cost a slow phone about 3 s at load); Word Guess showed no game over card on a loss; Dots and Boxes lines were too thin to tap (invisible larger tap area).
+- **Changes asked for.** New launch images (`assets/launch-image.png` is the source, `tools/gen-icons.py` cuts all 19 sizes in `assets/splash/` from it); Word Search shows found and dragged words as rounded capsules with the grid lines under them; Car Park cars are dragged directly (arrows removed); the "Admit defeat" and "Clear all your entries" questions are the site's own card (`Gamekit.ask` in `shared/gamekit.js`, `.gk-ask` in `shared/fun.css`) instead of the browser's confirm box (the hub's "Release this name" still uses the browser box); hub cards: Hangman and Pig pills no longer merge, every card now says Computer where the game has a computer opponent, and `hub-labels-accurate` keeps the pills honest.
+- **Line endings.** `.gitattributes` now says `* text=auto eol=lf`. On Windows a git checkout or merge turned files into CRLF, and the `?v=` page stamps hash raw bytes, so every stamp went stale.
+- **Rule change.** The full test suite is no longer a deploy gate: run `node tests/run.mjs changed` for what you touched, and the full suite only when asked (`CLAUDE.md`, `AGENTS.md`, `tests/run.mjs`).
+- **Last full run** before the final changes: 1110/1110 browser checks (one flaky Dominoes layout check passed on rerun), 47/47 unit-test files, static checks clean.
+- **Open decisions** (see `PLAYTEST.md`): Lights Out two-player is decided by the scramble (Easy always Player 1, Medium and Hard always Player 2); Battleship, Rock-Paper-Scissors, Memory and Minesweeper carry their secret in the link (accepted as friendly games, how-to notes added); Zip puzzles are never unique; many boards have tap targets under 44 px.
+- **New tools.** `tools/playtest.mjs <game>` runs the mechanical sweep (cold load on Slow 4G, three device profiles, overflow, tap targets, link abuse, OG tags).
+
 ## 2026-10-23 — review pass: fixes and a faster, stricter test run
 
 Scope: this review session only. Nothing was committed or deployed.

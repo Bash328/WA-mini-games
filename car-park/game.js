@@ -40,6 +40,7 @@
   let selected = -1;
   let hintMove = null;
   let hintTimer = 0;
+  let hintUsed = false;
   let noteTimer = 0;
   let drag = null;
   let resumer = null;
@@ -191,7 +192,7 @@
     const b = store.getInt("best:" + levelIndex, null);
     bestEl.textContent = b === null ? "—" : String(b);
     undoBtn.disabled = won || !history.length;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     levelSel.value = String(levelIndex);
     setStatus();
   }
@@ -205,6 +206,7 @@
   function startLevel(index, opts) {
     const i = Math.max(0, Math.min(LEVELS.length - 1, Number(index) || 0));
     if (!(opts && opts.keepResume) && resumer) resumer.clear();
+    if (!(opts && opts.keepHint)) hintUsed = false;      // a new level gets its one hint; a restart keeps it spent
     levelIndex = i;
     level = LEVELS[i];
     startCars = CP.carsOf(level);
@@ -298,13 +300,15 @@
   }
 
   function doHint() {
-    if (won) return;
+    if (won || hintUsed) return;
     if (hintMove) { clearHint(); renderCars(); return; }
     const m = CP.hint(cars);
     if (!m) { setNote("No move from here.", 1600); return; }
+    hintUsed = true;
     hintMove = m;
     selected = m.id;
     renderCars();
+    updateHud();
     const name = NAMES[m.id % NAMES.length];
     setNote("Hint: " + name + " car " + m.dir + " " + m.steps + ".", 6000);
     hintTimer = setTimeout(() => {
@@ -471,7 +475,7 @@
 
   undoBtn.addEventListener("click", undo);
   hintBtn.addEventListener("click", doHint);
-  resetBtn.addEventListener("click", () => startLevel(levelIndex));
+  resetBtn.addEventListener("click", () => startLevel(levelIndex, { keepHint: true }));
   newBtn.addEventListener("click", () => {
     document.body.classList.add("gk-play");
     startLevel((levelIndex + 1) % LEVELS.length);
@@ -494,8 +498,8 @@
   resumer = Gamekit.resume("car-park", () => {
     if (won) return null;
     const pos = snapshotPos(cars), from = snapshotPos(startCars);
-    if (!moves && pos.every((p, i) => p === from[i])) return null;
-    return { level: levelIndex, pos: pos, moves: moves };
+    if (!moves && !hintUsed && pos.every((p, i) => p === from[i])) return null;
+    return { level: levelIndex, pos: pos, moves: moves, hintUsed: hintUsed };
   }, (s) => {
     const lv = Number(s.level);
     if (!Number.isInteger(lv) || lv < 0 || lv >= LEVELS.length) return false;
@@ -518,6 +522,7 @@
     won = false;
     selected = -1;
     hintMove = null;
+    hintUsed = !!s.hintUsed;
     setNote("", 0);
     store.set("level", lv);
     setStatus();

@@ -48,7 +48,7 @@
   const legal = () => (dice && acting() ? R.legalSteps(S, cur, left) : []);
 
   // ---------- drawing ----------
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
   function dieEl(v, used) {
     const d = el("div", "bg-die" + (used ? " used" : ""));
     const on = new Set(PIPS[v]);
@@ -56,29 +56,10 @@
     d.setAttribute("aria-label", "die showing " + v);
     return d;
   }
-  // A roll tumbles: each die is thrown in, spins and bounces while its face flickers, then settles on the real value.
+  // A roll turns each die over while its face flicks past, then it lands on the real value (the shared dice roll).
   let rollAnimKey = "";
-  const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   function tumble() {
-    if (calm()) return;
-    [...diceOnEl.children].forEach((d, k) => {
-      if (!d.animate) return;
-      const finals = [...d.children].map((i) => i.className);
-      const spin = (k % 2 ? 1 : -1) * 360 * (1 + (k % 2));            // whole turns, so it lands the way it started
-      d.animate([
-        { transform: "translate(" + (k % 2 ? -34 : 34) + "px,-80px) rotate(0deg) scale(1.3)", opacity: 0.2 },
-        { transform: "translate(0,0) rotate(" + spin + "deg) scale(1)", opacity: 1, offset: 0.55 },
-        { transform: "translate(0,-12px) rotate(" + (spin + 16) + "deg) scale(1.05)", offset: 0.72 },
-        { transform: "translate(0,0) rotate(" + spin + "deg) scale(1)" },
-      ], { duration: 680, delay: k * 70, easing: "cubic-bezier(.2,.8,.3,1)" });
-      let n = 0;
-      const iv = setInterval(() => {
-        n++;
-        if (n >= 9) { clearInterval(iv); [...d.children].forEach((i, j) => { i.className = finals[j]; }); return; }
-        const on = new Set(PIPS[1 + Math.floor(Math.random() * 6)]);
-        [...d.children].forEach((i, j) => { i.className = on.has(j) ? "on" : ""; });
-      }, 75);
-    });
+    Gamekit.rollDice([...diceOnEl.children].map((d) => ({ el: d, v: d.querySelectorAll("i.on").length })), Gamekit.paintPips);
   }
   // the board from the viewer's side: their home board bottom right (White's view swaps the rows)
   const topIdx = (c) => (viewer === RED ? 12 + c : 11 - c);

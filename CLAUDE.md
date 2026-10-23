@@ -8,12 +8,12 @@ change**, so it can never quietly come back. A check should fail on the old beha
 and carry the issue in plain words. New fun pages go into the page lists at the top of the file (and
 `END` / `BOARD` / `SOLO` if the page needs them).
 
-Run it before telling the user something is fixed, and again before every deploy:
+Run the checks for what you changed before telling the user something is fixed. The full suite is NOT a gate before a deploy: run it only when the user asks for it.
 
 ```
 npm i --no-save playwright      # once; node_modules is git-ignored
 node tests/run.mjs changed      # while working: unit tests + the games you changed
-node tests/run.mjs              # before a deploy: unit tests + every browser check
+node tests/run.mjs              # the full suite: unit tests + every browser check (only when the user asks)
 node tests/regression.mjs       # the browser checks alone
 node tests/regression.mjs --page chess --only steady
 ```

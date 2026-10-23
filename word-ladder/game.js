@@ -95,7 +95,7 @@
     stepsEl.textContent = String(chain.length - 1);
     const parEl = document.getElementById("par"); if (parEl) parEl.textContent = String(puzzle.par);
     undoBtn.disabled = done || chain.length < 2;
-    hintBtn.disabled = done;
+    hintBtn.disabled = done || hints >= 1;
     submitBtn.disabled = done || current.length < LEN;
     kbEl.hidden = done;
   }
@@ -132,19 +132,19 @@
   function undo() { if (done || chain.length < 2) return; chain.pop(); current = ""; say(""); render(); }
   submitBtn.addEventListener("click", () => press("enter"));
   hintBtn.addEventListener("click", () => {
-    if (done) return;
+    if (done || hints >= 1) return;
     // the next word on a shortest way from where you are to the target
     const from = index.get(chain[chain.length - 1]), to = index.get(puzzle.target);
     const { prev } = bfs(to);                 // walk from the target back toward `from`
     const next = prev[from];
     if (next < 0) return;
-    hints++;
+    hints = 1;
     current = ALL[next];
     say("Hint used. Press Submit to take that step.");
     render();
   });
   undoBtn.addEventListener("click", undo);
-  resetBtn.addEventListener("click", () => { chain = [puzzle.start]; current = ""; hints = 0; done = false; say(""); render(); });
+  resetBtn.addEventListener("click", () => { chain = [puzzle.start]; current = ""; done = false; say(""); render(); });     // the hint belongs to the puzzle: keep it spent
 
   // ---------- keyboard, puzzles ----------
   function build() {
@@ -192,7 +192,7 @@
     newPuzzle(s.seed);
     if (s.chain[0] !== puzzle.start) return false;
     for (let i = 1; i < s.chain.length; i++) if (!index.has(s.chain[i]) || !oneApart(s.chain[i - 1], s.chain[i])) return false;
-    chain = s.chain.slice(); current = typeof s.current === "string" ? s.current.replace(/[^a-z]/g, "").slice(0, LEN) : ""; hints = Number.isInteger(s.hints) ? s.hints : 0;
+    chain = s.chain.slice(); current = typeof s.current === "string" ? s.current.replace(/[^a-z]/g, "").slice(0, LEN) : ""; hints = Math.min(1, Number.isInteger(s.hints) ? s.hints : 0);
     say(""); render();
     return true;
   });

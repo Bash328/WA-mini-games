@@ -87,7 +87,7 @@
     delBtn.disabled = won || cur.length <= lockLen();
     enterBtn.disabled = won || cur.length < 3;
     undoBtn.disabled = won || !chain.length;
-    hintBtn.disabled = won || hints >= 2;
+    hintBtn.disabled = won || hints >= 1;
     const left = 12 - u.size;
     if (!won) statusEl.textContent = left === 12 ? "Use all 12 letters." : left + " letter" + (left === 1 ? "" : "s") + " left.";
   }
@@ -123,12 +123,12 @@
   }
   function undoWord() { if (chain.length) { chain.pop(); cur = chain.length ? lastLetter() : ""; say(""); render(); } }
   function hint() {
-    if (hints >= 2) return;
-    hints++;
+    if (hints >= 1) return;
+    hints = 1;
     hintEl.textContent = "A way in two: " + puzzle.solution.slice(0, hints).join(" → ").toUpperCase() + (hints < 2 ? " → …" : "");
     render();
   }
-  function reset() { chain = []; cur = ""; hints = 0; won = false; hintEl.textContent = ""; say(""); render(); }
+  function reset() { chain = []; cur = ""; won = false; say(""); render(); }     // the hint belongs to the puzzle: keep it spent and keep its text
 
   // ---------- swiping ----------
   // Press a letter and slide over the others without lifting: each new letter is added (never one on the same side as the
@@ -203,7 +203,7 @@
     }
     cur = chain.length ? lastLetter() : "";
     if (s.cur.length > cur.length && s.cur.length <= 30 && s.cur.split("").every((l) => sideOf[l] !== undefined) && (!cur || s.cur[0] === cur)) cur = s.cur;
-    hints = Math.min(2, Number(s.hints) || 0);
+    hints = Math.min(1, Number(s.hints) || 0);
     if (hints) hintEl.textContent = "A way in two: " + puzzle.solution.slice(0, hints).join(" → ").toUpperCase() + (hints < 2 ? " → …" : "");
     render();
     return true;

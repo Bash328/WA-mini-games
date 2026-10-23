@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <script src="../shared/ga.js?v=29f6c01f"></script>
-<title>pig · games</title>
+<title>greed · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Pig — a dice game of nerve. Roll to build your turn, hold to bank it, and never roll a 1. First to 100 wins. Over WhatsApp, against the computer, or on one device.">
-<meta property="og:title" content="Pig · push-your-luck dice, two players over WhatsApp">
+<meta name="description" content="Greed — a dice game of nerve. Roll to build your turn, hold to bank it, and never roll a 1. First to 100 wins. Over WhatsApp, against the computer, or on one device.">
+<meta property="og:title" content="Greed · push-your-luck dice, two players over WhatsApp">
 <meta property="og:description" content="Roll, bank, or bust. First to 100 wins. Send the link back.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://wa-minigames.online/og-image.png">
@@ -38,9 +38,9 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
-<link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   .pig-main { max-width: 420px; margin: 0 auto; }
   .pig-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -79,8 +79,6 @@
   html body.fun.g-pig .pig-die svg circle { fill: #2f3a46; }
   html body.fun.g-pig .pig-die svg circle.one { fill: #e8353a; }
   html body.fun.g-pig .pig-die.bust svg rect { fill: #ffe3e0; stroke: #e8353a; }
-  html body.fun.g-pig .pig-die.rolling svg { animation: pig-spin .3s linear infinite; }
-  @keyframes pig-spin { 0% { transform: rotate(0deg) scale(1.08); } 50% { transform: rotate(180deg) scale(.94); } 100% { transform: rotate(360deg) scale(1.08); } }
   html body.fun.g-pig .pig-turn { color: rgba(255,255,255,.75); font-size: 18px; min-height: 4.4em; }
   html body.fun.g-pig .pig-turn b { color: #fff; font-size: 44px; font-weight: 400; display: block; line-height: 1.1; }
   html body.fun.g-pig .pig-rolls i { border: 0; background: rgba(0,0,0,.25); color: #fff; font-size: 15px; border-radius: 8px; padding: 2px 8px; }
@@ -97,13 +95,13 @@
 <body class="g-pig fun" data-fun-zone data-fun-reset data-fun-vs="YOU,BOT">
 <main class="wrap">
   <div class="topbar">
-    <h1>pig</h1>
+    <h1>greed</h1>
     <a class="back" href="../">← all games</a>
   </div>
   <div class="panel">
     <div class="row">
       <p class="status" id="status">Your turn.</p>
-      <button class="btn ghost tool-btn man-trigger" data-man="pig" data-man-title="PIG(1)" type="button">
+      <button class="btn ghost tool-btn man-trigger" data-man="pig" data-man-title="GREED(1)" type="button">
         how to <span class="q">?</span>
       </button>
     </div>
@@ -140,7 +138,7 @@
 
 <template id="man-pig">
   <h2>Name</h2>
-  <p>pig — a dice game of nerve. First to 100 wins.</p>
+  <p>greed — a dice game of nerve. First to 100 wins.</p>
 
   <h2>Rules</h2>
   <ul>
@@ -166,15 +164,15 @@
   <p class="muted">Over a whole game, holding at about 20 is hard to beat: the chance of rolling a 1 before you get there is about the same as what you'd lose. Take bigger risks only when you're behind and the other side is near 100.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script defer src="../shared/async-share.js?v=d4254c50"></script>
+<script defer src="../shared/async-share.js?v=0a9136e6"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/live-share.js?v=61dc292f"></script>
 <script defer src="rules.js?v=dc469416"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=f682aa33"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=b237f63c"></script>
 </body>
 </html>

@@ -12,14 +12,9 @@
 import { DurableObject } from "cloudflare:workers";
 import * as P from "./card-protocol.mjs";
 import { takeToken, checkTaunt } from "./live-protocol.mjs";
+import { newToken as mintToken } from "./users.mjs";
 
 const ROOM = "room";
-
-function mintToken() {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 export class CardRoom extends DurableObject {
   constructor(ctx, env) {

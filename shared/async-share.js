@@ -56,8 +56,12 @@
   ];
   function resignConfirmText() {
     const flavor = RESIGN_CONFIRMS[Math.floor(Math.random() * RESIGN_CONFIRMS.length)];
-    return "Admit defeat? Your opponent wins immediately — there's no undo. " + flavor;
+    return "Your opponent wins immediately, and there's no undo. " + flavor;
   }
+  // the site's own question card (Gamekit.ask); the browser's confirm box only if gamekit.js is somehow missing
+  const askResign = (text) => (global.Gamekit && Gamekit.ask
+    ? Gamekit.ask({ title: "Admit defeat?", text: text, ok: "Admit defeat", cancel: "Keep playing" })
+    : Promise.resolve(global.confirm("Admit defeat? " + text)));
 
   /* ---------- Encoding ----------
      Every byte in the URL costs WhatsApp preview real estate, so the
@@ -277,13 +281,16 @@
     // resign from, so the button for this is simply never shown then.
     function resign() {
       if (!view.state) return;
-      if (!global.confirm(resignConfirmText())) return;
-      commit({
-        board: view.state.board,
-        status: "won",
-        winner: other(view.viewer),
-        last: view.state.last,
-        resigned: true,
+      const at = view;
+      askResign(resignConfirmText()).then((yes) => {
+        if (!yes || view !== at) return;                  // cancelled, or the board changed while the card was open
+        commit({
+          board: view.state.board,
+          status: "won",
+          winner: other(view.viewer),
+          last: view.state.last,
+          resigned: true,
+        });
       });
     }
 

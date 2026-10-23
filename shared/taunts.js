@@ -46,6 +46,10 @@ window.NO_TAUNT = [
 // Live rooms that get no Table Talk buttons (Hype / Heckle): the heavy
 // abstracts, where chatter breaks concentration. See BANTER.md.
 window.NO_BANTER = ["onitama", "quoridor", "hex", "gomoku", "pentago", "ultimate-tic-tac-toe", "blokus-duo"];
+// SHELVED (2026-10-23): Table Talk (the Hype / Heckle buttons in live rooms) is
+// switched off. Nothing is deleted — the lines below, the room UI and the
+// Worker protocol all stay in place; flip this to true to bring it back.
+window.TABLE_TALK = false;
 window.TAUNT_LINES = {
   _: {
     loss: [
@@ -968,19 +972,19 @@ window.TAUNT_LINES = {
       "Greed has a die face, and it's a one.",
       "You were at 18. You were at 18!",
       "Hold at 20. It's right there in the how-to.",
-      "A pig could've banked that.",
+      "A goldfish could've banked that.",
       "The die has no feelings. It has a one.",
     ],
     win: [
       "You held your nerve. And then you held.",
-      "Pig champion. Nobody asked for a title, but here it is.",
-      "Bacon secured.",
+      "Greed champion. Nobody asked for a title, but here it is.",
+      "Greed is good. Today, anyway.",
       "Smart holds, steady rolls. Boring. Effective.",
       "You rolled the dice and the dice rolled over.",
       "A hundred points, zero regrets.",
     ],
     draw: [
-      "There are no draws in pig. Something has gone very wrong.",
+      "There are no draws in greed. Something has gone very wrong.",
     ],
   },
 

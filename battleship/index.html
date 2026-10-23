@@ -38,9 +38,9 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
-<link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
      shared "body[class*='g-'] .panel button" rule. */
@@ -135,6 +135,9 @@
   @keyframes bs-recoil { 0% { transform: translateY(0); } 22% { transform: translateY(9px); } 100% { transform: translateY(0); } }
   .bs-ball { position: fixed; z-index: 95; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b5f6a, #1b1c21 60%); box-shadow: 0 6px 6px rgba(0,0,0,.25); pointer-events: none; }
   .bs-fx { position: fixed; z-index: 96; pointer-events: none; }
+  /* the computer's cannon: dropped in from the top, turned to point down at your fleet, only while it fires */
+  .bs-foe-gun { position: fixed; top: 0; z-index: 94; pointer-events: none; transform: translate(-50%, -105%) rotate(180deg); }
+  .bs-foe-gun img { display: block; width: 100%; height: auto; user-select: none; }
   .bs-spark { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
   .bs-puff { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgba(255,255,255,.5); }
   /* aim: a crosshair on the chosen square; results: an orange diamond for a hit, a cross for a miss */
@@ -262,6 +265,17 @@
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon .cap { display: block; left: 50%; top: 56%; bottom: auto; transform: translate(-50%, -50%) scale(.6); opacity: 0; font-size: 30px; letter-spacing: .06em; color: #fff; background: none; padding: 0; text-shadow: 0 3px 0 #000, 0 0 10px rgba(0,0,0,.8); transition: opacity .15s ease, transform .2s cubic-bezier(.2,1.4,.4,1); pointer-events: none; }
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon.armed .cap { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .bs-home { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+  /* v7: the battle screen is sized from --bw, the screen width on a phone. On a PC it was the whole window (cells
+     stretched into long bars and a 700px cannon); there it is a centred column with the phone's proportions. */
+  html body.fun.g-battleship { --bw: 100vw; }
+  @media (min-width: 760px) { html body.fun.g-battleship { --bw: min(100vw, calc((100svh - 90px) / 2 / .825)); } }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --gh: min(calc(var(--bw) * .825), calc((100svh - 90px) / 2)); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { width: var(--bw); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-grid { padding: calc(var(--gh) * .028) calc(var(--bw) * .018); gap: calc(var(--gh) * .012) calc(var(--bw) * .009); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mid { width: var(--bw); }
+  html body.fun.g-battleship .panel .bs-cannon, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(var(--bw) * .37); }
+  body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { left: max(12px, calc(50% - var(--bw) / 2 + 12px)); right: max(12px, calc(50% - var(--bw) / 2 + 12px)); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -360,12 +374,12 @@
   </ul>
 </template>
 
-<script src="../shared/taunts.js?v=de2cfe57"></script>
-<script src="../shared/gamekit.js?v=3678b5be"></script>
+<script src="../shared/taunts.js?v=cc001b6b"></script>
+<script src="../shared/gamekit.js?v=d7d6d488"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../shared/async-share.js?v=d4254c50"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script src="game.js?v=f8538e53"></script>
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
+<script src="../shared/async-share.js?v=0a9136e6"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script src="game.js?v=4e440a84"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
 </body>
 </html>

@@ -88,12 +88,13 @@ console.log("\npokes:");
   const t = U.newRecord("Target", "x", T0); t.sub = sub;
   const f = U.newRecord("Friend", "x", T0);
   check("delivers to someone subscribed", U.canDeliver(f, t));
+  check("not silenced by default", !U.silenced(f, t));
   t.muted = true;
-  check("muted: not delivered", !U.canDeliver(f, t));
+  check("muted: not delivered, and silenced (the sender is not told)", !U.canDeliver(f, t) && U.silenced(f, t));
   t.muted = false; t.blocked.push(f.key);
-  check("blocked: not delivered", !U.canDeliver(f, t));
+  check("blocked: not delivered, and silenced", !U.canDeliver(f, t) && U.silenced(f, t));
   t.blocked = []; t.sub = null;
-  check("no subscription: not delivered", !U.canDeliver(f, t));
+  check("no subscription: not delivered, but not silenced (the sender is told)", !U.canDeliver(f, t) && !U.silenced(f, t));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

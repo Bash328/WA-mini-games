@@ -415,3 +415,12 @@ Tap targets under 44 px: Dominoes tiles (76x39), Ludo points (20 to 22 px), Lost
 7. Reduced motion: also drop the 0.35 s colour fade in `shared/fun.css`. 15 min.
 8. Optional integrity: a short checksum in the link rejects casual edits (still defeatable by reading the JS). 2 h in shared code.
 9. Raise or remove the missing upper bound on `moveCount` in shared validation. 10 min.
+
+## Late changes (after the sweeps above)
+
+- **Word Search diagonals:** the faint grid lines were drawn on every cell, above the capsule, so they cut across a diagonal word. The grid is now the board's own background (under the capsule) and the capsule is a solid soft colour. Check `word-search-capsules` covers it.
+- **Question card:** "Admit defeat?" (link and online games) and "Clear all your entries?" / "Clear the grid?" (Sudoku, Mini Sudoku, Nonogram) now use the site's own card (`Gamekit.ask`, shown in the same shape and colours as the game over card, Keep playing / Admit defeat buttons, Escape or a tap outside cancels, focus starts on the safe button). Check `admit-defeat-card`. Not changed: the hub's "Release this name" still uses the browser's box (the hub does not load gamekit.js).
+- **Hub labels:** Hangman and Pig showed their WhatsApp and Online pills on top of each other; both are now in the `.pills` row. Every game with a computer opponent now says Computer (19 games), pills are slightly smaller, and below 340 px titles and pills shrink so a three-line title (Ultimate Tic-Tac-Toe) clears the pills. Check `hub-labels-accurate` compares each card with the game's real modes and checks the pills never overlap at 320, 360 and 390 px.
+- **Line endings:** `.gitattributes` now forces LF (see the change log). Stamps were regenerated.
+- **Deploy:** the first deploy was version `e0890e34`; the later changes above were deployed after it. `main` is the only branch.
+- **Test rule:** per your instruction the full suite is no longer a deploy gate; it runs when you ask. The late changes were checked with the pages they touch (word-search, hub, tic-tac-toe resign flows, rock-paper-scissors resign, the three Clear popups), not with the full suite.

@@ -48,12 +48,12 @@ node tools/serve.mjs --phone
 node tests/run.mjs units     # about a minute: no browser
 node tests/run.mjs changed   # units + only the games you changed (a quick pass if shared/ changed)
 node tests/run.mjs quick     # units + smoke pass, about 3 minutes
-node tests/run.mjs           # units + the full browser suite: the gate before a deploy
+node tests/run.mjs           # units + the full browser suite (slow; run it only when the user asks)
 
 # All desktop layout checks (column, large viewports, modes, compact, overlays, phone guard)
 node tests/regression.mjs --only desktop
 
-# Full suite (the gate before a deploy)
+# Full suite (only when the user asks; it is not a deploy gate)
 node tests/regression.mjs
 
 # One game's checks

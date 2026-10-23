@@ -246,11 +246,13 @@
   }
   undoBtn.addEventListener("click", undo);
   resetBtn.addEventListener("click", () => {
-    if (!confirm("Clear the grid?")) return;
-    cur = new Array(n * n).fill(0); history = []; won = false;
-    timerStart = Date.now(); startTimer();
-    statusEl.textContent = "Fill the cells to match the numbers.";
-    renderAll();
+    Gamekit.ask({ title: "Clear the grid?", text: "This cannot be undone.", ok: "Clear", cancel: "Keep", danger: true }).then((yes) => {
+      if (!yes) return;
+      cur = new Array(n * n).fill(0); history = []; won = false;
+      timerStart = Date.now(); startTimer();
+      statusEl.textContent = "Fill the cells to match the numbers.";
+      renderAll();
+    });
   });
   newBtn.addEventListener("click", () => newPuzzle(Gamekit.randomSeed()));
 

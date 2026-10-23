@@ -751,9 +751,10 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   // force a merge: two 2s side by side, slide left. The slower settle makes the merge legible without fading.
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); });
   await p.keyboard.press('ArrowLeft');
-  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => t.getAnimations().forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0')) fade++; } if (k.some((x) => /scale\(1\.14\)/.test(x.transform || ''))) pop++; })); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
+  // the tiles stay solid while they slide and meet (as in the reference); only once they have met do they fade out over the new number
+  const seen = await p.evaluate(() => new Promise((res) => { const t0 = performance.now(); let slide = 0, fade = 0, pop = 0; const f = () => { document.querySelectorAll('#board .tile').forEach((t) => { const as = t.getAnimations(); as.forEach((a) => { const k = a.effect.getKeyframes(), d = a.effect.getTiming().duration; if (t.classList.contains('ghost')) { if (k.some((x) => x.transform)) slide = Math.max(slide, d); if (k.some((x) => x.opacity !== undefined && String(x.opacity) === '0') && as.some((b) => b !== a && b.effect.getKeyframes().some((x) => x.transform) && b.playState === 'running')) fade++; } if (k.some((x) => /scale\(1\.\d/.test(x.transform || ''))) pop++; }); }); if (performance.now() - t0 < 320) requestAnimationFrame(f); else res({ slide, fade, pop }); }; f(); }));
   if (!(seen.slide >= 155 && seen.slide <= 165)) bad.push('a one-cell slide should take about 160ms (0.8 x 200), saw ' + seen.slide + 'ms');
-  if (seen.fade) bad.push('the merging tiles fade; in the reference they just meet and swap');
+  if (seen.fade) bad.push('the merging tiles fade while still sliding; they must meet solid first');
   if (!seen.pop) bad.push('the doubled tile does not pop as it appears');
   await p.waitForTimeout(400);
   const v = await p.evaluate(() => [...document.querySelectorAll('#board .tile')].map((t) => t.textContent).filter(Boolean).join(','));
@@ -763,11 +764,11 @@ check('2048-board-centred-and-merge-smooth', '2048: the board was stuck to the t
   return bad;
 }, ['2048']);
 
-check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 then pop from that scale; they now stay full size while they overlap, and the doubled tile bulges from scale 1', async () => {
+check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 then pop from that scale; they now stay full size while they overlap, and the doubled tile bulges from scale 1. Later the new number still popped in (old tiles gone in one frame, a 0.16s yoyo): the old tiles now fade over it while it swells once', async () => {
   const p = await open('2048', 390);
   await p.evaluate(() => { grid = [[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]; render(); move('left'); });
   const seen = await p.evaluate(() => new Promise((res) => {
-    let squash = false, popFromOne = false, popExpands = false, slideEase = '', bulge = null, spawn = null;
+    let squash = false, popFromOne = false, popExpands = false, slideEase = '', bulge = null, spawn = null, fade = false;
     const t0 = performance.now();
     const sample = () => {
       document.querySelectorAll('#board .tile').forEach((tile) => tile.getAnimations().forEach((animation) => {
@@ -775,18 +776,19 @@ check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 t
         const joined = frames.join(' ');
         const timing = animation.effect.getTiming();
         if (joined.includes('scale(0.92)')) squash = true;
-        if (tile.classList.contains('ghost')) slideEase = timing.easing || '';
+        if (tile.classList.contains('ghost') && frames.some((f) => f.includes('translate'))) slideEase = timing.easing || '';
         if (!tile.classList.contains('ghost') && frames[0].includes('scale(1)')) popFromOne = true;
-        if (!tile.classList.contains('ghost') && frames.some((transform) => transform.includes('scale(1.14)'))) {
+        if (!tile.classList.contains('ghost') && frames.some((transform) => /scale\(1\.\d/.test(transform))) {
           popExpands = true;
-          bulge = { duration: timing.duration, iterations: timing.iterations, direction: timing.direction, easing: timing.easing };
+          bulge = { duration: timing.duration, last: frames[frames.length - 1], easing: timing.easing };
         }
+        if (tile.classList.contains('ghost') && animation.effect.getKeyframes().some((f) => f.opacity === '0' || f.opacity === 0)) fade = true;
         if (!tile.classList.contains('ghost') && frames[0].includes('scale(0)')) {
           spawn = { duration: timing.duration, easing: timing.easing };
         }
       }));
       if (performance.now() - t0 < 480) requestAnimationFrame(sample);
-      else res({ squash, popFromOne, popExpands, slideEase, bulge, spawn });
+      else res({ squash, popFromOne, popExpands, slideEase, bulge, spawn, fade });
     };
     sample();
   }));
@@ -795,7 +797,9 @@ check('2048-merge-lands-smoothly', '2048: merging tiles used to squash to 0.92 t
   if (seen.squash) bad.push('tiles still squash before they merge');
   if (!seen.popFromOne || !seen.popExpands) bad.push('the doubled tile does not bulge from full size after they meet');
   if (!/0\.25/.test(seen.slideEase)) bad.push('the slide does not use OutQuad (saw ' + seen.slideEase + ')');
-  if (!seen.bulge || seen.bulge.duration !== 80 || seen.bulge.iterations !== 2 || seen.bulge.direction !== 'alternate' || !/0\.37/.test(seen.bulge.easing)) bad.push('the merge bulge is not the 1.14 yoyo with InOutSine (' + JSON.stringify(seen.bulge) + ')');
+  // the new number used to pop in (the old tiles gone in one frame, a 0.16s yoyo): now one swell of at least 0.24s back to full size, and the old tiles fade out over it
+  if (!seen.bulge || seen.bulge.duration < 240 || !/scale\(1\)/.test(seen.bulge.last)) bad.push('the merge is not one smooth swell back to full size (' + JSON.stringify(seen.bulge) + ')');
+  if (!seen.fade) bad.push('the tiles that met vanish at once instead of fading out over the new number');
   if (!seen.spawn || seen.spawn.duration !== 300 || !/0\.37/.test(seen.spawn.easing)) bad.push('the new tile does not grow from scale 0 with InOutSine (' + JSON.stringify(seen.spawn) + ')');
   return bad;
 }, ['2048']);
@@ -924,8 +928,8 @@ check('rps-retry-clears-resign', 'rock paper scissors: after Admit defeat, the t
   await p.waitForTimeout(300);
   await p.locator('#wa-ui button:has-text("on this device")').click();
   await p.waitForTimeout(300);
-  await p.evaluate(() => { window.confirm = () => true; });
   await p.locator('.wa-resign-row button').click();
+  await p.locator('.gk-ask .yes').click();
   await p.waitForTimeout(400);
   if (!/admitted defeat/i.test(await p.locator('#wa-ui').innerText())) bad.push('the resign screen did not appear');
   await p.locator('.fun-restart').click();
@@ -1136,6 +1140,54 @@ check('battleship-cannon-slides-away-and-back', 'battleship: the cannon faded in
   return bad;
 }, ['battleship']);
 
+check('battleship-pc-column', 'battleship on a PC: the battle screen filled the whole window, so the cells became long bars and the cannon was 700px wide; it must be a centred column with the phone\'s proportions (and the phone layout unchanged)', async () => {
+  const bad = [];
+  for (const [w, h] of [[1920, 950], [1280, 800], [390, 844]]) {
+    const p = await browser.newPage({ viewport: { width: w, height: h } });
+    await p.goto(base + 'battleship/'); await p.waitForTimeout(500);
+    await p.keyboard.press('Escape');
+    await p.evaluate(() => { document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()); const m = document.querySelector('#mode'); m.value = 'computer'; m.dispatchEvent(new Event('change')); document.body.classList.add('gk-play'); });
+    await p.waitForTimeout(300);
+    await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+    const r = await p.evaluate(() => { const m = document.getElementById('bs-main').getBoundingClientRect(), c = document.querySelector('#bs-main .bs-cell').getBoundingClientRect(), f = document.getElementById('bs-fire').getBoundingClientRect(); return { mw: m.width, mc: m.left + m.width / 2, cell: c.width / c.height, gun: f.width, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
+    await p.close();
+    if (w > 760) {
+      if (r.mw > 600) bad.push(w + 'x' + h + ': the board is ' + Math.round(r.mw) + 'px wide, not a column');
+      if (Math.abs(r.mc - r.iw / 2) > 4) bad.push(w + 'x' + h + ': the board is not centred');
+      if (r.cell > 1.6) bad.push(w + 'x' + h + ': the cells are stretched into bars (' + r.cell.toFixed(2) + ':1)');
+      if (r.gun > r.mw * 0.4) bad.push(w + 'x' + h + ': the cannon is ' + Math.round(r.gun) + 'px, too big for a ' + Math.round(r.mw) + 'px board');
+    } else if (Math.round(r.mw) !== w) bad.push('on a phone the board must still go edge to edge (' + Math.round(r.mw) + 'px of ' + w + ')');
+    if (r.sw > r.iw) bad.push(w + 'x' + h + ': the page scrolls sideways');
+  }
+  return bad;
+}, ['battleship']);
+
+check('battleship-bot-cannon-fires', 'battleship vs computer: only your own cannon was ever seen; the bot\'s shot just appeared. The bot\'s cannon must come in while it fires (yours away), then leave so yours returns for your turn', async () => {
+  const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
+  await p.waitForTimeout(500);
+  const bad = [];
+  await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(800);
+  await p.locator('#bs-main .bs-cell').nth(0).click(); await p.locator('#bs-fire').click();
+  let seen = null;
+  for (let i = 0; i < 50 && !seen; i++) {
+    await p.waitForTimeout(100);
+    seen = await p.evaluate(() => { const g = document.querySelector('.bs-foe-gun'); if (!g) return null; const r = g.getBoundingClientRect(); return r.bottom > r.height * 0.9 ? { mineAway: document.getElementById('bs-fire').classList.contains('away'), shotYet: document.querySelectorAll('#bs-sub .bs-cell.hit, #bs-sub .bs-cell.miss, #bs-sub .bs-cell.sunk').length } : null; });
+  }
+  if (!seen) bad.push('the bot\'s cannon never came on screen when it fired');
+  else {
+    if (!seen.mineAway) bad.push('your cannon was still there while the bot\'s cannon fired');
+    if (seen.shotYet) bad.push('the bot\'s shot was already marked before its cannon fired');
+  }
+  await p.waitForTimeout(2000);
+  const end = await p.evaluate(() => ({ gun: !!document.querySelector('.bs-foe-gun'), mineAway: document.getElementById('bs-fire').classList.contains('away'), shots: document.querySelectorAll('#bs-sub .bs-cell.hit, #bs-sub .bs-cell.miss, #bs-sub .bs-cell.sunk').length }));
+  if (end.gun) bad.push('the bot\'s cannon did not leave after firing');
+  if (end.mineAway) bad.push('your cannon did not come back for your turn');
+  if (end.shots !== 1) bad.push('expected the bot\'s one shot on your fleet, saw ' + end.shots);
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['battleship']);
+
 check('battleship-ships-from-the-screenshots', 'battleship: the ship pictures must be the ones cut out of the reference screenshots (images, not drawn shapes), the cannon too, and the right tab must be Options (not Exit) and open the Options menu over the battle', async () => {
   const p = await open('battleship', 390, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')");
   await p.waitForTimeout(500);
@@ -1233,8 +1285,8 @@ check('resign-screen-desktop', 'Admit defeat was only tested at phone width with
     await p.waitForTimeout(250);
     await p.locator('.wa-ui button:has-text("on this device")').click();
     await p.waitForTimeout(300);
-    await p.evaluate(() => { window.confirm = () => true; });
     await p.locator('.wa-resign-row button').click();
+    await p.locator('.gk-ask .yes').click();
     await p.waitForTimeout(600);
     const r = await p.evaluate(() => {
       const ui = document.getElementById('wa-ui');
@@ -2234,9 +2286,9 @@ check('pig-look-and-roll', 'pig should look like the others: the scores and the 
   if (!/47, 180, 74/.test(info.hold)) bad.push('HOLD is not the green button');
   if (info.sw > 390) bad.push('page is wider than the phone');
   await p.locator('#roll-btn').click(); await p.waitForTimeout(90);
-  const spin = await p.evaluate(() => document.querySelector('.pig-die').classList.contains('rolling') && document.querySelector('.pig-die svg').getAnimations().length > 0);
+  const spin = await p.evaluate(() => document.querySelector('.pig-die').classList.contains('rolling') && document.querySelector('.pig-die').getAnimations().length > 0);
   if (!spin) bad.push('the die should spin while it rolls');
-  await p.waitForTimeout(500);
+  await p.waitForTimeout(700);
   const stopped = await p.evaluate(() => !document.querySelector('.pig-die').classList.contains('rolling'));
   if (!stopped) bad.push('the die keeps spinning after it landed');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
@@ -2331,6 +2383,42 @@ check('back-home-feedback', 'the top-bar back button and the game-over Home butt
   if (home && homePressed === 'none') bad.push('Home has no pressed state');
   if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
   await p.close();
+  return bad;
+}, ['chess']);
+
+check('home-buttons-orange', 'the game-over Home buttons were a see-through chip on most pages and solid red on Crazy 8; they must all be the same solid orange with a lip', async () => {
+  const bad = [];
+  const p = await open('chess', 390);
+  await p.evaluate(() => { document.getElementById('status').textContent = 'You win! ' + Gamekit.taunt('win'); });
+  await p.waitForTimeout(700);
+  const shared = await p.evaluate(() => {
+    const h = document.querySelector('.gk-over .home');
+    if (!h) return null;
+    const cs = getComputedStyle(h);
+    return { bg: cs.backgroundColor, shadow: cs.boxShadow };
+  });
+  if (!shared) bad.push('the game-over card has no Home button');
+  else {
+    if (shared.bg !== 'rgb(224, 122, 95)') bad.push('the game-over Home is not solid orange (' + shared.bg + ')');
+    if (!/rgb\(168, 84, 62\)/.test(shared.shadow)) bad.push('the game-over Home has no orange lip (' + shared.shadow + ')');
+  }
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+
+  const c = await open('crazy-8', 390);
+  const c8 = await c.evaluate(() => {
+    const d = document.createElement('div'); d.className = 'c8-over on';
+    d.innerHTML = '<div class="acts"><a class="home"></a></div>';
+    document.body.appendChild(d);
+    const cs = getComputedStyle(d.querySelector('.home'));
+    const r = { bg: cs.backgroundColor, shadow: cs.boxShadow };
+    d.remove();
+    return r;
+  });
+  if (c8.bg !== 'rgb(224, 122, 95)') bad.push('Crazy 8 Home is not the same solid orange (' + c8.bg + ')');
+  if (!/rgb\(168, 84, 62\)/.test(c8.shadow)) bad.push('Crazy 8 Home has no matching lip (' + c8.shadow + ')');
+  if (c.errs.length) bad.push('errors: ' + c.errs.join('; '));
+  await c.close();
   return bad;
 }, ['chess']);
 
@@ -2685,6 +2773,29 @@ check('farkle-rolls', 'Farkle: ROLL must deal six dice and ask which ones score'
   return bad;
 }, ['farkle']);
 
+check('farkle-dice-throw', 'Farkle: the dice just changed number on a roll; they must roll like every dice game (each die turns over while its faces flick past) and land on the numbers rolled', async () => {
+  const p = await open('farkle', 390);
+  const bad = [];
+  await p.locator('#fk-primary').click();
+  await p.waitForTimeout(150);
+  const turning = await p.evaluate(() => [...document.querySelectorAll('#fk-dice .fk-die')].filter((d) => d.getAnimations().some((a) => a.id === 'gk-roll')).length);
+  if (turning !== 6) bad.push('expected six dice rolling, saw ' + turning);
+  await p.waitForTimeout(700);
+  const match = await p.evaluate(() => [...document.querySelectorAll('#fk-dice .fk-slot')].every((s) => { const m = /Die showing (\d)/.exec(s.getAttribute('aria-label') || ''); return !m || s.querySelectorAll('.fk-die i.on').length === Number(m[1]); }));
+  if (!match) bad.push('a die landed showing a different number from the roll');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
+  await p.close();
+  return bad;
+}, ['farkle']);
+
+check('dice-roll-same-everywhere', 'every dice game rolled its dice its own way (a throw from above, a spinning picture, nothing at all); they must all use the one shared roll, the one Ludo has', async (g) => {
+  const bad = [];
+  const src = fs.readFileSync(path.join(ROOT, g, 'game.js'), 'utf8'), html = fs.readFileSync(path.join(ROOT, g, 'index.html'), 'utf8');
+  if (!/Gamekit\.rollDice\(/.test(src)) bad.push(g + ' does not use Gamekit.rollDice');
+  if (/@keyframes\s+[\w-]*(spin|tumble|roll)/i.test(html)) bad.push(g + ' still has its own roll keyframes');
+  return bad;
+}, ['ludo', 'farkle', 'yatzy', 'pig', 'backgammon', 'liars-dice']);
+
 check('hashiwokakero-board', 'Hashiwokakero: the daily board must draw its islands and offer a hint', async () => {
   const p = await open('hashiwokakero', 390);
   const bad = [];
@@ -2703,6 +2814,23 @@ check('flow-free-board', 'Flow Free: the daily board must have a full grid of ce
   const cells = await p.locator('.ff-cell').count();
   if (cells !== 36 && cells !== 49 && cells !== 64) bad.push('the grid has ' + cells + ' cells');
   if (await p.locator('#svg circle').count() < 4) bad.push('the endpoint dots are missing');
+  const fit = await p.evaluate(() => {
+    const board = document.querySelector('.ff-board');
+    const inner = document.querySelector('.ff-inner');
+    const grid = document.querySelector('.ff-grid');
+    const bs = getComputedStyle(board);
+    const b = board.getBoundingClientRect(), i = inner.getBoundingClientRect(), g = grid.getBoundingClientRect();
+    const contentH = b.height - 2 * (parseFloat(bs.borderTopWidth) + parseFloat(bs.paddingTop));
+    const dots = [...document.querySelectorAll('.ff-dot')].map((d) => d.getBoundingClientRect());
+    return {
+      innerH: Math.round(i.height), contentH: Math.round(contentH),
+      gridOver: Math.round(g.bottom - i.bottom),
+      dotOver: Math.round(Math.max(...dots.map((d) => d.bottom)) - b.bottom),
+    };
+  });
+  if (fit.innerH !== fit.contentH) bad.push('the grid is ' + fit.innerH + 'px tall inside a ' + fit.contentH + 'px board');
+  if (fit.gridOver > 0) bad.push('the grid overflows the board by ' + fit.gridOver + 'px');
+  if (fit.dotOver > 0) bad.push('an endpoint is cut by the board bottom');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
   return bad;
@@ -2718,6 +2846,121 @@ check('word-search-grid', 'Word Search: the daily grid and its word list must be
   await p.close();
   return bad;
 }, ['word-search']);
+
+check('word-search-one-hint', 'Word Search gave three hints a puzzle; it must give one, and Restart must not hand the hint back (the player could otherwise farm it on the same puzzle)', async () => {
+  const p = await open('word-search', 390);
+  const bad = [];
+  const state = () => p.evaluate(() => ({
+    disabled: document.getElementById('hint-btn').disabled,
+    rings: document.querySelectorAll('.ws-cell.hint').length,
+    status: document.getElementById('status').textContent,
+  }));
+  const start = await state();
+  if (start.disabled) bad.push('the first hint is disabled before it was used');
+  if (start.rings) bad.push('the board starts with a hint ring');
+  await p.locator('#hint-btn').click(); await p.waitForTimeout(250);
+  const used = await state();
+  if (used.rings !== 1) bad.push('the hint should ring exactly one first letter (saw ' + used.rings + ')');
+  if (!/^Hint: [A-Z] starts at the ringed letter\./.test(used.status)) bad.push('the hint line is missing: ' + JSON.stringify(used.status));
+  if (!used.disabled) bad.push('the hint button is still enabled after the one hint');
+  await p.locator('#reset-btn').click(); await p.waitForTimeout(250);
+  const restarted = await state();
+  if (!restarted.disabled) bad.push('Restart gave the hint back on the same puzzle');
+  if (restarted.rings !== 1) bad.push('Restart dropped the hint ring');
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);     // New lives in the Options popover on this page
+  await p.locator('#new-btn').click(); await p.waitForTimeout(400);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  const fresh = await state();
+  if (fresh.disabled) bad.push('a new puzzle did not get its one hint');
+  if (fresh.rings) bad.push('the new puzzle kept the old hint ring');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['word-search']);
+
+check('tango-one-hint', 'Tango lets one hint per puzzle; reset must not hand it back, and a new puzzle must get its own', async () => {
+  const p = await open('tango', 390);
+  const bad = [];
+  const state = () => p.evaluate(() => ({
+    disabled: document.getElementById('hint-btn').disabled,
+    filled: document.querySelectorAll('.tg-cell.sun, .tg-cell.moon').length,
+  }));
+  const start = await state();
+  if (start.disabled) bad.push('the hint is disabled before it was used');
+  await p.locator('#hint-btn').click(); await p.waitForTimeout(250);
+  const used = await state();
+  if (used.filled !== start.filled + 1) bad.push('the hint should reveal exactly one cell (filled ' + start.filled + ' -> ' + used.filled + ')');
+  if (!used.disabled) bad.push('the hint button is still enabled after the one hint');
+  await p.locator('#reset-btn').click(); await p.waitForTimeout(250);
+  const restarted = await state();
+  if (!restarted.disabled) bad.push('Reset gave the hint back on the same puzzle');
+  if (restarted.filled !== start.filled) bad.push('Reset should clear the revealed cell');
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);     // New lives in the Options popover on this page
+  await p.locator('#new-btn').click(); await p.waitForTimeout(400);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  const fresh = await state();
+  if (fresh.disabled) bad.push('a new puzzle did not get its one hint');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['tango']);
+
+check('letter-boxed-one-hint', 'Letter Boxed gave two hints a puzzle; it must give one (the first word), and reset must not hand it back', async () => {
+  const p = await open('letter-boxed', 390);
+  const bad = [];
+  const state = () => p.evaluate(() => ({
+    disabled: document.getElementById('hint-btn').disabled,
+    hint: document.getElementById('hint').textContent.trim(),
+    words: document.querySelectorAll('#chain span').length,
+  }));
+  const start = await state();
+  if (start.disabled) bad.push('the hint is disabled before it was used');
+  if (start.hint) bad.push('the puzzle starts with a hint line');
+  await p.locator('#hint-btn').click(); await p.waitForTimeout(250);
+  const used = await state();
+  if (!/^A way in two: [A-Z]{3,} → …$/.test(used.hint)) bad.push('the one hint should show the first word only: ' + JSON.stringify(used.hint));
+  if (!used.disabled) bad.push('the hint button is still enabled after the one hint');
+  await p.locator('#reset-btn').click(); await p.waitForTimeout(250);
+  const restarted = await state();
+  if (!restarted.disabled) bad.push('Reset gave the hint back on the same puzzle');
+  if (restarted.hint !== used.hint) bad.push('Reset dropped the hint that was already paid for');
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);
+  await p.locator('#new-btn').click(); await p.waitForTimeout(400);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  const fresh = await state();
+  if (fresh.disabled) bad.push('a new puzzle did not get its one hint');
+  if (fresh.hint) bad.push('the new puzzle kept the old hint line');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['letter-boxed']);
+
+check('word-ladder-one-hint', 'Word Ladder let you take a hint on every step; it must give one, and reset must not hand it back', async () => {
+  const p = await open('word-ladder', 390);
+  const bad = [];
+  const state = () => p.evaluate(() => ({
+    disabled: document.getElementById('hint-btn').disabled,
+    current: (document.getElementById('wl-input') || {}).textContent || '',
+  }));
+  const start = await state();
+  if (start.disabled) bad.push('the hint is disabled before it was used');
+  await p.locator('#hint-btn').click(); await p.waitForTimeout(300);
+  const used = await state();
+  if (used.current.replace(/\s/g, '').length !== 4) bad.push('the hint should fill the next four-letter word: ' + JSON.stringify(used.current));
+  if (!used.disabled) bad.push('the hint button is still enabled after the one hint');
+  await p.locator('#reset-btn').click(); await p.waitForTimeout(250);
+  const restarted = await state();
+  if (!restarted.disabled) bad.push('Reset gave the hint back on the same puzzle');
+  if (restarted.current.replace(/\s/g, '').length) bad.push('Reset should clear the hinted word');
+  await p.locator('.gk-optbtn').click(); await p.waitForTimeout(250);
+  await p.locator('#new-btn').click(); await p.waitForTimeout(400);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  const fresh = await state();
+  if (fresh.disabled) bad.push('a new puzzle did not get its one hint');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['word-ladder']);
 
 check('lost-cities-deal', 'Lost Cities: both expeditions and eight hand cards must be dealt, and a discard must lead to a draw', async () => {
   const p = await open('lost-cities', 390);
@@ -2745,7 +2988,7 @@ check('lost-cities-deal', 'Lost Cities: both expeditions and eight hand cards mu
 // multi-seat page a real, started room (worker/card-protocol.mjs) through a faked socket and checks the
 // table-talk buttons appear without a script error.
 const CARDP = await import(new URL('file:///' + path.join(ROOT, 'worker', 'card-protocol.mjs').replace(/\\/g, '/')));
-check('online-table-talk', 'Online tables: the Hype / Heckle buttons must draw (Crazy 8 still read the old angel/devil lists and threw an error as soon as a game was running)', async (g) => {
+check('online-table-talk', 'Online tables: while TABLE_TALK is on the Hype / Heckle buttons must draw (Crazy 8 once read the old angel/devil lists and threw as soon as a game was running); while it is shelved they and the Mute banter button must be absent and an incoming taunt must be ignored', async (g) => {
   const room = CARDP.newRoom('ABCDEF', Date.now(), g);
   let n = 0; const mint = () => 'tok' + ++n;
   const me = CARDP.join(room, null, 'Ann', mint, Date.now(), Math.random);
@@ -2756,17 +2999,33 @@ check('online-table-talk', 'Online tables: the Hype / Heckle buttons must draw (
   if (room.phase !== 'playing') return ['the test room did not start: ' + room.phase];
   const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const errs = []; p.on('pageerror', (e) => errs.push(e.message));
-  await p.routeWebSocket(/\/api\/card\//, (ws) => ws.onMessage((raw) => {
-    let m; try { m = JSON.parse(raw); } catch (e) { return; }
-    if (m.t !== 'hello') return;
-    ws.send(JSON.stringify({ t: 'welcome', pid: me.pid, token: me.token, code: room.code, game: g }));
-    ws.send(JSON.stringify({ t: 'room', v: CARDP.viewFor(room, me.pid, Date.now()) }));
-  }));
+  let sock = null;
+  await p.routeWebSocket(/\/api\/card\//, (ws) => {
+    sock = ws;
+    ws.onMessage((raw) => {
+      let m; try { m = JSON.parse(raw); } catch (e) { return; }
+      if (m.t !== 'hello') return;
+      ws.send(JSON.stringify({ t: 'welcome', pid: me.pid, token: me.token, code: room.code, game: g }));
+      ws.send(JSON.stringify({ t: 'room', v: CARDP.viewFor(room, me.pid, Date.now()) }));
+    });
+  });
   await p.goto(base + g + '/?live=ABCDEF');
   await p.waitForTimeout(1500);
+  const talk = await p.evaluate(() => window.TABLE_TALK === true);
   const hype = await p.evaluate(() => window.TAUNT_LINES.online.hype);
   const shown = await p.evaluate((lines) => [...document.querySelectorAll('button')].filter((b) => b.offsetParent && lines.includes(b.textContent.trim())).length, hype);
-  if (shown < 1) bad.push('no table-talk button is visible');
+  if (talk && shown < 1) bad.push('no table-talk button is visible');
+  if (!talk && shown) bad.push('table talk is shelved but ' + shown + ' Hype/Heckle button(s) still show');
+  if (!talk) {
+    const mute = await p.evaluate(() => [...document.querySelectorAll('button')].filter((b) => b.offsetParent && /^(Mute|Unmute) banter$/.test(b.textContent.trim())).length);
+    if (mute) bad.push('table talk is shelved but the Mute banter button still shows');
+    if (sock) {
+      sock.send(JSON.stringify({ t: 'taunt', k: 'h', i: 0 }));
+      await p.waitForTimeout(400);
+      const said = await p.evaluate((lines) => { const t = document.querySelector('.ms-toast'); return !!(t && !t.hidden && lines.some((l) => t.textContent.includes(l))); }, hype);
+      if (said) bad.push('a shelved page still showed an incoming taunt');
+    } else bad.push('the fake room socket did not connect');
+  }
   if (errs.length) bad.push('errors: ' + errs.join(';'));
   await p.close();
   return bad;
@@ -3486,6 +3745,11 @@ check('word-search-capsules', 'found words and the word being dragged are drawn 
   else if (caps[0].cap !== 'round') bad.push('the capsule ends are not rounded (' + caps[0].cap + ')');
   const bg = await p.evaluate((q) => getComputedStyle(document.querySelector('.ws-cell[data-row="' + q.r + '"][data-col="' + q.c + '"]')).backgroundColor, pos);
   if (!/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bad.push('a found letter still has a solid box behind it (' + bg + ')');
+  // the faint grid lines used to sit on every cell, above the capsule, so they cut across a diagonal word: they must be under it
+  const grid = await p.evaluate(() => ({ shadow: getComputedStyle(document.querySelector('.ws-cell')).boxShadow, capOpacity: getComputedStyle(document.querySelector('.ws-hl .ws-cap')).opacity, boardImage: getComputedStyle(document.getElementById('board')).backgroundImage }));
+  if (grid.shadow !== 'none') bad.push('the cells draw their own grid lines on top of the capsule (' + grid.shadow + ')');
+  if (grid.capOpacity !== '1') bad.push('the capsule is see-through, so the grid shows through it (opacity ' + grid.capOpacity + ')');
+  if (!/linear-gradient/.test(grid.boardImage)) bad.push('the board no longer draws the grid lines itself');
   await p.close();
   return bad;
 }, ['word-search']);
@@ -3519,6 +3783,250 @@ check('car-park-drag', 'in Car Park a car is dragged itself: it follows the fing
   await p.close();
   return bad;
 }, ['car-park']);
+
+check('car-park-drop-stays', 'Car Park: a dragged car jumped back to its old square when let go and then slid to where it was dropped, so the drag seemed to lag', async (g) => {
+  const p = await open(g, 390);
+  const cell = await p.evaluate(() => document.getElementById('inner').clientWidth / 6);
+  const box = () => p.locator('.cp-car[data-id="1"]').boundingBox();
+  const b0 = await box(), x = b0.x + b0.width / 2, y = b0.y + b0.height / 2;
+  await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x + cell * 2, y, { steps: 8 }); await p.mouse.up();
+  await p.waitForTimeout(40);
+  const off = ((await box()).x - b0.x) / cell;
+  await p.close();
+  return Math.abs(off - 2) < 0.25 ? [] : ['40ms after letting go the car was ' + off.toFixed(2) + ' squares along, not at the 2 it was dropped on'];
+}, ['car-park']);
+
+check('tic-tac-toe-pop-keeps-grid', 'tic-tac-toe: when a mark landed (yours or the bot\'s) the whole square popped, and the grid lines (its borders) jumped with it', async () => {
+  const p = await open('tic-tac-toe', 390, 'var m=document.querySelector("#mode");m.value="ai";m.dispatchEvent(new Event("change"))');
+  await p.locator('#board .cell').nth(4).click();
+  await p.waitForTimeout(40);
+  const r = await p.evaluate(() => {
+    const moving = (el) => el.getAnimations().filter((a) => a.effect.getKeyframes().some((k) => k.transform)).length;
+    return { cells: [...document.querySelectorAll('#board .cell')].filter(moving).length, marks: [...document.querySelectorAll('#board .cell .mk')].filter(moving).length };
+  });
+  await p.close();
+  const bad = [];
+  if (r.cells) bad.push(r.cells + ' square(s) scaled as a whole, moving the grid lines');
+  if (!r.marks) bad.push('the new mark no longer pops');
+  return bad;
+}, ['tic-tac-toe']);
+
+check('water-sort-water-moves-during-pour', 'water sort: the water stayed put through the whole pour and only then vanished from one tube and appeared in the other', async () => {
+  const p = await open('water-sort', 390);
+  const pair = await p.evaluate(() => {
+    const ts = [...document.querySelectorAll('#tubes .ws-tube')].map((t) => [...t.children].map((l) => l.style.background));
+    for (let a = 0; a < ts.length; a++) for (let b = 0; b < ts.length; b++) { const m = WaterSort.legal(ts, a, b); if (m) return { a, b, n: m.n, before: ts[b].length }; }
+    return null;
+  });
+  if (!pair) { await p.close(); return ['no legal pour found to test with']; }
+  const tube = (i) => p.locator('#tubes .ws-tube').nth(i);
+  await tube(pair.a).click(); await tube(pair.b).click();
+  await p.waitForTimeout(560);                                        // the stream is running (0.36 to 0.76 of 820ms)
+  const mid = await p.evaluate((b) => document.querySelectorAll('#tubes .ws-tube')[b].children.length, pair.b);
+  await p.waitForTimeout(700);
+  const end = await p.evaluate((b) => document.querySelectorAll('#tubes .ws-tube')[b].children.length, pair.b);
+  await p.close();
+  const bad = [];
+  if (mid <= pair.before) bad.push('mid-pour the target tube still had only its old ' + pair.before + ' layer(s)');
+  if (end !== pair.before + pair.n) bad.push('after the pour the target has ' + end + ' layers, wanted ' + (pair.before + pair.n));
+  return bad;
+}, ['water-sort']);
+
+check('hearts-trick-cards-and-side-stacks', 'hearts: the cards on the table were drawn 11cqw left of their places (Bot 1\'s hid under its name tag), and the side stacks stopped short of the screen edge', async () => {
+  const p = await open('hearts', 390);
+  for (let i = 0; i < 200; i++) {
+    if (await p.evaluate(() => !!document.querySelector('.ht-play.pos-l'))) break;
+    await p.evaluate(() => {
+      const picks = document.querySelectorAll('#ht .ht-hand .ht-card.pick').length;
+      const c = [...document.querySelectorAll('#ht .ht-hand .ht-card:not(.dim):not(.pick)')];
+      const b = document.querySelector('.ht-actions button:not([disabled])');
+      if (b) b.click(); else if (c.length && picks < 3) c[0].click();
+    });
+    await p.waitForTimeout(150);
+  }
+  await p.waitForTimeout(300);
+  const r = await p.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('.ht-play').forEach((w) => {
+      const a = w.getBoundingClientRect(), c = w.querySelector('.ht-card').getBoundingClientRect();
+      if (Math.abs(a.left - c.left) > 2 || Math.abs(a.top - c.top) > 2) out.push(w.className + ' card is ' + Math.round(c.left - a.left) + 'px off its place');
+    });
+    const l = document.querySelector('.ht-play.pos-l .ht-card');
+    if (!l) out.push('no card from Bot 1 reached the table');
+    else { const b = l.getBoundingClientRect(), hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); if (!hit || !hit.closest('.ht-play')) out.push('Bot 1\'s card is covered by ' + (hit && hit.className)); }
+    for (const [side, x] of [['ol', 2], ['or', innerWidth - 3]]) {
+      const f = document.querySelector('#ht .ht-' + side + ' .fan').getBoundingClientRect(), hit = document.elementFromPoint(x, f.top + f.height / 2);
+      if (!hit || !hit.closest('.fan')) out.push('the ' + (side === 'ol' ? 'left' : 'right') + ' stack does not reach the screen edge');
+    }
+    if (document.documentElement.scrollWidth > innerWidth) out.push('the page scrolls sideways');
+    return out;
+  });
+  await p.close();
+  return r;
+}, ['hearts']);
+
+check('ludo-hops-from-its-square', 'ludo: a moving token first jumped a square ahead and then slid in one straight line; it must start from where it stands and hop square by square like the reference', async () => {
+  const p = await open('ludo', 390);
+  await p.evaluate(() => { Math.random = () => 0.999; });     // every roll is a 6
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(400);
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.evaluate(() => { window.__at = new Map([...document.querySelectorAll('.ld-token')].map((t) => [t, [parseFloat(t.style.left), parseFloat(t.style.top)]])); });
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(30);
+  const r = await p.evaluate(() => {
+    const a = [...document.querySelectorAll('.ld-token')].flatMap((t) => t.getAnimations()).find((x) => x.effect.getKeyframes().length > 2);
+    if (!a) return ['no move animation ran'];
+    const k = a.effect.getKeyframes(), was = window.__at.get(a.effect.target), out = [];
+    if (Math.abs(parseFloat(k[0].left) - was[0]) > 0.01 || Math.abs(parseFloat(k[0].top) - was[1]) > 0.01) out.push('the move starts at ' + k[0].left + ',' + k[0].top + ' instead of the token\'s square ' + was.join(','));
+    if (!k.some((f) => /scale\(1\.[1-9]/.test(f.transform || ''))) out.push('the token does not hop between squares');
+    return out;
+  });
+  await p.close();
+  return r;
+}, ['ludo']);
+
+check('ludo-move-does-not-replay', 'ludo: when a hop ended the token was only then put on its new square, and the CSS slide ran again from the old one (on iPhones the move glitched and repeated)', async () => {
+  const p = await open('ludo', 390);
+  await p.evaluate(() => { Math.random = () => 0.999; });
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(400);
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(700);
+  await p.locator('.ld-token.movable').first().click(); await p.waitForTimeout(30);
+  const r = await p.evaluate(() => {
+    const a = [...document.querySelectorAll('.ld-token')].flatMap((t) => t.getAnimations()).find((x) => x.effect.getKeyframes().length > 2);
+    if (!a) return ['no move animation ran'];
+    const t = a.effect.target, k = a.effect.getKeyframes(), last = k[k.length - 1];
+    return Math.abs(parseFloat(t.style.left) - parseFloat(last.left)) < 0.01 && Math.abs(parseFloat(t.style.top) - parseFloat(last.top)) < 0.01 && t.style.transition === 'none'
+      ? [] : ['while hopping, the token sits on ' + t.style.left + ',' + t.style.top + ' (transition "' + t.style.transition + '") instead of its end square ' + last.left + ',' + last.top + ' with the slide off'];
+  });
+  await p.close();
+  return r;
+}, ['ludo']);
+
+check('ludo-die-tumbles', 'ludo: the die jerked: it showed the result at once and only its picture spun, restarting whenever the page redrew; it must turn over as a whole while the faces flick past, then land on the roll', async () => {
+  const p = await open('ludo', 390);
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(60);
+  const faces = new Set();
+  const turning = await p.evaluate(() => document.getElementById('ld-die').getAnimations().length > 0);
+  for (let i = 0; i < 6; i++) { faces.add(await p.evaluate(() => document.getElementById('ld-die').innerHTML)); await p.waitForTimeout(80); }
+  await p.waitForTimeout(400);
+  const end = await p.evaluate(() => { const d = document.getElementById('ld-die'); return { pips: d.querySelectorAll('circle').length, label: d.getAttribute('aria-label') }; });
+  await p.close();
+  const bad = [];
+  if (!turning) bad.push('the die box does not turn when rolled');
+  if (faces.size < 2) bad.push('the faces do not flick past while it rolls');
+  if (!end.label.endsWith(' ' + end.pips)) bad.push('the die landed on ' + end.pips + ' pips but says "' + end.label + '"');
+  return bad;
+}, ['ludo']);
+
+check('ludo-stuck-roll-shown', 'ludo: a roll that could not move (not a 6 with every token in the yard) passed the turn at once and the die went back to "?", so you never saw what you rolled', async () => {
+  const p = await open('ludo', 390);
+  await p.evaluate(() => { Math.random = () => 0.4; });       // every roll is a 3
+  await p.locator('#ld-roll').click(); await p.waitForTimeout(900);
+  const r = await p.evaluate(() => { const d = document.getElementById('ld-die'); return { label: d.getAttribute('aria-label'), pips: d.querySelectorAll('circle').length }; });
+  await p.close();
+  return r.label === 'Die showing 3' && r.pips === 3 ? [] : ['after rolling a 3 with nothing out the die shows "' + r.label + '" (' + r.pips + ' pips)'];
+}, ['ludo']);
+
+check('ludo-under-disc-colour', 'ludo: the disc under each token was mixed with black and showed as a dark ring on phones; it must be the token\'s own colour', async () => {
+  const p = await open('ludo', 390);
+  const r = await p.evaluate(() => [...document.querySelectorAll('.ld-token')].slice(0, 4).map((t) => ({ under: getComputedStyle(t, '::before').backgroundColor, top: getComputedStyle(t, '::after').backgroundColor })));
+  await p.close();
+  return r.filter((x) => x.under !== x.top).map((x) => 'under-disc ' + x.under + ' is not the token colour ' + x.top);
+}, ['ludo']);
+
+check('hub-labels-accurate', 'the pills on a hub card (WhatsApp, Online, Computer) must say what the game really offers, and the pills of one card must not sit on top of each other (Hangman and Pig put two loose pills in the same corner so they merged)', async () => {
+  const bad = [];
+  const hub = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  for (const m of hub.matchAll(/<a class="card"[^>]*href="([^"]+)"[\s\S]*?<\/a>/g)) {
+    const g = m[1].replace('/', ''), pills = [...m[0].matchAll(/<span class="pill[^"]*">([^<]*)<\/span>/g)].map((x) => x[1]);
+    if (!pills.some((x) => /^(WhatsApp|Online|Computer)$/.test(x))) continue;           // puzzle cards say Daily / Puzzle / Levels
+    const html = fs.readFileSync(path.join(ROOT, g, 'index.html'), 'utf8');
+    const opts = [...html.matchAll(/<option[^>]*value="([^"]*)"/g)].map((x) => x[1]);
+    const real = { WhatsApp: opts.includes('whatsapp'), Online: opts.includes('live'), Computer: opts.some((o) => /^(ai|computer)/.test(o)) };
+    for (const [label, has] of Object.entries(real)) if (has !== pills.includes(label)) bad.push(g + ': ' + (has ? 'offers ' + label + ' but the card does not say so' : 'says ' + label + ' but the game has no such mode'));
+    if (!/<div class="pills">/.test(m[0])) bad.push(g + ': its pills are not in the .pills row, so they stack in one corner');
+  }
+  for (const w of [320, 360, 390]) {
+    const p = await browser.newPage({ viewport: { width: w, height: 800 } });
+    await p.goto(base); await p.waitForTimeout(500);
+    const hit = await p.evaluate(() => { const out = []; for (const c of document.querySelectorAll('a.card')) { const cr = c.getBoundingClientRect(), t = c.querySelector('h3').getBoundingClientRect(), pills = [...c.querySelectorAll('.pill')].map((x) => x.getBoundingClientRect()); pills.forEach((a, i) => { if (a.left < cr.left - 1 || a.right > cr.right + 1 || a.bottom > cr.bottom + 1 || a.top < t.bottom) out.push(c.querySelector('h3').textContent + ' has a pill outside its card or under the title'); pills.slice(i + 1).forEach((b) => { if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) out.push(c.querySelector('h3').textContent + ' has two pills on top of each other'); }); }); } return out; });
+    for (const x of hit) bad.push(w + 'px: ' + x);
+    await p.close();
+  }
+  return bad;
+}, ['icons']);
+
+check('hub-card-labels-and-titles', 'the hub labels must be laid out the same way on every tile — Computer stacked above WhatsApp on the left, Online flush to the far right, Daily and Puzzle on one line at opposite ends — and a long tile name (Hashiwokakero) must shrink to fit instead of running past the card edge', async () => {
+  const bad = [];
+  for (const w of [320, 360, 390, 430]) {
+    const p = await browser.newPage({ viewport: { width: w, height: 800 } });
+    await p.goto(base); await p.waitForTimeout(600);
+    await p.evaluate(() => (document.fonts ? document.fonts.ready : null));
+    const out = await p.evaluate(() => {
+      const bad = [], R = (e) => e.getBoundingClientRect();
+      for (const c of document.querySelectorAll('a.card')) {
+        const h = c.querySelector('h3'), cr = R(c), hr = R(h), name = h.textContent;
+        const pills = [...c.querySelectorAll('.pill')], find = (t) => pills.find((x) => x.textContent === t);
+        if (h.scrollWidth > h.clientWidth + 1) bad.push(name + ': its title does not fit the tile');
+        if (hr.right > cr.right - 1) bad.push(name + ': its title runs past the card edge');
+        for (const x of pills) {
+          const r = R(x);
+          if (r.left < cr.left - 1 || r.right > cr.right + 1 || r.bottom > cr.bottom + 1 || r.top < hr.bottom - 1) bad.push(name + ': a pill is outside the card or under the title');
+        }
+        const computer = find('Computer'), wa = find('WhatsApp'), online = find('Online'), daily = find('Daily'), puzzle = find('Puzzle'), puzzles = find('Puzzles');
+        if (computer && wa) {
+          const a = R(computer), b = R(wa);
+          if (a.top >= b.top - 2) bad.push(name + ': Computer is not above WhatsApp');
+          if (Math.abs(a.left - b.left) > 1) bad.push(name + ': Computer and WhatsApp are not stacked on the left');
+        }
+        for (const right of [online, puzzles]) {
+          if (!right) continue;
+          const r = R(right);
+          if (r.right < cr.right - 40) bad.push(name + ': ' + right.textContent + ' is not flush right');
+          if (wa && r.left < R(wa).right) bad.push(name + ': ' + right.textContent + ' overlaps the left labels');
+        }
+        if (daily && puzzle) {
+          const a = R(daily), b = R(puzzle);
+          if (Math.abs(a.top - b.top) > 1) bad.push(name + ': Daily and Puzzle are not on one line');
+          if (a.right >= b.left) bad.push(name + ': Daily is not left of Puzzle');
+          if (b.right < cr.right - 40) bad.push(name + ': Puzzle is not flush right');
+        }
+      }
+      return bad;
+    });
+    for (const x of out) bad.push(w + 'px: ' + x);
+    await p.close();
+  }
+  return bad;
+}, ['hub']);
+
+check('admit-defeat-card', 'Admit defeat opened the grey browser confirm box (it looked like nothing else on the site); it must be the own question card of the site, Keep playing / Escape / a tap outside must leave the game alone, and Admit defeat must forfeit', async (g) => {
+  const bad = [];
+  const p = await open(g, 390);
+  let native = 0; p.on('dialog', (d) => { native++; d.dismiss(); });
+  await p.locator('#board > *').nth(0).click(); await p.waitForTimeout(250);
+  await p.locator('.wa-ui button:has-text("on this device")').click(); await p.waitForTimeout(300);
+  const open1 = async () => { await p.locator('.wa-resign-row button').click(); await p.waitForSelector('.gk-ask', { timeout: 2000 }); };
+  await open1();
+  const r = await p.evaluate(() => { const c = document.querySelector('.gk-ask .card'), cs = getComputedStyle(c), a = document.activeElement; return { title: (document.querySelector('.gk-ask h2') || {}).textContent, radius: cs.borderTopLeftRadius, w: Math.round(c.getBoundingClientRect().width), focus: a && a.className, sw: document.documentElement.scrollWidth, buttons: [...document.querySelectorAll('.gk-ask .acts button')].map((b) => Math.round(b.getBoundingClientRect().height)) }; });
+  if (r.title !== 'Admit defeat?') bad.push('the card title is "' + r.title + '"');
+  if (r.radius !== '36px') bad.push('the card does not use the card shape of the site (' + r.radius + ')');
+  if (r.focus !== 'no') bad.push('focus should start on the safe button (' + r.focus + ')');
+  if (r.sw > 390) bad.push('the card made the page wider than the phone');
+  if (r.buttons.some((h) => h < 44)) bad.push('a button is under 44px tall (' + r.buttons + ')');
+  await p.locator('.gk-ask .no').click(); await p.waitForTimeout(250);
+  if (await p.locator('.gk-ask').count() || /admitted defeat/i.test(await p.locator('.wa-ui').innerText())) bad.push('Keep playing should close the card and leave the game on');
+  await open1(); await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+  if (await p.locator('.gk-ask').count()) bad.push('Escape should close the card');
+  await open1(); await p.mouse.click(5, 5); await p.waitForTimeout(250);
+  if (await p.locator('.gk-ask').count()) bad.push('a tap outside should close the card');
+  await open1(); await p.locator('.gk-ask .yes').click(); await p.waitForTimeout(500);
+  if (!/admitted defeat|gave up|surrender/i.test(await p.locator('.wa-ui').innerText())) bad.push('Admit defeat did not forfeit the game');
+  if (native) bad.push('the native browser dialog still appeared ' + native + ' time(s)');
+  await p.close();
+  return bad;
+}, ['tic-tac-toe']);
 
 
 /* ---------- run ---------- */

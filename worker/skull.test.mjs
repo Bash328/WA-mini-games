@@ -323,6 +323,19 @@ const P = await protocolWithSkull();
   P.vote(room, b.pid, now, rng);
   check("everyone voting starts a rematch", room.phase === "playing" && room.state.round === 1, room.phase);
 }
+{
+  // three people, no computers: one drops out after the game, the other two vote. Skull needs three, so the room
+  // must go back to the lobby. (It used to try to start with two, the engine threw, and the room stuck on "Waiting".)
+  const room = P.newRoom("ABC235", T0, "skull");
+  let n = 0; const mint = () => "t" + (++n);
+  const [a, b, c] = ["Ann", "Ben", "Cat"].map((nm) => P.join(room, null, nm, mint, T0, rng));
+  P.start(room, a.pid, T0, rng);
+  room.phase = "game_over"; room.state.winner = 0;
+  P.setOnline(room, c.pid, false, T0);
+  let threw = null, r = null;
+  try { P.vote(room, a.pid, T0, rng); r = P.vote(room, b.pid, T0, rng); } catch (e) { threw = e.message; }
+  check("a rematch with too few people for Skull goes back to the lobby", !threw && r && r.ok && room.phase === "lobby", threw || room.phase);
+}
 
 console.log(fail ? `\n${pass} passed, ${fail} FAILED` : `\n${pass} passed`);
 process.exit(fail ? 1 : 0);

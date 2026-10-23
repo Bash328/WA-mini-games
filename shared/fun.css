@@ -145,6 +145,23 @@ body.fun[class*="g-"] .panel .btn.ghost {
 }
 body.fun[class*="g-"] .panel button.ghost:hover { background: var(--fun-chip); color: var(--fun-ink); filter: brightness(1.2); }
 body.fun[class*="g-"] .panel .tool-btn .glyph, body.fun[class*="g-"] .man-trigger .q { color: var(--accent); }
+/* every hint is the same filled amber action, like Flow Free's */
+body.fun[class*="g-"] .panel #hint-btn,
+body.fun[class*="g-"] .panel #puz-hint {
+  background: #ffbf2e; color: #4a2f00; box-shadow: 0 4px 0 #c98a00; border-radius: 999px; font-size: 14px;
+}
+body.fun[class*="g-"] .panel #hint-btn:hover,
+body.fun[class*="g-"] .panel #puz-hint:hover {
+  background: #ffbf2e; color: #4a2f00; filter: brightness(1.06);
+}
+body.fun[class*="g-"] .panel #hint-btn:active,
+body.fun[class*="g-"] .panel #puz-hint:active {
+  transform: translateY(3px); box-shadow: 0 1px 0 #c98a00;
+}
+body.fun[class*="g-"] .panel #hint-btn:disabled,
+body.fun[class*="g-"] .panel #puz-hint:disabled {
+  background: rgba(255, 191, 46, .5); color: rgba(74, 47, 0, .7); box-shadow: none; opacity: 1;
+}
 body.fun[class*="g-"] .toolbar { border: 0; padding-top: 6px; margin-top: 6px; }
 
 /* menus */
@@ -275,6 +292,19 @@ html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-co
 .gk-over { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 18px;
   background: rgba(14,14,22,.78); overflow-y: auto; font-family: var(--font-mono); letter-spacing: .02em; }
 .gk-over .card { width: min(400px, 100%); border-radius: 36px; padding: 26px 16px 16px; text-align: center; background: color-mix(in srgb, var(--fun-bg, #2f3555) 55%, #000); color: #fff; box-shadow: 0 10px 0 rgba(0,0,0,.25); }
+/* a question card (Gamekit.ask): the game over card's look, with two buttons */
+.gk-ask { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(14,14,22,.78); overflow-y: auto; font-family: var(--font-mono); letter-spacing: .02em; animation: gk-fade .18s ease-out; }
+.gk-ask .card { width: min(400px, 100%); border-radius: 36px; padding: 26px 16px 16px; text-align: center; background: color-mix(in srgb, var(--fun-bg, #2f3555) 55%, #000); color: #fff; box-shadow: 0 10px 0 rgba(0,0,0,.25); animation: gk-card-in .3s cubic-bezier(.2, 1.25, .4, 1) both; }
+.gk-ask h2 { margin: 0; font-size: 34px; font-weight: 400; text-transform: uppercase; }
+.gk-ask p { margin: 12px 8px 20px; font-size: 19px; line-height: 1.3; color: rgba(255,255,255,.85); text-wrap: balance; }
+.gk-ask .acts { display: flex; gap: 12px; }
+.gk-ask .acts button { flex: 1; min-width: 0; height: 58px; border: 0; border-radius: 18px; color: #fff; font-family: inherit; font-size: 20px; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .09s ease-out, filter .18s ease; }
+.gk-ask .acts button:active { transform: scale(.95); filter: brightness(1.2); }
+.gk-ask .acts .no { background: var(--fun-chip, rgba(255,255,255,.14)); }
+.gk-ask .acts .yes { background: #e5484d; box-shadow: 0 5px 0 #a82a30; }
+.gk-ask .acts .yes.safe { background: #2fb44a; box-shadow: 0 5px 0 #1c7a31; }
+.gk-ask .acts button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .gk-ask, .gk-ask .card { animation: none; } .gk-ask .acts button { transition: none; } }
 .gk-over h2 { margin: 0; font-size: 42px; font-weight: 400; text-transform: uppercase; }
 .gk-over .big { margin: 14px 0 6px; font-size: 34px; line-height: 1.1; color: #ffbf2e; word-break: break-word; }
 .gk-over.bad .big { color: #ff8a7a; }
@@ -287,7 +317,7 @@ html body.fun[data-fun-zone] .wa-ui:not(:has(button, a, input, .banner, .live-co
 .gk-over .row.t1 svg { color: #f0a800; } .gk-over .row.t2 svg { color: #e8648a; } .gk-over .row.t3 svg { color: #1fbf9a; }
 .gk-over .acts { display: flex; gap: 14px; width: min(400px, 100%); }
 .gk-over .acts a, .gk-over .acts button { height: 62px; border: 0; border-radius: 18px; color: #fff; font-family: inherit; font-size: 28px; letter-spacing: .03em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; }
-.gk-over .acts .home { width: 76px; background: var(--fun-chip, rgba(255,255,255,.14)); touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .09s ease-out, filter .15s ease; }
+.gk-over .acts .home { width: 76px; background: #e07a5f; box-shadow: 0 5px 0 #a8543e; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .09s ease-out, filter .15s ease; }
 .gk-over .acts .home:active,
 .gk-over .acts .home.gk-pressed { transform: scale(.92); filter: brightness(1.25); }
 .gk-over .acts .home svg { width: 34px; height: 34px; }

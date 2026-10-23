@@ -30,7 +30,7 @@
   if (!P.LEVELS[diff]) diff = "medium";
 
   let puzzle = null, curSeed = 0, marks = [], won = false, checking = false, history = [];
-  let hintEdge = -1, hintValue = -1;
+  let hintEdge = -1, hintValue = -1, hintUsed = false;
   let mode = "line";
   let startAt = 0, elapsedBefore = 0, timer = null;
   let svgEl = null, lineG = null, xG = null, hintG = null, clueEls = [];
@@ -151,7 +151,7 @@
     }
     drawMarks();
     undoBtn.disabled = !history.length || won;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     checkBtn.disabled = won;
     randomBtn.disabled = false;
   }
@@ -343,7 +343,7 @@
   }
 
   function showHint() {
-    if (!puzzle || won) return;
+    if (!puzzle || won || hintUsed) return;
     checking = false;
     const h = P.hint(puzzle, marks);
     if (!h) {
@@ -352,6 +352,7 @@
       hintEl.textContent = "Nothing left to hint: the loop is complete.";
       return render();
     }
+    hintUsed = true;
     hintEdge = h.edge;
     hintValue = h.value;
     hintEl.textContent = h.value === 1 ? "Hint: add the glowing edge." : "Hint: take the glowing line away.";
@@ -414,6 +415,7 @@
       checking = false;
       hintEdge = -1;
       hintValue = -1;
+      hintUsed = false;
       down = null;
       elapsedBefore = 0;
       timeEl.textContent = "0:00";
@@ -467,8 +469,8 @@
 
   /* ---------- keeping the game across a refresh ---------- */
   const resumer = Gamekit.resume("slitherlink", () => {
-    if (!puzzle || won || !marks.some((v) => v)) return null;
-    return { seed: curSeed, diff: diff, marks: marks.slice(), t: Math.floor(total()) };
+    if (!puzzle || won || (!marks.some((v) => v) && !hintUsed)) return null;
+    return { seed: curSeed, diff: diff, marks: marks.slice(), t: Math.floor(total()), hintUsed: hintUsed };
   }, (s) => {
     if (!P.LEVELS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.marks)) return false;
     diff = s.diff;
@@ -476,6 +478,7 @@
     const apply = () => {
       if (!puzzle || s.marks.length !== puzzle.E) return;
       marks = s.marks.map((v) => (v === 1 || v === 2 ? v : 0));
+      hintUsed = !!s.hintUsed;
       elapsedBefore = Math.max(0, Number(s.t) || 0);
       timeEl.textContent = fmt(Math.floor(elapsedBefore));
       startTimer();

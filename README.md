@@ -29,7 +29,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 | [battleship](battleship/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [mastermind](mastermind/) | **2 players · WhatsApp** (default), vs computer, local 2 players |
 | [gomoku](gomoku/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
-| [pig](pig/) | **2 players · WhatsApp** (default), **online** (the server rolls), vs computer at 3 levels, same device |
+| [greed](pig/) | **2 players · WhatsApp** (default), **online** (the server rolls), vs computer at 3 levels, same device |
 | [ultimate-tic-tac-toe](ultimate-tic-tac-toe/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [hex](hex/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
 | [blokus-duo](blokus-duo/) | **2 players · WhatsApp** (default), **online**, vs computer at 3 levels, same device |
@@ -40,7 +40,7 @@ Forked from [wavde/games](https://github.com/wavde/games) (MIT): vanilla HTML/CS
 
 Opening a shared link always switches the page to WhatsApp mode. The newer games built from scratch for this project (not adapted from wavde/games) are listed below with their own notes; some skip a computer mode — a same-device "local" pass-and-play mode stands in for it instead, since building a bespoke engine for each wasn't proportionate to the ask.
 
-## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo, Onitama, Quoridor, Backgammon, Pig, Nine Men's Morris, Breakthrough)
+## Live online play (Tic-Tac-Toe, Connect Four, Reversi, Dots and Boxes, Lights Out, Rock Paper Scissors, Gomoku, Ultimate Tic-Tac-Toe, Hex, Blokus Duo, Onitama, Quoridor, Backgammon, Greed, Nine Men's Morris, Breakthrough)
 
 An optional mode next to WhatsApp: one player creates a room, the other opens the invite link, and moves appear instantly. Link-passing is unchanged and stays the default.
 
@@ -176,7 +176,7 @@ These play by the same standard rules as the real games — no reinterpretation 
 **Gomoku**
 - 15×15 board, Black opens, five or more in a row (any direction) wins; a full board is a draw. On a touchscreen the first tap previews a stone and the second tap places it. Computer: a pattern-scoring heuristic (hard also looks one reply ahead). Link, live and same-device play.
 
-**Pig**
+**Greed** (folder `pig/`, its old name, kept so shared links still work)
 - Roll as often as you like adding to a turn total; a 1 loses the turn, "hold" banks it. First to 100. A whole turn is one link. The roller's browser makes the dice, so over WhatsApp it runs on trust (like Minesweeper's mines); for the same reason Pig has no live mode.
 
 **Ultimate Tic-Tac-Toe**

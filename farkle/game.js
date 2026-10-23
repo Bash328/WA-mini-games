@@ -25,10 +25,11 @@
   let Lc = null;                               // the local (vs computer) game
   const sel = new Set();                       // dice tapped for keeping: indices into table.dice
   let overFor = null, overText = "";           // the game-over line, so repeated renders do not re-roll the taunt
+  let rolledKey = null;                        // the last throw that was rolled onto the table
 
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const shortName = (name) => String(name || "").replace(/^Computer (\d+)$/, "Bot $1");
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
 
   function dieFace(v) {
     const d = el("span", "fk-die" + (v === 1 ? " one" : ""));
@@ -36,6 +37,8 @@
     for (let i = 0; i < 9; i++) d.append(el("i", on.has(i) ? "on" : ""));
     return d;
   }
+  // redraw a die element as face v (Gamekit.rollDice flicks the faces through this)
+  function paintDie(d, v) { const f = dieFace(v); d.className = f.className; d.replaceChildren(...f.childNodes); }
   function nameOf(i) {
     const t = M && M.table;
     if (!t || !t.seats[i]) return "";
@@ -90,8 +93,11 @@
     else for (const i of Array.from(sel)) if (!t.dice[i] || t.dice[i].kept) sel.delete(i);
 
     diceEl.replaceChildren();
-    const slots = t.setAside.map((v) => ({ v, kind: "set" }));
+    let slots = t.setAside.map((v) => ({ v, kind: "set" }));
     t.dice.forEach((d, i) => slots.push({ v: d.v, kind: d.kept ? "kept" : "live", i }));
+    // a farkle empties the table: show the throw that busted until the next roll, so you see what was rolled
+    if (!slots.length && M.phase === "playing" && t.last && t.last.t === "farkle") slots = t.last.dice.map((v) => ({ v, kind: "bust" }));
+    const thrown = [];
     for (let k = 0; k < F.DICE; k++) {
       const s = slots[k];
       if (!s) { const e = el("span", "fk-slot empty"); e.setAttribute("aria-hidden", "true"); diceEl.append(e); continue; }
@@ -108,17 +114,23 @@
           renderDice(); renderButtons(); renderHint();
         });
         diceEl.append(b);
+        thrown.push({ el: b.firstElementChild, v: s.v });
       } else {
         // your own leftovers after a keep are dimmed: they are the dice the next Roll will take
         const loose = s.kind === "live" && t.turn === t.you && t.awaiting === "roll_or_bank";
         const d = el("div", "fk-slot " + (loose ? "loose" : s.kind));
         d.setAttribute("role", "img");
-        const state = loose ? ", will be rolled" : s.kind === "kept" || s.kind === "set" ? ", kept" : "";
+        const state = loose ? ", will be rolled" : s.kind === "kept" || s.kind === "set" ? ", kept" : s.kind === "bust" ? ", farkle" : "";
         d.setAttribute("aria-label", label + state);
         d.append(dieFace(s.v));
         diceEl.append(d);
+        if (s.kind === "live" || s.kind === "bust") thrown.push({ el: d.firstElementChild, v: s.v });
       }
     }
+    // a fresh throw is rolled onto the table once (a redraw of the same throw, or the same model sent again, is not)
+    const roll = (M.lastEvents || []).find((e) => e.e === "roll");
+    const key = roll ? t.moves + ":" + roll.seat + ":" + roll.dice.join("") : null;
+    if (key && key !== rolledKey) { rolledKey = key; Gamekit.rollDice(thrown, paintDie); }
   }
 
   function renderMessage() {
@@ -247,7 +259,7 @@
     const names = ["You"].concat(Array.from({ length: n - 1 }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n - 1).fill(diff));
     Lc = { st: F.create({ names, bots, starter: 0 }, Math.random), cfg: { players: n, level: diff }, events: [], timer: null };
-    sel.clear(); overFor = null; overText = "";
+    sel.clear(); overFor = null; overText = ""; rolledKey = null;
     localRender();
     localSchedule();
   }
@@ -268,7 +280,7 @@
       if (res.ok) Lc.events = res.events;
       localRender();
       localSchedule();
-    }, 800 + Math.random() * 500);
+    }, 800 + Math.random() * 500 + ((Lc.events || []).some((e) => e.e === "roll") ? 500 : 0));   // let a roll land before the bot acts on it
   }
 
   /* ============================================================
@@ -344,7 +356,7 @@
     clearTimeout(Lc && Lc.timer);
     Lc = { st, cfg: { players: st.seats.length, level: diff }, events: [], timer: null };
     playersSel.value = String(st.seats.length);
-    sel.clear(); overFor = null; overText = "";
+    sel.clear(); overFor = null; overText = ""; rolledKey = null;
     localRender();
     localSchedule();
     return true;

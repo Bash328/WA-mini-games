@@ -1,5 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Always LF in the working tree, on every machine: the page stamps (?v=hash) hash the raw bytes, so a Windows checkout that turned files into CRLF made every stamp stale
+* text=auto eol=lf
 
 # Fonts are binary — never newline-normalize them
 *.woff2 binary

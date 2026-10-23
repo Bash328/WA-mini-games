@@ -38,9 +38,9 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
-<link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   .board {
     display: grid;
@@ -91,9 +91,11 @@
   html body.fun.g-tic-tac-toe .panel .cell.win { background: rgba(255,255,255,.4); }
   html body.fun.g-tic-tac-toe .panel .board { position: relative; }
   .ttt-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
-  .cell.x::before, .cell.x::after { content: ""; position: absolute; left: 20%; right: 20%; top: calc(50% - 6px); height: 13px; border-radius: 7px; background: #ff4d46; transform: rotate(45deg); }
-  .cell.x::after { transform: rotate(-45deg); }
-  .cell.o::before { content: ""; width: 52%; aspect-ratio: 1; box-sizing: border-box; border: 12px solid #0aa5ea; border-radius: 50%; background: radial-gradient(circle, #0a3d91 0 26%, transparent 28%); }
+  /* the mark sits in its own span so the pop scales the mark, not the cell and its grid-line borders */
+  .cell .mk { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .cell.x .mk::before, .cell.x .mk::after { content: ""; position: absolute; left: 20%; right: 20%; top: calc(50% - 6px); height: 13px; border-radius: 7px; background: #ff4d46; transform: rotate(45deg); }
+  .cell.x .mk::after { transform: rotate(-45deg); }
+  .cell.o .mk::before { content: ""; width: 52%; aspect-ratio: 1; box-sizing: border-box; border: 12px solid #0aa5ea; border-radius: 50%; background: radial-gradient(circle, #0a3d91 0 26%, transparent 28%); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -161,15 +163,15 @@
   </ul>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script defer src="../shared/async-share.js?v=d4254c50"></script>
+<script defer src="../shared/async-share.js?v=0a9136e6"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2267f8ba"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=392a2566"></script>
+<script defer src="../shared/live-share.js?v=61dc292f"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=050c5b41"></script>
 <script>window.addEventListener("load", () => Manpage.autoOpen("tic-tac-toe"));</script>
 </body>
 </html>

@@ -41,6 +41,11 @@
     "rate-limit": "Slow down a little.",
   };
 
+  // the site's own question card (Gamekit.ask); the browser's confirm box only if gamekit.js is somehow missing
+  const askResign = () => (global.Gamekit && Gamekit.ask
+    ? Gamekit.ask({ title: "Admit defeat?", text: "Your opponent wins immediately, and there's no undo.", ok: "Admit defeat", cancel: "Keep playing" })
+    : Promise.resolve(global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")));
+
   function start(opts) {
     const ui = opts.ui;
     const statusEl = opts.statusEl;
@@ -240,6 +245,7 @@
         return paint();
       }
       if (m.t === "taunt") {
+        if (global.TABLE_TALK !== true) return;          // shelved: ignore, don't show (see taunts.js)
         if ((global.NO_BANTER || []).indexOf(opts.game) !== -1) return;
         const L = tauntLines();
         const list = m.k === "h" ? L.hype : m.k === "k" ? L.heckle : null;
@@ -502,6 +508,7 @@
       sugg[k] = i;
     }
     function tauntRow() {
+      if (global.TABLE_TALK !== true) return;            // shelved: no buttons, no Mute banter (see taunts.js)
       if ((global.NO_BANTER || []).indexOf(opts.game) !== -1) return;
       const L = tauntLines();
       if (!L.hype.length || !L.heckle.length) return;
@@ -619,8 +626,7 @@
         tauntRow();
         if (state && state.status === "in_progress") {
           resignSlot(true, () => {
-            if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
-            resign();
+            askResign().then((yes) => { if (yes) resign(); });
           });
         } else resignSlot(false);
         return;
@@ -637,8 +643,7 @@
       tauntRow();
       if (state && myTurn) {
         resignSlot(true, () => {
-          if (!global.confirm("Admit defeat? Your opponent wins immediately — there's no undo.")) return;
-          commit({ board: state.board, status: "won", winner: other(me), last: state.last, resigned: true });
+          askResign().then((yes) => { if (yes && state && state.status === "in_progress") commit({ board: state.board, status: "won", winner: other(me), last: state.last, resigned: true }); });
         });
       } else resignSlot(false);
     }

@@ -546,11 +546,39 @@
     const target = mainEl.children[cell];
     if (still || !target || !target.animate) return Promise.resolve();
     fireBtn.classList.remove("recoil"); void fireBtn.offsetWidth; fireBtn.classList.add("recoil");
-    const img = fireBtn.querySelector("img").getBoundingClientRect(), t = target.getBoundingClientRect();
+    const img = fireBtn.querySelector("img").getBoundingClientRect();
+    return lob(img.left + img.width * 0.52, img.top + img.height * 0.17, target, hit);
+  }
+  // The computer's cannon: it drops in from the top of the screen pointing down, kicks, lobs its ball onto your fleet,
+  // and leaves again, so you see the bot fire the way you fire. Resolves once the ball has landed.
+  function foeShootAnim(cell, hit) {
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const target = subEl.children[cell];
+    if (still || !target || !target.animate) return Promise.resolve();
+    const gun = document.createElement("div");
+    gun.className = "bs-foe-gun";
+    gun.innerHTML = '<img src="ships/cannon.png" alt="" draggable="false">';
+    const m = mainEl.getBoundingClientRect();
+    gun.style.width = (fireBtn.getBoundingClientRect().width || 140) + "px";
+    gun.style.left = m.left + m.width / 2 + "px";
+    document.body.appendChild(gun);
+    const at = (y) => ({ transform: "translate(-50%, " + y + ") rotate(180deg)" });
+    const ease = { duration: 550, easing: "cubic-bezier(.55, 0, .25, 1)", fill: "forwards" };
+    return gun.animate([at("-105%"), at("0")], ease).finished.then(() => {
+      gun.querySelector("img").animate([{ transform: "translateY(0)" }, { transform: "translateY(9px)", offset: 0.22 }, { transform: "translateY(0)" }], { duration: 420, easing: "ease-out" });
+      const img = gun.getBoundingClientRect();                       // turned over, so the muzzle is near the bottom
+      return lob(img.left + img.width * 0.48, img.top + img.height * 0.83, target, hit);
+    }).catch(() => {}).then(() => {
+      gun.animate([at("0"), at("-105%")], ease).finished.catch(() => {}).then(() => gun.remove());
+    });
+  }
+  // a ball flies from (x0, y0) to the middle of a square and bursts there
+  function lob(x0, y0, target, hit) {
+    const t = target.getBoundingClientRect();
     const ball = document.createElement("div");
     ball.className = "bs-ball";
     document.body.appendChild(ball);
-    const x0 = img.left + img.width * 0.52, y0 = img.top + img.height * 0.17, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
+    const x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
     const fly = ball.animate([
       { left: x0 + "px", top: y0 + "px", transform: "scale(.8)" },
       { left: (x0 + x1) / 2 + "px", top: (y0 + y1) / 2 - 30 + "px", transform: "scale(1.7)", offset: 0.55 },
@@ -829,9 +857,14 @@
 
   // the computer fires back (called after its pause, or at once when a refresh finds it still owed a shot)
   function computerShot(L) {
+    if (lo !== L || !L.thinking || L.phase !== "battle" || L.firing) return;
+    const c = aiPick(L.F[P1], L.S[P2]);
+    L.firing = true;
+    foeShootAnim(c, ownerMap(L.F[P1])[c] >= 0).then(() => { L.firing = false; computerHits(L, c); });
+  }
+  function computerHits(L, c) {
     if (lo !== L || !L.thinking || L.phase !== "battle") return;
     L.thinking = false;
-    const c = aiPick(L.F[P1], L.S[P2]);
     const r2 = shotResult(L.F[P1], L.S[P2], c);
     L.S[P2].push(c);
     L.hl.theirs = c;

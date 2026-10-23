@@ -32,15 +32,18 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
 <style>
   /* ── the board: a dark tray, a light grid, bright pipes on top ─────────────────────────── */
   .ff-board {
     --n: 6;
+    --ff-w: min(calc(100% + 22px), calc(100svh - 289px));
     position: relative;
-    width: calc(100% + 22px);
-    margin: 8px -11px 4px;
+    /* the square board is capped by the height left under the header/options, so its bottom
+       (and the hint note and buttons) cannot fall off a short phone screen */
+    width: var(--ff-w);
+    margin: 8px calc((100% - var(--ff-w)) / 2) 4px;
     aspect-ratio: 1 / 1;
     box-sizing: border-box;
     padding: 4px;
@@ -57,7 +60,10 @@
   .ff-inner {
     position: relative;
     width: 100%;
-    height: 100%;
+    /* Not height:100%: Safari resolves that against the board's border box, which
+       makes the grid 20px taller than the board and clips the bottom row. */
+    height: auto;
+    aspect-ratio: 1 / 1;
     border-radius: 16px;
     overflow: hidden;
     background: #151b31;
@@ -101,7 +107,11 @@
 
   /* a wider screen gets a board of its own size, centred, instead of a giant one */
   @media (min-width: 560px) {
-    .ff-board { width: min(100%, 520px); margin: 10px auto 4px; }
+    .ff-board { width: min(100%, 520px, calc(100svh - 289px)); margin: 10px auto 4px; }
+  }
+  /* the desktop topbar is shorter, so the same board can use a little more of the screen */
+  @media (min-width: 760px) {
+    .ff-board { width: min(100%, 520px, calc(100svh - 229px)); }
   }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -168,11 +178,11 @@
   <p class="muted">Start with the pair whose route has the fewest choices, often one that has to hug an edge. Keep new pipes out of corners that another colour will need, and when two pairs compete for the last free cells, undo and route the longer one first.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="puzzle.js?v=b352e16f"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=e8518985"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=a6996e52"></script>
 </body>
 </html>

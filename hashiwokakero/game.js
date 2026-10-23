@@ -13,7 +13,7 @@
   let diff = store.get("diff", "medium");
   if (!H.LEVELS[diff]) diff = "medium";
   let puzzle = null, curSeed = 0, counts = [], sel = null, won = false, checking = false, history = [];
-  let hintPair = -1;
+  let hintPair = -1, hintUsed = false;
   let startAt = 0, elapsedBefore = 0, timer = null;
   let islandEls = [], linesEl = null;
   let pendingRestore = null, buildToken = 0;
@@ -120,7 +120,7 @@
     });
     drawLines();
     undoBtn.disabled = !history.length || won;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     checkBtn.disabled = won;
     solveBtn.disabled = won;
   }
@@ -201,13 +201,14 @@
   }
 
   function showHint() {
-    if (!puzzle || won) return;
+    if (!puzzle || won || hintUsed) return;
     checking = false;
     hintPair = -1;
     for (let k = 0; k < puzzle.pairs.length; k++) {
       if (counts[k] !== puzzle.solution[k]) { hintPair = k; break; }
     }
     if (hintPair < 0) { hintEl.textContent = "Nothing left to hint."; return render(); }
+    hintUsed = true;
     const v = puzzle.solution[hintPair];
     hintEl.textContent = v === 0 ? "Hint: no bridge between these two islands."
       : v === 1 ? "Hint: one bridge between these two islands."
@@ -265,7 +266,7 @@
       curSeed = s;
       puzzle = p;
       counts = zeros();
-      sel = null; won = false; checking = false; history = []; hintPair = -1;
+      sel = null; won = false; checking = false; history = []; hintPair = -1; hintUsed = false;
       elapsedBefore = 0; timeEl.textContent = "0:00";
       bestEl.textContent = store.get("best:" + diff, "") ? fmt(Number(store.get("best:" + diff, 0))) : "—";
       statusEl.textContent = "Link every island.";
@@ -296,13 +297,14 @@
   });
 
   /* ---------- keeping the game across a refresh ---------- */
-  const resumer = Gamekit.resume("hashiwokakero", () => (!puzzle || won || !history.length) ? null : { seed: curSeed, diff: diff, counts: counts, t: Math.floor(total()) }, (s) => {
+  const resumer = Gamekit.resume("hashiwokakero", () => (!puzzle || won || (!history.length && !hintUsed)) ? null : { seed: curSeed, diff: diff, counts: counts, t: Math.floor(total()), hintUsed: hintUsed }, (s) => {
     if (!H.LEVELS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.counts)) return false;
     diff = s.diff;
     chips.show(diff);
     const apply = () => {
       if (!puzzle || s.counts.length !== puzzle.pairs.length) return;
       counts = s.counts.map((v) => (v === 1 || v === 2 ? v : 0));
+      hintUsed = !!s.hintUsed;
       elapsedBefore = Math.max(0, Number(s.t) || 0);
       startTimer();
       render();

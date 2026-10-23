@@ -20,6 +20,15 @@ The old "angel / devil" feature is renamed to **Table Talk · Hype / Heckle**.
 The wire keeps sending a position in a vetted list (`k: "h" | "k"`, `i`), never
 free text, and the server still validates the position and rate-limits it.
 
+## Shelved — Table Talk (2026-10-23)
+
+Table Talk (Hype / Heckle) is switched off for now: `window.TABLE_TALK = false`
+in [shared/taunts.js](../shared/taunts.js). Nothing was deleted. The line lists,
+the room buttons, the delivery code and the Worker protocol are all still in
+place; `shared/live-share.js`, `shared/multiseat.js` and `crazy-8/game.js` return
+early on the flag, so setting it to `true` is the only change needed to bring
+the feature back. Commentary and Hangman's own banter are unaffected.
+
 ## Which games get what
 
 Commentary is only added where there is a persona or a dramatic arc worth

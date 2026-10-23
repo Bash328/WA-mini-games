@@ -9,7 +9,7 @@
 
   let game = null, seed = "", sel = null, saved = false;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
 
   const HOUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
   const LABELS = { "3k": "3x", "4k": "4x", fh: HOUSE, ss: "SM", ls: "LG", y: "YATZY", c: "?" };
@@ -24,22 +24,8 @@
     return d;
   }
 
-  // a roll tumbles the dice that were thrown (the kept ones stay put)
+  // a roll turns over the dice that were thrown while their faces flick past (the shared dice roll); kept ones stay put
   let rollAnimKey = "";
-  const calm = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
-  function tumble(thrown) {
-    if (calm()) return;
-    thrown.forEach((d, k) => {
-      if (!d.animate) return;
-      const spin = (k % 2 ? 1 : -1) * 360;
-      d.animate([
-        { transform: "translateY(-70px) rotate(0deg) scale(1.25)", opacity: 0.2 },
-        { transform: "translateY(0) rotate(" + spin + "deg) scale(1)", opacity: 1, offset: 0.6 },
-        { transform: "translateY(-10px) rotate(" + (spin + 12) + "deg)", offset: 0.76 },
-        { transform: "translateY(0) rotate(" + spin + "deg)" },
-      ], { duration: 620, delay: k * 60, easing: "cubic-bezier(.2,.8,.3,1)" });
-    });
-  }
 
   function render() {
     const g = game, card = g.card, over = Y.finished(card);
@@ -58,7 +44,7 @@
     const key = g.turn + ":" + g.roll + ":" + g.dice.join("");
     if (g.roll > 0 && key !== rollAnimKey && !g.held.every(Boolean)) {
       const kids = [...diceEl.children];
-      tumble(kids.filter((d, i) => !g.held[i]));
+      Gamekit.rollDice(kids.map((d, i) => ({ el: d, v: g.dice[i] })).filter((x, i) => !g.held[i]), Gamekit.paintPips);
     }
     if (g.roll > 0) rollAnimKey = key;
     rollBtn.disabled = g.roll >= 3 || over;

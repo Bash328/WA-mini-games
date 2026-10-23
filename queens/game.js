@@ -24,6 +24,7 @@
   let grid = [];         // length N*N, EMPTY | MARK | QUEEN
   let history = [];
   let won = false;
+  let hintUsed = false;
   let timerStart = 0;
   let timerInterval = null;
   let cellEls = [];
@@ -223,6 +224,8 @@
     grid = new Array(N * N).fill(EMPTY);
     history = [];
     won = false;
+    hintUsed = false;
+    if (hintBtn) hintBtn.disabled = false;
     timerStart = Date.now();
     startTimer();
     renderShell();
@@ -318,6 +321,7 @@
       return;
     }
     won = true;
+    hintBtn.disabled = true;
     const s = Math.floor((Date.now() - timerStart) / 1000);
     const best = store.getInt("best:" + diff, null);
     if (best === null || s < best) {
@@ -364,11 +368,13 @@
     renderAll();
   });
   hintBtn.addEventListener("click", () => {
-    if (won) return;
+    if (won || hintUsed) return;
     // Find a row that doesn't yet have the correct queen placed; place it.
     for (let r = 0; r < N; r++) {
       const target = idx(r, solution[r]);
       if (grid[target] !== QUEEN) {
+        hintUsed = true;
+        hintBtn.disabled = true;
         history.push({ i: target, v: grid[target] });
         grid[target] = QUEEN;
         renderAll();
@@ -397,7 +403,7 @@
   // A refresh keeps the puzzle, your queens and marks, undo history and the clock.
   const resumer = Gamekit.resume("queens", () => won ? null : {
     diff: diff, seed: curSeed, grid: grid, history: history,
-    elapsed: Math.floor((Date.now() - timerStart) / 1000),
+    elapsed: Math.floor((Date.now() - timerStart) / 1000), hintUsed: hintUsed,
   }, (s) => {
     if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.grid)) return false;
     if (s.grid.length !== DIFFS[s.diff] * DIFFS[s.diff] || !s.grid.every(v => v === 0 || v === 1 || v === 2)) return false;
@@ -407,6 +413,8 @@
     history = Array.isArray(s.history) ? s.history.filter(h => h && Number.isInteger(h.i) && h.i >= 0 && h.i < N * N && (h.v === 0 || h.v === 1 || h.v === 2)) : [];
     timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
     timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
+    hintUsed = !!s.hintUsed;
+    hintBtn.disabled = hintUsed;
     renderAll(); updateStatus();
     return true;
   });

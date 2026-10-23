@@ -603,6 +603,7 @@
   const muted = () => store.get("taunt-mute", "0") === "1";
   function suggest(k) { const l = k === "h" ? lines().hype : lines().heckle; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
   function renderTaunts() {
+    if (window.TABLE_TALK !== true) { tauntsEl.hidden = true; tauntsEl.innerHTML = ""; return; }   // shelved (see shared/taunts.js)
     tauntsEl.innerHTML = "";
     const online = M && M.kind === "online" && M.phase !== "lobby" && M.table;
     tauntsEl.hidden = !online || !lines().hype.length;
@@ -623,6 +624,7 @@
     });
   }
   function onTaunt(m) {
+    if (window.TABLE_TALK !== true) return;          // shelved: ignore it (see shared/taunts.js)
     if (muted()) return;
     const l = m.k === "h" ? lines().hype : lines().heckle;
     const p = M && M.players && M.players.find((x) => x.pid === m.from);
@@ -751,14 +753,10 @@
   }
 
   /* ---------- game over: a card with your win counts (kept on this device) ---------- */
-  const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zM6 7v1a2 2 0 0 0 1.5 1.9A5 5 0 0 1 7 8.3V7zm12 0h-1v1.3a5 5 0 0 1-.5 1.6A2 2 0 0 0 18 8z"/></svg>';
-  const ICON_HOME = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
+  // the same icons and win counts as the shared game-over card (gamekit.js); this card adds the host's room controls
+  const { ICON_TROPHY, ICON_HOME } = Gamekit;
   let overSeen = false;
-  function winCounts() {
-    const w = store.getJSON("winlog", []), now = new Date();
-    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    return { today: w.filter((x) => x >= day).length, week: w.filter((x) => x >= now.getTime() - 7 * 864e5).length, all: w.length };
-  }
+  const winCounts = () => Gamekit.winCounts(store.getJSON("winlog", []));
   function renderOver() {
     const show = !!(M && M.phase === "game_over" && M.table);
     overEl.classList.toggle("on", show);

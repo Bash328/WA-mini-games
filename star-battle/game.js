@@ -11,7 +11,7 @@
   let diff = store.get("diff", "medium");
   if (!SB.LEVELS[diff]) diff = "medium";
   let puzzle = null, curSeed = 0, stars = [], history = [], won = false;
-  let hintCell = -1;
+  let hintCell = -1, hintUsed = false;
   let startAt = 0, elapsedBefore = 0, timer = null;
   let cellEls = [];
   let pendingRestore = null, buildToken = 0;
@@ -72,7 +72,7 @@
     }
     boardEl.classList.toggle("won", won);
     undoBtn.disabled = !history.length || won;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     checkBtn.disabled = won;
     return chk;
   }
@@ -138,13 +138,14 @@
   }
 
   function showHint() {
-    if (!puzzle || won) return;
+    if (!puzzle || won || hintUsed) return;
     const h = SB.hint(puzzle, stars);
     if (!h) {
       hintCell = -1;
       hintEl.textContent = "Every star from the answer is already on the board.";
       return render();
     }
+    hintUsed = true;
     hintCell = h.cell;
     hintEl.textContent = "Hint: row " + (h.row + 1) + ", column " + (h.col + 1) + ".";
     render();
@@ -205,6 +206,7 @@
       history = [];
       won = false;
       hintCell = -1;
+      hintUsed = false;
       elapsedBefore = 0;
       timeEl.textContent = "0:00";
       const best = store.getInt("best:" + diff, -1);
@@ -238,8 +240,8 @@
   });
 
   /* ---------- keeping the game across a refresh ---------- */
-  const resumer = Gamekit.resume("star-battle", () => (!puzzle || won || !stars.some((v) => v)) ? null : {
-    seed: curSeed, diff: diff, stars: stars.slice(), t: Math.floor(total()),
+  const resumer = Gamekit.resume("star-battle", () => (!puzzle || won || (!stars.some((v) => v) && !hintUsed)) ? null : {
+    seed: curSeed, diff: diff, stars: stars.slice(), t: Math.floor(total()), hintUsed: hintUsed,
   }, (s) => {
     if (!SB.LEVELS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.stars)) return false;
     diff = s.diff;
@@ -248,6 +250,7 @@
       if (!puzzle || s.stars.length !== puzzle.n * puzzle.n) return;
       stars = s.stars.map((v) => (v ? 1 : 0));
       history = [];
+      hintUsed = !!s.hintUsed;
       elapsedBefore = Math.max(0, Number(s.t) || 0);
       startTimer();
       render();

@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
 <link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
 <style>
   /* ---------- the chunky look: a deep blue table with a cream cross board ---------- */
@@ -104,14 +104,12 @@
   .ld-die { width: 18cqw; height: 18cqw; flex: none; border-radius: 3.4cqw; background: #fff; color: #1b1b1d; box-shadow: 0 .8cqw 0 rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; }
   .ld-die svg { width: 100%; height: 100%; display: block; }
   .ld-die .ld-q { font-size: 8cqw; line-height: 1; color: #b9b2a5; }
-  .ld-die.rolling svg { animation: ld-tumble .45s cubic-bezier(.2,.9,.3,1); }
-  @keyframes ld-tumble { 0% { transform: rotate(0) scale(.9); } 45% { transform: rotate(190deg) scale(1.14); } 100% { transform: rotate(360deg) scale(1); } }
   html body.g-ludo .panel button.ld-roll { flex: 1; min-width: 0; height: 16cqw; min-height: 0; padding: 0 3cqw; border-radius: 4cqw; font-size: 5.4cqw; letter-spacing: .04em; background: var(--fun-btn); box-shadow: 0 1cqw 0 #9c322c; }
-  html body.g-ludo .panel button.ld-roll:disabled { background: #39427a !important; box-shadow: none !important; color: rgba(255,255,255,.62) !important; opacity: 1; }
+  html body.g-ludo .panel button.ld-roll:disabled { background: #233150 !important; box-shadow: none !important; color: rgba(255,255,255,.62) !important; opacity: 1; }
   .ld-note { min-height: 4.2cqw; font-size: 3.1cqw; line-height: 1.15; text-align: center; color: rgba(255,255,255,.62); padding: 0 2cqw; }
-  /* match the reference: coral page, dark-edged cross board, compact score bar */
+  /* dark-edged cross board and compact score bar as in the reference, on a slate blue page (the user's pick over the reference's coral) */
   html body.fun.g-ludo {
-    --fun-bg: #ef8a73;
+    --fun-bg: #3a4f7a;
     --fun-chip: rgba(255,255,255,.22);
     --fun-btn: #d9574b;
     --ld-yellow: #f7c21e;
@@ -210,7 +208,8 @@
   /* a token is two overlapping discs with a heavy outline: the button itself is empty, ::before is the disc behind, ::after the one in front */
   html body.g-ludo .panel .ld-token { width: calc(100% / 15 * 0.9); border: 0; background: transparent; box-shadow: none; }
   html body.g-ludo .panel .ld-token::before, html body.g-ludo .panel .ld-token::after { content: ""; position: absolute; inset: 0; box-sizing: border-box; border: .6cqw solid #17171d; border-radius: 50%; }
-  html body.g-ludo .panel .ld-token::before { transform: translateX(-36%); background: color-mix(in srgb, var(--tok) 80%, #000); }
+  /* the disc under the token is the token's own colour, lightly shaded (it read as black on phones when mixed with black) */
+  html body.g-ludo .panel .ld-token::before { transform: translateX(-36%); background: linear-gradient(rgba(0,0,0,.14), rgba(0,0,0,.14)), var(--tok); }
   html body.g-ludo .panel .ld-token::after { background: var(--tok); }
   html body.g-ludo .panel .ld-token.movable::after { inset: 0; background: var(--tok); box-shadow: 0 0 0 .7cqw var(--accent); }
   html body.g-ludo .panel .ld-token.done { box-shadow: none; }
@@ -308,14 +307,14 @@
   <p class="muted">Getting tokens out is the slowest part, so a 6 is nearly always worth using for that. Watch the squares just in front of your tokens: an opponent six steps behind can send you home. The safe star squares are good places to wait.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2267f8ba"></script>
-<script defer src="../shared/multiseat.js?v=eca9364b"></script>
+<script defer src="../shared/live-share.js?v=61dc292f"></script>
+<script defer src="../shared/multiseat.js?v=2f80f13b"></script>
 <script defer src="engine.js?v=069c8237"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=4e705542"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=32ac8ec7"></script>
 </body>
 </html>

@@ -45,7 +45,7 @@
   const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Bot") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
 
   // Pip positions on a 3x3 grid, per face.
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
   function dieSvg(n) {
     let pips = "";
     (PIPS[n] || []).forEach((k) => {
@@ -82,18 +82,18 @@
 
   function rollDie() { return 1 + Math.floor(Math.random() * 6); }
 
-  // Shows a few tumbling faces, then the real one.
+  // The die turns over while its faces flick past, then lands on the real one (the shared dice roll).
   function tumble(final, done) {
     busy = true;
     render();
-    if (reduceMotion) { lastFace = final; busy = false; return done(); }
     dieEl.classList.add("rolling");
-    let n = 0;
-    (function frame() {
-      if (n++ < 4) { lastFace = 1 + Math.floor(Math.random() * 6); dieEl.innerHTML = dieSvg(lastFace); timer = setTimeout(frame, 70); }
-      else { timer = null; lastFace = final; busy = false; dieEl.classList.remove("rolling"); done(); }
-    })();
+    const mine = ++rollToken;
+    Gamekit.rollDice([{ el: dieEl, v: final }], (e, n) => { e.innerHTML = dieSvg(n); }).then(() => {
+      if (mine !== rollToken) return;                 // a new game or mode came in while it rolled
+      lastFace = final; busy = false; dieEl.classList.remove("rolling"); done();
+    });
   }
+  let rollToken = 0;
 
   function describeTurn(p, rs, banked) {
     const list = rs.join(", ");
@@ -199,7 +199,7 @@
   }
 
   function newLocal() {
-    clearTimeout(timer); timer = null; busy = false; bustShown = false;
+    clearTimeout(timer); timer = null; rollToken++; busy = false; bustShown = false;
     score = { [P1]: 0, [P2]: 0 };
     current = P1; over = false; winner = null; lastNote = ""; lastFace = 0;
     startTurn();
@@ -231,7 +231,7 @@
     return mine >= GOAL ? s.status === "won" && s.winner === mover : s.status === "in_progress";
   }
   const link = AsyncShare.start({
-    game: "pig", version: 1, title: "pig", players: [P1, P2],
+    game: "pig", version: 1, title: "greed", players: [P1, P2],
     label: (p) => "Player " + p,
     ui: document.getElementById("wa-ui"), statusEl: statusEl,
     validateBoard: validatePig, onState: loadLink,
@@ -239,7 +239,7 @@
   });
 
   function loadLink(s, canMove) {
-    clearTimeout(timer); timer = null; busy = false;
+    clearTimeout(timer); timer = null; rollToken++; busy = false;
     if (s) {
       const m = BOARD_RE.exec(s.board);
       score = { [P1]: +m[1], [P2]: +m[2] };
@@ -282,7 +282,7 @@
   const activeLink = () => (mode === "live" && live ? live : link);
 
   function loadLive(s, canMove, info) {
-    clearTimeout(timer); timer = null; busy = false;
+    clearTimeout(timer); timer = null; rollToken++; busy = false;
     if (info && info.me) me = info.me;
     const B = PigRules.parse(s ? s.board : PigRules.initial());
     const same = s && s.id === liveId, before = liveCount;
@@ -338,7 +338,7 @@
     mode = s.mode; modeSel.value = mode;
     if (["easy", "medium", "hard"].includes(s.diff)) { diff = s.diff; chips.show(diff); }
     applyMode();
-    clearTimeout(timer); timer = null; busy = false;
+    clearTimeout(timer); timer = null; rollToken++; busy = false;
     score = { [P1]: s.s[P1], [P2]: s.s[P2] };
     current = s.cur; turnTotal = s.tt; rolls = s.rs.slice(); over = false; winner = null;
     lastFace = rolls.length ? rolls[rolls.length - 1] : 0;

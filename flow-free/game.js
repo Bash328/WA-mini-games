@@ -27,7 +27,7 @@
   let puzzle = null, paths = [], curSeed = 0;
   let moves = 0, history = [], won = false, active = -1;
   let dragging = false, down = null;
-  let hintFlow = -1, hintPath = null, hintTimer = null;
+  let hintFlow = -1, hintPath = null, hintTimer = null, hintUsed = false;
   let startAt = 0, elapsedBefore = 0, timer = null;
 
   const fmt = (s) => Gamekit.fmtTime(s);
@@ -236,13 +236,15 @@
     if (thenDraw) draw();
   }
   function showHint() {
-    if (won || !puzzle) return;
+    if (won || !puzzle || hintUsed) return;
     const h = F.hint(puzzle, paths);
     if (!h) { noteEl.textContent = "That is the answer already."; return; }
+    hintUsed = true;
     hintFlow = h.flow;
     hintPath = h.path;
     noteEl.textContent = "One pair's route is shown.";
     draw();
+    updateHud();
     if (hintTimer) clearTimeout(hintTimer);
     hintTimer = setTimeout(() => { hintFlow = -1; hintPath = null; noteEl.textContent = ""; draw(); }, 5000);
   }
@@ -252,7 +254,7 @@
     movesEl.textContent = String(moves);
     timeEl.textContent = fmt(Math.floor(total()));
     undoBtn.disabled = !history.length || won;
-    hintBtn.disabled = won;
+    hintBtn.disabled = won || hintUsed;
     if (won || !puzzle) return;
     let done = 0;
     for (let f = 0; f < puzzle.flows.length; f++) if (flowDone(f)) done++;
@@ -267,7 +269,7 @@
   }
 
   /* ---------- a new board ---------- */
-  function start(seed) {
+  function start(seed, opts) {
     curSeed = seed >>> 0;
     let p = null;
     for (let k = 0; k < 4 && !p; k++) p = F.generate((curSeed + k) >>> 0, diff);
@@ -280,6 +282,7 @@
     active = -1;
     dragging = false;
     down = null;
+    if (!(opts && opts.keepHint)) hintUsed = false;     // a new board gets its one hint; a restart keeps it spent
     clearHint();
     resetClock();
     bestEl.textContent = bestText();
@@ -421,7 +424,7 @@
     draw();
   });
   hintBtn.addEventListener("click", showHint);
-  resetBtn.addEventListener("click", () => { if (puzzle) start(curSeed); });
+  resetBtn.addEventListener("click", () => { if (puzzle) start(curSeed, { keepHint: true }); });
   newBtn.addEventListener("click", () => start(Gamekit.randomSeed()));
   randomBtn.addEventListener("click", () => start(Gamekit.randomSeed()));
 
@@ -435,8 +438,8 @@
 
   /* ---------- keeping the game across a refresh ---------- */
   const resumer = Gamekit.resume("flow-free", () => {
-    if (won || !puzzle || !paths.some((p) => p.length)) return null;
-    return { seed: curSeed, diff: diff, paths: paths.map((p) => p.slice()), moves: moves, elapsed: Math.floor(total()) };
+    if (won || !puzzle || (!paths.some((p) => p.length) && !hintUsed)) return null;
+    return { seed: curSeed, diff: diff, paths: paths.map((p) => p.slice()), moves: moves, elapsed: Math.floor(total()), hintUsed: hintUsed };
   }, (s) => {
     if (!F.LEVELS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.paths)) return false;
     diff = s.diff;
@@ -448,6 +451,7 @@
     elapsedBefore = Math.max(0, Number(s.elapsed) || 0);
     active = -1;
     if (elapsedBefore > 0 || moves > 0) startTimer();
+    hintUsed = !!s.hintUsed;
     updateHud();
     draw();
     return true;

@@ -18,8 +18,9 @@ import { CARD_GAMES } from "./card-protocol.mjs";
 /* Mirrors each game's AsyncShare.start({ title, players, label }). Kept
    here rather than imported because game.js files are browser scripts,
    not modules — so this table has to stay in step with them by hand.
-   Only games with a WhatsApp mode appear; anything else is left alone. */
-const GAMES = {
+   Only games with a WhatsApp mode appear; anything else is left alone.
+   og-text.test.mjs checks every title against the game's own AsyncShare.start title. */
+export const GAMES = {
   "tic-tac-toe":        { title: "tic-tac-toe",        labels: { X: "X", O: "O" } },
   "connect-four":       { title: "connect-four",       labels: { 1: "Red", 2: "Yellow" } },
   "chess":              { title: "chess",              labels: { w: "White", b: "Black" } },
@@ -55,7 +56,7 @@ const GAMES = {
   "cribbage":           { title: "cribbage",             labels: { 1: "Player 1", 2: "Player 2" } },
   "skull":              { title: "skull",                labels: { 1: "Player 1", 2: "Player 2" } },
   "gomoku":             { title: "gomoku",             labels: { 1: "Black", 2: "White" } },
-  "pig":                { title: "pig",                labels: { 1: "Player 1", 2: "Player 2" } },
+  "pig":                { title: "greed",             labels: { 1: "Player 1", 2: "Player 2" } },
   "mastermind":          { title: "mastermind",          labels: { 1: "Codemaker", 2: "Codebreaker" } },
 };
 

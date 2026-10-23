@@ -67,15 +67,16 @@ const calm = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: 
 
 // Timing from the reference (Z048Controller prefab values):
 //   travel = 0.20s, scaled by Manhattan distance (1 cell = 0.8x, 2 cells = 0.9x);
-//   movement uses DOTween's default OutQuad; the merged tile bulges to 1.14x
-//   with InOutSine, 0.08s per half (0.16s total); a new tile grows from zero
+//   movement uses DOTween's default OutQuad; the reference bulges a merged tile to 1.14x in 0.16s,
+//   here it swells to 1.1x over 0.26s while the two old tiles fade out on top (smoother); a new tile grows from zero
 //   with InOutSine over 0.30s. The prefab's anim speed multiplier is 1.0.
 // No audio: the reference plays slide/merge clips, the web page stays silent.
 const TRAVEL = 200;                 // _travelTime 0.20s
 const TRAVEL_1 = 0.8;               // TravelScaleDistance1
 const TRAVEL_2 = 0.9;               // TravelScaleDistance2
-const BULGE = 80;                   // _bulgeOnMergeTime 0.08s per half
-const MERGE_SCALE = 1.14;           // MergeBulgeScale
+const BULGE = 260;                  // one smooth swell (the reference's 0.08s yoyo read as a pop on phones)
+const MERGE_SCALE = 1.1;
+const MERGE_FADE = 150;             // the two tiles that met fade out over the new one
 const SPAWN = 300;                  // _newPiecePopInTime 0.30s
 const MOVE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // OutQuad (DOTween default)
 const POP_EASE = 'cubic-bezier(0.37, 0, 0.63, 1)';        // InOutSine
@@ -115,13 +116,19 @@ function animateSlide(el, moves, spawn, merged) {
   const land = () => {
     if (done || token !== animToken) return;
     done = true;
-    ghosts.forEach(t => t.remove());
+    // The tiles that met fade out over the doubled tile (so the number crossfades) while it swells once and settles;
+    // the old 0.16s yoyo with the old tiles gone in one frame made the new number pop in.
+    ghosts.forEach((t, k) => {
+      const m = moving[k], to = m.to[0] * N + m.to[1];
+      if (!(merged && merged.has(to))) return t.remove();
+      t.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MERGE_FADE, easing: 'ease-out', fill: 'forwards' }).finished.catch(() => {}).then(() => t.remove());
+    });
     dests.forEach(i => {
       cells[i].style.visibility = '';
       if (merged && merged.has(i)) {
         cells[i].animate(
-          [{ transform: 'scale(1)' }, { transform: 'scale(' + MERGE_SCALE + ')' }],
-          { duration: BULGE, easing: POP_EASE, iterations: 2, direction: 'alternate' }
+          [{ transform: 'scale(1)' }, { transform: 'scale(' + MERGE_SCALE + ')', offset: 0.45 }, { transform: 'scale(1)' }],
+          { duration: BULGE, easing: POP_EASE }
         );
       }
     });

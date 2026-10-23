@@ -59,6 +59,7 @@ export function checkName(raw) {
 
 /* ---------- tokens ---------- */
 
+// 128 random bits as hex: a username's token, and (imported by live-room / card-room) a room seat's token.
 export function newToken() {
   const b = new Uint8Array(16);
   crypto.getRandomValues(b);
@@ -130,9 +131,10 @@ export function notePoke(from, target, now) {
   for (const k of Object.keys(from.to)) if (now - from.to[k] > HOUR) delete from.to[k];
   target.inn.push(now);
 }
-/* Will the poke actually be pushed? A muted or blocking target silently
-   doesn't get it. */
+/* A muted or blocking target silently doesn't get pokes (the sender is told it went). */
+export const silenced = (from, target) => !!target.muted || target.blocked.includes(from.key);
+/* Will the poke actually be pushed? */
 export function canDeliver(from, target) {
-  return !target.muted && !target.blocked.includes(from.key) && !!target.sub;
+  return !silenced(from, target) && !!target.sub;
 }
 

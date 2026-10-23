@@ -434,6 +434,11 @@
   let overEl = null, overKey = "", overPending = null, overReady = null;
   const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zM6 7v1a2 2 0 0 0 1.5 1.9A5 5 0 0 1 7 8.3V7zm12 0h-1v1.3a5 5 0 0 1-.5 1.6A2 2 0 0 0 18 8z"/></svg>';
   const ICON_HOME = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>';
+  // Wins in a "winlog" (a list of win times): today, the last 7 days, all time. Crazy 8's own card uses it too.
+  function winCounts(log) {
+    const now = new Date(), day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return { today: log.filter((x) => x >= day).length, week: log.filter((x) => x >= now.getTime() - 7 * 864e5).length, all: log.length };
+  }
   function hideOver() { overKey = ""; overPending = overReady = null; if (overEl) { overEl.remove(); overEl = null; } }
   function showOver(full, tone) {
     if (overKey === full) return;                 // already shown (or dismissed) for this result
@@ -446,8 +451,7 @@
     const st = storage(GAME_ID + ":");
     let log = st.getJSON("winlog", []);
     if (tone === "win") { log = log.concat(Date.now()).slice(-1000); st.set("winlog", JSON.stringify(log)); }
-    const now = new Date(), day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const counts = [["Today", log.filter((x) => x >= day).length], ["This week", log.filter((x) => x >= now.getTime() - 7 * 864e5).length], ["All time", log.length]];
+    const c = winCounts(log), counts = [["Today", c.today], ["This week", c.week], ["All time", c.all]];
     overEl = mk("div", "gk-over " + (tone || (draw ? "draw" : "")));
     overEl.setAttribute("role", "dialog"); overEl.setAttribute("aria-label", "Game over");
     const card = mk("div", "card");
@@ -821,8 +825,49 @@
       });
     };
     new MutationObserver(() => { if (!queued) { queued = true; Promise.resolve().then(check); } }).observe(container, { childList: true, subtree: true });
+    // A piece dragged under the finger is already where it lands: glide from where it was let go, not from its old square
+    // (Car Park's car jumped back to its start and then slid, so a drag seemed to lag).
+    window.addEventListener("pointerup", () => {
+      if (prev && Array.from(container.querySelectorAll(sel)).some((el) => el.style.transform)) prev = snap();
+    }, true);
     window.addEventListener("resize", () => { prev = null; setTimeout(() => { prev = snap(); }, 50); });
     check();
+  }
+
+  // A dice roll, the same in every dice game: each die turns over once while its faces flick past, then lands on the
+  // number rolled. dice = [{ el, v }]: el is the die itself (what turns), v the number it lands on; paint(el, n) draws
+  // face n into el (the game's own drawing). Neighbouring dice turn opposite ways. A die rolled again restarts cleanly.
+  // Resolves when every die has landed. Under reduced motion the dice are just painted.
+  // Where the pips of each die face sit on a 3x3 grid (0 = top left, 8 = bottom right): every dice game draws from this.
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  // A die drawn as nine <i> cells: light the ones face v uses.
+  function paintPips(el, v) {
+    const on = new Set(PIPS[v] || []);
+    el.querySelectorAll("i").forEach((p, j) => { p.className = on.has(j) ? "on" : ""; });
+  }
+  const ROLL_MS = 520, FLICK_MS = 90;
+  function rollDice(dice, paint) {
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return Promise.all(dice.map((d, k) => new Promise((done) => {
+      const el = d.el;
+      clearInterval(el.__gkRoll);
+      if (still || !el.animate) { paint(el, d.v); return done(); }
+      el.getAnimations().forEach((a) => { if (a.id === "gk-roll") a.cancel(); });
+      const turn = k % 2 ? -1 : 1;
+      el.animate([
+        { transform: "rotate(0deg) scale(.92)" },
+        { transform: "rotate(" + turn * 200 + "deg) scale(1.12)", offset: 0.5 },
+        { transform: "rotate(" + turn * 360 + "deg) scale(1)" },
+      ], { duration: ROLL_MS, easing: "cubic-bezier(.25, .8, .3, 1)", id: "gk-roll" });
+      let n = 0;
+      paint(el, (d.v % 6) + 1);
+      el.__gkRoll = setInterval(() => {
+        if (++n < 5) return paint(el, ((d.v + n * 2 + k) % 6) + 1);
+        clearInterval(el.__gkRoll); el.__gkRoll = null;
+        paint(el, d.v);
+        done();
+      }, FLICK_MS);
+    })));
   }
 
   // Every Undo button gets the same clean line icon (the one Mini Sudoku has) instead of a text arrow.
@@ -863,9 +908,48 @@
   }
   init();
 
+  // A question card in the site's own look (the same card as the game over screen) instead of the browser's grey confirm box.
+  // Gamekit.ask({ title, text, ok, cancel, danger }) -> a promise of true (the ok button) or false (cancel, Escape, a tap outside).
+  // Focus starts on Cancel so a stray Enter or tap never does the risky thing.
+  function ask(o) {
+    o = o || {};
+    if (!document.body) return Promise.resolve(window.confirm(o.text || o.title || ""));
+    return new Promise((resolve) => {
+      const prevFocus = document.activeElement;
+      const wrap = document.createElement("div");
+      wrap.className = "gk-ask";
+      wrap.setAttribute("role", "alertdialog"); wrap.setAttribute("aria-modal", "true"); wrap.setAttribute("aria-label", o.title || "Are you sure?");
+      const card = document.createElement("div"); card.className = "card";
+      if (o.title) { const h = document.createElement("h2"); h.textContent = o.title; card.append(h); }
+      if (o.text) { const p = document.createElement("p"); p.textContent = o.text; card.append(p); }
+      const acts = document.createElement("div"); acts.className = "acts";
+      const no = document.createElement("button"); no.type = "button"; no.className = "no"; no.textContent = o.cancel || "Cancel";
+      const yes = document.createElement("button"); yes.type = "button"; yes.className = "yes" + (o.danger === false ? " safe" : ""); yes.textContent = o.ok || "OK";
+      acts.append(no, yes); card.append(acts); wrap.append(card);
+      const done = (v) => { document.removeEventListener("keydown", onKey, true); wrap.remove(); try { if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); } catch (e) { /* gone */ } resolve(v); };
+      function onKey(e) {
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(false); }
+        else if (e.key === "Tab") { e.preventDefault(); (document.activeElement === no ? yes : no).focus(); }
+      }
+      no.addEventListener("click", () => done(false));
+      yes.addEventListener("click", () => done(true));
+      wrap.addEventListener("click", (e) => { if (e.target === wrap) done(false); });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(wrap);
+      no.focus({ preventScroll: true });
+    });
+  }
+
   global.Gamekit = {
+    ask,
     popFilled,
     glidePieces,
+    rollDice,
+    winCounts,
+    ICON_TROPHY,
+    ICON_HOME,
+    PIPS,
+    paintPips,
     mulberry32,
     dailySeed,
     randomSeed,

@@ -40,6 +40,7 @@
   let cellEls = [];
   let edgeEls = [];
   let curSeed = 0;       // the puzzle on screen can be rebuilt from this + diff
+  let hintUsed = false;  // one hint per puzzle; reset keeps it spent
 
   function idx(r, c) { return r * N + c; }
   function rof(i) { return Math.floor(i / N); }
@@ -240,6 +241,8 @@
     grid = new Uint8Array(givens);
     history = [];
     won = false;
+    hintUsed = false;
+    hintBtn.disabled = false;
     timerStart = Date.now();
     startTimer();
     renderShell();
@@ -321,6 +324,7 @@
       return;
     }
     won = true;
+    hintBtn.disabled = true;
     const s = Math.floor((Date.now() - timerStart) / 1000);
     const best = store.getInt("best:" + diff, null);
     if (best === null || s < best) {
@@ -358,16 +362,19 @@
     history = [];
     won = false;
     timerStart = Date.now();
+    hintBtn.disabled = hintUsed;     // the hint belongs to the puzzle, so a reset does not hand it back
     startTimer();
     statusEl.textContent = "Fill with suns and moons.";
     renderAll();
   });
   hintBtn.addEventListener("click", () => {
-    if (won) return;
+    if (won || hintUsed) return;
     // Find an empty cell and reveal the correct answer
     const empties = [];
     for (let i = 0; i < N * N; i++) if (grid[i] === EMPTY) empties.push(i);
     if (empties.length === 0) return;
+    hintUsed = true;
+    hintBtn.disabled = true;
     const i = empties[Math.floor(Math.random() * empties.length)];
     history.push({ i: i, v: grid[i] });
     grid[i] = solution[i];
@@ -393,7 +400,7 @@
   // A refresh keeps the puzzle, your cells, undo history and the clock.
   const resumer = Gamekit.resume("tango", () => won ? null : {
     diff: diff, seed: curSeed, grid: Array.from(grid), history: history,
-    elapsed: Math.floor((Date.now() - timerStart) / 1000),
+    elapsed: Math.floor((Date.now() - timerStart) / 1000), hintUsed: hintUsed,
   }, (s) => {
     if (!DIFFS[s.diff] || !Number.isInteger(s.seed) || !Array.isArray(s.grid) || s.grid.length !== N * N) return false;
     if (!s.grid.every(v => v === 0 || v === 1 || v === 2)) return false;
@@ -401,6 +408,8 @@
     newPuzzle(s.seed);
     for (let i = 0; i < N * N; i++) if (!givens[i]) grid[i] = s.grid[i];     // givens always stay as dealt
     history = Array.isArray(s.history) ? s.history.filter(h => h && Number.isInteger(h.i) && h.i >= 0 && h.i < N * N && [0, 1, 2].includes(h.v)) : [];
+    hintUsed = !!s.hintUsed;
+    hintBtn.disabled = hintUsed;
     timerStart = Date.now() - (Number.isFinite(s.elapsed) ? Math.max(0, s.elapsed) : 0) * 1000;
     timeEl.textContent = Gamekit.fmtTime(Math.floor((Date.now() - timerStart) / 1000));
     renderAll(); updateStatus();

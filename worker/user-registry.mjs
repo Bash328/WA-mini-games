@@ -137,10 +137,13 @@ export class UserRegistry extends DurableObject {
       if (!ok.ok) { await this.save(me); return json({ error: ok.reason }, ok.reason === "self" ? 400 : 429); }
       U.notePoke(me, target, now);
 
+      // A muted or blocking target silently gets nothing (the sender is told the same either way: see users.mjs).
+      // A push service that cannot be reached is "not delivered", never an error: the poke still counts against the limits.
       let delivered = true;
-      if (!target.muted && !target.blocked.includes(me.key)) {
-        if (!target.sub || !pushConfigured(this.env)) delivered = false;
-        else {
+      if (U.silenced(me, target)) { /* told nothing */ }
+      else if (!U.canDeliver(me, target) || !pushConfigured(this.env)) delivered = false;   // no subscription, or push is off
+      else {
+        try {
           const res = await sendPush(target.sub, {
             t: "poke", from: me.name, game: body.game,
             title: me.name + " wants to play " + body.game.replace(/-/g, " "),
@@ -149,7 +152,7 @@ export class UserRegistry extends DurableObject {
           }, this.env);
           if (res.gone) target.sub = null;
           if (!res.ok) delivered = false;
-        }
+        } catch (e) { delivered = false; }
       }
       await this.save(me);
       await this.save(target);

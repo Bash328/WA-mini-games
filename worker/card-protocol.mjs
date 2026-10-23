@@ -248,7 +248,8 @@ export function vote(room, pid, now, rng) {
     room.players.forEach((x) => { if (!x.online) x.left = true; });
     room.players = room.players.filter((x) => !x.left);
     if (!room.players.find((x) => x.pid === room.host)) room.host = room.players[0] ? room.players[0].pid : null;
-    if (room.players.length + room.config.bots < 2) { room.phase = "lobby"; room.state = null; room.table = []; room.votes = []; return { ok: true, started: false }; }
+    // too few left for this game (Skull needs 3): back to the lobby, not a start the engine would refuse
+    if (room.players.length + room.config.bots < (engineOf(room).MIN_SEATS || 2)) { room.phase = "lobby"; room.state = null; room.table = []; room.votes = []; return { ok: true, started: false }; }
     startGame(room, room.host, now, rng, false);
     return { ok: true, started: true };
   }

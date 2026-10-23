@@ -14,7 +14,7 @@
     return;
   }
 
-  const HINTS = 3;
+  const HINTS = 1;                // one hint per puzzle; a restart does not give it back
   const COLORS = ["#c93f3f", "#2f8f63", "#3f63c9", "#a8660a", "#8e44ad", "#0f7f8a", "#b03a78", "#5f6e22"];
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const reverse = (w) => w.split("").reverse().join("");
@@ -109,6 +109,11 @@
   // under the letters), not as boxes on each cell. The board is square and the SVG stretches to it, so one cell is one unit.
   const SVGNS = "http://www.w3.org/2000/svg";
   let hlEl = null, selLine = null;
+  // a soft version of a colour, as a solid colour (not see-through, so the grid lines under it cannot show)
+  function soft(hex, keep) {
+    const n = parseInt(hex.slice(1), 16), mix = (v) => Math.round(v * keep + 255 * (1 - keep));
+    return "rgb(" + mix(n >> 16) + "," + mix((n >> 8) & 255) + "," + mix(n & 255) + ")";
+  }
   function capsule(r1, c1, r2, c2, color, cls) {
     const l = document.createElementNS(SVGNS, "line");
     l.setAttribute("x1", String(c1 + 0.5)); l.setAttribute("y1", String(r1 + 0.5));
@@ -129,7 +134,7 @@
       }
     }
     const last = item.word.length - 1;
-    if (hlEl) hlEl.insertBefore(capsule(item.row, item.col, item.row + item.dr * last, item.col + item.dc * last, color, "ws-cap"), selLine);
+    if (hlEl) hlEl.insertBefore(capsule(item.row, item.col, item.row + item.dr * last, item.col + item.dc * last, soft(color, 0.42), "ws-cap"), selLine);
     const el = wordEls.get(word);
     if (el) el.classList.add("found");
   }
@@ -241,8 +246,7 @@
     dragFrom = null;
     setSelection([]);
     found = new Set();
-    hinted = new Set();
-    hintsLeft = HINTS;
+    // the hint belongs to the puzzle, not the attempt: keep hinted / hintsLeft
     timerStart = Date.now();
     applyState();
     startTimer();

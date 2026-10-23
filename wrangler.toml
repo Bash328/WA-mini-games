@@ -99,3 +99,12 @@ namespace_id = "1002"
   [ratelimits.simple]
   limit = 30
   period = 60
+
+# Asking whether a room exists: each one wakes a room object, so a script trying
+# codes would be billed per guess. 120 a minute per IP is far above any player.
+[[ratelimits]]
+name = "LOOKUP_LIMITER"
+namespace_id = "1003"
+  [ratelimits.simple]
+  limit = 120
+  period = 60

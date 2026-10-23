@@ -139,6 +139,7 @@
     function suggest(k) { const l = k === "h" ? lines().hype : lines().heckle; if (!l.length) return; let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === sugg[k]); sugg[k] = i; }
     function renderTaunts() {
       if (!tauntsEl) return;
+      if (global.TABLE_TALK !== true) { tauntsEl.hidden = true; tauntsEl.innerHTML = ""; return; }   // shelved (see taunts.js)
       tauntsEl.innerHTML = "";
       const on = M && M.kind === "online" && M.phase !== "lobby" && M.phase !== "landing" && M.phase !== "closed" && M.table;
       tauntsEl.hidden = !on || !lines().hype.length;
@@ -159,6 +160,7 @@
       });
     }
     function onTaunt(m) {
+      if (global.TABLE_TALK !== true) return;          // shelved: ignore it (see taunts.js)
       if (muted()) return;
       const l = m.k === "h" ? lines().hype : lines().heckle;
       const p = M && M.players && M.players.find((x) => x.pid === m.from);

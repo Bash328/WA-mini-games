@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
 <style>
   .wl-list { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 10px auto; }
   .wl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: min(260px, 74%); }
@@ -74,9 +74,7 @@
   .wl-act { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 14px 0 0; }
   html body.fun.g-word-ladder .panel .wl-submit { flex: 0 1 270px; height: 50px; min-height: 0; padding: 0; border-radius: 25px; background: #2fe3b9; color: #06231d; font-size: 28px; box-shadow: 0 4px 0 #14a07f; }
   html body.fun.g-word-ladder .panel .wl-submit:disabled { background: #9a938e; color: #404656; box-shadow: none; opacity: 1; }
-  html body.fun.g-word-ladder .panel .wl-hint { width: 54px; height: 54px; min-height: 0; padding: 0; flex: none; border-radius: 50%; background: #e0629c; box-shadow: 0 3px 0 #b84d80; }
-  .wl-hint svg { width: 34px; height: 34px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; display: block; margin: auto; }
-  html body.fun.g-word-ladder .panel .wl-hint:disabled { opacity: .45; }
+  html body.fun.g-word-ladder .panel .wl-hint { width: auto; height: 50px; min-height: 0; padding: 0 20px; flex: none; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -104,7 +102,7 @@
     </div>
     <div class="wl-list" id="ladder" aria-label="Your ladder"></div>
     <div class="wl-kb" id="kb"></div>
-    <div class="wl-act"><button class="wl-submit" id="submit-btn" type="button">Submit</button><button class="wl-hint" id="hint-btn" type="button" aria-label="Hint"><svg viewBox="0 0 24 24"><path d="M12 5a5.5 5.5 0 0 0-3.2 10v2.2h6.4V15A5.5 5.5 0 0 0 12 5z"/><path d="M9.6 20.3h4.8"/><path d="M12 1.8v1M4.6 5l.8.8M19.4 5l-.8.8M2.6 11h1M20.4 11h1"/></svg></button></div>
+    <div class="wl-act"><button class="wl-submit" id="submit-btn" type="button">Submit</button><button class="wl-hint" id="hint-btn" type="button">hint</button></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="undo-btn" type="button"><span class="glyph">↶</span> undo</button>
       <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> reset</button>
@@ -126,7 +124,7 @@
   <h2>Controls</h2>
   <ul>
     <li>Type with the keyboard or the on-screen keys and press <code>Enter</code>. The letter that changed is highlighted in each step.</li>
-    <li><code>Undo</code> removes your last step. <code>hint</code> fills in the next word of a shortest route (and doesn't count for your best). <code>↻ reset</code> starts the ladder again; <code>↻ new</code> makes a new puzzle.</li>
+    <li><code>Undo</code> removes your last step. <code>hint</code> fills in the next word of a shortest route: one hint per puzzle, and <code>↻ reset</code> does not give it back (a hinted solve does not count for your best). <code>↻ reset</code> starts the ladder again; <code>↻ new</code> makes a new puzzle.</li>
   </ul>
 
   <h2>Difficulty</h2>
@@ -138,11 +136,11 @@
   <p class="muted">Work from both ends: look at the target and think of words next to it, then try to meet in the middle. Changing a vowel is often the way to reach a new neighbourhood of words.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="words.js?v=58cf16cb"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=7a1fce96"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
+<script defer src="game.js?v=d03bb98c"></script>
 </body>
 </html>

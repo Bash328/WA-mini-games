@@ -3,7 +3,7 @@
 //   node tests/run.mjs units      static checks + Node unit tests                      (seconds)
 //   node tests/run.mjs changed    units + browser checks for the games you changed     (about a minute)
 //   node tests/run.mjs quick      units + browser smoke pass, 2 sample pages per check (about 2 minutes)
-//   node tests/run.mjs            units + the full browser suite: the gate before a deploy
+//   node tests/run.mjs            units + the full browser suite (slow; run it when asked, it is not a deploy gate)
 //
 // Anything after the tier goes to tests/regression.mjs (--jobs 8, --only chess, --slow ...).
 // Unit tests are every *.test.mjs in the repo; they live next to the code they test.

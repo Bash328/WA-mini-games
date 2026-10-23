@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
-<link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
+<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
 <link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
 <style>
   /* ---------- the chunky look: a green card table ---------- */
@@ -201,7 +201,9 @@
   html body.fun.g-hearts { --ht-felt: #17566f; --ht-rim: #f4a63f; --ht-tag: #ffd29f; --ht-tagink: #b8363a; }
   /* the whole layout is in cqw of #ht, so on a short screen narrowing #ht scales it all down to fit instead of scrolling */
   /* (header and bottom padding take about 116px; the layout is 195cqw tall) */
-  #ht { --htw: min(calc(100% + 16px), calc((100svh - 116px) * .50)); width: var(--htw); margin: 0 0 0 calc(50% - var(--htw) / 2); overflow-x: clip; }
+  /* the side stacks hang off the table: clip them at the screen edge (.wrap), not at #ht, which stopped them short of it */
+  #ht { --htw: min(calc(100% + 16px), calc((100svh - 116px) * .50)); width: var(--htw); margin: 0 0 0 calc(50% - var(--htw) / 2); }
+  html body.fun.g-hearts .wrap { overflow-x: clip; }
   #ht .ht-stage {
     width: 77%; height: 104cqw; margin: 38.5cqw auto 0; border-radius: 10cqw; background: var(--ht-felt);
     box-shadow: 0 0 0 1.7cqw var(--ht-rim), 0 1.5cqw 0 1.7cqw rgba(0,0,0,.28);
@@ -251,7 +253,9 @@
 
   /* the middle: just the cards of the trick (the old dashed circle goes) */
   .ht-empty { display: none; }
-  .ht-play { width: 14cqw; height: 20cqw; }
+  /* a played card fills its place on the table: the hand's size and overlap (#ht .ht-card below) pushed it 11cqw left, under Bot 1's tag */
+  .ht-play { width: 18cqw; height: 27cqw; }
+  #ht .ht-play .ht-card { width: 100%; height: 100%; margin: 0; }
   .ht-note { bottom: -2cqw; width: 58cqw; font-size: 3.4cqw; color: rgba(255,255,255,.72); text-transform: uppercase; letter-spacing: .03em; }
 
   /* your hand: big overlapping cards from the left edge; a playable card is white, the rest grey */
@@ -357,14 +361,14 @@
   <p class="muted">Pass high hearts and the queen of spades when they are not guarded. Keep short suits so you can shed points on someone else's trick, and remember that winning a trick with hearts in it is usually a bad idea.</p>
 </template>
 
-<script defer src="../shared/manpage.js?v=6ba2d49b"></script>
-<script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=3678b5be"></script>
+<script defer src="../shared/manpage.js?v=01a4ac19"></script>
+<script defer src="../shared/taunts.js?v=cc001b6b"></script>
+<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2267f8ba"></script>
-<script defer src="../shared/multiseat.js?v=eca9364b"></script>
+<script defer src="../shared/live-share.js?v=61dc292f"></script>
+<script defer src="../shared/multiseat.js?v=2f80f13b"></script>
 <script defer src="engine.js?v=e827ff37"></script>
-<script defer src="../shared/fun.js?v=0db388a6"></script>
+<script defer src="../shared/fun.js?v=2d6bc944"></script>
 <script defer src="game.js?v=5a90d66a"></script>
 </body>
 </html>

@@ -3,7 +3,8 @@
    async-share.js encodes them. */
 
 import LZString from "../assets/vendor/lz-string.min.js";
-import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES } from "./og-text.mjs";
+import fs from "node:fs";
+import { ogFor, ogForLive, slugFor, decodeState, SUPPORTED_GAMES, GAMES } from "./og-text.mjs";
 
 const enc = (o) =>
   LZString.compressToEncodedURIComponent(JSON.stringify(o)).replace(/\+/g, "_");
@@ -116,6 +117,23 @@ const missing = SUPPORTED_GAMES.filter((g) => {
 });
 checkThat(SUPPORTED_GAMES.length + " games covered", missing.length === 0,
   "no preview for: " + missing.join(", "));
+
+// The preview's game name is kept here by hand: it must match the title each game gives AsyncShare.start, or a
+// renamed game (Pig -> Greed) keeps its old name in WhatsApp previews.
+console.log("\ntitles match the games:");
+{
+  const wrong = [];
+  let compared = 0;
+  for (const slug of SUPPORTED_GAMES) {
+    const src = fs.readFileSync(new URL("../" + slug + "/game.js", import.meta.url), "utf8");
+    if (!/AsyncShare\.start\(/.test(src)) continue;          // a room-only game (Farkle, Hearts...): no WhatsApp link to name
+    compared++;
+    const m = /AsyncShare\.start\((?:Object\.assign\()?\{[\s\S]{0,600}?title:\s*(["'])(.*?)\1/.exec(src);
+    if (!m) wrong.push(slug + ": no title found in AsyncShare.start");
+    else if (m[2] !== GAMES[slug].title) wrong.push(slug + ": page says \"" + m[2] + "\", preview says \"" + GAMES[slug].title + "\"");
+  }
+  checkThat("every preview names the game the way its page does (" + compared + " games)", compared > 20 && wrong.length === 0, wrong.join("; "));
+}
 
 console.log("\n" + (fail ? "RESULT: " + fail + " FAILED, " + pass + " passed"
                          : "RESULT: all " + pass + " checks passed"));

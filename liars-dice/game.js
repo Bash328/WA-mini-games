@@ -24,7 +24,7 @@
   let bq = 1, bf = 2, bidKey = "";             // the bid being set up: quantity, face; and which turn it was set up for
 
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const PIPS = Gamekit.PIPS;             // the shared pip layout
   function dieEl(v, cls) {
     const d = el("div", "ld-die" + (cls ? " " + cls : ""));
     if (!v) { d.classList.add("back"); d.setAttribute("aria-hidden", "true"); return d; }
@@ -117,8 +117,17 @@
     const s = t.seats[t.you];
     const reveal = t.reveal && M.phase !== "playing";
     const hand = reveal && s.hand ? s.hand : s.hand || [];
-    hand.slice().sort((a, b) => a - b).forEach((v) => mineEl.append(dieEl(v, "lg" + (reveal && hits(v) ? " hit" : ""))));
+    const sorted = hand.slice().sort((a, b) => a - b);
+    sorted.forEach((v) => mineEl.append(dieEl(v, "lg" + (reveal && hits(v) ? " hit" : ""))));
+    // a new round's hand is rolled in (the shared dice roll), once per round
+    const key = t.round + ":" + sorted.join("");
+    if (M.phase === "playing" && sorted.length && key !== handKey) {
+      handKey = key;
+      Gamekit.rollDice([...mineEl.children].map((d, i) => ({ el: d, v: sorted[i] })), paintDie);
+    }
   }
+  let handKey = "";
+  function paintDie(d, v) { Gamekit.paintPips(d, v); d.classList.toggle("wild", v === 1); }
 
   function renderControls() {
     const t = M.table;
