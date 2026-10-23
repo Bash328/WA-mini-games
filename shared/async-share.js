@@ -354,7 +354,7 @@
     }
 
     function captionFor(finished, moveCount, resigned) {
-      return resigned ? "I surrendered! 🏳️"
+      return resigned ? "I surrendered!"
         : finished ? "Game over!"
         : moveCount === 1 ? "Let's play!"
         : "Your turn!";
@@ -397,7 +397,7 @@
 
     function result(s, viewer) {
       if (s.status === "draw") return { cls: "", text: "It's a draw." };
-      if (s.winner === viewer) return { cls: "win", text: s.resigned ? "They gave up — you won! 🎉" : "You won! 🎉" };
+      if (s.winner === viewer) return { cls: "win", text: s.resigned ? "They gave up — you won!" : "You won!" };
       return { cls: "bad", text: s.resigned ? "You admitted defeat." : "You lost." };
     }
 

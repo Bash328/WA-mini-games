@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../shared/ga.js?v=e72d72bb"></script>
+<script src="../shared/ga.js?v=29f6c01f"></script>
 <title>ludo · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -174,7 +174,59 @@
   .ld-die .ld-q { width: 42%; height: 42%; font-size: 0; background: #e35b4f; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
   html body.g-ludo .panel button.ld-roll { height: 17cqw; border-radius: 3cqw; font-size: 6cqw; background: #d9574b; box-shadow: 0 1cqw 0 #a53a32; }
 
-  @media (max-width: 360px) { #ld { margin-top: 46px; } .ld-vs { width: 210px; } }
+  /* ---- the reference board: saturated lanes, star start squares, a four-triangle centre, double-disc tokens,
+          a dark frame, and the dice row centred under it ---- */
+  #ld { margin: clamp(88px, calc(100svh - 690px), 150px) -8px 0; padding: 0 4px; }
+  .ld-board { border: 1.6cqw solid #3a3a44; }
+  .ld-cell.track { background: #fff; box-shadow: inset 0 0 0 .12cqw rgba(60,60,80,.3); }
+  .ld-cell.home-red { background: var(--ld-red); }
+  .ld-cell.home-yellow { background: var(--ld-yellow); }
+  .ld-cell.home-blue { background: var(--ld-blue); }
+  .ld-cell.home-green { background: var(--ld-green); }
+  .ld-cell[class*="home-"] { box-shadow: inset 0 0 0 .12cqw rgba(60,60,80,.3); }
+  /* start squares: the colour's tint with its star; the other safe squares carry a grey star */
+  .ld-cell.safe::after, .ld-cell[class*="entry-"]::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 66%; height: 66%; transform: translate(-50%, -50%); border-radius: 0; background: #c3c4cc;
+    clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  .ld-cell.entry-red { background: color-mix(in srgb, var(--ld-red) 30%, #fff); --star: var(--ld-red); }
+  .ld-cell.entry-yellow { background: color-mix(in srgb, var(--ld-yellow) 30%, #fff); --star: var(--ld-yellow); }
+  .ld-cell.entry-blue { background: color-mix(in srgb, var(--ld-blue) 30%, #fff); --star: var(--ld-blue); }
+  .ld-cell.entry-green { background: color-mix(in srgb, var(--ld-green) 30%, #fff); --star: var(--ld-green); }
+  .ld-cell[class*="entry-"]::after { background: var(--star); }
+
+  .ld-yard-in { inset: 19%; border-radius: 21%; background: rgba(255,255,255,.34); }
+  .ld-spot { width: 19%; border: 0; background: rgba(255,255,255,.45); }
+  /* the centre: four triangles pointing at the middle, in the colour of the lane they close */
+  .ld-home {
+    background:
+      linear-gradient(45deg, transparent calc(50% - .17cqw), rgba(40,40,55,.45) 0 calc(50% + .17cqw), transparent 0),
+      linear-gradient(135deg, transparent calc(50% - .17cqw), rgba(40,40,55,.45) 0 calc(50% + .17cqw), transparent 0),
+      conic-gradient(from 315deg, var(--ld-blue) 0 25%, var(--ld-green) 0 50%, var(--ld-red) 0 75%, var(--ld-yellow) 0 100%);
+    box-shadow: inset 0 0 0 .2cqw rgba(40,40,55,.45);
+  }
+  .ld-home::after { display: none; }
+
+  /* a token is two overlapping discs with a heavy outline: the button itself is empty, ::before is the disc behind, ::after the one in front */
+  html body.g-ludo .panel .ld-token { width: calc(100% / 15 * 0.9); border: 0; background: transparent; box-shadow: none; }
+  html body.g-ludo .panel .ld-token::before, html body.g-ludo .panel .ld-token::after { content: ""; position: absolute; inset: 0; box-sizing: border-box; border: .6cqw solid #17171d; border-radius: 50%; }
+  html body.g-ludo .panel .ld-token::before { transform: translateX(-36%); background: color-mix(in srgb, var(--tok) 80%, #000); }
+  html body.g-ludo .panel .ld-token::after { background: var(--tok); }
+  html body.g-ludo .panel .ld-token.movable::after { inset: 0; background: var(--tok); box-shadow: 0 0 0 .7cqw var(--accent); }
+  html body.g-ludo .panel .ld-token.done { box-shadow: none; }
+  html body.g-ludo .panel .ld-token.done::after { box-shadow: 0 0 0 .4cqw #fff; }
+  html body.g-ludo .panel .ld-token:hover::after, html body.g-ludo .panel .ld-token:focus-visible::after { background: var(--tok); }
+
+  /* the dice row, centred: a die with a dark frame and a narrower ROLL button with a big label */
+  .ld-controls { height: 15cqw; margin-top: 2.2cqw; gap: 11cqw; justify-content: center; }
+  .ld-die { width: 15cqw; height: 15cqw; border: 1.1cqw solid #3a3d48; border-radius: 3cqw; box-shadow: none; }
+  html body.fun.g-ludo .panel button.ld-roll { flex: 0 0 55cqw; min-height: 0; padding: 0; height: 15cqw; border-radius: 2.6cqw; font-size: 8.6cqw; letter-spacing: .02em; background: #d3594d; box-shadow: 0 1cqw 0 #a8453b; }
+
+  /* the gear stays in the page column, and its menu opens across it */
+  body.g-ludo .gk-optwrap { right: calc(max(0px, 50vw - 215px) + 12px) !important; }
+  html body.fun.g-ludo[data-fun-zone] .gk-menu { position: fixed; top: 126px; left: max(8px, calc(50vw - 207px)); right: max(8px, calc(50vw - 207px)); }
+
+  @media (max-width: 360px) { .ld-vs { width: 210px; } }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -258,12 +310,12 @@
 
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 <script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2da83d25"></script>
-<script defer src="../shared/multiseat.js?v=f5bba1b1"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/multiseat.js?v=eca9364b"></script>
 <script defer src="engine.js?v=069c8237"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=86f26a3d"></script>
+<script defer src="game.js?v=4e705542"></script>
 </body>
 </html>

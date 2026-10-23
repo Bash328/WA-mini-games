@@ -43,11 +43,17 @@
     historyStore.setJSON("history", history);
   }
 
+  // How much he talks: "lots" (a line after most guesses), "some" (the default: now and then) or "off" (only when poked).
+  let talk = historyStore.get("talk", "some");
+  if (talk !== "lots" && talk !== "off") talk = "some";
+  let bubbleTimer = 0, flashTimer = 0;
   function speak(line) {
+    if (line && talk === "off" && !line.poke) line = "";           // silent: a poke is the only thing that gets an answer
     const t = line ? line.text : "";
     const key = t + (line && line.ghost ? "|ghost" : "");
     if (key === spoken) return;                     // a re-render must not restart the bubble
     spoken = key;
+    clearTimeout(bubbleTimer); clearTimeout(flashTimer);
     bubbleEl.hidden = !t;
     bubbleEl.textContent = t;
     bubbleEl.classList.toggle("beg", !!(line && line.beg));
@@ -56,7 +62,17 @@
     // a proud face even on the last life, so he never grins through a shiver.
     const face = t && B.faceOf ? B.faceOf(t) : "";
     if (face) stageEl.dataset.face = face; else delete stageEl.dataset.face;
+    // an ordinary line fades after a few seconds, so there is not always a sentence on screen; how a game ended stays
+    if (t && !line.final) bubbleTimer = setTimeout(() => { bubbleEl.hidden = true; delete stageEl.dataset.face; }, 1500 + t.length * 40);
     ghostEl.toggleAttribute("hidden", !(line && line.ghost));   // the last line, when he has run out of chances, comes from his ghost (an SVG has no .hidden property)
+  }
+
+  // A guess he has nothing to say about still shows on his face for a moment.
+  function flashFace(name) {
+    if (!bubbleEl.hidden) return;
+    stageEl.dataset.face = name;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { if (bubbleEl.hidden) delete stageEl.dataset.face; }, 1100);
   }
 
   let reactionTimer = 0;
@@ -77,8 +93,10 @@
   function puff(part) {
     if (!dustEl || !dustPosEl) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const box = part.getBBox();
-    dustPosEl.setAttribute("transform", `translate(${box.x + box.width / 2} ${box.y + box.height / 2})`);
+    // the joint the part grows from: the middle of the head, or the start of a limb (neck, shoulder, hip)
+    const at = (n) => Number(part.getAttribute(n));
+    const x = part.tagName === "circle" ? at("cx") : at("x1"), y = part.tagName === "circle" ? at("cy") : at("y1");
+    dustPosEl.setAttribute("transform", `translate(${x} ${y})`);
     dustEl.classList.remove("on");
     void dustEl.getBoundingClientRect();
     dustEl.classList.add("on");
@@ -89,6 +107,7 @@
     const missesNode = document.getElementById("misses");
     const parts = [...document.querySelectorAll("#gallows .pt")];
     if (!missesNode || !parts.length) return;
+    parts.forEach((p) => p.style.setProperty("--len", String(Math.ceil(p.getTotalLength()) + 1)));   // an explicit length draws the same way in every browser
     let prev = -1;
     const draw = () => {
       const m = /Misses: (\d+)/.exec(missesNode.textContent);
@@ -129,7 +148,7 @@
     return !!(waInGame && waStatus === "in_progress" && waCanMove && waCurrent === P2);
   }
   function showIdle() {
-    if (document.hidden || idleCount >= 2) return;
+    if (document.hidden || idleCount >= 1 || talk === "off") return;
     if (modeSel.value === "local" && loWord && loStatus === "in_progress") {
       idleCount++;
       glance();
@@ -144,8 +163,8 @@
   }
   function scheduleIdle() {
     clearTimeout(idleTimer); idleTimer = 0;
-    if (document.hidden || idleCount >= 2 || !activeIdleTarget()) return;
-    idleTimer = setTimeout(showIdle, idleCount === 0 ? 15000 : 25000);
+    if (document.hidden || idleCount >= 1 || talk === "off" || !activeIdleTarget()) return;
+    idleTimer = setTimeout(showIdle, 20000);
   }
 
   // A poke is deliberately only possible once his head is drawn; before that
@@ -155,15 +174,19 @@
       const misses = wrongCount(loWord, loMask);
       if (misses < 1) return;
       clearIdle(true);
-      loIdle = { text: B.pokeLine(misses) };
+      loIdle = { text: B.pokeLine(misses), poke: true };
       renderLocal();
       reaction("poke");
     } else if (waInGame && waStatus === "in_progress") {
       const misses = wrongCount(waWord, waMask);
       if (misses < 1) return;
       clearIdle(true);
-      waIdle = { text: B.pokeLine(misses) };
+      waIdle = { text: B.pokeLine(misses), poke: true };
       renderWA();
+      reaction("poke");
+    } else if (modeSel.value === "live" && M && M.table && M.table.phase === "play" && M.table.misses >= 1) {
+      lvIdle = { text: B.pokeLine(M.table.misses), poke: true };
+      renderLive();
       reaction("poke");
     }
   }
@@ -362,8 +385,8 @@
         if (waEndKey !== k) {
           waEndKey = k;
           waEnd = solved
-            ? { text: B.savedLine(history, misses) }
-            : { text: B.lossTaunt(waWord, waMask, history), ghost: true };
+            ? { text: B.savedLine(history, misses), final: true }
+            : { text: B.lossTaunt(waWord, waMask, history), ghost: true, final: true };
         }
         speak(waEnd);
       } else if (waInGame && !waCanMove && waStatus === "in_progress" && waMask === 0) {
@@ -411,7 +434,7 @@
     if (isSolved(waWord, mask)) { status = "won"; winner = P2; }
     else if (wrongCount(waWord, mask) >= MAX_WRONG) { status = "won"; winner = P1; }
     clearIdle(true); waIdle = "";
-    waNote = B.react(waTaunt, waWord, mask, ch);
+    waNote = B.react(waTaunt, waWord, mask, ch, talk);
     waNoteMask = mask;
     lookAtGuess(i);
     if (status === "in_progress") reaction(hit ? "hit" : "miss");
@@ -419,6 +442,7 @@
     // the default (turn goes to the opponent) must apply, otherwise Player 1
     // opening the final link is treated as Player 2 and sees the result inverted.
     link.commit({ board: boardToStr(waWord, mask), status, winner, last: i, nextTurn: status === "in_progress" ? P2 : undefined });
+    if (status === "in_progress" && !waNote) flashFace(hit ? "hopeful" : "nervous");
   }
 
   // ---------- 2 players, same device ----------
@@ -446,8 +470,8 @@
       }
       if (reveal && !loEnd) {
         loEnd = loStatus === "won-p2"
-          ? { text: B.savedLine(history, misses) }
-          : { text: B.lossTaunt(loWord, loMask, history), ghost: true };
+          ? { text: B.savedLine(history, misses), final: true }
+          : { text: B.lossTaunt(loWord, loMask, history), ghost: true, final: true };
       }
       statusEl.textContent = loStatus === "in_progress"
         ? "Player 2: guess a letter."
@@ -486,27 +510,168 @@
     if (isSolved(loWord, loMask)) loStatus = "won-p2";
     else if (wrongCount(loWord, loMask) >= MAX_WRONG) loStatus = "won-p1";
     clearIdle(true); loIdle = "";
-    loNote = B.react(loTaunt, loWord, loMask, ch);
+    loNote = B.react(loTaunt, loWord, loMask, ch, talk);
     lookAtGuess(i);
     if (loStatus === "in_progress") reaction(hit ? "hit" : "miss");
     renderLocal();
+    if (loStatus === "in_progress" && !loNote) flashFace(hit ? "hopeful" : "nervous");
   }
 
+  // ---------- online room: two people, the secret word stays on the server ----------
+  // M is the room model from multiseat.js; M.table is the engine's view (hangman/engine.js) for this person: the setter sees
+  // the word, the guesser only its length and the letters found so far.
+  const roomEl = document.getElementById("ms-room");
+  const tauntsEl = document.getElementById("ms-taunts");
+  const scoreEl = document.getElementById("lv-score");
+  const params = new URLSearchParams(location.search);
+  const invited = params.has("live");
+  let M = null, lvTaunt = B.newState(), lvKey = "", lvSeen = 0, lvEnd = null, lvNote = "", lvIdle = "", lvSetLine = "", lvRecorded = "";
+
+  const ms = MultiSeat.create({
+    game: "hangman", title: "Hangman", roomEl, tauntsEl, store: historyStore,
+    tableSize: 2, fixedSeats: true, fillSeats: false,
+    onModel: (m) => { M = m; renderLive(); },
+  });
+  const bitsOf = (tried) => tried.reduce((m, c) => m | bit(letterIdx(c)), 0);
+
+  function renderLive() {
+    if (modeSel.value !== "live") return;
+    const t = M && M.kind === "online" ? M.table : null;
+    if (!t) {                                     // landing, lobby, waiting, a closed room: the room screens own the page
+      lvKey = "";
+      wordEl.textContent = ""; missesEl.textContent = ""; scoreEl.hidden = true; keyboardEl.hidden = true; setupEl.hidden = true;
+      paintMood(0, ""); speak(""); Gamekit.turn(null, "");
+      statusEl.textContent = M && M.closed ? M.closed : "";
+      return;
+    }
+    const you = t.you, them = 1 - you, over = t.phase !== "play", setter = t.role === "setter";
+    const word = t.word || "", seen = word || t.mask.replace(/_/g, "?");     // what this screen knows of the word
+    const mask = bitsOf(t.tried), misses = t.misses;
+    const key = (M.code || "") + ":" + t.round;
+    if (key !== lvKey) { lvKey = key; lvTaunt = B.newState(); lvSeen = t.tried.length; lvEnd = null; lvNote = ""; lvIdle = ""; lvSetLine = ""; }
+
+    // a new letter since the last look: his reaction (the guesser's screen reacts without knowing the word)
+    let flash = "";
+    if (t.stage === "guess" && t.tried.length > lvSeen) {
+      if (t.tried.length === lvSeen + 1 && !over) {
+        const ch = t.tried[lvSeen], hit = seen.includes(ch);
+        lvNote = B.react(lvTaunt, seen, mask, ch, talk, !setter);
+        lookAtGuess(letterIdx(ch));
+        reaction(hit ? "hit" : "miss");
+        if (!lvNote) flash = hit ? "hopeful" : "nervous";
+      }
+      lvSeen = t.tried.length; lvIdle = "";
+    }
+
+    // the board
+    const showWord = t.stage === "guess" || over;
+    wordEl.textContent = !showWord ? "" : ((over || setter) && word ? word : t.mask).split("").join(" ");
+    missesEl.textContent = showWord ? `Misses: ${misses} / ${t.maxWrong}` : "Misses: 0 / " + t.maxWrong;
+    keyboardEl.hidden = !showWord;
+    if (showWord) renderKeyboard(mask, seen, t.options.guess.length > 0, (i) => ms.send({ t: "guess", ch: String.fromCharCode(A_CODE + i) }));
+    setupEl.hidden = !t.options.set;
+    if (t.options.set && !setupEl.dataset.live) { setupEl.dataset.live = "1"; setupInput.value = ""; setupError.textContent = ""; setTimeout(() => { try { setupInput.focus(); } catch (e) { /* ignore */ } }, 50); }
+    if (!t.options.set) delete setupEl.dataset.live;
+    scoreEl.hidden = false;
+    scoreEl.textContent = `Round ${t.round} · You ${t.seats[you].score} – ${t.seats[them].score} ${t.seats[them].name} · first to ${t.target}`;
+
+    // the words
+    const nameOf = (i) => (i === you ? "You" : t.seats[i].name);
+    let text, pill, result = "";
+    if (over) {
+      const solved = !!(t.last && t.last.solved), finished = t.phase === "game_over";
+      result = solved ? "saved" : "dead";
+      const w = (t.last && t.last.word) || word;
+      const guesserName = nameOf(t.guesser);
+      text = (solved ? `${guesserName} found ${w}.` : `${w} was not guessed.`);
+      if (finished) text = t.winner === you ? `You win the match ${t.seats[you].score} – ${t.seats[them].score}!` : `${t.seats[t.winner].name} wins the match ${t.seats[t.winner].score} – ${t.seats[you].score}.`;
+      pill = finished ? "Match over" : "Next word coming";
+    } else if (t.stage === "set") {
+      text = setter ? `Pick a secret word for ${t.seats[them].name} to guess.` : `${t.seats[t.setter].name} is picking a word…`;
+      pill = setter ? "Pick a word" : `${t.seats[t.setter].name} · picking a word`;
+    } else {
+      text = setter ? `${t.seats[them].name} is guessing.` : "Your guess: pick a letter.";
+      pill = setter ? `${t.seats[them].name} · guessing` : "Your guess";
+    }
+    statusEl.textContent = text;
+    Gamekit.turn(t.turn === you && !over ? P2 : P1, pill, t.turn !== you || over);
+    paintMood(misses, result);
+
+    // Splinter: the end of a round stays up; before the first letter he comments on the word; later, on guesses
+    if (over && !lvEnd) {
+      const solved = !!(t.last && t.last.solved);
+      lvEnd = solved ? { text: B.savedLine(history, misses), final: true } : { text: B.lossTaunt(t.last.word, mask, history), ghost: true, final: true };
+      if (t.role === "guesser" && lvRecorded !== key) { lvRecorded = key; recordResult(solved, "live:" + key); }
+    }
+    if (over) speak(lvEnd);
+    else if (t.stage === "guess" && t.tried.length === 0) {
+      if (!lvSetLine) lvSetLine = B.setterLine(seen, setter ? "self" : "handoff", history);
+      speak(lvIdle || { text: lvSetLine });
+    } else if (t.stage === "guess") speak(lvIdle || lvNote);
+    else speak("");
+    if (flash) flashFace(flash);
+  }
+
+  function setWordLive() {
+    const word = normalizeWord(setupInput.value);
+    if (!validWord(word)) { setupError.textContent = "Enter a word from 3 to 20 letters (A-Z only)."; return; }
+    setupError.textContent = "";
+    setupInput.value = "";
+    ms.send({ t: "set", word });
+  }
+
+  function leaveLive() {
+    if (ms.active()) ms.stop();
+    M = null; lvKey = ""; roomEl.hidden = true; tauntsEl.hidden = true; scoreEl.hidden = true;
+    delete setupEl.dataset.live; spoken = null;
+  }
+  function enterLive() {
+    M = null; lvKey = "";
+    wordEl.textContent = ""; missesEl.textContent = ""; keyboardEl.hidden = true; setupEl.hidden = true;
+    paintMood(0, ""); speak(""); Gamekit.turn(null, ""); statusEl.textContent = "";
+    const c = (params.get("live") || "").toUpperCase();
+    if (invited && /^[A-HJ-NP-Z2-9]{6}$/.test(c) && !ms.active()) ms.enter(c);
+    else if (!ms.active()) ms.landing();
+    else renderLive();
+  }
+
+  // Typing a letter guesses it (a computer keyboard), whichever mode is on.
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || !/^[a-zA-Z]$/.test(e.key)) return;
+    if (e.target.closest && e.target.closest("input,select,textarea,[contenteditable]")) return;
+    if (document.querySelector(".man-backdrop") || document.querySelector(".gk-over")) return;
+    const key = [...keyboardEl.querySelectorAll(".hm-key")].find((k) => k.textContent === e.key.toUpperCase() && !k.disabled);
+    if (key && !keyboardEl.hidden) { e.preventDefault(); key.click(); }
+  });
+
   function applyMode() {
-    const wa = modeSel.value === "whatsapp";
-    resetBtn.hidden = wa;
-    clearIdle(true); loIdle = ""; waIdle = "";
-    if (wa) { link.show(); return; }
+    const mode = modeSel.value, wa = mode === "whatsapp", live = mode === "live";
+    resetBtn.hidden = wa || live;
+    clearIdle(true); loIdle = ""; waIdle = ""; lvIdle = "";
+    if (wa) { leaveLive(); link.show(); return; }
     link.hide();
+    if (live) { enterLive(); return; }
+    leaveLive();
     resetLocal();
   }
 
   // Setup form is shared between modes; route to the right handler.
-  setupBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? setWordWA() : setWordLocal()));
+  setupBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? setWordWA() : modeSel.value === "live" ? setWordLive() : setWordLocal()));
 
   // The top-bar restart clicks this button even when WhatsApp mode hides it.
-  resetBtn.addEventListener("click", () => (modeSel.value === "whatsapp" ? link.newGame() : resetLocal()));
+  resetBtn.addEventListener("click", () => { if (modeSel.value === "whatsapp") link.newGame(); else if (modeSel.value === "local") resetLocal(); else { const rm = roomEl.querySelector("button.primary"); if (rm) rm.click(); } });   // online: the card's Play again votes for the rematch
   modeSel.addEventListener("change", applyMode);
+  const talkSel = document.getElementById("talk");
+  if (talkSel) {
+    talkSel.value = talk;
+    talkSel.addEventListener("change", () => {
+      talk = talkSel.value; historyStore.set("talk", talk);
+      spoken = null; clearIdle(true);
+      if (talk === "off") { bubbleEl.hidden = true; delete stageEl.dataset.face; }
+    });
+  }
+  if (invited) modeSel.value = "live";
+  if (typeof LiveShare !== "undefined") LiveShare.enable(modeSel, "hangman", invited);
   applyMode();
 
   // A refresh keeps a same-device game: the secret word and the letters tried.
@@ -528,7 +693,7 @@
 
   window.__hangmanTest = {
     boardToStr, strToBoard, wrongCount, isSolved, normalizeWord, validWord, MAX_WRONG,
-    banter: B, history, idle: showIdle, poke,
+    banter: B, history, idle: showIdle, poke, live: () => M,
     mood: () => stageEl.dataset.mood,
     face: () => stageEl.dataset.face || "",
   };

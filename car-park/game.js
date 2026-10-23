@@ -20,6 +20,7 @@
   const boardEl = $("board"), innerEl = $("inner"), gridEl = $("grid"), carsEl = $("cars");
   const statusEl = $("status"), noteEl = $("note");
   const levelNumEl = $("level-num"), movesEl = $("moves"), bestEl = $("best");
+  const titleEl = document.querySelector(".topbar h1");
   const levelSel = $("level-sel"), newBtn = $("new-btn");
   const undoBtn = $("undo-btn"), hintBtn = $("hint-btn"), resetBtn = $("reset-btn");
   const store = Gamekit.storage("car-park:");
@@ -86,6 +87,43 @@
     el.style.height = "calc(" + pct(h) + "% - 6px)";
   }
 
+  /* ---------- the vehicles: top-down pictures, drawn here so every level can use them ---------- */
+  const INK = "#111", GLASS = "#1a1c20";
+  const SEDAN = ["#f1f2f4", "#bdd9ee", "#f1f2f4", "#ecd8b2", "#bdd9ee"];
+  const svg = (len, inner) => '<svg viewBox="0 0 ' + len * 100 + ' 100" aria-hidden="true" focusable="false">' + inner + '</svg>';
+  function sedan(c) {
+    const roof = 'color-mix(in srgb, ' + c + ' 86%, #fff)';
+    return svg(2, '<rect x="6" y="12" width="188" height="76" rx="34" fill="' + c + '" stroke="' + INK + '" stroke-width="5"/>'
+      + '<path d="M134 28C152 32 156 42 156 50C156 58 152 68 134 72Z" fill="' + GLASS + '"/><path d="M64 30C50 34 46 42 46 50C46 58 50 66 64 70Z" fill="' + GLASS + '"/>'
+      + '<rect x="64" y="26" width="70" height="48" rx="9" fill="' + roof + '" stroke="' + INK + '" stroke-width="3"/>'
+      + '<rect x="70" y="19" width="58" height="8" rx="4" fill="' + GLASS + '"/><rect x="70" y="73" width="58" height="8" rx="4" fill="' + GLASS + '"/>'
+      + '<rect x="124" y="3" width="12" height="10" rx="3" fill="' + c + '" stroke="' + INK + '" stroke-width="3"/><rect x="124" y="87" width="12" height="10" rx="3" fill="' + c + '" stroke="' + INK + '" stroke-width="3"/>');
+  }
+  function truck() {
+    return svg(3, '<rect x="6" y="10" width="206" height="80" rx="10" fill="#cdbfa0" stroke="' + INK + '" stroke-width="5"/>'
+      + '<path d="M58 22V78M104 22V78M150 22V78" stroke="#a89b7c" stroke-width="5" stroke-linecap="round"/>'
+      + '<rect x="212" y="20" width="82" height="60" rx="22" fill="#e4d7ba" stroke="' + INK + '" stroke-width="5"/>'
+      + '<rect x="228" y="30" width="30" height="40" rx="6" fill="#d8ccae"/><path d="M262 28C278 32 284 42 284 50C284 58 278 68 262 72Z" fill="' + GLASS + '"/>'
+      + '<rect x="246" y="11" width="11" height="9" rx="3" fill="#e4d7ba" stroke="' + INK + '" stroke-width="3"/><rect x="246" y="80" width="11" height="9" rx="3" fill="#e4d7ba" stroke="' + INK + '" stroke-width="3"/>');
+  }
+  function keyTruck() {
+    return svg(2, '<rect x="6" y="10" width="124" height="80" rx="8" fill="#f2424a" stroke="' + INK + '" stroke-width="5"/>'
+      + '<path d="M24 32H112M24 50H112M24 68H112" stroke="#cf3039" stroke-width="4" stroke-linecap="round"/>'
+      + '<path d="M56 36L82 50L56 64" fill="none" stroke="#cf3039" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<rect x="130" y="20" width="64" height="60" rx="20" fill="#f2424a" stroke="' + INK + '" stroke-width="5"/>'
+      + '<rect x="140" y="30" width="22" height="40" rx="6" fill="#d9333b"/><path d="M164 28C178 32 184 42 184 50C184 58 178 68 164 72Z" fill="' + GLASS + '"/>');
+  }
+  function sprite(v) {
+    const w = document.createElement("span");
+    w.className = "cp-sprite";
+    w.setAttribute("aria-hidden", "true");
+    // facing: the red truck always faces the exit; the others face either way, by id, so a lot looks lived in
+    const flip = v.id !== CP.RED && v.id % 2 === 1;
+    w.style.setProperty("--turn", (v.dir === "v" ? (flip ? -90 : 90) : (flip ? 180 : 0)) + "deg");
+    w.innerHTML = v.id === CP.RED ? keyTruck() : v.len === 3 ? truck() : sedan(SEDAN[v.id % SEDAN.length]);
+    return w;
+  }
+
   function makeCar(v) {
     const b = document.createElement("button");
     b.type = "button";
@@ -97,9 +135,8 @@
     else b.setAttribute("aria-pressed", "false");
     if (hintMove && hintMove.id === v.id) b.dataset.hint = "1";
     b.setAttribute("aria-label", labelFor(v));
-    const cab = document.createElement("span");
-    cab.className = "cp-cab";
-    b.appendChild(cab);
+    b.dataset.dir = v.dir;
+    b.appendChild(sprite(v));
     place(b, v);
     return b;
   }
@@ -174,17 +211,21 @@
 
   function setStatus() {
     if (won) return;
-    statusEl.textContent = "Level " + (levelIndex + 1) + " · par " + level.best + ". Get the red car out.";
+    const b = store.getInt("best:" + levelIndex, null);
+    statusEl.textContent = moves === 0 ? "Level " + (levelIndex + 1) + " · par " + level.best + ". Get the red car out."
+      : "Moves " + moves + " · par " + level.best + (b === null ? "" : " · best " + b);
   }
 
   function updateHud() {
     levelNumEl.textContent = (levelIndex + 1) + "/" + LEVELS.length;
+    titleEl.innerHTML = "<small>par " + level.best + "</small>Level " + (levelIndex + 1);
     movesEl.textContent = String(moves);
     const b = store.getInt("best:" + levelIndex, null);
     bestEl.textContent = b === null ? "—" : String(b);
     undoBtn.disabled = won || !history.length;
     hintBtn.disabled = won;
     levelSel.value = String(levelIndex);
+    setStatus();
   }
 
   function clearHint() {

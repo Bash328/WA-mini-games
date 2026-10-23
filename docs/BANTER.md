@@ -255,5 +255,6 @@ fire in a situation the game does not report. `node shared/taunts.test.mjs` pass
 Context tags, the safe-slot picker and template slots are still open (plan
 steps 3-4).
 
+## Hangman pacing (2026-10-23)
 
-
+Pacing (2026-10-23): `react(st, word, mask, ch, level)` wraps the old picker. A line is owed at the first miss, the last life (and its first two right letters) and as the answer to his own hint; otherwise he stays quiet for `QUIET_GUESSES[level]` guesses after speaking (some 5, lots 1, off never). The page fades ordinary bubbles after about 1.5s + 40ms a character, shows a short face (`flashFace`) for a quiet guess, and keeps end-of-game lines up. Measured on 800 simulated games per setting: about 5.4 lines a game before, 2.4 on some, 4.2 on lots, 0 on off (`node hangman/banter.test.mjs`).

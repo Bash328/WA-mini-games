@@ -24,7 +24,7 @@
   "use strict";
 
   const REJECT = {
-    "not-host": "Only the host can do that.", "need-2": "You need at least 2 players. Add a computer player or wait for a friend.",
+    "not-host": "Only the host can do that.", "need-2": "You need at least 2 players. Add a bot or wait for a friend.",
     full: "There are no free seats for that.", illegal: "That can't be done right now.", "not-your-turn": "It's not your turn.",
     "rate-limit": "Slow down a little.", "in-game": "You can't change that during a game.", "bad-config": "That setting isn't allowed.",
     "not-playing": "The game isn't running.", "not-seated": "You aren't seated in this game.",
@@ -191,7 +191,7 @@
       if (M.phase === "landing") {
         roomEl.append(el("h3", "", "Play " + opts.title + " online"));
         roomEl.append(el("p", "note", opts.fixedSeats
-          ? opts.title + " always has " + tableSize + " seats. " + (opts.fillSeats === false ? "Create a room and send the invite link: the game starts when " + tableSize + " people are in." : "Create a room and send the invite link: friends take a seat, and computers fill any still empty when the game starts.")
+          ? opts.title + " always has " + tableSize + " seats. " + (opts.fillSeats === false ? "Create a room and send the invite link: the game starts when " + tableSize + " people are in." : "Create a room and send the invite link: friends take a seat, and bots fill any still empty when the game starts.")
           : "Up to " + tableSize + " players. Create a room and send the invite link, or join a friend's room with its code. The host can add computer players to fill seats."));
         const row = el("div", "ms-join");
         row.append(btn("Create a room", "primary", () => enter(null)));
@@ -229,7 +229,7 @@
         const botRows = Math.min(tableSize - M.players.length, Math.max(M.config.bots, auto));
         for (let i = 0; i < botRows; i++) {
           const r = el("div", "ms-seat");
-          r.append(el("span", "", "Computer " + (i + 1)), el("span", "tag", i < M.config.bots ? M.config.level : "fills a seat"));
+          r.append(el("span", "", "Bot " + (i + 1)), el("span", "tag", i < M.config.bots ? M.config.level : "fills a seat"));
           seats.append(r);
         }
         for (let i = M.players.length + botRows; i < tableSize; i++) seats.append(el("div", "ms-seat empty", "Waiting for someone to join…"));
@@ -239,9 +239,9 @@
         if (!opts.fixedSeats) {
           const botChoices = [[0, "None"]];
           for (let n = 1; n < tableSize; n++) botChoices.push([n, String(n)]);
-          cfg.append(seg("Computer players", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= tableSize : null));
+          cfg.append(seg("Bots", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= tableSize : null));
         }
-        cfg.append(seg("Computer level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), isHost ? () => true : null));
+        if (opts.fillSeats !== false) cfg.append(seg("Bot level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), isHost ? () => true : null));
         roomEl.append(cfg);
         if (isHost) {
           const go = btn("Start the game", "primary", () => sendRaw({ t: "start" }));
@@ -249,8 +249,8 @@
           go.disabled = M.seatsWanted < minSeats;
           roomEl.append(go);
           roomEl.append(el("p", "note", M.seatsWanted < minSeats
-            ? opts.fixedSeats ? "You need at least one more person: invite a friend with the link." : "You need at least " + minSeats + " players: invite a friend or add a computer."
-            : opts.fixedSeats ? (opts.fillSeats === false ? "It starts when " + tableSize + " people are in the room." : "It starts when you tap Start, or by itself when " + tableSize + " people are in the room. Empty seats are played by computers.") : "It starts when you tap Start, or by itself when all " + tableSize + " seats are full."));
+            ? opts.fixedSeats ? "You need at least one more person: invite a friend with the link." : "You need at least " + minSeats + " players: invite a friend or add a bot."
+            : opts.fixedSeats ? (opts.fillSeats === false ? "It starts when " + tableSize + " people are in the room." : "It starts when you tap Start, or by itself when " + tableSize + " people are in the room. Empty seats are played by bots.") : "It starts when you tap Start, or by itself when all " + tableSize + " seats are full."));
         } else roomEl.append(el("p", "note", "Waiting for " + ((M.players.find((p) => p.host) || {}).name || "the host") + " to start. Only the host can change the settings."));
         if (typeof Account !== "undefined") {
           Account.status().then((st) => {
@@ -284,12 +284,12 @@
           if (!opts.fixedSeats) {
             const botChoices = [[0, "None, just the people here"]];
             for (let n = 1; n < tableSize; n++) botChoices.push([n, String(n)]);
-            cfg.append(seg("Computer players", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), (v) => M.players.length + v <= tableSize));
+            cfg.append(seg("Bots", botChoices, M.config.bots, (v) => sendRaw({ t: "config", bots: v }), (v) => M.players.length + v <= tableSize));
           }
-          cfg.append(seg("Computer level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), () => true));
+          if (opts.fillSeats !== false) cfg.append(seg("Bot level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => sendRaw({ t: "config", level: v }), () => true));
           roomEl.append(cfg);
-          if (opts.fixedSeats) roomEl.append(el("p", "note", "Empty seats are filled by computers at the level above."));
-        } else roomEl.append(el("p", "note", "The host chooses the computer players for the rematch."));
+          if (opts.fixedSeats && opts.fillSeats !== false) roomEl.append(el("p", "note", "Empty seats are filled by bots at the level above."));
+        } else roomEl.append(el("p", "note", "The host chooses the bots for the rematch."));
         const mine = M.players.find((p) => p.pid === M.you.pid);
         const rm = btn(mine && mine.voted ? "Waiting for the others…" : "Rematch", "primary", () => sendRaw({ t: "vote" }));
         rm.disabled = !!(mine && mine.voted);

@@ -442,19 +442,19 @@
       const reversed = confidenceGivenTo === loserColor;
       statusEl.textContent = aiColor === null
         ? `${NAMES[winnerColor]} wins.` + (reversed ? " " + Gamekit.taunt("reversal") : "")
-        : (winnerColor === aiColor ? "Computer wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! 🎉 " + Gamekit.taunt("win"));
+        : (winnerColor === aiColor ? "Bot wins. " + Gamekit.taunt(reversed ? "reversal" : "loss") : "You win! " + Gamekit.taunt("win"));
     } else if (aiThinking) {
-      statusEl.textContent = "Computer thinking…";
-      Gamekit.turn(aiColor, "Computer thinking…", true);
+      statusEl.textContent = "Bot thinking…";
+      Gamekit.turn(aiColor, "Bot thinking…", true);
     } else {
       // one-shot: kept through the AI's turn, cleared once shown
       const aiTurnNow = aiColor !== null && localCurrent === aiColor;
       const note = aiTurnNow ? "" : confidenceNote;
       if (note) confidenceNote = "";
-      const base = aiColor !== null ? (localCurrent === aiColor ? "Computer thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
+      const base = aiColor !== null ? (localCurrent === aiColor ? "Bot thinking…" : "Your move.") : `${NAMES[localCurrent]}'s move.`;
       statusEl.textContent = base + (note ? " " + note : "");
       const aiTurn = aiColor !== null && localCurrent === aiColor;
-      Gamekit.turn(localCurrent, aiTurn ? "Computer thinking…" : aiColor !== null ? "Your move · you're " + NAMES[localCurrent] : `${NAMES[localCurrent]}'s move`, aiTurn);
+      Gamekit.turn(localCurrent, aiTurn ? "Bot thinking…" : aiColor !== null ? "Your move · you're " + NAMES[localCurrent] : `${NAMES[localCurrent]}'s move`, aiTurn);
     }
   }
 

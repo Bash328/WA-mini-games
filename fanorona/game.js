@@ -234,8 +234,8 @@
 
   function aiTurn() {
     thinking = true;
-    Gamekit.turn(cur, chainActive() ? "Computer · keep capturing" : "Computer thinking…", true);
-    statusEl.textContent = "Computer thinking…";
+    Gamekit.turn(cur, chainActive() ? "Bot · keep capturing" : "Bot thinking…", true);
+    statusEl.textContent = "Bot thinking…";
     render();
     aiTimer = setTimeout(aiMove, 800 + Math.floor(Math.random() * 500));   // 0.8–1.3 s
   }
@@ -264,8 +264,8 @@
     const chain = chainActive();
     if (mode === "ai") {
       if (cur !== humanIs) {
-        Gamekit.turn(cur, chain ? "Computer · keep capturing" : "Computer thinking…", true);
-        statusEl.textContent = "Computer thinking…";
+        Gamekit.turn(cur, chain ? "Bot · keep capturing" : "Bot thinking…", true);
+        statusEl.textContent = "Bot thinking…";
         return;
       }
       Gamekit.turn(cur, chain ? "Keep capturing" : "Your move · you're " + NAMES[humanIs]);
@@ -282,7 +282,7 @@
     sel = null;
     Gamekit.turn(null);
     if (status === "draw") statusEl.textContent = "Draw. 60 quiet turns. " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = NAMES[winner] + " wins. " + NAMES[other(winner)] + " — " + Gamekit.taunt("loss");
     render();
   }

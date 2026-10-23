@@ -200,8 +200,8 @@
     if (res.status !== "in_progress") return finish(res);
     if (mode === "ai" && current !== humanIs) {
       thinking = true;
-      Gamekit.turn(slotOf(current), "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(slotOf(current), "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 350);
       return;
@@ -233,7 +233,7 @@
     Gamekit.turn(null);
     if (res.status === "draw") statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
     else if (mode === "ai") {
-      statusEl.textContent = res.winner === humanIs ? "You win! 🎉 " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+      statusEl.textContent = res.winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     } else {
       statusEl.textContent = `${NAMES[res.winner]} wins. ${NAMES[other(res.winner)]} — ${Gamekit.taunt("loss")}`;
     }

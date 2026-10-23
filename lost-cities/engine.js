@@ -91,7 +91,7 @@
 
   function create(opts, rng) {
     opts = opts || {};
-    const names = Array.isArray(opts.names) ? opts.names : ["You", "Computer"];
+    const names = Array.isArray(opts.names) ? opts.names : ["You", "Bot"];
     if (names.length !== TABLE_SIZE) throw new Error("Lost Cities needs exactly 2 seats");
     const bots = opts.bots || [];
     const st = {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../shared/ga.js?v=e72d72bb"></script>
+<script src="../shared/ga.js?v=29f6c01f"></script>
 <title>car park · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -229,15 +229,63 @@
   @media (min-width: 560px) {
     .cp-board { width: min(100%, 480px); margin: 10px auto 4px; }
   }
+  /* ---- the reference look: a grey frame round a near-black lot, illustrated vehicles, an exit tab with chevrons,
+          a "Level N" header and two round buttons ---- */
+  html body.fun.g-car-park { --fun-bg: #25302a; --fun-chip: rgba(0, 0, 0, .28); }
+  .cp-board { width: calc(100% - 22px); margin: 14px auto 4px; padding: 7px; border-radius: 18px; background: #7b7d81; box-shadow: 0 8px 0 rgba(0, 0, 0, .25); overflow: visible; }
+  .cp-inner { border-radius: 12px; background: #1e2024; }
+  .cp-grid, .cp-inner::after { display: none; }
+  html body.fun.g-car-park .panel .cp-car,
+  html body.fun.g-car-park .panel .cp-car:hover,
+  html body.fun.g-car-park .panel .cp-car:active { background: transparent; box-shadow: none; border-radius: 10px; container-type: size; }
+  .cp-sprite {
+    position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; pointer-events: none;
+    transform: translate(-50%, -50%) rotate(var(--turn, 0deg)); filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4));
+  }
+  .cp-car[data-dir="v"] .cp-sprite { width: 100cqh; height: 100cqw; }       /* drawn lying down, turned to stand up */
+  .cp-sprite svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .cp-ghost { border-radius: 10px; }
+
+  .cp-exit { right: -22px; width: 22px; top: calc(7px + (100% - 14px) / 3); height: calc((100% - 14px) / 6); border-radius: 0 8px 8px 0; background: #1a1c20; box-shadow: none; }
+  .cp-exit::before { content: ""; position: absolute; left: -9px; top: 0; bottom: 0; width: 9px; background: #1e2024; }      /* the gap in the frame */
+  .cp-exit::after {
+    left: 6px; width: 10px; height: 24px; border: 0; transform: translateY(-50%);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 24'%3E%3Cpath d='M2 1.5L7 4.5L2 7.5M2 9L7 12L2 15M2 16.5L7 19.5L2 22.5' fill='none' stroke='%23858a92' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  body.fun.g-car-park .topbar .fun-pills[hidden] { display: none; }      /* (the stats live on in the status line; the elements stay for the page script) */
+  body.fun.g-car-park .topbar h1 { font-size: 24px; line-height: 1.05; }
+  body.fun.g-car-park .topbar h1 small {
+    display: block; width: max-content; margin: 0 auto 3px; padding: 2px 14px; border-radius: 999px; background: rgba(0, 0, 0, .32);
+    color: #fff; font-size: 11px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  /* undo and hint: two round yellow buttons at the bottom corners (reset is the header's restart) */
+  html body.fun.g-car-park .panel .gk-acts { display: flex; justify-content: space-between; margin: 10px 6px 0; }
+  html body.fun.g-car-park .panel .gk-acts #reset-btn { display: none; }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn,
+  html body.fun.g-car-park .panel .gk-acts #hint-btn {
+    position: relative; flex: 0 0 56px; width: 56px; height: 56px; min-width: 0; min-height: 0; padding: 0; border-radius: 50%; font-size: 0;
+    background: #fdbd2a; color: #fff; box-shadow: none;
+  }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn:disabled,
+  html body.fun.g-car-park .panel .gk-acts #hint-btn:disabled { background: #44505a; opacity: 1; box-shadow: none; }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn .glyph, html body.fun.g-car-park .panel .gk-acts #undo-btn .gk-undo-ico { display: none; }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn::before,
+  html body.fun.g-car-park .panel .gk-acts #hint-btn::before { content: ""; position: absolute; inset: 13px; background: #fff; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn:disabled::before,
+  html body.fun.g-car-park .panel .gk-acts #hint-btn:disabled::before { background: rgba(255, 255, 255, .4); }
+  html body.fun.g-car-park .panel .gk-acts #undo-btn { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7H15.5a4.5 4.5 0 0 1 0 9H8' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12 3.5L8.5 7L12 10.5' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html body.fun.g-car-park .panel .gk-acts #hint-btn { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.8a6.2 6.2 0 0 0-3.6 11.2c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6.2 6.2 0 0 0 12 2.8Z' fill='%23000'/%3E%3Crect x='9.6' y='17.6' width='4.8' height='2' rx='1' fill='%23000'/%3E%3Crect x='10.4' y='20.4' width='3.2' height='1.8' rx='.9' fill='%23000'/%3E%3C/svg%3E"); }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-car-park fun" data-next="Next level" data-fun-zone="mini" data-over-delay="320">
+<body class="g-car-park fun" data-next="Next level" data-fun-zone="mini" data-fun-reset data-over-delay="320">
 <main class="wrap">
   <div class="topbar">
     <h1>car park</h1>
     <a class="back" href="../">← all games</a>
-    <div class="fun-pills"><div><small>Level</small><b id="level-num">1/42</b></div><div><small>Moves</small><b id="moves">0</b></div><div class="best"><small>Best</small><b id="best">—</b></div></div>
+    <div class="fun-pills" hidden><div><small>Level</small><b id="level-num">1/42</b></div><div><small>Moves</small><b id="moves">0</b></div><div class="best"><small>Best</small><b id="best">—</b></div></div>
   </div>
   <div class="panel">
     <div class="row">
@@ -294,9 +342,9 @@
 
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 <script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
 <script defer src="rules.js?v=5fd430b9"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=afd1ae0d"></script>
+<script defer src="game.js?v=2214f196"></script>
 </body>
 </html>

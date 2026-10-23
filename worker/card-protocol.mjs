@@ -35,13 +35,14 @@ import "../farkle/engine.js";
 import "../lost-cities/engine.js";
 import "../cribbage/engine.js";
 import "../skull/engine.js";
+import "../hangman/engine.js";
 
 /* One engine per game, all with the same shape (see crazy-8/engine.js):
    create, act, botAct, view, nextRound, and optionally fallback(state, seat)
    (an action that is always legal) and PAUSE (ms between rounds). An engine
    may set TABLE_SIZE: seats a game needs exactly (Hearts: 4) — startGame
    tops the host's computers up to it. */
-const ENGINES = { "crazy-8": globalThis.Crazy8, "liars-dice": globalThis.LiarsDice, "dominoes": globalThis.Dominoes, "ludo": globalThis.Ludo, "hearts": globalThis.Hearts, "farkle": globalThis.Farkle, "lost-cities": globalThis.LostCities, "cribbage": globalThis.Cribbage, "skull": globalThis.Skull };
+const ENGINES = { "crazy-8": globalThis.Crazy8, "liars-dice": globalThis.LiarsDice, "dominoes": globalThis.Dominoes, "ludo": globalThis.Ludo, "hearts": globalThis.Hearts, "farkle": globalThis.Farkle, "lost-cities": globalThis.LostCities, "cribbage": globalThis.Cribbage, "skull": globalThis.Skull, "hangman": globalThis.HangmanEngine };
 const GAME_MODES = { "crazy-8": ["normal", "tournament"] };
 export const CARD_GAMES = Object.keys(ENGINES);
 const engineOf = (room) => ENGINES[room.game];
@@ -161,7 +162,7 @@ export function leave(room, pid, now, rng) {
     if (next) { room.host = next.pid; notices.push(displayName(room, next) + " is the host now."); }
   }
   if (room.phase === "playing") {
-    notices.push(displayName(room, p) + " left; a computer is playing their seat.");
+    notices.push(displayName(room, p) + " left; a bot is playing their seat.");
     scheduleBot(room, now, rng);
   }
   return notices;
@@ -307,7 +308,7 @@ export function tick(room, now, rng) {
     for (const p of humans(room)) {
       if (!p.online && p.offlineSince !== null && !p.autoBot && now - p.offlineSince >= OFFLINE_TAKEOVER_MS) {
         p.autoBot = true;
-        notices.push(displayName(room, p) + " has been offline for " + Math.round(OFFLINE_TAKEOVER_MS / 1000) + " seconds. A computer is playing for them; they can take their seat back when they return.");
+        notices.push(displayName(room, p) + " has been offline for " + Math.round(OFFLINE_TAKEOVER_MS / 1000) + " seconds. A bot is playing for them; they can take their seat back when they return.");
       }
     }
   }
@@ -325,7 +326,7 @@ export function tick(room, now, rng) {
       if (!a.ok) continue;
       if (idle) {
         const p = player(room, room.table[seat].pid);
-        notices.push(displayName(room, p) + " took too long, so a computer passed for them.");
+        notices.push(displayName(room, p) + " took too long, so a bot passed for them.");
       }
       afterEvents(room, a.events, now, rng);
       if (room.state.phase !== "pass") break;
@@ -358,7 +359,7 @@ export function tick(room, now, rng) {
       const a = engineOf(room).botAct(room.state, seat, "medium", rng);
       const res = engineOf(room).act(room.state, seat, a, rng);
       if (!res.ok) break;
-      notices.push(displayName(room, p) + " took too long, so a computer played their turn.");
+      notices.push(displayName(room, p) + " took too long, so a bot played their turn.");
       afterEvents(room, res.events, now, rng);
       continue;
     }

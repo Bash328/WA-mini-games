@@ -217,8 +217,8 @@
     if (over) return finish();
     if (mode === "ai" && current !== humanIs) {
       thinking = true;
-      Gamekit.turn(current, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(current, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(() => { aiTimer = null; thinking = false; if (over) return; place(aiPick(diff), current); afterMove(); }, 350);
       return;
@@ -239,7 +239,7 @@
     cancelAI();
     Gamekit.turn(null);
     if (!winner) statusEl.textContent = "Draw. " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! 🎉 " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = `${NAMES[winner]} wins. ${NAMES[other(winner)]} — ${Gamekit.taunt("loss")}`;
     render();
   }

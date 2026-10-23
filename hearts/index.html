@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../shared/ga.js?v=e72d72bb"></script>
+<script src="../shared/ga.js?v=29f6c01f"></script>
 <title>hearts · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -135,13 +135,15 @@
   body.g-hearts .topbar .back { background: rgba(255,255,255,.1); box-shadow: none; }
   body.g-hearts .panel > .row, body.g-hearts .panel > .game-controls, body.g-hearts .panel > .toolbar { display: none; }
   body.g-hearts .ht-scores { display: none; }
-  body.g-hearts .gk-optwrap { position: fixed !important; top: 76px !important; right: 12px !important; left: auto !important; width: 44px; height: 44px; z-index: 30; }
-  body.g-hearts .gk-optbtn { width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 0; overflow: hidden; justify-content: center; }
+  /* the gear sits in the header row, just left of restart (back 56px, restart 56px, 8px gaps) */
+  body.g-hearts .gk-optwrap { position: fixed !important; top: 14px !important; right: calc(max(0px, 50vw - 215px) + 72px) !important; left: auto !important; width: 56px; height: 56px; z-index: 30; }
+  body.g-hearts .gk-optbtn { width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 0; overflow: hidden; justify-content: center; }
   body.g-hearts .gk-optbtn span { display: none; }
-  body.g-hearts .gk-optbtn .gk-gear { width: 22px; height: 22px; }
-  body.g-hearts .gk-opts { top: 52px; right: 0; left: auto; }
+  body.g-hearts .gk-optbtn .gk-gear { width: 26px; height: 26px; }
+  /* the menu opens under the header across the page column (its wrapper is only the 56px gear) */
+  html body.fun.g-hearts[data-fun-zone] .gk-menu { position: fixed; top: 78px; left: max(8px, calc(50vw - 207px)); right: max(8px, calc(50vw - 207px)); }
   body.g-hearts #gk-slot { display: none; }
-  #ht { margin: 66px -8px 0; padding: 0 8px; overflow: visible; }
+  #ht { margin: 22px -8px 0; padding: 0 8px; overflow: visible; }
 
   .ht-stage {
     width: 72%; height: 82cqw; margin: 18px auto 0; border-radius: 6cqw;
@@ -194,10 +196,79 @@
   #ht .ht-card.dim { background: #c8bfae; border-color: #211d1a; color: #51463d; }
   .ht-hint { min-height: 3.4cqw; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .03em; }
 
-  @media (max-width: 360px) {
-    .ht-stage { width: 76%; height: 86cqw; margin-top: 12px; }
-    .ht-ol { left: -7cqw; } .ht-or { right: -7cqw; }
+  /* ---- the reference layout: a tall flat felt table with a heart on it, big cream name tags straddling its rim,
+          and the three hands OUTSIDE it (across above, the other two as stacks at the screen edges) ---- */
+  html body.fun.g-hearts { --ht-felt: #17566f; --ht-rim: #f4a63f; --ht-tag: #ffd29f; --ht-tagink: #b8363a; }
+  /* the whole layout is in cqw of #ht, so on a short screen narrowing #ht scales it all down to fit instead of scrolling */
+  /* (header and bottom padding take about 116px; the layout is 195cqw tall) */
+  #ht { --htw: min(calc(100% + 16px), calc((100svh - 116px) * .50)); width: var(--htw); margin: 0 0 0 calc(50% - var(--htw) / 2); overflow-x: clip; }
+  #ht .ht-stage {
+    width: 77%; height: 104cqw; margin: 38.5cqw auto 0; border-radius: 10cqw; background: var(--ht-felt);
+    box-shadow: 0 0 0 1.7cqw var(--ht-rim), 0 1.5cqw 0 1.7cqw rgba(0,0,0,.28);
   }
+  #ht .ht-stage::before {
+    content: ""; position: absolute; left: 15%; right: 15%; top: 21%; bottom: 20%; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90'%3E%3Cpath d='M50 86C12 58-6 28 18 11 33 1 47 9 50 20 53 9 67 1 82 11 106 28 88 58 50 86Z' fill='%23000' fill-opacity='.13'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  /* the hand boxes only group the tag and the cards: both are placed against the table */
+  #ht .ht-op, #ht .ht-ol, #ht .ht-or { display: contents; }
+  #ht .ht-opp .st { display: none; }
+
+  #ht .ht-opp .nm, #ht .ht-me {
+    position: absolute; z-index: 3; display: flex; align-items: center; gap: 1.8cqw; max-width: none;
+    padding: 1.7cqw 4.6cqw; border-radius: 999px; background: var(--ht-tag); box-shadow: 0 0 0 .9cqw var(--ht-rim);
+    color: var(--ht-tagink); font-size: 5.6cqw; line-height: 1; letter-spacing: .01em; text-transform: uppercase; white-space: nowrap;
+  }
+  #ht .ht-opp .nm b, #ht .ht-me b { font-weight: 400; color: inherit; }
+  #ht .ht-opp .nm .sc, #ht .ht-me .sc {
+    font-style: normal; padding: .5cqw 1.9cqw; border-radius: 999px; background: var(--ht-tagink); color: var(--ht-tag); font-size: 4.2cqw; min-width: 6.4cqw; text-align: center;
+  }
+  #ht .ht-op .nm { left: 50%; top: 0; transform: translate(-50%, -50%); }
+  #ht .ht-me { left: 50%; top: 100%; bottom: auto; transform: translate(-50%, -50%); }
+  #ht .ht-ol .nm, #ht .ht-or .nm { writing-mode: vertical-rl; padding: 4.6cqw 1.7cqw; top: 50%; }
+  #ht .ht-ol .nm { left: 0; transform: translate(-50%, -50%) rotate(180deg); }
+  #ht .ht-or .nm { left: 100%; transform: translate(-50%, -50%); }
+  /* on the vertical tags the score is plain text after the name */
+  #ht .ht-ol .nm, #ht .ht-or .nm { gap: 1.2cqw; }
+  #ht .ht-ol .nm .sc, #ht .ht-or .nm .sc { padding: 0; min-width: 0; background: none; color: inherit; font-size: inherit; }
+  #ht .ht-ol .nm .sc::before, #ht .ht-or .nm .sc::before { content: "·"; margin-bottom: 1.2cqw; }
+  #ht .ht-opp.now .nm, #ht .ht-me.now { background: #fff1c9; box-shadow: 0 0 0 .9cqw var(--ht-rim), 0 0 0 2cqw rgba(255,211,74,.5); }
+
+  /* the hands: card backs are dark maroon with a red edge */
+  #ht .ht-card.back { background: #4b2121; border-color: #150e0e; }
+  #ht .ht-card.back::before { inset: .7cqw; border: .55cqw solid #c24d4b; background: none; border-radius: 1.5cqw; }
+  #ht .ht-opp .fan { position: absolute; display: flex; height: auto; filter: drop-shadow(0 .5cqw 0 rgba(0,0,0,.25)); }
+  #ht .ht-op .fan { left: 50%; bottom: calc(100% + 9.5cqw); transform: translateX(-50%); flex-direction: row-reverse; }
+  #ht .ht-op .ht-card.sm { width: 16cqw; height: 23cqw; margin: 0 -14.1cqw 0 0; border-radius: 2.2cqw; box-shadow: none; }
+  #ht .ht-ol .fan, #ht .ht-or .fan { top: 45%; transform: translateY(-50%); flex-direction: column; }
+  #ht .ht-or .fan { flex-direction: column-reverse; }
+  #ht .ht-ol .fan { left: -26.5cqw; align-items: flex-start; }
+  #ht .ht-or .fan { right: -26.5cqw; left: auto; align-items: flex-end; }
+  #ht .ht-ol .ht-card.sm { width: 19cqw; height: 13cqw; margin: -10.7cqw 0 0; border-radius: 2.2cqw; box-shadow: none; }
+  #ht .ht-or .ht-card.sm { width: 19cqw; height: 13cqw; margin: 0 0 -10.7cqw; border-radius: 2.2cqw; box-shadow: none; }
+  #ht .ht-op .ht-card.sm:first-child, #ht .ht-or .ht-card.sm:first-child { margin-right: 0; margin-bottom: 0; }
+  #ht .ht-ol .ht-card.sm:first-child { margin-top: 0; }
+
+  /* the middle: just the cards of the trick (the old dashed circle goes) */
+  .ht-empty { display: none; }
+  .ht-play { width: 14cqw; height: 20cqw; }
+  .ht-note { bottom: -2cqw; width: 58cqw; font-size: 3.4cqw; color: rgba(255,255,255,.72); text-transform: uppercase; letter-spacing: .03em; }
+
+  /* your hand: big overlapping cards from the left edge; a playable card is white, the rest grey */
+  #ht .ht-handbar { margin: 15cqw -8px 0; padding: 0 8px; }
+  #ht .ht-hand { justify-content: flex-start; min-height: 27cqw; }
+  #ht .ht-card { width: 18cqw; height: 27cqw; margin-left: -11.1cqw; border-width: .65cqw; border-radius: 2.5cqw; }
+  #ht .ht-hand .ht-card:first-child { margin-left: 0; }
+  /* a chosen card only lifts: raised above its neighbours it would hide the slice of the next card you want to tap */
+  #ht .ht-card.pick { z-index: auto; }
+  #ht .ht-card .r { top: 1cqw; left: 1.5cqw; font-size: 7.6cqw; }
+  #ht .ht-card.ten .r { font-size: 6.2cqw; }
+  #ht .ht-card .s { top: 8.8cqw; left: 1.6cqw; font-size: 5.8cqw; }
+  #ht .ht-card .big { right: -2cqw; bottom: -3cqw; font-size: 17cqw; }
+  #ht .ht-card.dim { background: #857c7c; border-color: #1a1414; color: #2c2626; opacity: 1; }
+  #ht .ht-card.dim.red { --ink: #7d2c2c; }
+  .ht-actions { min-height: 12cqw; padding-top: 2cqw; }
+  .ht-actions .btn { min-height: 9.5cqw; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -288,12 +359,12 @@
 
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 <script defer src="../shared/taunts.js?v=de2cfe57"></script>
-<script defer src="../shared/gamekit.js?v=e0e3f4c6"></script>
+<script defer src="../shared/gamekit.js?v=3678b5be"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
-<script defer src="../shared/live-share.js?v=2da83d25"></script>
-<script defer src="../shared/multiseat.js?v=f5bba1b1"></script>
+<script defer src="../shared/live-share.js?v=2267f8ba"></script>
+<script defer src="../shared/multiseat.js?v=eca9364b"></script>
 <script defer src="engine.js?v=e827ff37"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script defer src="game.js?v=609b4ea4"></script>
+<script defer src="game.js?v=5a90d66a"></script>
 </body>
 </html>

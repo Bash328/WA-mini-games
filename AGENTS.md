@@ -41,6 +41,9 @@ Do not read the whole event log for a small change. Search by file, tag or text.
 ## Useful commands
 
 ```powershell
+# Try the games by hand: a local server and an iPhone-sized window (390x844, touch)
+node tools/serve.mjs --phone
+
 # One entry point: static checks + every unit test, then the browser suite
 node tests/run.mjs units     # about a minute: no browser
 node tests/run.mjs changed   # units + only the games you changed (a quick pass if shared/ changed)
@@ -105,3 +108,5 @@ memory event.
 
 When records conflict, the newer verified record wins only after the older one
 is marked as superseded in a decision record.
+
+- Launch review per game: `node tools/launch-review.mjs <game>`; stamps are kept in `docs/LAUNCH.md`.

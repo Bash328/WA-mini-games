@@ -17,7 +17,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -42,15 +42,15 @@ const END = {
   checkers: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'tic-tac-toe': "document.getElementById('status').textContent='Draw. '+Gamekit.taunt('draw')",
   reversi: "document.getElementById('status').textContent='Black wins. '+Gamekit.taunt('loss')",
-  'connect-four': "document.getElementById('status').textContent='Computer wins. '+Gamekit.taunt('loss')",
-  backgammon: "document.getElementById('status').textContent='Computer wins. '+Gamekit.taunt('loss')",
+  'connect-four': "document.getElementById('status').textContent='Bot wins. '+Gamekit.taunt('loss')",
+  backgammon: "document.getElementById('status').textContent='Bot wins. '+Gamekit.taunt('loss')",
   'dots-and-boxes': "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   mancala: "document.getElementById('status').textContent='Player 1 wins. '+Gamekit.taunt('loss')",
   2048: "document.getElementById('over-msg').textContent='Game over. Final score: 123.'",
   minesweeper: "document.getElementById('status').textContent='Boom. '+Gamekit.taunt('boom')",
   memory: "document.getElementById('status').textContent='You won! Done in 14 moves, 12s. '+Gamekit.taunt('win')",
   'water-sort': "document.getElementById('status').textContent='You won! Sorted in 20 moves. '+Gamekit.taunt('win')",
-  'liars-dice': "document.getElementById('status').textContent='Computer 1 wins. '+Gamekit.taunt('loss')",
+  'liars-dice': "document.getElementById('status').textContent='Bot 1 wins. '+Gamekit.taunt('loss')",
   mastermind: "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'rock-paper-scissors': "document.getElementById('status').textContent='You win! '+Gamekit.taunt('win')",
   'word-ladder': "document.getElementById('status').textContent='Solved. Perfect! 4 steps. '+Gamekit.taunt('win')",
@@ -1441,11 +1441,14 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   await press('Z'); await p.waitForTimeout(200);                                  // the first miss draws his head ...
   const first = await state();
   if (first.hidden || !first.text) bad.push('he says nothing when his head appears (first miss)');
-  await press('X'); await p.waitForTimeout(200);                                  // ... and a second miss
+  await press('X'); await p.waitForTimeout(200);                                  // ... a second miss comes right after a line: he stays quiet
+  const quiet = await state();
+  if (!quiet.hidden) bad.push('he commented on the very next miss; after a line he should stay quiet for a few guesses');
+  for (const c of 'QJ') { await press(c); await p.waitForTimeout(150); }
+  await press('V'); await p.waitForTimeout(200);                                  // the fifth miss is the last life: he always speaks then
   const s = await state();
-  if (s.hidden || !s.text) bad.push('no speech bubble after two misses');
+  if (s.hidden || !s.text) bad.push('no speech bubble on the last life');
   else {
-    if (!s.beg) bad.push('expected him to beg (random forced to 0)');
     if (s.left < s.gRight - 2) bad.push('bubble overlaps the gallows');
     if (s.right > 390) bad.push('bubble runs off the screen');
     if (/[\u{1F300}-\u{1FAFF}]/u.test(s.text)) bad.push('emoji in the bubble');
@@ -1453,7 +1456,7 @@ check('hangman-man-speaks', 'the taunts should come from the stick man in a spee
   if (s.gl > 40) bad.push('gallows is not at the left edge (more room is wanted for the bubble)');
   if (s.gTop !== t0) bad.push('gallows moved when he spoke');
   if (s.sw > 390) bad.push('page got wider');
-  for (const c of 'QJVW') { await press(c); await p.waitForTimeout(150); }
+  await press('W'); await p.waitForTimeout(150);
   const e = await state();
   if (e.hidden || !e.text) bad.push('nothing says the last line when the game ends');
   const ghost = await p.evaluate(() => { const g = document.getElementById('ghost'), big = g.querySelector('.big'), b = document.getElementById('bubble'), gr = big.getBoundingClientRect(), br = b.getBoundingClientRect(), ga = document.getElementById('gallows').getBoundingClientRect(); return { shown: !g.hasAttribute('hidden') && gr.width > 0 && g.querySelectorAll('.hm-g').length === 1, bubbleGhost: b.classList.contains('ghost'), nextToBubble: gr.right <= br.left + 4 && Math.abs((gr.top + gr.bottom) / 2 - (br.top + br.bottom) / 2) < 70, besideMan: gr.left > ga.left + ga.width * 0.5, inside: gr.right <= 390 }; });
@@ -1488,12 +1491,15 @@ check('hangman-no-repeat', 'the stick man said the same line on consecutive miss
   const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
   const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
   const said = [];
-  for (const c of 'ZXQ') {
+  await p.evaluate(() => { const t = document.getElementById('talk'); t.value = 'lots'; t.dispatchEvent(new Event('change')); });   // the chattiest setting, so there are several lines to compare
+  for (const c of 'ZXQJ') {
     await press(c);
     await p.waitForTimeout(150);
-    said.push(await p.evaluate(() => document.getElementById('bubble').textContent));
+    const t = await p.evaluate(() => (document.getElementById('bubble').hidden ? '' : document.getElementById('bubble').textContent));
+    if (t) said.push(t);
   }
   const bad = [];
+  if (said.length < 2) bad.push('he said ' + said.length + ' lines in four misses on the chattiest setting');
   if (new Set(said).size !== said.length) bad.push('the same line appeared twice: ' + said.join(' / '));
   if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
   await p.close();
@@ -1528,7 +1534,7 @@ check('hangman-face-mood', 'the drawn stick man had no face or mood: a guessed l
       look: stage.style.getPropertyValue('--look-x'),
     };
   });
-  await press('Z'); await p.waitForTimeout(350);
+  await press('Z'); await p.waitForTimeout(750);
   const one = await read();
   await press('X'); await p.waitForTimeout(300);
   const two = await read();
@@ -1546,9 +1552,11 @@ check('hangman-face-mood', 'the drawn stick man had no face or mood: a guessed l
   if (one.face !== 'shocked' || one.o < .5 || one.gasp > .1) bad.push('the first miss is not delivered with a shocked face');
   if (!one.look) bad.push('his eyes did not follow the guessed key');
   if (two.mood !== 'worried') bad.push('two misses do not leave the resting mood worried');
-  if (two.face !== 'pleading' || two.wail < .5 || two.worried > .1) bad.push('a begging line is not delivered with a pleading face');
+  if (two.face !== 'nervous') bad.push('a quiet miss shows nothing on his face (' + two.face + ')');
+  const plead = await p.evaluate(async () => { const st = document.querySelector('.hm-stage'); delete st.dataset.face; st.dataset.face = 'pleading'; await new Promise((r) => setTimeout(r, 300)); const o = (s) => Number(getComputedStyle(document.querySelector(s)).opacity); return { wobble: o('.hm-mouth-wobble'), tear: o('.hm-tear'), brows: o('.hm-brows-sad'), wail: o('.hm-mouth-wail') }; });
+  if (plead.wobble < .5 || plead.tear < .5 || plead.brows < .5 || plead.wail > .1) bad.push('the pleading face is not a trembling mouth, sad brows and a tear (' + JSON.stringify(plead) + ')');
   if (four.mood !== 'scared') bad.push('four misses do not leave the resting mood scared');
-  if (four.face !== 'nervous' || four.wobble < .5 || four.sweat < .5) bad.push('a danger line is not delivered with a nervous, sweating face');
+  if (four.face !== 'nervous' || four.wobble < .5 || four.sweat < .5) bad.push('a quiet miss deep in the game is not a nervous, sweating face');
   if (four.on !== 4) bad.push('the parts are not drawn one per miss');
   if (four.top !== one.top) bad.push('the gallows moved while he was reacting');
   if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
@@ -2538,7 +2546,7 @@ check('hearts-pass-and-play', 'hearts: the pass must take three cards and a high
   if (await p.locator('.ht-score').count() !== 4) bad.push('not four score slots');
   const hand = p.locator('#ht-hand .ht-card');
   if (await hand.count() !== 13) bad.push('dealt ' + (await hand.count()) + ' cards, not 13');
-  for (let i = 0; i < 3; i++) await hand.nth(i).click();
+  for (let i = 0; i < 3; i++) await hand.nth(i).click({ position: { x: 9, y: 40 } });   // the visible slice: the cards overlap
   const pass = p.locator('#ht-actions button').first();
   if (!(await pass.count())) bad.push('no pass button after choosing three cards');
   else if (await pass.isDisabled()) bad.push('the pass button stayed disabled with three cards chosen');
@@ -2547,7 +2555,7 @@ check('hearts-pass-and-play', 'hearts: the pass must take three cards and a high
   try {
     await p.locator('#ht-hand .ht-card.play').first().waitFor({ state: 'visible', timeout: 9000 });
     const before = await hand.count();
-    await p.locator('#ht-hand .ht-card.play').first().click();
+    await p.locator('#ht-hand .ht-card.play').first().click({ position: { x: 9, y: 40 } });
     await p.waitForTimeout(500);
     const after = await hand.count();
     if (after !== before - 1) bad.push('the hand was ' + before + ' cards, then ' + after + ' after playing one');
@@ -2789,6 +2797,325 @@ check('tests-stay-offline', 'running the suite loaded Google Analytics on every 
   return bad;
 }, ['chess']);
 
+check('ga-skips-localhost', 'opening the site locally (or running the tests) sent a Google Analytics hit to the real property for every page; a page on localhost must queue no hits and add no analytics script', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => ({ hits: (window.dataLayer || []).length, script: !!document.querySelector('script[src*="googletagmanager"]') }));
+  await p.close();
+  const bad = [];
+  if (r.hits) bad.push(r.hits + ' analytics hits were queued on localhost');
+  if (r.script) bad.push('the analytics library was added to a localhost page');
+  return bad;
+}, ['chess', 'hearts', 'sudoku']);
+
+check('lost-cities-no-ghost-letters', 'Lost Cities: a big faint colour letter sat behind every hand card and showed as ghost shapes where the overlapping cards cut it off; the small letter and the coloured band already say the colour', async () => {
+  const p = await open('lost-cities', 390);
+  const bad = [];
+  const cards = await p.locator('#lc-hand .lc-card').count();
+  if (cards !== 8) bad.push('expected 8 hand cards, found ' + cards);
+  const ghosts = await p.locator('#lc-hand .lc-card .big').count();
+  if (ghosts) bad.push(ghosts + ' hand cards still draw a big faint letter');
+  const unreadable = await p.evaluate(() => [...document.querySelectorAll('#lc-hand .lc-card')].filter((c) => !c.querySelector('.sub') || !c.querySelector('.sub').textContent.trim()).length);
+  if (unreadable) bad.push(unreadable + ' hand cards have no small colour letter or x2 mark');
+  await p.close();
+  return bad;
+}, ['lost-cities']);
+
+check('hearts-gear-in-header', 'Hearts: the Options gear sat alone on its own row under the header, which the redesign mockup does not have; it belongs in the header row, just left of restart, on a phone and in the desktop column', async () => {
+  const bad = [];
+  for (const [w, h] of [[320, 700], [390, 844], [1280, 900]]) {
+    const p = await open('hearts', w, null, { viewport: { width: w, height: h } });
+    const r = await p.evaluate(() => {
+      const box = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, cy: (b.top + b.bottom) / 2 }; };
+      const gear = document.querySelector('.gk-optbtn'), restart = document.querySelector('.fun-restart'), back = document.querySelector('.topbar .back');
+      return gear && restart && back ? { gear: box(gear), restart: box(restart), back: box(back) } : null;
+    });
+    if (!r) { bad.push(w + 'px: gear, restart or back is missing'); await p.close(); continue; }
+    if (Math.abs(r.gear.cy - r.restart.cy) > 4) bad.push(w + 'px: the gear is not on the header row (' + Math.round(r.gear.cy) + ' vs ' + Math.round(r.restart.cy) + ')');
+    if (r.gear.r > r.restart.l - 2) bad.push(w + 'px: the gear is not left of restart');
+    if (r.gear.l < r.back.r + 2) bad.push(w + 'px: the gear touches the back button');
+    await p.close();
+  }
+  return bad;
+}, ['hearts']);
+
+check('hearts-matches-reference', 'Hearts must look like the reference: the across hand above the table and the two side stacks outside it, cream name tags straddling the table rim, and big overlapping hand cards', async () => {
+  const p = await open('hearts', 390);
+  const r = await p.evaluate(() => {
+    const box = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, cx: (b.left + b.right) / 2, cy: (b.top + b.bottom) / 2 }; };
+    const card = document.querySelector('#ht-hand .ht-card');
+    return { ht: box('#ht'), stage: box('.ht-stage'), top: box('.ht-op .fan'), left: box('.ht-ol .fan'), right: box('.ht-or .fan'),
+      tTop: box('.ht-op .nm'), tLeft: box('.ht-ol .nm'), tRight: box('.ht-or .nm'), tMe: box('.ht-me'), card: card && card.getBoundingClientRect().width,
+      tagFont: parseFloat(getComputedStyle(document.querySelector('.ht-op .nm')).fontSize), tagBg: getComputedStyle(document.querySelector('.ht-op .nm')).backgroundColor,
+      heart: getComputedStyle(document.querySelector('.ht-stage'), '::before').backgroundImage !== 'none' };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.stage || !r.top || !r.left || !r.right) return ['table, or a hand, is missing'];
+  if (r.top.b > r.stage.t - 4) bad.push('the across hand is not above the table');
+  if (r.left.r > r.stage.l - 8) bad.push('the left hand is not outside the table');
+  if (r.right.l < r.stage.r + 8) bad.push('the right hand is not outside the table');
+  if (Math.abs(r.tTop.cy - r.stage.t) > 6) bad.push('the top name tag does not straddle the rim');
+  if (Math.abs(r.tMe.cy - r.stage.b) > 6) bad.push('your name tag does not straddle the bottom rim');
+  if (Math.abs(r.tLeft.cx - r.stage.l) > 6) bad.push('the left name tag does not straddle the rim');
+  if (Math.abs(r.tRight.cx - r.stage.r) > 6) bad.push('the right name tag does not straddle the rim');
+  if (r.card < 60) bad.push('hand cards are only ' + Math.round(r.card) + 'px wide');
+  if (r.tagFont < 18) bad.push('name tags are too small (' + r.tagFont + 'px)');
+  if (r.tagBg !== 'rgb(255, 210, 159)') bad.push('name tags are not the cream of the reference (' + r.tagBg + ')');
+  if (!r.heart) bad.push('the heart is missing from the table');
+  const share = r.stage.w / r.ht.w;                  // (the layout scales down on a short screen, so measure against its own width)
+  if (share < 0.7 || share > 0.8) bad.push('the table is ' + Math.round(100 * share) + '% of the layout width, the reference is about 77%');
+  return bad;
+}, ['hearts']);
+
+check('ludo-matches-reference', 'Ludo must look like the reference: saturated home lanes, star start squares, a four-triangle centre, tokens drawn as two overlapping discs, and a big ROLL label', async () => {
+  const p = await open('ludo', 390);
+  const r = await p.evaluate(() => {
+    const cs = (s, pseudo) => getComputedStyle(document.querySelector(s), pseudo || null);
+    const tok = document.querySelector('.ld-token');
+    return {
+      lane: cs('.ld-cell.home-red').backgroundColor, ref: cs('.ld-yard.yard-red').backgroundColor,
+      centre: cs('.ld-home').backgroundImage, border: parseFloat(cs('.ld-board').borderTopWidth),
+      back: getComputedStyle(tok, '::before').content, front: getComputedStyle(tok, '::after').content,
+      star: getComputedStyle(document.querySelector('.ld-cell[class*="entry-"]'), '::after').clipPath,
+      roll: parseFloat(cs('.ld-roll').fontSize), rollW: document.querySelector('.ld-roll').getBoundingClientRect().width,
+    };
+  });
+  await p.close();
+  const bad = [];
+  if (r.lane !== r.ref) bad.push('the red home lane (' + r.lane + ') is not the yard red (' + r.ref + '): pastel lanes');
+  if (!/conic-gradient/.test(r.centre)) bad.push('the centre is not four triangles');
+  if (r.border < 5) bad.push('the board frame is only ' + r.border + 'px');
+  if (r.back === 'none' || r.front === 'none') bad.push('a token is not two overlapping discs');
+  if (!/polygon/.test(r.star)) bad.push('the start squares have no star');
+  if (r.roll < 28) bad.push('the ROLL label is only ' + Math.round(r.roll) + 'px');
+  return bad;
+}, ['ludo']);
+
+check('car-park-matches-reference', 'Car Park must look like the reference: illustrated cars and trucks (not coloured bars), a grey frame round a dark lot with an exit tab, "Level N" in the header, and two round buttons for undo and hint', async () => {
+  const p = await open('car-park', 390);
+  const r = await p.evaluate(() => {
+    const cars = [...document.querySelectorAll('.cp-car')];
+    const box = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height) }; };
+    const cs = (s) => getComputedStyle(document.querySelector(s));
+    return {
+      n: cars.length, sprites: cars.filter((c) => c.querySelector('.cp-sprite svg')).length, red: !!document.querySelector('.cp-car[data-red="1"] .cp-sprite svg'),
+      title: document.querySelector('.topbar h1').textContent, pillsShown: document.querySelector('.fun-pills') ? getComputedStyle(document.querySelector('.fun-pills')).display : 'none',
+      undo: box('#undo-btn'), hint: box('#hint-btn'), restart: !!document.querySelector('.fun-restart'),
+      frame: cs('.cp-board').backgroundColor, lot: cs('.cp-inner').backgroundColor, page: getComputedStyle(document.body).backgroundColor,
+      exit: !!document.querySelector('.cp-exit') && getComputedStyle(document.querySelector('.cp-exit'), '::after').backgroundImage.startsWith('url'),
+    };
+  });
+  await p.close();
+  const bad = [];
+  if (!r.n || r.sprites !== r.n) bad.push(r.sprites + ' of ' + r.n + ' vehicles are drawn as pictures');
+  if (!r.red) bad.push('the red key truck is not a picture');
+  if (!/^par \d+Level \d+$/i.test(r.title.trim())) bad.push('the header does not say Level N with a par tab (' + r.title + ')');
+  if (r.pillsShown !== 'none') bad.push('the old Level / Moves / Best boxes are still in the header');
+  for (const k of ['undo', 'hint']) if (!r[k] || r[k].w !== 56 || r[k].h !== 56) bad.push(k + ' is not a 56px round button (' + JSON.stringify(r[k]) + ')');
+  if (!r.restart) bad.push('no restart button in the header');
+  if (r.frame !== 'rgb(123, 125, 129)') bad.push('the frame is not the reference grey (' + r.frame + ')');
+  if (r.lot !== 'rgb(30, 32, 36)') bad.push('the lot is not near-black (' + r.lot + ')');
+  if (r.page !== 'rgb(37, 48, 42)') bad.push('the page is not the reference dark green (' + r.page + ')');
+  if (!r.exit) bad.push('the exit tab has no chevrons');
+  return bad;
+}, ['car-park']);
+
+check('hangman-neck-and-drawing', 'the stick man had no neck (the arms started right at the chin) and the torso began with a round nub below the head; now there is a neck, the torso grows out of the chin and the head is drawn from the top', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const g = await p.evaluate(() => {
+    const at = (e, n) => Number(e.getAttribute(n));
+    const head = document.querySelector('#man circle.pt'), lines = [...document.querySelectorAll('#man line.pt')];
+    return { cy: at(head, 'cy'), r: at(head, 'r'), torsoTop: at(lines[0], 'y1'), torsoX: at(lines[0], 'x1'), headX: at(head, 'cx'), armTop: at(lines[1], 'y1'), hip: at(lines[0], 'y2'), legTop: at(lines[3], 'y1'),
+      rot: getComputedStyle(head).transform, lens: [...document.querySelectorAll('#man .pt')].map((e) => parseFloat(e.style.getPropertyValue('--len'))), rope: document.getElementById('rope').getAttribute('d') };
+  });
+  await p.close();
+  const bad = [];
+  if (Math.abs(g.torsoTop - (g.cy + g.r)) > 1 || g.torsoX !== g.headX) bad.push('the torso does not start at the chin (' + g.torsoTop + ' vs ' + (g.cy + g.r) + ')');
+  if (g.armTop - g.torsoTop < 14) bad.push('no neck: the arms start only ' + (g.armTop - g.torsoTop) + 'px below the chin');
+  if (g.armTop > g.torsoTop + (g.hip - g.torsoTop) * 0.5) bad.push('the shoulders are lower than halfway down the body');
+  if (g.legTop !== g.hip) bad.push('the legs do not start at the hip');
+  if (g.rot === 'none') bad.push('the head ring is not turned to start at the top');
+  else { const m = g.rot.match(/matrix\(([^)]*)\)/); const v = m ? m[1].split(',').map(Number) : []; if (!(Math.abs(v[0]) < 0.01 && v[1] < -0.99)) bad.push('the head does not start from the top (' + g.rot + ')'); }
+  if (g.lens.length !== 6 || g.lens.some((n) => !(n > 5))) bad.push('the six parts do not all carry an explicit draw length (' + g.lens.join(',') + ')');
+  if (!/V40$/.test(g.rope.replace(/\s/g, ''))) bad.push('the rope no longer ends where the head begins (' + g.rope + ')');
+  return bad;
+}, ['hangman']);
+
+check('hangman-faces-distinct', 'the stick man faces were hairline marks on a dark disc that all looked alike; every expression must be a different, bold picture on a light face', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  await press('Z'); await press('X'); await p.waitForTimeout(900);
+  const r = await p.evaluate(async () => {
+    const st = document.querySelector('.hm-stage'), q = (s) => document.querySelector(s);
+    const o = (e) => Number(getComputedStyle(e).opacity);
+    const parts = ['.hm-mouth-calm', '.hm-mouth-worried', '.hm-mouth-gasp', '.hm-mouth-dead', '.hm-mouth-grin', '.hm-mouth-smirk', '.hm-mouth-flat', '.hm-mouth-wail', '.hm-mouth-o', '.hm-mouth-wobble', '.hm-brows-sad', '.hm-brows-raised', '.hm-brows-angry', '.hm-brows-flat', '.hm-eyes-happy', '.hm-xeyes', '.hm-blush', '.hm-tear', '.hm-sweat'];
+    const sig = {}; const faces = ['calm', 'worried', 'scared', 'terrified', 'dead', 'saved', 'shocked', 'pleading', 'smug', 'deadpan', 'proud', 'hopeful', 'relieved', 'nervous', 'annoyed'];
+    for (const f of faces) {
+      if (['calm', 'worried', 'scared', 'terrified', 'dead'].includes(f)) { delete st.dataset.face; st.dataset.mood = f; } else { st.dataset.mood = 'calm'; st.dataset.face = f; }
+      await new Promise((res) => setTimeout(res, 330));
+      const eyes = getComputedStyle(q('.hm-eyes-normal')).transform;
+      sig[f] = parts.filter((s) => o(q(s)) > 0.5).join(' ') + ' | ' + (o(q('.hm-eyes-normal')) > 0.5 ? eyes : 'no-eyes');
+    }
+    const w = (s) => parseFloat(getComputedStyle(q(s)).strokeWidth);
+    return { sig, skin: getComputedStyle(q('.hm-skin')).fill, mouth: w('.hm-mouth-calm'), brow: w('.hm-brows-sad path'), skinOp: o(q('.hm-skin')) };
+  });
+  await p.close();
+  const bad = [], seen = {};
+  for (const [f, s] of Object.entries(r.sig)) { if (seen[s]) bad.push(f + ' looks exactly like ' + seen[s]); else seen[s] = f; }
+  if (r.mouth < 2.3 || r.brow < 2.3) bad.push('the features are hairlines again (mouth ' + r.mouth + ', brow ' + r.brow + ')');
+  if (r.skin !== 'rgb(255, 241, 214)' || r.skinOp < 0.9) bad.push('the face is not the light skin colour the features sit on (' + r.skin + ')');
+  return bad;
+}, ['hangman']);
+
+check('hangman-talks-less', 'the stick man talked after nearly every guess and the bubble never went away; he now stays quiet for a few guesses after a line, the bubble fades, and the Splinter talks setting can silence him', async () => {
+  const p = await open('hangman', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'));document.getElementById('setup-input').value='CAT';document.getElementById('setup-btn').click();Math.random=()=>0");
+  const press = (c) => p.evaluate((c) => [...document.querySelectorAll('.hm-key')].find((k) => k.textContent === c && !k.disabled)?.click(), c);
+  const bubble = () => p.evaluate(() => { const b = document.getElementById('bubble'); return { hidden: b.hidden, text: b.textContent }; });
+  const bad = [];
+  const opts = await p.evaluate(() => { const t = document.getElementById('talk'); return t ? [...t.options].map((o) => o.value).join() : 'missing'; });
+  if (opts !== 'some,lots,off') bad.push('the talk setting is missing or wrong (' + opts + ')');
+  await press('Z'); await p.waitForTimeout(150);
+  if ((await bubble()).hidden) bad.push('no line on the first miss');
+  const faded = await p.waitForFunction(() => document.getElementById('bubble').hidden, null, { timeout: 6500 }).then(() => true, () => false);   // an ordinary line fades by itself
+  if (!faded) bad.push('the bubble is still up 6.5 seconds later');
+  await press('X'); await p.waitForTimeout(150);
+  if (!(await bubble()).hidden) bad.push('a line straight after a line');
+  await p.evaluate(() => { const t = document.getElementById('talk'); t.value = 'off'; t.dispatchEvent(new Event('change')); });
+  let said = 0;
+  for (const c of 'QJ') { await press(c); await p.waitForTimeout(150); if (!(await bubble()).hidden) said++; }
+  if (said) bad.push('he spoke ' + said + ' times on silent');
+  await p.evaluate(() => document.getElementById('gallows').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await p.waitForTimeout(200);
+  if ((await bubble()).hidden) bad.push('a poke gets no answer on silent');
+  if (p.errs.length) bad.push('errors: ' + p.errs.join('; '));
+  await p.close();
+  return bad;
+}, ['hangman']);
+
+/* ---------- online games: real pages talking to the real room code ---------- */
+// The Worker cannot run here, so each page's WebSocket is routed to the real CardRoom class running in this process under a
+// fake Cloudflare (worker/fake-cf.mjs). Two pages joined to one room play exactly as two phones would.
+const FAKE = await import(pathToFileURL(path.join(ROOT, 'worker', 'fake-cf.mjs')).href);
+const { CardRoom } = await import(pathToFileURL(path.join(ROOT, 'worker', 'card-room.mjs')).href);
+async function realRoom(game, code = 'ABCDEF') {
+  const h = FAKE.harness(CardRoom);
+  await h.init({ code, game });
+  const log = [];                                           // every frame the room sent to a page
+  return {
+    h, log,
+    async attach(page, who) {
+      await page.routeWebSocket(/\/api\/card\//, async (route) => {
+        const { ws } = await h.connect();
+        ws.onSend = (raw) => { log.push({ who, raw }); try { route.send(raw); } catch (e) { /* page gone */ } };
+        ws.onClose = (c, r) => { try { route.close({ code: c || 1000, reason: r || '' }); } catch (e) { /* page gone */ } };
+        route.onMessage((msg) => { const m = String(msg); if (m === 'ping') { try { route.send('pong'); } catch (e) { /* ignore */ } return; } h.say(ws, m).catch(() => {}); });
+        route.onClose(() => { h.room.webSocketClose(ws, 1000).catch(() => {}); });
+      });
+      await page.route('**/api/live/status', (r) => r.fulfill({ json: { enabled: true, games: [game] } }));
+    },
+    advance: async (ms) => { FAKE.clock.now += ms; await h.room.alarm(); },
+  };
+}
+
+check('hangman-online-two-players', 'online Hangman: two pages in one room play a whole match; the guesser never receives the secret word while a round is on, roles swap, first to three wins, and a rematch starts again', async () => {
+  const room = await realRoom('hangman');
+  const bad = [];
+  let step = 'joining';
+  const pagesOpen = [];
+  try {
+  const mk = async (who) => {
+    const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    p.errs = []; p.on('pageerror', (e) => p.errs.push(who + ': ' + e.message)); p.setDefaultTimeout(6000);
+    await room.attach(p, who); await p.goto(base + 'hangman/?live=ABCDEF'); await p.waitForTimeout(900);
+    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    await p.evaluate(() => document.querySelectorAll('.man-backdrop').forEach((n) => n.remove()));
+    return p;
+  };
+  const A = await mk('A'), B = await mk('B'); pagesOpen.push(A, B);
+  await B.waitForTimeout(900);
+  const info = (p) => p.evaluate(() => { const t = window.__hangmanTest.live(); const tb = t && t.table; return { phase: tb && tb.phase, stage: tb && tb.stage, role: tb && tb.role, round: tb && tb.round, word: tb && tb.word, setupShown: !document.getElementById('setup').hidden, wordText: document.getElementById('word').textContent, misses: document.getElementById('misses').textContent, status: document.getElementById('status').textContent, score: document.getElementById('lv-score').textContent, keys: document.querySelectorAll('.hm-key:not([disabled])').length, room: !document.getElementById('ms-room').hidden, roomText: document.getElementById('ms-room').textContent }; });
+  const until = async (p, fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const i = await info(p); if (fn(i)) return i; await p.waitForTimeout(100); } return info(p); };
+  const pages = { A, B };
+  const sides = async () => { const [a, b] = [await info(A), await info(B)]; return a.setupShown || a.role === 'setter' ? { S: A, G: B, s: a, g: b } : { S: B, G: A, s: b, g: a }; };
+
+  let { S, G, s, g } = await until(A, (i) => i.stage === 'set').then(sides);
+  if (s.stage !== 'set' || s.role !== 'setter' || !s.setupShown) bad.push('the setter does not get the word form (' + JSON.stringify(s) + ')');
+  if (g.setupShown || !/picking a word/.test(g.status)) bad.push('the guesser sees the form or the wrong status (' + g.status + ')');
+
+  step = 'round 1';
+  // round 1: the guesser finds the word
+  const playRound = async (word, guesses, label) => {
+    ({ S, G } = await sides());
+    await S.fill('#setup-input', word); await S.click('#setup-btn');
+    const gi = await until(G, (i) => i.stage === 'guess');
+    const si = await info(S);
+    if (gi.word !== null) bad.push(label + ': the guesser\'s model holds the word');
+    if (!/^(_ )*_$/.test(gi.wordText) || gi.wordText.replace(/ /g, '').length !== word.length) bad.push(label + ': the guesser sees "' + gi.wordText + '" instead of blanks');
+    if (si.wordText.replace(/ /g, '') !== word.toUpperCase()) bad.push(label + ': the setter does not see the word (' + si.wordText + ')');
+    const before = room.log.length;
+    for (const [i, ch] of [...guesses].entries()) {
+      await G.keyboard.press(ch);
+      await G.waitForTimeout(170);
+      if (i === guesses.length - 2 || guesses.length < 2) { /* the last letter ends the round */ }
+    }
+    return before;
+  };
+  let before = await playRound('ladder', 'zlade', 'round 1');
+  // up to now (one letter short of the end) nothing sent to the guesser may contain the word
+  const leaked = room.log.slice(before).filter((f) => f.who === (G === A ? 'A' : 'B') && /LADDER/.test(f.raw));
+  if (leaked.length) bad.push('the room sent the guesser the word before the round ended (' + leaked.length + ' frames)');
+  const mid = await info(G);
+  if (!/_/.test(mid.wordText) || mid.misses.indexOf('Misses: 1 / 6') !== 0) bad.push('after Z, L, A, D, E the guesser should have 1 miss and a blank left (' + mid.wordText + ' | ' + mid.misses + ')');
+  await G.keyboard.press('r'); await G.waitForTimeout(400);
+  let gi = await until(G, (i) => i.phase === 'round_over'), si = await info(S);
+  if (gi.phase !== 'round_over' || gi.wordText.replace(/ /g, '') !== 'LADDER' || si.wordText.replace(/ /g, '') !== 'LADDER') bad.push('the round did not end with the word on both screens (' + gi.wordText + ' / ' + si.wordText + ')');
+  if (!/You 1 – 0/.test(gi.score) || !/You 0 – 1/.test(si.score)) bad.push('the score is wrong after round 1 (' + gi.score + ' / ' + si.score + ')');
+
+  step = 'round 2';
+  // round 2: the roles swap; this time the new guesser loses
+  await room.advance(7000);
+  await until(A, (i) => i.round === 2 && i.stage === 'set');
+  const before2 = await sides();
+  if (before2.S === S) bad.push('the roles did not swap for round 2');
+  ({ S, G } = before2);
+  await S.fill('#setup-input', 'dog'); await S.click('#setup-btn'); await until(G, (i) => i.stage === 'guess');
+  for (const ch of 'qxjkvw') { await G.keyboard.press(ch); await G.waitForTimeout(170); }
+  gi = await until(G, (i) => i.phase === 'round_over'); si = await info(S);
+  if (gi.phase !== 'round_over' || !/DOG/.test(gi.wordText.replace(/ /g, ''))) bad.push('six wrong letters did not end round 2 with the word shown (' + gi.wordText + ')');
+  if (!/You 2 – 0/.test(si.score + gi.score) || !/You 0 – 2/.test(si.score + gi.score)) bad.push('the score is not 2 – 0 / 0 – 2 after round 2 (' + si.score + ' / ' + gi.score + ')');
+
+  step = 'round 3';
+  // round 3: the first guesser wins again and takes the match
+  await room.advance(7000);
+  await until(A, (i) => i.round === 3 && i.stage === 'set');
+  ({ S, G } = await sides());
+  await S.fill('#setup-input', 'ant'); await S.click('#setup-btn'); await until(G, (i) => i.stage === 'guess');
+  for (const ch of 'ant') { await G.keyboard.press(ch); await G.waitForTimeout(170); }
+  gi = await until(G, (i) => i.phase === 'game_over'); si = await info(S);
+  const winnerPage = gi.phase === 'game_over' ? await info(G) : null;
+  if (!winnerPage) bad.push('the match did not end after the third point');
+  else {
+    const loseText = (await info(S)).status, winText = (await info(G)).status;
+    if (!/win/i.test(winText) && !/win/i.test(loseText)) bad.push('the end of the match is not announced (' + winText + ' / ' + loseText + ')');
+    if (!/rematch/i.test(winnerPage.roomText) && !/rematch/i.test((await info(S)).roomText)) bad.push('there is no Rematch button once the match is over');
+  }
+
+  step = 'rematch';
+  // a rematch: both tap it and a new match starts from 0 – 0
+  // the game over card covers the room panel; its Play again is the rematch vote
+  for (const p of [A, B]) { const btn = p.locator('.gk-over .again'); if (await btn.count()) await btn.first().click().catch(() => {}); else bad.push('no Play again on the game over card'); }
+  await A.waitForTimeout(700);
+  const ra = await until(A, (i) => i.phase === 'play' && i.stage === 'set', 5000);
+  if (ra.stage !== 'set') bad.push('the rematch did not start a new match (' + JSON.stringify({ phase: ra.phase, stage: ra.stage }) + ')');
+  else if (!/0 – 0/.test(ra.score)) bad.push('a rematch should start from 0 – 0 (' + ra.score + ')');
+
+  for (const p of [A, B]) { if (p.errs.length) bad.push('errors: ' + p.errs.join('; ')); }
+  } catch (e) { bad.push('stopped during ' + step + ': ' + e.message.split('\n')[0]); }
+  for (const p of pagesOpen) await p.close().catch(() => {});
+  return bad;
+}, ['hangman']);
+
+
 /* ---------- run ---------- */
 // Checks run in parallel (each opens its own page). --quick runs each check on 2 sample pages only:
 // a fast smoke pass while working; run the full thing before a deploy.
@@ -2803,7 +3130,9 @@ if (!jobs.length) { console.log('no checks matched --only / --page'); await brow
 const times = [];
 const attempt = async ({ c, g }) => {
   const t = Date.now();
-  try { return await c.fn(g); } catch (e) { return ['threw: ' + e.message.split('\n')[0]]; } finally { times.push({ id: c.id, g, ms: Date.now() - t }); }
+  // one stuck check must not hang the whole run: each gets three minutes
+  const limit = new Promise((r) => setTimeout(() => r(['timed out after 180 s (a page or a wait is stuck)']), 180000));
+  try { return await Promise.race([c.fn(g), limit]); } catch (e) { return ['threw: ' + e.message.split('\n')[0]]; } finally { times.push({ id: c.id, g, ms: Date.now() - t }); }
 };
 const out = new Array(jobs.length);
 let next = 0, printed = 0;

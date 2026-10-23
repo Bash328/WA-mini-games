@@ -5,9 +5,14 @@
    the WhatsApp in-app browser, where most first paints happen. */
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
-gtag("js", new Date());
-gtag("config", "G-RFN70FPWB1");
+// Visits from this machine (localhost while developing or testing) are not real players: send nothing.
+var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+if (!LOCAL) {
+  gtag("js", new Date());
+  gtag("config", "G-RFN70FPWB1");
+}
 addEventListener("load", function () {
+  if (LOCAL) return;
   var s = document.createElement("script");
   s.async = true;
   s.src = "https://www.googletagmanager.com/gtag/js?id=G-RFN70FPWB1";

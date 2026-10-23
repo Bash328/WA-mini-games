@@ -64,6 +64,16 @@ flakes, hardened and rechecked.
 - [ ] **Agent-memory concurrency.** Move from one JSONL writer to one file per
   event, or add a lock, only if top-level agents start writing in parallel.
 
+- [ ] **One gear menu on every page (idea, agreed in principle, not started).** Hearts and Ludo already
+  use a small gear instead of the full-width Options bar, with How to play inside its menu. Make that the
+  system: the gear replaces the "?" in the header (same width, nothing squeezed at 320px), the Options bar goes
+  (about 56px back for the board), the menu opens across the page column with How to play first, then mode,
+  difficulty or level, New game and any page extras; keep the current mode visible as a small tag; first-visit
+  rules still open by themselves. Ludo keeps its gear on its own row (its score bar fills the header). Build it
+  in shared/gamekit.js + shared/fun.css behind a body flag, switch it on for Hearts, Ludo, Car Park, Chess and
+  Sudoku first, then make it the default. Cost: every layout moves up ~56px, so the Options-bar checks and the
+  short-screen height budgets need re-tuning, and all 58 pages want a screenshot review.
+
 ## Current rule
 
 Phone layout first. Desktop and compact changes belong behind the existing

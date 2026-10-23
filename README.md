@@ -461,7 +461,7 @@ worker/                          Cloudflare Worker: link previews, live and card
     rules/                           per-game rules the server checks live moves against
     *.test.mjs                       unit tests, run under plain Node (room-glue.test.mjs runs the real rooms)
 tests/                           regression.mjs (browser checks), cache-bust.mjs (?v= stamps), load-timing.mjs
-tools/                           gen-sitemap.mjs, gen-icons.py, memory/ (agent memory scripts)
+tools/                           serve.mjs (local server, --phone for an iPhone-sized window), gen-sitemap.mjs, gen-icons.py, deepseek.mjs, memory/ (agent memory scripts)
 docs/                            TODO.md, CHANGELOG.md, BANTER.md, agent-memory/ (state, decisions, event log)
 README.md, AGENTS.md, CLAUDE.md, LICENSE
 ```

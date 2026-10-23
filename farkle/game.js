@@ -244,7 +244,7 @@
     clearTimeout(Lc && Lc.timer);
     const n = Math.max(2, Math.min(4, Number(playersSel.value) || 2));
     playersSel.value = String(n);
-    const names = ["You"].concat(Array.from({ length: n - 1 }, (_, i) => "Computer " + (i + 1)));
+    const names = ["You"].concat(Array.from({ length: n - 1 }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n - 1).fill(diff));
     Lc = { st: F.create({ names, bots, starter: 0 }, Math.random), cfg: { players: n, level: diff }, events: [], timer: null };
     sel.clear(); overFor = null; overText = "";

@@ -186,6 +186,66 @@ for (const [word, guessed] of [["CAT", []], ["ELEPHANT", []], ["CAT", ["C", "A"]
 if (typeof B.savedLine() !== "string" || !B.savedLine()) problems.push("savedLine returned nothing");
 if (B.MAX_WRONG !== 6) problems.push("MAX_WRONG should stay 6");
 
+// ---- how often he talks: with real randomness, over many whole games ----
+const real = {};
+vm.runInNewContext(readFileSync(new URL("./banter.js", import.meta.url), "utf8"), { window: real, Math });
+const R = real.HangmanBanter;
+const WORDS = ["CAT", "ELEPHANT", "JAZZ", "RHYTHM", "BANANA", "PYTHON", "QUIZ", "STRENGTH"];
+function simulate(level, games) {
+  let guesses = 0, spoken = 0, tooSoon = 0;
+  for (let g = 0; g < games; g++) {
+    const word = WORDS[g % WORDS.length], st = R.newState();
+    const order = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].sort(() => Math.random() - 0.5), tried = [];
+    let last = -99, i = 0;
+    for (const ch of order) {
+      tried.push(ch);
+      const hit = word.includes(ch), misses = tried.filter((c) => !word.includes(c)).length;
+      if (misses >= R.MAX_WRONG || [...word].every((c) => tried.includes(c))) break;
+      const hadNudge = !!st.nudge, firstLastLifeHit = st.lastLifeHits <= 1;
+      const r = R.react(st, word, mask(...tried), ch, level);
+      guesses++; i++;
+      if (r && r.text) {
+        spoken++;
+        const moment = hadNudge || (!hit && (misses === 1 || misses >= R.MAX_WRONG - 1)) || (hit && misses === R.MAX_WRONG - 1 && firstLastLifeHit);
+        if (!moment && i - last <= 5) tooSoon++;       // an ordinary line needs five quiet guesses before it
+        last = i;
+      }
+    }
+  }
+  return { guesses, spoken, tooSoon, rate: spoken / guesses };
+}
+const some = simulate("some", 800), lots = simulate("lots", 800), off = simulate("off", 200);
+if (some.tooSoon) problems.push(`on "some" he spoke too soon after a line ${some.tooSoon} times`);
+const perGame = some.spoken / 800;      // he used to say about 5 lines in these games (a line after 86% of guesses)
+if (perGame > 3) problems.push(`on "some" he says ${perGame.toFixed(1)} lines a game (limit 3: the first miss, the last life, and now and then one more)`);
+if (!(lots.rate > some.rate)) problems.push("the chatty setting is not chattier than the default");
+if (off.spoken) problems.push("silent mode still spoke " + off.spoken + " times");
+// ---- blind mode: the online guesser does not know the word, so lines that depend on what is still hidden must never be said ----
+{
+  const secret = ["NO_VOWELS", "ALL_VOWELS", "VOWEL_NUDGE", "VOWEL_PAYOFF", "ONE_LEFT", "NEARLY"];
+  const forbidden = new Set(secret.flatMap((k) => B.pools[k] || []));
+  if (forbidden.size < 10) problems.push("blind test: the pools it guards are missing or empty");
+  let said = 0, bad = 0;
+  for (let g = 0; g < 1500; g++) {
+    const word = WORDS[g % WORDS.length], st = R.newState(), tried = [];
+    for (const ch of [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].sort(() => Math.random() - 0.5)) {
+      tried.push(ch);
+      const misses = tried.filter((c) => !word.includes(c)).length;
+      if (misses >= R.MAX_WRONG || [...word].every((c) => tried.includes(c))) break;
+      // what a guesser sees: the right letters in place, "?" where nothing has been found
+      const seen = [...word].map((c) => (tried.includes(c) ? c : "?")).join("");
+      const r = R.react(st, seen, mask(...tried), ch, "lots", true);
+      if (r && r.text) { said++; if (forbidden.has(r.text)) bad++; }
+    }
+  }
+  if (bad) problems.push(`blind mode said a line that only the secret word could justify ${bad} times (of ${said} lines)`);
+  if (said < 500) problems.push("blind mode is almost silent (" + said + " lines in 1500 games)");
+}
+console.log(`lines per game: some ${perGame.toFixed(1)}, lots ${(lots.spoken / 800).toFixed(1)}, off ${off.spoken}`);
+
+// the first hit can come on the very first guess, before any miss: no "finally" or "worried" there, and taunts must not wear a scared face
+for (const l of B.pools.FIRST_HIT) if (/finally|worry/i.test(l)) problems.push("FIRST_HIT line implies earlier misses: " + l);
+for (const l of ["One guess left. Make it count. You won't.", "Pick wisely. Or don't — it's funnier that way."]) if (B.faceOf(l) !== "smug") problems.push("a taunt wears the wrong face: " + l);
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 const total = [...seen.keys()].length;
 console.log(`banter.js ok (${total} lines in ${poolCount} pools)`);

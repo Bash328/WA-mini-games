@@ -72,7 +72,7 @@
       let st = s.bot ? "computer" : "";
       const p = M.players && M.players.find((x) => x.seat === i);
       if (p && !s.bot) {
-        if (p.autoBot && !p.online) st = "offline: a computer is playing";
+        if (p.autoBot && !p.online) st = "offline: a bot is playing";
         else if (!p.online) st = "offline: computer in " + Math.max(0, Math.ceil((p.offlineSince + M.takeoverMs - ms.nowMs()) / 1000)) + "s";
       }
       if (s.status === "out") st = "out";
@@ -204,7 +204,7 @@
   function localStart() {
     clearTimeout(Lc && Lc.timer);
     const n = Number(botsSel.value);
-    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Computer " + (i + 1)));
+    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n).fill(diff));
     Lc = { st: L.create({ names, bots, starter: 0 }, Math.random), cfg: { bots: n, level: diff }, events: [], timer: null };
     bidKey = "";

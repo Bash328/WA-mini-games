@@ -94,7 +94,7 @@
   function create(opts, rng) {
     opts = opts || {};
     rng = rng || Math.random;
-    const names = Array.isArray(opts.names) ? opts.names : ["You", "Computer"];
+    const names = Array.isArray(opts.names) ? opts.names : ["You", "Bot"];
     if (names.length !== TABLE_SIZE) throw new Error("Cribbage needs exactly 2 seats");
     const bots = opts.bots || [];
     const dealer = opts.dealer === 1 ? 1 : 0;

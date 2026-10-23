@@ -657,7 +657,7 @@
     const root = document.documentElement;
     const paint = () => {
       const m = root.getAttribute("data-theme");
-      b.textContent = m === "light" ? "☀" : m === "dark" ? "☾" : "◐";
+      b.textContent = m === "light" ? "\u2600\uFE0E" : m === "dark" ? "☾" : "◐";
       b.setAttribute("aria-label", "Theme: " + (m || "system") + ". Tap to change.");
       b.title = "Theme: " + (m || "system");
     };

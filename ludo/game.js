@@ -61,16 +61,16 @@
     cellsEl.append(frag);
 
     // the four yards and the home in the middle sit over the grid
-    L.YARDS.forEach((y) => {
+    L.YARDS.forEach((y, yardIndex) => {
       const origin = YARD_ORIGIN[y.key];
       const box = el("div", "ld-yard yard-" + y.key);
       box.style.left = (origin[1] / 15) * 100 + "%";
       box.style.top = (origin[0] / 15) * 100 + "%";
       box.append(el("div", "ld-yard-in"));
-      y.spots.forEach(([r, c]) => {
-        const spot = el("div", "ld-spot");
-        spot.style.left = ((c - origin[1] + 0.5) / 6) * 100 + "%";
-        spot.style.top = ((r - origin[0] + 0.5) / 6) * 100 + "%";
+      y.spots.forEach((_, k) => {
+        const spot = el("div", "ld-spot"), at = yardSpot(yardIndex, k);
+        spot.style.left = ((at.x - origin[1]) / 6) * 100 + "%";
+        spot.style.top = ((at.y - origin[0]) / 6) * 100 + "%";
         box.append(spot);
       });
       boardEl.insertBefore(box, tokensEl);
@@ -104,10 +104,17 @@
     return '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="4" y="4" width="92" height="92" rx="18" fill="#fff" stroke="#d8d0bf" stroke-width="3"/>' + pips + "</svg>";
   }
 
+  // The four yard slots sit close to the middle of the yard, as in the reference (half the cell spacing of the rules).
+  const SPOT_PULL = 0.5;
+  function yardSpot(yard, i) {
+    const o = YARD_ORIGIN[L.YARDS[yard].key], [r, c] = L.YARDS[yard].spots[i];
+    return { x: o[1] + 3 + (c + 0.5 - o[1] - 3) * SPOT_PULL, y: o[0] + 3 + (r + 0.5 - o[0] - 3) * SPOT_PULL };
+  }
+
   // ---------- a token's place on the board ----------
   function basePos(yard, rel, i) {
     const y = L.YARDS[yard];
-    if (rel === -1) { const [r, c] = y.spots[i]; return { x: c + 0.5, y: r + 0.5 }; }
+    if (rel === -1) return yardSpot(yard, i);
     if (rel <= 50) { const [r, c] = L.CELLS[(y.entry + rel) % 52]; return { x: c + 0.5, y: r + 0.5 }; }
     if (rel <= 55) { const [r, c] = y.home[rel - 51]; return { x: c + 0.5, y: r + 0.5 }; }
     return ({ red: { x: 7.5, y: 8.35 }, yellow: { x: 6.65, y: 7.5 }, blue: { x: 7.5, y: 6.65 }, green: { x: 8.35, y: 7.5 } })[y.key];
@@ -220,7 +227,7 @@
     t.seats.forEach((s, i) => {
       const p = el("div", "ld-player" + (i === t.you ? " you" : "") + (t.phase === "play" && t.turn === i ? " now" : "") + (t.phase === "game_over" && t.winner === i ? " win" : ""));
       p.style.setProperty("--pc", colorOf(s.yard));
-      p.append(el("span", "dot"), el("span", "nm", i === t.you ? "You" : s.bot ? s.name.replace(/^Computer /, "CPU ").replace(/^Bot /, "CPU ") : s.name), el("span", "hm", s.done + "/4"));
+      p.append(el("span", "dot"), el("span", "nm", i === t.you ? "You" : s.name), el("span", "hm", s.done + "/4"));
       const who = M.players && M.players.find((x) => x.seat === i);
       if (who && !s.bot && !who.online && !who.autoBot) p.title = s.name + " is offline";
       playersEl.append(p);
@@ -281,7 +288,7 @@
     }
     let text = "Waiting for " + seatName(t.turn) + ".";
     const p = M.players && M.players.find((x) => x.seat === t.turn);
-    if (p && p.autoBot && !p.online) text += " A computer is playing.";
+    if (p && p.autoBot && !p.online) text += " A bot is playing.";
     else {
       const left = idleLeft();
       if (left !== null) text += " (" + left + "s)";
@@ -350,7 +357,7 @@
     clearTimeout(rollTimer);
     const n = Math.max(2, Math.min(4, Number(playersSel.value) || 4));
     const names = ["You"], bots = [null];
-    for (let i = 1; i < n; i++) { names.push("Computer " + i); bots.push(diff); }
+    for (let i = 1; i < n; i++) { names.push("Bot " + i); bots.push(diff); }
     Lc = { st: L.create({ names, bots }, Math.random), cfg: { players: n, level: diff }, events: [], timer: null };
     busy = false; lastDie = null; faceShown = null;
     localRender(); localSchedule();

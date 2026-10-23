@@ -56,7 +56,6 @@
     n.append(el("i", "bar"), el("span", "rk", shown));
     if (!mini) {
       n.append(el("span", "sub", LC.isHandshake(card) ? "×2" : LC.colourOf(card)));
-      n.append(el("span", "big", LC.isHandshake(card) ? "×2" : LC.colourOf(card)));
       if (o.selected) n.classList.add("sel");
       if (o.ok) n.classList.add("ok");
       if (o.no) n.classList.add("no");
@@ -266,7 +265,7 @@
       else if (M.kind === "online") {
         const left = idleLeft();
         text = seatName(t.turn) + "'s turn" + (left !== null ? " · " + left + "s" : "");
-      } else text = "Computer is thinking";
+      } else text = "Bot is thinking";
     }
     if (text !== lastStatus) { lastStatus = text; statusEl.textContent = text; }
   }
@@ -333,7 +332,7 @@
   }
   function localStart() {
     clearTimeout(Lc && Lc.timer);
-    const names = ["You", "Computer"];
+    const names = ["You", "Bot"];
     const bots = [null, diff];
     Lc = { st: LC.create({ names, bots }, Math.random), cfg: { level: diff }, events: [], timer: null };
     selected = null;

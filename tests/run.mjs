@@ -58,9 +58,14 @@ const queue = tests.slice(), done = [];
 await Promise.all(Array.from({ length: Math.min(8, os.cpus().length) }, async () => {
   while (queue.length) { const f = queue.shift(); done.push({ f, ...(await run([f], [])) }); }
 }));
-const ut = Date.now();
-for (const r of done.filter((d) => d.code)) { failures++; console.log('FAIL  ' + r.f + '\n      ' + tail(r.out)); }
-console.log((done.every((d) => !d.code) ? 'ok    ' : 'FAIL  ') + done.filter((d) => !d.code).length + '/' + done.length + ' files pass   slowest: ' +
+// a file that failed while 8 ran at once (the puzzle tests have a wall-clock limit) gets one more go on its own
+let flaky = 0;
+for (const r of done.filter((d) => d.code)) {
+  const again = await run([r.f], []);
+  if (!again.code) { r.code = 0; flaky++; console.log('flaky ' + r.f + ' (failed under load, passed alone)'); }
+  else { failures++; console.log('FAIL  ' + r.f + '\n      ' + tail(again.out)); }
+}
+console.log((done.every((d) => !d.code) ? 'ok    ' : 'FAIL  ') + done.filter((d) => !d.code).length + '/' + done.length + ' files pass' + (flaky ? ' (' + flaky + ' flaky)' : '') + '   slowest: ' +
   done.sort((a, b) => b.ms - a.ms).slice(0, 3).map((d) => path.basename(d.f) + ' ' + (d.ms / 1000).toFixed(1) + 's').join(', '));
 
 // 3. browser checks

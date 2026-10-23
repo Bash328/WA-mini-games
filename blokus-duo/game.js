@@ -198,8 +198,8 @@
     selectBest();
     if (mode === "ai" && current !== humanIs) {
       thinking = true;
-      Gamekit.turn(current, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(current, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       renderAll();
       aiTimer = setTimeout(() => { aiTimer = null; thinking = false; if (over) return; const m = aiChoose(diff); if (m) commitMove(m, current); }, 450);
       return;
@@ -213,7 +213,7 @@
     const a = R.penalty(pos.used[ONE], lastPieceOf(ONE)), b = R.penalty(pos.used[TWO], lastPieceOf(TWO));
     const tally = NAMES[ONE] + " " + a + " · " + NAMES[TWO] + " " + b + " (lower wins)";
     if (!winner) statusEl.textContent = "Draw. " + tally + ". " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = (winner === humanIs ? "You win! 🎉 " : "Computer wins. ") + tally + ". " + Gamekit.taunt(winner === humanIs ? "win" : "loss");
+    else if (mode === "ai") statusEl.textContent = (winner === humanIs ? "You win! " : "Bot wins. ") + tally + ". " + Gamekit.taunt(winner === humanIs ? "win" : "loss");
     else statusEl.textContent = NAMES[winner] + " wins. " + tally + ". " + Gamekit.taunt("loss");
     renderAll();
   }

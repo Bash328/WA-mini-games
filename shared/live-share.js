@@ -433,7 +433,7 @@
 
     function result() {
       if (state.status === "draw") return { cls: "", text: "It's a draw." };
-      if (state.winner === me) return { cls: "win", text: state.resigned ? "They gave up — you won! 🎉" : "You won! 🎉" };
+      if (state.winner === me) return { cls: "win", text: state.resigned ? "They gave up — you won!" : "You won!" };
       return { cls: "bad", text: state.resigned ? "You admitted defeat." : "You lost." };
     }
 

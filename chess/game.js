@@ -580,9 +580,9 @@ function renderBoard() {
     const aiToMove = thinking || state.turn !== humanColor;
     // same words as the turn pill so the status line stays hidden and the board never shifts
     document.getElementById('status').textContent =
-      (aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : 'Your move.') + note;
+      (aiToMove ? 'Bot thinking…' : inChk ? 'Check! Your move' : 'Your move.') + note;
     Gamekit.turn(state.turn === 'w' ? 1 : 2,
-      aiToMove ? 'Computer thinking…' : inChk ? 'Check! Your move' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black'),
+      aiToMove ? 'Bot thinking…' : inChk ? 'Check! Your move' : "Your move · you're " + (humanColor === 'w' ? 'White' : 'Black'),
       aiToMove);
   }
 }
@@ -677,7 +677,7 @@ function resetSolo() {
   humanColor = sideSel.value;
   flipped = humanColor === 'b';
   renderBoard();
-  document.getElementById('status').textContent = humanColor === 'b' ? 'Computer is thinking…' : 'Your move.';
+  document.getElementById('status').textContent = humanColor === 'b' ? 'Bot is thinking…' : 'Your move.';
   if (humanColor === 'b') aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
 }
 
@@ -908,7 +908,7 @@ undoBtn.addEventListener('click', () => {
   if (state.turn !== humanColor) {
     // everything was undone and the computer plays first: let it open again
     // instead of leaving the board waiting for a move that never comes
-    document.getElementById('status').textContent = 'Computer is thinking…';
+    document.getElementById('status').textContent = 'Bot is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';
@@ -948,7 +948,7 @@ const resumer = Gamekit.resume('chess', () => (mode !== 'ai' || state.history.le
   lastMove = null; selected = null; legalFromSel = [];
   renderBoard();
   if (state.turn !== humanColor) {
-    document.getElementById('status').textContent = 'Computer is thinking…';
+    document.getElementById('status').textContent = 'Bot is thinking…';
     aiTimer = setTimeout(() => { aiTimer = null; aiTurn(); }, 200);
   } else {
     document.getElementById('status').textContent = 'Your move.';

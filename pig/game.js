@@ -42,7 +42,7 @@
   let liveBoard = null, liveId = null, liveCount = 0, bustShown = false;
 
   const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Computer") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
+  const nameOf = (p) => (mode === "ai" ? (p === humanIs ? "You" : "Bot") : mode === "live" ? (p === me ? "You" : "Opponent") : "Player " + p);
 
   // Pip positions on a 3x3 grid, per face.
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -144,8 +144,8 @@
     turnTotal = 0; rolls = [];
     if (mode === "ai" && current !== humanIs) {
       canAct = false;
-      Gamekit.turn(current, "Computer is playing…", true);
-      statusEl.textContent = "Computer is playing…";
+      Gamekit.turn(current, "Bot is playing…", true);
+      statusEl.textContent = "Bot is playing…";
       render();
       timer = setTimeout(aiStep, 700);
       return;
@@ -193,7 +193,7 @@
     clearTimeout(timer); timer = null;
     canAct = false; busy = false;
     Gamekit.turn(null);
-    if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! 🎉 " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = `${nameOf(winner)} wins. ${nameOf(other(winner))} — ${Gamekit.taunt("loss")}`;
     render();
   }
@@ -330,7 +330,7 @@
     score = { [P1]: s.s[P1], [P2]: s.s[P2] };
     current = s.cur; turnTotal = s.tt; rolls = s.rs.slice(); over = false; winner = null;
     lastFace = rolls.length ? rolls[rolls.length - 1] : 0;
-    if (mode === "ai" && current !== humanIs) { canAct = false; Gamekit.turn(current, "Computer is playing…", true); render(); timer = setTimeout(aiStep, 700); }
+    if (mode === "ai" && current !== humanIs) { canAct = false; Gamekit.turn(current, "Bot is playing…", true); render(); timer = setTimeout(aiStep, 700); }
     else { canAct = true; showTurn(); render(); }
     return true;
   });

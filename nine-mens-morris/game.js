@@ -175,8 +175,8 @@
     if (!S || over) { render(); return; }
     if (mode === "ai" && S.turn !== humanIs) {
       thinking = true;
-      Gamekit.turn(S.turn, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(S.turn, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 900);
       return;
@@ -216,8 +216,8 @@
     if (!S || over) return;
     const p = S.turn;
     if (mode === "ai" && p !== humanIs) {
-      Gamekit.turn(p, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(p, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       return;
     }
     const left = 9 - S.placed[p - 1];
@@ -244,7 +244,7 @@
     sel = null;
     Gamekit.turn(null);
     if (!winner) statusEl.textContent = "Draw. Nobody can move. " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = NAMES[winner] + " wins. " + NAMES[other(winner)] + " — " + Gamekit.taunt("loss");
     render();
   }

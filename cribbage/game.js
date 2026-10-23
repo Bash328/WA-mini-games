@@ -369,7 +369,7 @@
   }
   function localStart() {
     clearTimeout(Lc && Lc.timer);
-    const names = ["You", "Computer"];
+    const names = ["You", "Bot"];
     const bots = [null, diff];
     Lc = { st: C.create({ names, bots }, Math.random), cfg: { level: diff }, events: [], timer: null };
     sel.clear(); statusKey = "";

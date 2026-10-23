@@ -163,7 +163,7 @@ for (const level of ["easy", "medium", "hard"]) {
   const notices = P.tick(room, T0 + P.OFFLINE_TAKEOVER_MS + 1000, rng).notices;
   check("after the takeover a computer passes for each absent seat, and the hand starts",
     room.state.phase === "play" && room.state.passed.every((p) => p !== null), JSON.stringify(room.state.passed));
-  check("the people are told a computer took over", notices.some((n) => /computer is playing/.test(n)), JSON.stringify(notices));
+  check("the people are told a bot took over", notices.some((n) => /bot is playing/.test(n)), JSON.stringify(notices));
 }
 // --- somebody online but never passing is passed for after the idle limit
 {

@@ -129,9 +129,9 @@
       "Okay okay, now we're cooking.",
     ],
     FIRST_HIT: [
-      "Finally! A letter the word actually wanted.",
+      "Nice! A letter the word actually wanted.",
       "See? The alphabet works. Keep going.",
-      "A hit! I was starting to worry about you.",
+      "A hit! Off to a good start.",
       "One down. The word is officially worried.",
       "A correct letter. Don't let it go to your head. I have one of those now.",
       "Progress! Actual progress!",
@@ -544,6 +544,19 @@
     else for (const lines of Object.values(pool)) for (const line of lines) FACE_OF[line] = face;
   }
   for (const [name, pool] of Object.entries(P)) tagPool(name, pool);
+  // A few lines say something other than their pool's usual mood (a taunt in a nervous pool).
+  const FACE_OVERRIDE = {
+    "One guess left. Make it count. You won't.": "smug",
+    "Pick wisely. Or don't — it's funnier that way.": "smug",
+    "The executioner is checking their watch.": "deadpan",
+    "Dramatic pause intensifies.": "deadpan",
+    "Four letters or less. You've got this.": "hopeful",
+    "This is the quiet part. I don't like the quiet part.": "nervous",
+  };
+  for (const [line, face] of Object.entries(FACE_OVERRIDE)) {
+    if (!(line in FACE_OF)) throw new Error("face override for an unknown line: " + line);
+    FACE_OF[line] = face;
+  }
 
   // The expression for a spoken line. Text is unique across the pools (the
   // test enforces it), so this is exact even though the game only stores text.
@@ -615,6 +628,7 @@
       lastLifeHits: 0,      // right letters in a row while on the last life
       hitStreak: 0,         // right letters in a row at any point
       toldVowels: false,    // the "all vowels are out" line is said once
+      cool: 0,              // ordinary guesses still to stay quiet for after he has spoken
       toldNearly: false,    // the "two letters left" line is said once
       toldOne: false,       // the "one letter left" line is said once
     };
@@ -677,7 +691,9 @@
   // includes `ch`. State changes (the nudge, streaks, one-time lines) are
   // committed only for a line that is actually shown, so a later callback
   // can never answer a hint the player did not see.
-  function react(st, word, mask, ch) {
+  // `blind`: the guesser online does not know the word, only its length and the letters found so far (the rest are "?").
+  // Lines that depend on what is still hidden (no vowels, all the vowels are out, one or two letters left) are skipped.
+  function reactRaw(st, word, mask, ch, blind) {
     const misses = wrongCount(word, mask);
     if (isSolved(word, mask) || misses >= MAX_WRONG) { st.nudge = null; return ""; }
 
@@ -695,7 +711,7 @@
 
       // A word with no vowels is worth saying once: it stops the guesser
       // wasting the rest of the game on A, E, I, O and U.
-      if (isVowel && !hasAnyVowel(word) && Math.random() < 0.8) {
+      if (!blind && isVowel && !hasAnyVowel(word) && Math.random() < 0.8) {
         return { text: pick(P.NO_VOWELS) };
       }
 
@@ -720,7 +736,7 @@
       }
 
       if (misses >= MANY_WRONG_THRESHOLD) {
-        if (hasUnguessedVowel(word, mask) && Math.random() < 0.35) {
+        if (!blind && hasUnguessedVowel(word, mask) && Math.random() < 0.35) {
           st.nudge = "vowel";
           return { text: pick(P.VOWEL_NUDGE) };
         }
@@ -748,11 +764,11 @@
     if (prevNudge) return { text: pick(P.COMEBACK) };
 
     // Word-shape reactions, strongest first.
-    if (!st.toldVowels && hasAnyVowel(word) && !hasUnguessedVowel(word, mask)) {
+    if (!blind && !st.toldVowels && hasAnyVowel(word) && !hasUnguessedVowel(word, mask)) {
       if (Math.random() < 0.8) { st.toldVowels = true; return { text: pick(P.ALL_VOWELS) }; }
     }
 
-    const missing = missingUniqueCount(word, mask);
+    const missing = blind ? -1 : missingUniqueCount(word, mask);
     if (missing === ALMOST_MAX_MISSING && !st.toldOne && Math.random() < 0.75) {
       st.toldOne = true;
       return { text: pick(P.ONE_LEFT) };
@@ -775,6 +791,27 @@
       return { text: pick(P.RELIEF) };
     }
     return "";
+  }
+
+  // How often he comments on an ordinary guess. A line is owed at a few moments (his first miss, the last life, and a
+  // follow-up to a hint he just gave); everything else waits until he has been quiet for a few guesses, so he reacts with his
+  // face and a little body language and speaks up now and then instead of after every letter.
+  const QUIET_GUESSES = { lots: 1, some: 5 };
+  function react(st, word, mask, ch, level, blind) {
+    level = level || "some";
+    if (isSolved(word, mask) || wrongCount(word, mask) >= MAX_WRONG) { st.nudge = null; return ""; }
+    const hit = word.includes(ch), misses = wrongCount(word, mask);
+    if (level === "off") { if (hit) st.hitStreak++; else { st.hitStreak = 0; st.lastLifeHits = 0; } st.nudge = null; return ""; }
+    const moment = !!st.nudge || (!hit && (misses === 1 || misses >= MAX_WRONG - 1)) || (hit && misses === MAX_WRONG - 1 && st.lastLifeHits <= 1);
+    if (!moment && st.cool > 0) {
+      st.cool--;
+      if (hit) st.hitStreak++; else { st.hitStreak = 0; st.lastLifeHits = 0; }
+      return "";
+    }
+    const line = reactRaw(st, word, mask, ch, blind);
+    if (line && line.text) st.cool = QUIET_GUESSES[level] === undefined ? QUIET_GUESSES.some : QUIET_GUESSES[level];
+    else if (st.cool > 0) st.cool--;
+    return line;
   }
 
   root.HangmanBanter = {

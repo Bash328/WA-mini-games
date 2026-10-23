@@ -2,7 +2,7 @@
   "use strict";
 
   const C = globalThis.Crazy8;
-  const SYM = { S: "♠", H: "♥", D: "♦", C: "♣" };
+  const SYM = { S: "\u2660\uFE0E", H: "\u2665\uFE0E", D: "\u2666\uFE0E", C: "\u2663\uFE0E" };
   const SUIT_NAME = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
   const RANK_NAME = { A: "Ace", J: "Jack", Q: "Queen", K: "King", X: "Joker" };
   const ORDER_R = { A: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, J: 11, Q: 12, K: 13, X: 14 };
@@ -151,7 +151,7 @@
       let st = "";
       const p = M.players && M.players.find((x) => x.seat === i);
       if (p && !s.bot) {
-        if (p.autoBot && !p.online) st = "offline: a computer is playing";
+        if (p.autoBot && !p.online) st = "offline: a bot is playing";
         else if (!p.online) {
           const left = Math.max(0, Math.ceil((p.offlineSince + M.takeoverMs - nowMs()) / 1000));
           st = "offline: computer in " + left + "s";
@@ -507,7 +507,7 @@
      Online rooms
      ============================================================ */
   const REJECT = {
-    "not-host": "Only the host can do that.", "need-2": "You need at least 2 players. Add a computer player or wait for a friend.",
+    "not-host": "Only the host can do that.", "need-2": "You need at least 2 players. Add a bot or wait for a friend.",
     full: "There are no free seats for that.", illegal: "That can't be played right now.", "not-your-turn": "It's not your turn.",
     "rate-limit": "Slow down a little.", "in-game": "You can't change that during a game.", "bad-config": "That setting isn't allowed.",
     "not-playing": "The game isn't running.", "not-seated": "You aren't seated in this game.",
@@ -697,14 +697,14 @@
       // settings
       const cfg = el("div", "c8-cfg");
       cfg.append(seg("Game type", [["normal", "Normal: first out wins"], ["tournament", "Tournament"]], M.config.mode, (v) => onlineSend({ t: "config", mode: v }), isHost ? () => true : null));
-      cfg.append(seg("Computer players", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= 4 : null));
-      cfg.append(seg("Computer level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => onlineSend({ t: "config", level: v }), isHost ? () => true : null));
+      cfg.append(seg("Bots", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), isHost ? (v) => M.players.length + v <= 4 : null));
+      cfg.append(seg("Bot level", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], M.config.level, (v) => onlineSend({ t: "config", level: v }), isHost ? () => true : null));
       roomEl.append(cfg);
       if (isHost) {
         const go = btn("Start the game", "primary", () => onlineSend({ t: "start" }));
         go.disabled = M.seatsWanted < 2;
         roomEl.append(go);
-        roomEl.append(el("p", "note", M.seatsWanted < 2 ? "You need at least 2 players: invite a friend or add a computer." : "It starts by itself when all 4 seats are full."));
+        roomEl.append(el("p", "note", M.seatsWanted < 2 ? "You need at least 2 players: invite a friend or add a bot." : "It starts by itself when all 4 seats are full."));
       } else roomEl.append(el("p", "note", "Waiting for " + ((M.players.find((p) => p.host) || {}).name || "the host") + " to start. Only the host can change the settings."));
       // poke a friend
       if (typeof Account !== "undefined") {
@@ -738,9 +738,9 @@
       if (isHost) {
         const cfg = el("div", "c8-cfg");
         cfg.append(seg("Game type", [["normal", "Normal"], ["tournament", "Tournament"]], M.config.mode, (v) => onlineSend({ t: "config", mode: v }), () => true));
-        cfg.append(seg("Computer players", [[0, "None, just the people here"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), (v) => M.players.length + v <= 4));
+        cfg.append(seg("Bots", [[0, "None, just the people here"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), (v) => M.players.length + v <= 4));
         roomEl.append(cfg);
-      } else roomEl.append(el("p", "note", "The host chooses the game type and the computer players for the rematch."));
+      } else roomEl.append(el("p", "note", "The host chooses the game type and the bots for the rematch."));
       const mine = M.players.find((p) => p.pid === M.you.pid);
       const rm = btn(mine && mine.voted ? "Waiting for the others…" : "Rematch", "primary", () => onlineSend({ t: "vote" }));
       rm.disabled = !!(mine && mine.voted);
@@ -782,7 +782,7 @@
     if (M.kind === "online" && M.you && M.you.host) {
       const cfg = el("div", "c8-cfg");
       cfg.append(seg("Game type", [["normal", "Normal"], ["tournament", "Tournament"]], M.config.mode, (v) => onlineSend({ t: "config", mode: v }), () => true));
-      cfg.append(seg("Computer players", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), (v) => M.players.length + v <= 4));
+      cfg.append(seg("Bots", [[0, "None"], [1, "1"], [2, "2"], [3, "3"]], M.config.bots, (v) => onlineSend({ t: "config", bots: v }), (v) => M.players.length + v <= 4));
       overEl.append(cfg);
     }
     const acts = el("div", "acts");

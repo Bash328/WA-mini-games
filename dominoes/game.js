@@ -70,7 +70,7 @@
       const p = M.players && M.players.find((x) => x.seat === i);
       let warn = false;
       if (p && !s.bot) {
-        if (p.autoBot && !p.online) { st = s.score + " pts · offline: a computer is playing"; warn = true; }
+        if (p.autoBot && !p.online) { st = s.score + " pts · offline: a bot is playing"; warn = true; }
         else if (!p.online) { st = s.score + " pts · offline: computer in " + Math.max(0, Math.ceil((p.offlineSince + M.takeoverMs - ms.nowMs()) / 1000)) + "s"; warn = true; }
       }
       box.append(el("div", "st" + (warn ? " warn" : ""), st));
@@ -160,7 +160,7 @@
     if (o) {
       o.ends.forEach((end) => {
         const num = end === "L" ? (t.ends ? t.ends[0] : "") : (t.ends ? t.ends[1] : "");
-        const label = t.line.length ? (end === "L" ? "◀ Left (" + num + ")" : "Right (" + num + ") ▶") : "Play it";
+        const label = t.line.length ? (end === "L" ? "\u25C0\uFE0E Left (" + num + ")" : "Right (" + num + ") \u25B6\uFE0E") : "Play it";
         const b = el("button", "btn primary", label); b.type = "button";
         b.addEventListener("click", () => playSelected(end));
         actionsEl.append(b);
@@ -214,7 +214,7 @@
   function localStart() {
     clearTimeout(Lc && Lc.timer);
     const n = Number(botsSel.value);
-    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Computer " + (i + 1)));
+    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n).fill(diff));
     Lc = { st: D.create({ names, bots }, Math.random), cfg: { bots: n, level: diff }, events: [], timer: null };
     sel = null;

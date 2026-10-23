@@ -4,6 +4,11 @@
 
 Scope: this review session only. Nothing was committed or deployed.
 
+- **Hangman online.** A third mode: two people in a room, one sets the word, the other guesses, roles swap each round, first to three wins, rematch from the game over card. The secret word stays on the server (`hangman/engine.js`, 43 checks in `worker/hangman.test.mjs`; `hangman-online-two-players` drives two real pages).
+- **Splinter phrases vs faces.** All 352 lines read against their faces; six lines got their own face (taunts no longer wear a scared face) and two first-hit lines no longer say "finally" on a first guess.
+- **`tools/launch-review.mjs`** and **`docs/LAUNCH.md`**: the per-game launch review and its ledger (Hangman first).
+
+
 - **Hearts leak fixed.** `viewFor` in `worker/card-protocol.mjs` sent every player the
   `pass` events (who passed which cards). It now sends a person only the passes they gave or got.
 - **Crazy 8 online table talk fixed.** `crazy-8/game.js` still used `angel`/`devil` and `"a"`/`"d"`;
@@ -23,7 +28,21 @@ Scope: this review session only. Nothing was committed or deployed.
   (a pass then counts as "flaky"). Full run: 1043/1043 passed, 6 flaky, 955 s.
 - **Repo regrouped** (decision 0005): shared code in `shared/`, fonts/vendor/splash/ui images in `assets/`, loose docs in `docs/`. Removed the unused `assets/ui/hint.png`; moved the unreferenced `previews/` screenshots out of the repo.
 - **Tests:** `tests/run.mjs` is the one entry point (units, changed, quick, full); `tests/links.mjs` checks every local link; `tools/deepseek.mjs` hands a bounded task to DeepSeek (text or diff back, nothing executed). The three viewport-matrix checks reuse one page per game (resize instead of reload: 2036 to 676 job-seconds); the test browser blocks every non-local request (it was sending Google Analytics hits for each test page).
-- **Not done:** `shared/ga.js` still sends hits from localhost when a person browses locally (one-line guard, not applied).
+- **Hearts, Ludo and Car Park redone to match the reference screenshots.**
+  - Hearts: tall flat felt table with a heart, big cream name tags straddling the rim, the across hand above the table and the side stacks at the screen edges, big overlapping hand cards (grey when not playable), scores back on the tags, the gear in the header row, and the whole layout scales down on a short screen instead of scrolling. A chosen card no longer jumps above its neighbours (it hid the next card you wanted to tap).
+  - Ludo: saturated home lanes, star start squares, four-triangle centre, tokens drawn as two overlapping discs, the four yard slots packed closer, a dark frame, a big ROLL label and the dice row centred.
+  - Car Park: illustrated top-down cars and trucks (drawn in `car-park/game.js`), grey frame round a near-black lot with an exit tab, "Level N" header with a par tab, restart in the header, two round undo/hint buttons.
+  - The Options popover on Hearts and Ludo used to be squeezed into the 56px gear and clipped at the screen edge; it now opens across the page column.
+  - Numbered computers are now "Bot 1/2/3" everywhere (Hearts, Ludo, Dominoes, Farkle, Liar's Dice, Skull and the online lobby); the plain "Computer" in two-player games is unchanged.
+  - Checks: `hearts-matches-reference`, `ludo-matches-reference`, `car-park-matches-reference`, `hearts-gear-in-header`; the Hearts pass test taps the visible slice of each card.
+- **Wording and symbols:** every opponent is a "Bot" now ("Bot wins", "Bot thinking…", "The bot sank your fleet", online notices, lobby labels "Bots" / "Bot level"; the "vs computer" mode name and the taunt voice are unchanged). Decorative emoji removed from result text (party, boom and flag); the dominoes arrows, the theme sun, Crazy 8 suits, Yatzy's sun and the hub art suits now ask for text form so iPhones do not draw them as emoji. Memory's fruit cards and Word Guess's colour squares are content and stay. Pig's hub card now shows Online.
+- **`tools/serve.mjs`:** a local server (`--phone` opens an iPhone-sized touch window, `--lan` shares it on the Wi-Fi) for trying the games by hand.
+- **Hangman: Splinter reworked.**
+  - Look: a cream face with bold dark features inside a thinner ring (the old face was hairline marks on a dark disc, so most expressions looked alike). Bigger head, a visible neck (shoulders 18px below the chin), the torso grows straight out of the chin, and the head ring is drawn from the top where the rope meets it. Each part has an explicit draw length (`--len`) instead of `pathLength`, so it draws the same in every browser. Dust puffs at the joint a new part grows from.
+  - Expressions: pleading is now a trembling mouth, sad brows and a tear; terrified is an open scream; smug is half-lidded; every one of the 15 is a different picture (`hangman-faces-distinct`).
+  - Talking: he used to speak after 86% of guesses and the bubble stayed up. Now a line is owed only at his first miss, the last life (and its first two right letters) and as an answer to his own hint; otherwise he stays quiet for five guesses after a line and reacts with his face and a little body language. About 2.4 lines a game on the default, down from about 5.4. The bubble fades after a few seconds (the end of the game stays), idle chatter happens once after 20 seconds, and a new "Splinter talks" setting (some / a lot / silent) sits in the Options menu; a poke is always answered.
+  - Checks: `hangman-neck-and-drawing`, `hangman-faces-distinct`, `hangman-talks-less`; `node hangman/banter.test.mjs` simulates 800 games per setting; the older Hangman checks were updated for the quiet pacing and the face that fades in half a second after the head.
+- **Analytics:** `shared/ga.js` now sends nothing from localhost, 127.0.0.1 or ::1 (`shared/ga.test.mjs`, check `ga-skips-localhost`).
 - **Not fixed, for a decision:** Hearts and Ludo use a lone gear instead of the Options bar; Lost Cities
   hand cards show large faint colour letters; the hub card for Pig does not say Online although it is.
 

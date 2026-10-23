@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../shared/ga.js?v=e72d72bb"></script>
+<script src="../shared/ga.js?v=29f6c01f"></script>
 <title>hangman · games</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
@@ -40,6 +40,7 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared/shared.css?v=15c7c1ca">
 <link rel="stylesheet" href="../shared/fun.css?v=87759006">
+<link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
 <link rel="stylesheet" href="../shared/async-share.css?v=60323ef7">
 <style>
   #word {
@@ -111,6 +112,7 @@
     html body.fun.g-hangman .hm-g,
     #man, .hm-eye, .hm-sweat, .hm-bubble, .hm-bubble::before, #hm-dust, #hm-dust-land, #hm-spark,
     .hm-gallows .pt, .hm-gallows .pt.on, #rope { animation: none !important; }
+    .hm-stage .hm-face, .hm-stage .hm-skin { transition: none; }
     .hm-gallows .pt.on { stroke-dashoffset: 0; }
     .hm-stage[data-mood="saved"] .pt { opacity: 1; visibility: visible; stroke-dashoffset: 0; }
     .hm-stage[data-mood="saved"] #rope { transform: scaleY(.04); opacity: 0; }
@@ -145,31 +147,35 @@
   #hm-shadow { fill: #000; opacity: .12; transform-box: fill-box; transform-origin: center; transition: opacity .3s ease, transform .3s ease; }
   #hm-outline { stroke: #fff; stroke-width: 4; stroke-linecap: round; fill: none; stroke-dasharray: 4 7; opacity: 0; transition: opacity .25s ease; }
   .hm-stage[data-misses="0"] #hm-outline { opacity: .13; }
-  .hm-gallows .pt { stroke: #fff; stroke-width: 6; stroke-linecap: round; fill: none; opacity: 0; visibility: hidden; stroke-dasharray: 100; stroke-dashoffset: 100; }
+  .hm-gallows .pt { stroke: #fff; stroke-width: 6; stroke-linecap: round; fill: none; opacity: 0; visibility: hidden; stroke-dasharray: var(--len, 100); stroke-dashoffset: var(--len, 100); }
   .hm-gallows .pt.on { opacity: 1; visibility: visible; animation: hm-draw .34s ease-out forwards; }
   @keyframes hm-draw { to { stroke-dashoffset: 0; } }
+  .hm-gallows .hm-head-pt { stroke-width: 5.4; transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; }   /* the ring is drawn from the top, clockwise */
+  .hm-skin { fill: #fff1d6; opacity: 0; transition: opacity .25s ease .3s; }                                   /* the face fills in once the ring is drawn */
+  .hm-stage:not([data-misses="0"]) .hm-skin, .hm-stage[data-mood="saved"] .hm-skin { opacity: 1; }
   #man { transform-box: view-box; transform-origin: 128px 40px; animation: hm-breathe 5.4s ease-in-out infinite; }
   @keyframes hm-breathe { 0%, 100% { transform: rotate(-.35deg); } 50% { transform: rotate(.35deg); } }
 
-  .hm-face { opacity: 0; transition: opacity .2s ease; }
+  .hm-face { opacity: 0; transition: opacity .2s ease .32s; }
   .hm-stage:not([data-misses="0"]) .hm-face { opacity: 1; }
   .hm-stage[data-mood="saved"] .hm-face { opacity: 1; }
   .hm-eye { transform-box: fill-box; transform-origin: center; animation: hm-blink 5.6s infinite; }
-  .hm-eye-white { fill: #fff; stroke: #2b2d33; stroke-width: 1.2; }
+  .hm-eye-white { fill: #fff; stroke: #2b2d33; stroke-width: 1.7; }
   .hm-pupil { fill: #2b2d33; transform: translate(var(--look-x, 0px), var(--look-y, 0px)); transition: transform .18s ease-out; }
   @keyframes hm-blink { 0%, 91%, 100% { transform: scaleY(1); } 93%, 95% { transform: scaleY(.12); } }
   .hm-eyes { transform-box: fill-box; transform-origin: center; transition: transform .2s ease; }
-  .hm-brows { opacity: 0; stroke: #f4ead8; stroke-width: 1.6; stroke-linecap: round; fill: none; transition: opacity .2s ease; }
+  .hm-brows { opacity: 0; stroke: #2b2d33; stroke-width: 2.7; stroke-linecap: round; fill: none; transition: opacity .2s ease; }
   .hm-brows-raised, .hm-brows-angry, .hm-brows-flat, .hm-eyes-happy, .hm-blush, .hm-tear { opacity: 0; }
-  .hm-eyes-happy path { stroke: #f4ead8; stroke-width: 1.8; stroke-linecap: round; fill: none; }
-  .hm-blush ellipse { fill: #ff9aa8; opacity: .55; }
+  .hm-eyes-happy path { stroke: #2b2d33; stroke-width: 2.7; stroke-linecap: round; fill: none; }
+  .hm-blush ellipse { fill: #ff8fa0; opacity: .8; }
   .hm-tear { fill: #9fd8ff; }
   .hm-sweat { opacity: 0; fill: #9fd8ff; stroke: #2b2d33; stroke-width: 1; }
-  .hm-mouth { opacity: 0; stroke: #f4ead8; stroke-width: 1.8; stroke-linecap: round; fill: none; transition: opacity .15s ease; }
-  .hm-mouth-gasp { fill: #f4ead8; stroke: none; }
-  .hm-mouth-wail { fill: #f4ead8; stroke: none; }
+  .hm-mouth { opacity: 0; stroke: #2b2d33; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; fill: none; transition: opacity .15s ease; }
+  .hm-mouth-gasp { fill: #3b2626; stroke: none; }
+  .hm-mouth-wail { fill: #3b2626; stroke: none; }
+  .hm-mouth-grin { fill: #3b2626; stroke: #3b2626; stroke-width: 1.6; }
   .hm-mouth-o { fill: none; }
-  .hm-xeyes { opacity: 0; stroke: #f4ead8; stroke-width: 1.9; stroke-linecap: round; fill: none; }
+  .hm-xeyes { opacity: 0; stroke: #2b2d33; stroke-width: 2.7; stroke-linecap: round; fill: none; }
   @keyframes hm-sweat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 
   /* the miss-count mood is the resting face; a spoken line's face wins below */
@@ -177,9 +183,9 @@
   .hm-stage[data-mood="worried"] .hm-mouth-worried { opacity: 1; }
   .hm-stage[data-mood="worried"] .hm-brows-sad,
   .hm-stage[data-mood="scared"] .hm-brows-sad,
-  .hm-stage[data-mood="terrified"] .hm-brows-sad { opacity: .8; }
+  .hm-stage[data-mood="terrified"] .hm-brows-sad { opacity: 1; }
   .hm-stage[data-mood="scared"] .hm-mouth-gasp,
-  .hm-stage[data-mood="terrified"] .hm-mouth-gasp { opacity: 1; }
+  .hm-stage[data-mood="terrified"] .hm-mouth-wail { opacity: 1; }
   .hm-stage[data-mood="scared"] .hm-sweat,
   .hm-stage[data-mood="terrified"] .hm-sweat { opacity: 1; animation: hm-sweat 1.8s ease-in-out infinite; }
   .hm-stage[data-mood="scared"] .hm-eye { animation-duration: 3s; }
@@ -194,7 +200,7 @@
   .hm-stage[data-mood="saved"] .hm-eyes-normal { opacity: 0; }
   .hm-stage[data-mood="saved"] .hm-eyes-happy,
   .hm-stage[data-mood="saved"] .hm-blush { opacity: 1; }
-  .hm-stage[data-mood="saved"] .hm-brows-raised { opacity: .8; }
+  .hm-stage[data-mood="saved"] .hm-brows-raised { opacity: 1; }
   .hm-stage[data-mood="saved"] .hm-mouth-grin { opacity: 1; }
   .hm-stage[data-mood="saved"] .hm-sweat { opacity: 0; animation: none; }
 
@@ -211,37 +217,39 @@
   .hm-stage[data-face] .hm-eyes { transform: none; }
   .hm-stage[data-face="calm"] .hm-mouth-calm,
   .hm-stage[data-face="worried"] .hm-mouth-worried { opacity: 1; }
-  .hm-stage[data-face="worried"] .hm-brows-sad { opacity: .8; }
+  .hm-stage[data-face="worried"] .hm-brows-sad { opacity: 1; }
   .hm-stage[data-face="scared"] .hm-mouth-gasp,
-  .hm-stage[data-face="terrified"] .hm-mouth-gasp { opacity: 1; }
+  .hm-stage[data-face="terrified"] .hm-mouth-wail { opacity: 1; }
   .hm-stage[data-face="scared"] .hm-brows-sad,
-  .hm-stage[data-face="terrified"] .hm-brows-sad { opacity: .8; }
+  .hm-stage[data-face="terrified"] .hm-brows-sad { opacity: 1; }
   .hm-stage[data-face="scared"] .hm-sweat,
   .hm-stage[data-face="terrified"] .hm-sweat,
   .hm-stage[data-face="pleading"] .hm-sweat,
   .hm-stage[data-face="nervous"] .hm-sweat { opacity: 1; animation: hm-sweat 1.8s ease-in-out infinite; }
   .hm-stage[data-face="scared"] .hm-eyes { transform: scale(1.1); }
   .hm-stage[data-face="terrified"] .hm-eyes { transform: scale(1.16); }
-  .hm-stage[data-face="pleading"] .hm-mouth-wail { opacity: 1; }
-  .hm-stage[data-face="pleading"] .hm-brows-raised { opacity: .9; }
+  .hm-stage[data-face="pleading"] .hm-mouth-wobble,
+  .hm-stage[data-face="pleading"] .hm-tear { opacity: 1; }
+  .hm-stage[data-face="pleading"] .hm-brows-sad { opacity: 1; }
+  .hm-stage[data-face="pleading"] .hm-eyes { transform: scale(1.2); }
   .hm-stage[data-face="smug"] .hm-mouth-smirk { opacity: 1; }
-  .hm-stage[data-face="smug"] .hm-brows-raised { opacity: .8; }
-  .hm-stage[data-face="smug"] .hm-eyes { transform: scaleY(.7); }
+  .hm-stage[data-face="smug"] .hm-brows-raised { opacity: 1; }
+  .hm-stage[data-face="smug"] .hm-eyes { transform: scaleY(.55); }
   .hm-stage[data-face="annoyed"] .hm-mouth-flat { opacity: 1; }
-  .hm-stage[data-face="annoyed"] .hm-brows-angry { opacity: .9; }
+  .hm-stage[data-face="annoyed"] .hm-brows-angry { opacity: 1; }
   .hm-stage[data-face="annoyed"] .hm-eyes { transform: scaleY(.66); }
   .hm-stage[data-face="deadpan"] .hm-mouth-flat { opacity: 1; }
-  .hm-stage[data-face="deadpan"] .hm-brows-flat { opacity: .7; }
+  .hm-stage[data-face="deadpan"] .hm-brows-flat { opacity: 1; }
   .hm-stage[data-face="shocked"] .hm-mouth-o { opacity: 1; }
-  .hm-stage[data-face="shocked"] .hm-brows-raised { opacity: .9; }
+  .hm-stage[data-face="shocked"] .hm-brows-raised { opacity: 1; }
   .hm-stage[data-face="shocked"] .hm-eyes { transform: scale(1.16); }
   .hm-stage[data-face="hopeful"] .hm-mouth-calm { opacity: 1; }
-  .hm-stage[data-face="hopeful"] .hm-brows-raised { opacity: .85; }
+  .hm-stage[data-face="hopeful"] .hm-brows-raised { opacity: 1; }
   .hm-stage[data-face="proud"] .hm-mouth-grin,
   .hm-stage[data-face="saved"] .hm-mouth-grin { opacity: 1; }
   .hm-stage[data-face="proud"] .hm-brows-raised,
   .hm-stage[data-face="saved"] .hm-brows-raised,
-  .hm-stage[data-face="relieved"] .hm-brows-raised { opacity: .85; }
+  .hm-stage[data-face="relieved"] .hm-brows-raised { opacity: 1; }
   .hm-stage[data-face="proud"] .hm-eyes-happy,
   .hm-stage[data-face="saved"] .hm-eyes-happy,
   .hm-stage[data-face="relieved"] .hm-eyes-happy { opacity: 1; }
@@ -252,7 +260,7 @@
   .hm-stage[data-face="saved"] .hm-blush { opacity: 1; }
   .hm-stage[data-face="relieved"] .hm-mouth-calm { opacity: 1; }
   .hm-stage[data-face="nervous"] .hm-mouth-wobble { opacity: 1; }
-  .hm-stage[data-face="nervous"] .hm-brows-sad { opacity: .8; }
+  .hm-stage[data-face="nervous"] .hm-brows-sad { opacity: 1; }
   .hm-stage[data-face="nervous"] .hm-eyes { transform: scaleY(.82); }
   .hm-stage[data-face="saved"] .hm-tear { opacity: 1; }
   .hm-stage[data-face="dead"] .hm-xeyes { opacity: 1; }
@@ -304,6 +312,7 @@
   #hm-spark { transform-box: fill-box; transform-origin: center; opacity: 0; }
   @keyframes hm-puff { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.6); } }
   html body.fun.g-hangman #word { font-size: clamp(1.8rem, 9vw, 2.8rem); font-weight: 400; color: #fff; margin: 14px 0 4px; letter-spacing: .12em; }
+  html body.fun.g-hangman .hm-score { margin: 0 0 6px; text-align: center; font-size: 14px; color: rgba(255,255,255,.62); }
   html body.fun.g-hangman #misses { color: rgba(255,255,255,.7); font-size: 16px; min-height: 1.4em; margin-bottom: 6px; }
   html body.fun.g-hangman .hm-keyboard { width: 100%; gap: 6px; grid-template-columns: repeat(7, 1fr); }
   html body.fun.g-hangman #keyboard .hm-key { background: #9a938e; color: #fff; border: 0; border-radius: 8px; min-height: 46px; padding: 0; font-size: 22px; font-weight: 400; box-shadow: none; opacity: 1; }
@@ -338,9 +347,16 @@
       <select id="mode" aria-label="Mode">
         <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
         <option data-short="Local" value="local">2 players · same device</option>
+        <option data-short="Online" value="live" hidden>Online room</option>
+      </select>
+      <select id="talk" aria-label="How much Splinter talks">
+        <option data-short="Talks some" value="some">Splinter talks · some</option>
+        <option data-short="Talks a lot" value="lots">Splinter talks · a lot</option>
+        <option data-short="Silent" value="off">Splinter · silent</option>
       </select>
     </div>
     <div id="wa-ui" class="wa-ui" hidden></div>
+    <div id="ms-room" class="ms-room"></div>
     <div id="setup" hidden>
       <input id="setup-input" type="text" maxlength="20" placeholder="Secret word" autocomplete="off" autocapitalize="characters" spellcheck="false">
       <button class="btn primary" id="setup-btn" type="button">Set word</button>
@@ -354,44 +370,45 @@
         <path class="fr" d="M50 186 V18 H128 M50 62 L92 18"/>
         <path id="rope" d="M128 18 V40"/>
         <g id="hm-outline" aria-hidden="true">
-          <circle cx="128" cy="56" r="16"/>
-          <line x1="128" y1="72" x2="128" y2="124"/>
-          <line x1="128" y1="84" x2="106" y2="106"/>
-          <line x1="128" y1="84" x2="150" y2="106"/>
-          <line x1="128" y1="124" x2="110" y2="156"/>
-          <line x1="128" y1="124" x2="146" y2="156"/>
+          <circle cx="128" cy="59" r="19"/>
+          <line x1="128" y1="78" x2="128" y2="128"/>
+          <line x1="128" y1="96" x2="104" y2="119"/>
+          <line x1="128" y1="96" x2="152" y2="119"/>
+          <line x1="128" y1="128" x2="111" y2="159"/>
+          <line x1="128" y1="128" x2="145" y2="159"/>
         </g>
         <g id="man">
-          <circle class="pt" pathLength="100" cx="128" cy="56" r="16"/>
-          <line class="pt" pathLength="100" x1="128" y1="72" x2="128" y2="124"/>
-          <line class="pt" pathLength="100" x1="128" y1="84" x2="106" y2="106"/>
-          <line class="pt" pathLength="100" x1="128" y1="84" x2="150" y2="106"/>
-          <line class="pt" pathLength="100" x1="128" y1="124" x2="110" y2="156"/>
-          <line class="pt" pathLength="100" x1="128" y1="124" x2="146" y2="156"/>
+          <circle class="pt hm-head-pt" cx="128" cy="59" r="19"/>
+          <line class="pt" x1="128" y1="78" x2="128" y2="128"/>
+          <line class="pt" x1="128" y1="96" x2="104" y2="119"/>
+          <line class="pt" x1="128" y1="96" x2="152" y2="119"/>
+          <line class="pt" x1="128" y1="128" x2="111" y2="159"/>
+          <line class="pt" x1="128" y1="128" x2="145" y2="159"/>
+          <circle class="hm-skin" cx="128" cy="59" r="16.4"/>
           <g class="hm-face" aria-hidden="true">
             <g class="hm-eyes hm-eyes-normal">
-              <g class="hm-eye"><circle class="hm-eye-white" cx="122" cy="53" r="4.2"/><circle class="hm-pupil" cx="122" cy="53" r="1.9"/></g>
-              <g class="hm-eye"><circle class="hm-eye-white" cx="134" cy="53" r="4.2"/><circle class="hm-pupil" cx="134" cy="53" r="1.9"/></g>
+              <g class="hm-eye"><circle class="hm-eye-white" cx="121.5" cy="56" r="4.5"/><circle class="hm-pupil" cx="121.5" cy="56" r="2.5"/></g>
+              <g class="hm-eye"><circle class="hm-eye-white" cx="134.5" cy="56" r="4.5"/><circle class="hm-pupil" cx="134.5" cy="56" r="2.5"/></g>
             </g>
-            <g class="hm-eyes hm-eyes-happy" aria-hidden="true"><path d="M118 54 Q122 49 126 54"/><path d="M130 54 Q134 49 138 54"/></g>
-            <g class="hm-brows hm-brows-sad"><path d="M117 46 L125 44"/><path d="M131 44 L139 46"/></g>
-            <g class="hm-brows hm-brows-raised"><path d="M116 45 Q121 42 126 44"/><path d="M130 44 Q135 42 140 45"/></g>
-            <g class="hm-brows hm-brows-angry"><path d="M116 45 L126 49"/><path d="M130 49 L140 45"/></g>
-            <g class="hm-brows hm-brows-flat"><path d="M117 46 L126 46"/><path d="M130 46 L139 46"/></g>
-            <path class="hm-mouth hm-mouth-calm" d="M122 63 Q128 67 134 63"/>
-            <path class="hm-mouth hm-mouth-worried" d="M122 64 Q128 61 134 64"/>
-            <ellipse class="hm-mouth hm-mouth-gasp" cx="128" cy="64" rx="3.2" ry="4.2"/>
-            <line class="hm-mouth hm-mouth-dead" x1="123" y1="64" x2="133" y2="64"/>
-            <path class="hm-mouth hm-mouth-grin" d="M119 62 Q128 73 137 62"/>
-            <path class="hm-mouth hm-mouth-smirk" d="M120 64 Q127 69 136 62"/>
-            <line class="hm-mouth hm-mouth-flat" x1="122" y1="64" x2="134" y2="64"/>
-            <path class="hm-mouth hm-mouth-wail" d="M120 62 Q128 55 136 62 Q132 70 128 70 Q124 70 120 62Z"/>
-            <ellipse class="hm-mouth hm-mouth-o" cx="128" cy="64" rx="2.3" ry="2.9"/>
-            <path class="hm-mouth hm-mouth-wobble" d="M121 64 Q124 61 127 64 Q130 67 133 64 Q135 62 136 64"/>
-            <path class="hm-sweat" d="M145 43 C145 46 148 47 148 50 C148 52.5 146 54 144 54 C142 54 140 52.5 140 50 C140 47 145 46 145 43Z"/>
-            <g class="hm-blush"><ellipse cx="118" cy="59" rx="3.4" ry="1.9"/><ellipse cx="138" cy="59" rx="3.4" ry="1.9"/></g>
-            <path class="hm-tear" d="M137 55 C138 58 138.5 59.5 137 60.5 C135.5 59.5 136 58 137 55Z"/>
-            <g class="hm-xeyes"><path d="M119 49 L125 55 M125 49 L119 55"/><path d="M131 49 L137 55 M137 49 L131 55"/></g>
+            <g class="hm-eyes hm-eyes-happy" aria-hidden="true"><path d="M116.5 57.5 Q121.5 51 126.5 57.5"/><path d="M129.5 57.5 Q134.5 51 139.5 57.5"/></g>
+            <g class="hm-brows hm-brows-sad"><path d="M115 50.5 L125.5 46.5"/><path d="M130.5 46.5 L141 50.5"/></g>
+            <g class="hm-brows hm-brows-raised"><path d="M115.5 48 Q121 43.8 126.5 46.5"/><path d="M129.5 46.5 Q135 43.8 140.5 48"/></g>
+            <g class="hm-brows hm-brows-angry"><path d="M115 46.5 L126.5 51"/><path d="M129.5 51 L141 46.5"/></g>
+            <g class="hm-brows hm-brows-flat"><path d="M116 48 L126.5 48"/><path d="M129.5 48 L140 48"/></g>
+            <path class="hm-mouth hm-mouth-calm" d="M122.5 66 Q128 70 133.5 66"/>
+            <path class="hm-mouth hm-mouth-worried" d="M122.5 69.5 Q128 64.5 133.5 69.5"/>
+            <ellipse class="hm-mouth hm-mouth-gasp" cx="128" cy="67.5" rx="3.4" ry="4.6"/>
+            <line class="hm-mouth hm-mouth-dead" x1="122.5" y1="67.5" x2="133.5" y2="67.5"/>
+            <path class="hm-mouth hm-mouth-grin" d="M119.5 63.5 Q128 76.5 136.5 63.5Z"/>
+            <path class="hm-mouth hm-mouth-smirk" d="M121 67.5 Q127.5 72 136 64.5"/>
+            <line class="hm-mouth hm-mouth-flat" x1="123" y1="67.5" x2="133" y2="67.5"/>
+            <path class="hm-mouth hm-mouth-wail" d="M120.5 67 Q128 58 135.5 67 Q132 74.5 128 74.5 Q124 74.5 120.5 67Z"/>
+            <ellipse class="hm-mouth hm-mouth-o" cx="128" cy="67.5" rx="2.6" ry="3.3"/>
+            <path class="hm-mouth hm-mouth-wobble" d="M121 67.5 Q124 63.5 127 67.5 Q130 71.5 133 67.5 Q135.5 64.5 137 67.5"/>
+            <path class="hm-sweat" d="M149 41 C149 44 152 45 152 48 C152 50.5 150 52 148 52 C146 52 144 50.5 144 48 C144 45 149 44 149 41Z"/>
+            <g class="hm-blush"><ellipse cx="116.5" cy="63" rx="3.8" ry="2.2"/><ellipse cx="139.5" cy="63" rx="3.8" ry="2.2"/></g>
+            <path class="hm-tear" d="M139 60.5 C140.2 63.5 140.8 65.1 139 66.3 C137.2 65.1 137.8 63.5 139 60.5Z"/>
+            <g class="hm-xeyes"><path d="M117 52 L126 61 M126 52 L117 61"/><path d="M130 52 L139 61 M139 52 L130 61"/></g>
           </g>
         </g>
         <g id="hm-spark" aria-hidden="true" fill="#ffd75e">
@@ -407,7 +424,9 @@
     </div>
     <p id="word"></p>
     <p id="misses"></p>
+    <p id="lv-score" class="hm-score" hidden></p>
     <div class="hm-keyboard" id="keyboard" hidden></div>
+    <div class="ms-taunts" id="ms-taunts" hidden></div>
     <div class="toolbar">
       <button class="btn ghost tool-btn" id="reset-btn" type="button"><span class="glyph">↻</span> new game</button>
     </div>
@@ -444,12 +463,15 @@
 </template>
 
 <script src="../shared/taunts.js?v=de2cfe57"></script>
-<script src="../shared/gamekit.js?v=e0e3f4c6"></script>
+<script src="../shared/gamekit.js?v=3678b5be"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
-<script src="../shared/async-share.js?v=51603494"></script>
+<script src="../shared/async-share.js?v=ed2b02b5"></script>
+<script src="../shared/account.js?v=160336a8"></script>
+<script src="../shared/live-share.js?v=2267f8ba"></script>
+<script src="../shared/multiseat.js?v=eca9364b"></script>
 <script defer src="../shared/fun.js?v=0db388a6"></script>
-<script src="banter.js?v=d3e051bd"></script>
-<script src="game.js?v=63b36c1a"></script>
+<script src="banter.js?v=1694b6e0"></script>
+<script src="game.js?v=7158514e"></script>
 <script defer src="../shared/manpage.js?v=6ba2d49b"></script>
 </body>
 </html>

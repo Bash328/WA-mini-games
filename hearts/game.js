@@ -86,18 +86,18 @@
     const now = t.phase === "play" && t.turn === seat;
     box.classList.toggle("now", now);
     const nm = el("div", "nm");
-    nm.append(el("b", "", s.name));
+    nm.append(el("b", "", s.name), el("i", "sc", String(s.score)));
     const fan = el("div", "fan");
-    const shown = Math.min(8, s.count);
+    const shown = Math.min(13, s.count);
     for (let k = 0; k < shown; k++) fan.append(cardNode(null, { small: true }));
     if (!shown) fan.append(el("span", "st", "no cards"));
     box.append(nm, fan);
     let st = s.count + (s.count === 1 ? " card" : " cards") + " · " + s.taken + (s.taken === 1 ? " trick" : " tricks");
     const p = M.players && M.players.find((x) => x.seat === seat);
     if (p && !s.bot) {
-      if (p.autoBot && !p.online) st = s.count + " cards · computer is playing";
+      if (p.autoBot && !p.online) st = s.count + " cards · bot is playing";
       else if (!p.online) st = s.count + " cards · offline: computer in " + Math.max(0, Math.ceil((p.offlineSince + M.takeoverMs - ms.nowMs()) / 1000)) + "s";
-    } else if (s.bot) st = s.count + " cards · computer";
+    } else if (s.bot) st = s.count + " cards · bot";
     box.append(el("div", "st", st));
     box.hidden = seat === you;
   }
@@ -110,7 +110,7 @@
     const s = t.seats[you];
     meEl.innerHTML = "";
     meEl.classList.toggle("now", t.phase === "play" && t.turn === you);
-    meEl.append(document.createTextNode("You"), el("b", "", String(s.score)));
+    meEl.append(document.createTextNode("You"), el("i", "sc", String(s.score)));
     meEl.append(el("span", "", "· " + s.count + (s.count === 1 ? " card" : " cards")));
   }
 
@@ -305,7 +305,7 @@
   }
   function localStart() {
     clearTimeout(Lc && Lc.timer);
-    const names = ["You", "Computer 1", "Computer 2", "Computer 3"];
+    const names = ["You", "Bot 1", "Bot 2", "Bot 3"];
     const bots = [null, diff, diff, diff];
     Lc = { st: H.create({ names, bots }, Math.random), cfg: { level: diff }, events: [], timer: null };
     sel.clear(); lastTrick = null; eventKey = ""; clearTimeout(trickTimer);

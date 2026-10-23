@@ -54,7 +54,7 @@
   const youSeat = () => (M && M.table && M.table.you !== null && M.table.you !== undefined ? M.table.you : null);
   const seatName = (i) => (M && M.table && M.table.seats[i] ? M.table.seats[i].name : "Player " + (i + 1));
   const subj = (i) => (i === youSeat() ? "You" : seatName(i));
-  const vb = (i, one, many) => (i === youSeat() ? one : many);   // "You win" / "Computer 1 wins"
+  const vb = (i, one, many) => (i === youSeat() ? one : many);   // "You win" / "Bot 1 wins"
   function idleLeft() {
     if (!M || M.kind !== "online" || !M.turnSince || !M.table) return null;
     const p = M.players && M.players.find((x) => x.seat === M.table.turn);
@@ -269,7 +269,7 @@
   function localStart() {
     clearTimeout(Lc && Lc.timer);
     const n = Math.max(2, Math.min(5, Number(botsSel.value) || 2));
-    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Computer " + (i + 1)));
+    const names = ["You"].concat(Array.from({ length: n }, (_, i) => "Bot " + (i + 1)));
     const bots = [null].concat(Array(n).fill(diff));
     Lc = { st: S.create({ names, bots, starter: 0 }, Math.random), cfg: { bots: n, level: diff }, events: [], timer: null };
     bidKey = ""; statusKey = "";

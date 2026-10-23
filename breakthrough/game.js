@@ -124,8 +124,8 @@
   function afterMove() {
     if (mode === "ai" && cur !== humanIs) {
       thinking = true;
-      Gamekit.turn(cur, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(cur, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 900);
       return;
@@ -158,7 +158,7 @@
     cancelAI();
     Gamekit.turn(null);
     if (status === "draw") statusEl.textContent = "Draw. 60 moves without a capture. " + Gamekit.taunt("draw");
-    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Computer wins. " + Gamekit.taunt("loss");
+    else if (mode === "ai") statusEl.textContent = winner === humanIs ? "You win! " + Gamekit.taunt("win") : "Bot wins. " + Gamekit.taunt("loss");
     else statusEl.textContent = NAMES[winner] + " wins. " + NAMES[other(winner)] + " — " + Gamekit.taunt("loss");
     render();
   }

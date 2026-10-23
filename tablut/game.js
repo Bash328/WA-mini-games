@@ -128,8 +128,8 @@
   function afterMove() {
     if (mode === "ai" && cur !== humanIs) {
       thinking = true;
-      Gamekit.turn(cur, "Computer thinking…", true);
-      statusEl.textContent = "Computer thinking…";
+      Gamekit.turn(cur, "Bot thinking…", true);
+      statusEl.textContent = "Bot thinking…";
       render();
       aiTimer = setTimeout(aiMove, 800 + Math.random() * 500);
       return;
@@ -166,7 +166,7 @@
       : NAMES[other(winner)] + " had no move.";
     if (mode === "ai") {
       const humanWon = winner === humanIs;
-      statusEl.textContent = (humanWon ? "You win! " : "Computer wins. ") + reason + " " +
+      statusEl.textContent = (humanWon ? "You win! " : "Bot wins. ") + reason + " " +
         Gamekit.taunt(humanWon ? "win" : "loss");
     } else {
       statusEl.textContent = NAMES[winner] + " win. " + reason + " " +
