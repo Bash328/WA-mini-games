@@ -71,6 +71,10 @@ tag = "v3"
 new_sqlite_classes = ["CardRoom"]
 
 [vars]
+# Kill switch for the offline storage in sw.js: set to "1" and deploy, and every phone deletes what it stored and stops
+# using it the next time it loads a page online. Set back to "0" and deploy to turn it on again. See the header of sw.js.
+SW_KILL = "0"
+
 # Kill switch: set to "0" and redeploy. The API answers 503, open rooms are
 # closed, and the games hide the "live online" option on their next probe.
 LIVE_ENABLED = "1"

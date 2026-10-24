@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-24
 Last verified: 2026-10-24
-Worktree: clean after the 2026-10-24 commit (phone-video fixes, one dice roll everywhere, Battleship on PC, audit fixes); committed, pushed and deployed. `main` is the only branch.
+Worktree: branch `polish-2026-10-24` (committed once mid-session, then more work; see `git log`). Not pushed. `main` still has the 2026-10-24 morning commit.
 
 ## What this is
 
@@ -19,6 +19,8 @@ pass are done. The every-page regression has been run; its only two failures
 were test-side timing flakes, now hardened and rechecked.
 
 Recently verified:
+
+- **2026-10-24 (later) session.** See `docs/CHANGELOG.md` ("PC side panels everywhere, Worker only for pages, offline storage, hub sprite, accessibility"). Things the next agent must know: pages go through the Worker, **static files do not** (`run_worker_first` array; caching is in `_headers`; never load a script or style without `?v=`); `sw.js` stores pages and files on phones and has a kill switch (`SW_KILL` in `wrangler.toml`, or `CACHING` in `sw.js`); the hub art is in `assets/hub-art.svg` and was only checked in Chrome; side panels are on by default (`data-no-desk` opts out); wrangler and node fetch on this PC need `NODE_OPTIONS="--dns-result-order=ipv4first --no-network-family-autoselection"`. The to-do list is empty.
 
 - **2026-10-24 session.** Phone-video fixes (Car Park drag, Tic-Tac-Toe twitch, Ludo hops/replay/stuck roll/slate blue, Water Sort pour, Hearts trick cards and side stacks, 2048 merge), Battleship bot cannon and PC column, one shared dice roll (`Gamekit.rollDice`) in six games, Pig renamed Greed (URL unchanged), and the audit fixes (Skull rematch, poke push failure, body size, lookup rate limit, Worker de-duplication, preview-title test). Units 47/47; browser checks for every changed page passed; full suite not run. See `docs/CHANGELOG.md` (2026-10-24).
 - **Flow Free's board no longer clips on Safari.** `.ff-inner` used `height: 100%`; WebKit resolved it against the board's border box, so the grid was 20px taller than the content box and the bottom row was clipped. It now uses `height: auto; aspect-ratio: 1 / 1`. `--only flow-free-board` — **1/1**; `--page flow-free` — **17/17**; `node tests/run.mjs changed` — **200/200** browser checks and **47/47** unit files. WebKit checked at 390×664, 390×844, 375×667, 320×568 and 430×932 on medium and hard boards. See `docs/CHANGELOG.md` (2026-10-23 late).

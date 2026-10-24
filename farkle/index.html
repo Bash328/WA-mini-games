@@ -83,15 +83,15 @@
   .fk-msg { min-height: 2.7em; display: flex; align-items: center; justify-content: center; padding: 0 4px; text-align: center; font-size: 15px; line-height: 1.25; color: rgba(255,255,255,.82); }
   .fk-msg.bad { color: #ffb3a6; }
   .fk-msg.good { color: #ffd76b; }
-  .fk-hint { min-height: 2.7em; margin: 0 0 2px; padding: 0 4px; text-align: center; font-size: 13px; line-height: 1.25; color: rgba(255,255,255,.6); }
+  .fk-hint { min-height: 2.7em; margin: 0 0 2px; padding: 0 4px; text-align: center; font-size: 13px; line-height: 1.25; color: rgba(255,255,255,.75); }
   .fk-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
   html body.fun.g-farkle .panel .fk-actions button {
     height: 62px; min-height: 0; min-width: 0; padding: 4px 8px; border-radius: 16px;
     font-size: clamp(18px, 5.6vw, 24px); line-height: 1; letter-spacing: .04em; white-space: nowrap;
   }
-  html body.fun.g-farkle .panel .fk-actions #fk-primary { background: #d95a4e; box-shadow: 0 6px 0 #a8403a; }
+  html body.fun.g-farkle .panel .fk-actions #fk-primary { background: #c8483d; box-shadow: 0 6px 0 #9a3730; }
   html body.fun.g-farkle .panel .fk-actions #fk-bank { background: #2fb44a; box-shadow: 0 6px 0 #1c7a31; }
-  html body.fun.g-farkle .panel .fk-actions #fk-primary:disabled { background: #d95a4e; box-shadow: 0 6px 0 #a8403a; opacity: .42; }
+  html body.fun.g-farkle .panel .fk-actions #fk-primary:disabled { background: #c8483d; box-shadow: 0 6px 0 #9a3730; opacity: .42; }
   html body.fun.g-farkle .panel .fk-actions #fk-bank:disabled { background: #2fb44a; box-shadow: 0 6px 0 #1c7a31; opacity: .42; }
 
   /* the room screens and taunt row sit where the shared ones expect them */
@@ -142,7 +142,7 @@
     <div id="board" class="fk" data-board data-reserve>
       <div class="fk-scores" id="fk-scores" aria-label="Scores"></div>
       <div class="fk-tray">
-        <div class="fk-dice" id="fk-dice" aria-label="Dice"></div>
+        <div class="fk-dice" id="fk-dice" role="group" aria-label="Dice"></div>
       </div>
       <div class="fk-turnrow"><span>This turn</span><b id="fk-turnscore">0</b></div>
       <div class="fk-msg" id="fk-msg" role="status" aria-live="polite"></div>
@@ -200,7 +200,7 @@
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=219f1806"></script>
+<script defer src="../shared/gamekit.js?v=dc0f4f14"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
 <script defer src="../shared/live-share.js?v=61dc292f"></script>
 <script defer src="../shared/multiseat.js?v=2f80f13b"></script>

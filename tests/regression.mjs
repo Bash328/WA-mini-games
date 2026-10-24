@@ -108,7 +108,9 @@ function serve() {
     if (p.endsWith('/')) p += 'index.html';
     const f = path.join(ROOT, p);
     if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('no'); }
-    res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' });
+    const head = { 'content-type': types[path.extname(f)] || 'application/octet-stream' };
+    if (/[?&]swkill=1/.test(req.url) && path.extname(f) === '.html') head['x-sw-kill'] = '1';      // what the Worker adds when SW_KILL = "1"
+    res.writeHead(200, head);
     fs.createReadStream(f).pipe(res);
   });
   return new Promise((r) => srv.listen(0, () => r(srv)));
@@ -718,10 +720,12 @@ check('reversi-flip-animates', 'reversi: flipped discs used to change colour ins
   const p = await open('reversi', 390, "var m=document.querySelector('#mode');m.value='local';m.dispatchEvent(new Event('change'))");
   await p.waitForTimeout(500);
   const bad = [];
+  // watch from before the click: a single look right after it can land after the animation under load
+  await p.evaluate(() => { window.__maxFlip = 0; const t0 = performance.now(); const f = () => { window.__maxFlip = Math.max(window.__maxFlip, document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale/.test(k.transform || ''))).length); if (performance.now() - t0 < 1800) requestAnimationFrame(f); }; f(); });
   await p.locator('.rv-cell.hint').first().click();
-  const during = await p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale/.test(k.transform || ''))).length);
+  await p.waitForTimeout(1500);
+  const during = await p.evaluate(() => window.__maxFlip);
   if (during < 2) bad.push('no flip animation after a move (saw ' + during + ' animations)');
-  await p.waitForTimeout(1200);
   const n = await p.evaluate(() => ({ b: document.querySelectorAll('.rv-disc.black').length, w: document.querySelectorAll('.rv-disc.white').length }));
   if (n.b !== 4 || n.w !== 1) bad.push('after the first move black should have 4 discs and white 1 (saw ' + n.b + ' and ' + n.w + ')');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
@@ -1095,13 +1099,19 @@ check('new-squares-pop-in', 'stones, marks and numbers just appeared in their sq
   await p.waitForTimeout(600);
   const bad = [];
   const popping = () => p.evaluate(() => document.getAnimations().filter((a) => a.effect && a.effect.getKeyframes().some((k) => /scale\(1\.16\)/.test(k.transform || ''))).length);
+  let n = -1;
   if (g === 'sudoku' || g === 'mini-sudoku') {
+    // the daily puzzle decides which digits fit: a digit that clashes with its row marks many cells at once and the pop skips
+    // (by design), so try digits until one fits
     const cell = p.locator('#board .sk-cell:not(.given)').first();
-    await cell.click(); await p.locator('#pad button').first().click();
+    for (let d = 0; d < 9 && n < 1; d++) {
+      await cell.click(); await p.locator('#pad button').nth(d).click();
+      n = await popping();
+    }
   } else if (g === 'ultimate-tic-tac-toe') await p.locator('#board button:not([disabled])').nth(4).click();
   else if (g === 'tic-tac-toe') await p.locator('#board .cell').nth(4).click();
   else await p.locator('#board button:not([disabled])').nth(12).click();
-  const n = await popping();
+  if (n < 1) n = await popping();
   if (n < 1) bad.push('nothing popped when a square was filled');
   if (p.errs.length) bad.push('errors: ' + p.errs.join(';'));
   await p.close();
@@ -1350,10 +1360,12 @@ check('battleship-vs-computer-turn-and-fire-word', 'battleship vs the computer: 
   const armed = await cap();
   if (armed.op !== '1' || !/fire/i.test(armed.text)) bad.push('FIRE does not show on the cannon once a square is aimed at (' + JSON.stringify(armed) + ')');
   await p.locator('#bs-fire').click();
-  await p.waitForTimeout(900);
+  // poll instead of sleeping a fixed time: the computer's pause is 0.8 to 1.3 s and the slide takes 0.65 s, so a fixed wait misses the window under load
+  await p.waitForFunction(() => { const e = document.getElementById('bs-fire'); return getComputedStyle(e).visibility === 'hidden' && e.getBoundingClientRect().top >= 844; }, null, { timeout: 5000 }).catch(() => {});
   const away = await p.evaluate(() => { const e = document.getElementById('bs-fire'); return { top: Math.round(e.getBoundingClientRect().top), vis: getComputedStyle(e).visibility, pill: document.body.className }; });
   if (away.top < 844 || away.vis !== 'hidden') bad.push('the cannon did not slide away down while the computer takes its turn (' + JSON.stringify(away) + ')');
-  await p.waitForTimeout(2200);
+  await p.waitForFunction(() => { const e = document.getElementById('bs-fire'); return getComputedStyle(e).visibility === 'visible' && e.getBoundingClientRect().bottom <= 844; }, null, { timeout: 9000 }).catch(() => {});
+  await p.waitForTimeout(200);
   const back = await p.evaluate(() => { const e = document.getElementById('bs-fire'); return { bottom: Math.round(e.getBoundingClientRect().bottom), vis: getComputedStyle(e).visibility, mine: document.querySelectorAll('#bs-sub .bs-cell.hit, #bs-sub .bs-cell.miss, #bs-sub .bs-cell.sunk').length }; });
   if (back.vis !== 'visible' || back.bottom > 844) bad.push('the cannon did not come back for your turn (' + JSON.stringify(back) + ')');
   if (back.mine !== 1) bad.push('the computer should have fired exactly once (' + back.mine + ')');
@@ -1611,6 +1623,104 @@ check('hub-art-in-cached-sprite', 'the hub page carried 155 KB of tile drawings 
   const r = await p.evaluate(() => { const tiles = [...document.querySelectorAll('.artbox svg')]; return { n: tiles.length, empty: tiles.filter((s) => { const u = s.querySelector('use'); const b = u && u.getBBox(); return !(b && b.width > 0 && b.height > 0); }).length }; });
   if (r.empty) bad.push(r.empty + ' of ' + r.n + ' tiles drew nothing');
   await p.close();
+  return bad;
+}, ['chess']);
+
+check('options-button-has-a-name', 'Lighthouse: on Hearts, Ludo and Battleship the Options button shows only a gear, so it had no name at all for a screen reader; every page\'s Options button must keep an accessible name', async (g) => {
+  const p = await open(g, 390);
+  const r = await p.evaluate(() => { const b = document.querySelector('.gk-optbtn'); return b ? (b.getAttribute('aria-label') || b.textContent.trim()) : null; });
+  await p.close();
+  return r === null ? [] : (/options/i.test(r) ? [] : ['the Options button has no accessible name (' + JSON.stringify(r) + ')']);
+}, FUN);
+
+check('contrast-farkle-battleship', 'Lighthouse: Farkle\'s ROLL button (white on #d95a4e, 3.8), its hint text (4.1) and Battleship\'s YOU / FOE labels (2.7 and 3.8 on the brown bar) were below the 4.5 contrast WCAG asks for; the dice group also had a label but no role, and the tray ship pictures were stretched', async () => {
+  const lum = (rgb) => { const c = rgb.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const parse = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+  const bad = [];
+  let p = await open('farkle', 390);
+  const f = await p.evaluate(() => { const b = document.getElementById('fk-primary'), d = document.getElementById('fk-dice'); const c = getComputedStyle(b); return { color: c.color, bg: c.backgroundColor, role: d.getAttribute('role') }; });
+  if (ratio(parse(f.color), parse(f.bg)) < 4.5) bad.push('Farkle ROLL contrast is ' + ratio(parse(f.color), parse(f.bg)).toFixed(2));
+  if (f.role !== 'group') bad.push('the Farkle dice container has a label but no role');
+  if (!/color: rgba\(255,255,255,\.(7[5-9]|[89]\d?)\)/.test(fs.readFileSync(path.join(ROOT, 'farkle/index.html'), 'utf8').match(/\.fk-hint \{[^}]*\}/)[0])) bad.push('the Farkle hint text is back to a dim colour');
+  await p.close();
+  p = await open('battleship', 390);
+  const b = await p.evaluate(() => { const bar = document.querySelector('.fun-vs'), l = document.querySelector('.fun-vs b.l'), r = document.querySelector('.fun-vs b.r'); return { bg: getComputedStyle(bar).backgroundColor, l: getComputedStyle(l).color, r: getComputedStyle(r).color, fit: getComputedStyle(document.querySelector('#bs-tray .bs-svg') || document.body).objectFit }; });
+  for (const side of ['l', 'r']) if (ratio(parse(b[side]), parse(b.bg)) < 4.5) bad.push('Battleship ' + (side === 'l' ? 'YOU' : 'FOE') + ' label contrast is ' + ratio(parse(b[side]), parse(b.bg)).toFixed(2));
+  if (b.fit !== 'contain') bad.push('the Battleship tray pictures are stretched again (object-fit ' + b.fit + ')');
+  await p.close();
+  return bad;
+}, ['farkle']);
+
+check('offline-after-a-visit', 'the service worker cached nothing, so a game never opened without signal and every cold start refetched everything; pages you have opened (and their scripts, styles and pictures) are now kept, a shared ?s= link falls back to the same game, and the API is never answered from storage', async () => {
+  const bad = [];
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(() => { try { localStorage.setItem('wa:sw', '1'); } catch (e) { /* ignore */ } });
+  await ctx.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort());
+  const p = await ctx.newPage();
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto(base);
+  await p.evaluate(() => navigator.serviceWorker.ready);
+  await p.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 8000 }).catch(() => bad.push('the service worker never took control of the page'));
+  await p.reload(); await p.waitForTimeout(800);                        // the first visit is not kept (the worker was not in charge yet): the second is
+  await p.goto(base + 'chess/'); await p.waitForTimeout(500);
+  await p.reload(); await p.waitForTimeout(1200);                       // second load: every script and style now goes through the worker
+  const stored = await p.evaluate(async () => { const out = {}; for (const k of await caches.keys()) out[k] = (await (await caches.open(k)).keys()).map((r) => new URL(r.url).pathname + new URL(r.url).search); return out; });
+  const files = Object.entries(stored).filter(([k]) => /files$/.test(k)).flatMap(([, v]) => v);
+  const pages = Object.entries(stored).filter(([k]) => /pages$/.test(k)).flatMap(([, v]) => v);
+  if (!files.some((f) => /shared\/gamekit\.js\?v=/.test(f))) bad.push('the game script was not kept');
+  if (files.filter((f) => /shared\/gamekit\.js/.test(f)).length > 1) bad.push('older copies of the game script are piling up');
+  if (!pages.includes('/chess/')) bad.push('the chess page was not kept');
+  await ctx.setOffline(true);
+  for (const [url, label] of [[base + 'chess/', 'a page you opened'], [base + 'chess/?s=abc123', 'a shared link to a game you opened'], [base, 'the hub']]) {
+    try {
+      await p.goto(url, { timeout: 15000 }); await p.waitForTimeout(700);
+      const ok = await p.evaluate(() => document.querySelectorAll('#board .sq').length === 64 || document.querySelectorAll('.card').length > 20);
+      if (!ok) bad.push('offline, ' + label + ' did not draw');
+    } catch (e) { bad.push('offline, ' + label + ' did not open: ' + String(e.message).slice(0, 80)); }
+  }
+  const api = await p.evaluate(() => fetch('/api/user/status').then(() => 'answered').catch(() => 'failed'));
+  if (api !== 'failed') bad.push('the API answered while offline: it must never be served from storage');
+  await ctx.setOffline(false);
+  if (errs.length) bad.push('errors: ' + errs.slice(0, 2).join(';'));
+  await ctx.close();
+  return bad;
+}, ['chess']);
+
+check('sw-kill-switch', 'the service worker stores pages on phones and a mistake in it could only be fixed on each phone\'s next visit; a server flag (SW_KILL, sent as the x-sw-kill header on every page) now makes it delete everything it stored and stand aside, and it resumes by itself when the flag goes away', async () => {
+  const bad = [];
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(() => { try { localStorage.setItem('wa:sw', '1'); } catch (e) { /* ignore */ } });
+  await ctx.route((u) => /^https?:$/.test(u.protocol) && !u.href.startsWith(base), (r) => r.abort());
+  const p = await ctx.newPage();
+  const stores = () => p.evaluate(async () => { const o = {}; for (const k of await caches.keys()) o[k] = (await (await caches.open(k)).keys()).length; return o; });
+  await p.goto(base);
+  await p.evaluate(() => navigator.serviceWorker.ready);
+  await p.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 8000 }).catch(() => bad.push('the service worker never took control'));
+  await p.reload(); await p.goto(base + 'chess/'); await p.reload(); await p.waitForTimeout(1000);
+  const before = await stores();
+  if (!(before['wa-v1-files'] > 0 && before['wa-v1-pages'] > 0)) bad.push('nothing was stored before the switch: ' + JSON.stringify(before));
+  // the server turns the switch on: the page comes with x-sw-kill: 1
+  await p.goto(base + 'chess/?swkill=1'); await p.waitForTimeout(1200);
+  const killed = await stores();
+  if (Object.keys(killed).some((k) => k !== 'wa-v1-paused')) bad.push('the stores were not deleted when the switch came on: ' + JSON.stringify(killed));
+  if (!('wa-v1-paused' in killed)) bad.push('the worker did not mark itself paused');
+  // while paused a file or page is not answered from storage
+  await p.reload(); await p.waitForTimeout(800);
+  const still = await stores();
+  if (Object.keys(still).some((k) => k !== 'wa-v1-paused')) bad.push('it stored something while paused: ' + JSON.stringify(still));
+  // the switch goes off: the next page without the header makes it resume
+  await p.goto(base + 'chess/'); await p.waitForTimeout(1200);
+  await p.reload(); await p.waitForTimeout(1200);
+  const after = await stores();
+  if ('wa-v1-paused' in after) bad.push('it did not resume after the switch went off: ' + JSON.stringify(after));
+  if (!(after['wa-v1-pages'] > 0)) bad.push('it did not start storing pages again: ' + JSON.stringify(after));
+  const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  if (!/const CACHING = true;/.test(sw)) bad.push('sw.js is shipped with CACHING = false (the code-level kill switch is on)');
+  const toml = fs.readFileSync(path.join(ROOT, 'wrangler.toml'), 'utf8');
+  if (!/^SW_KILL = "0"$/m.test(toml)) bad.push('wrangler.toml does not ship SW_KILL = "0"');
+  await ctx.close();
   return bad;
 }, ['chess']);
 

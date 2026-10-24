@@ -257,7 +257,7 @@ function viaWorker(res) {
   return out;
 }
 
-export default {
+const handler = {
   async fetch(request, env) {
     // Before anything else, and before touching the assets: www and the
     // apex were each serving their own indexable copy of every page.
@@ -320,5 +320,19 @@ export default {
         .onDocument({ comments(c) { c.remove(); } });
     }
     return rw.transform(out);
+  },
+};
+
+// Kill switch for the service worker (sw.js). With SW_KILL = "1" in wrangler.toml, every page carries x-sw-kill: 1 and
+// each phone's worker deletes what it stored and goes inert on its next online page load. See the header of sw.js.
+// Only pages get the marker; sockets (status 101), the API and files are passed through untouched.
+export default {
+  async fetch(request, env, ctx) {
+    const res = await handler.fetch(request, env, ctx);
+    if (env.SW_KILL !== "1" || res.status === 101 || res.webSocket) return res;
+    if (!(res.headers.get("content-type") || "").includes("text/html")) return res;
+    const out = new Response(res.body, res);
+    out.headers.set("x-sw-kill", "1");
+    return out;
   },
 };

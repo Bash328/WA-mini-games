@@ -742,6 +742,7 @@
     if (ctl.children.length || opts.children.length) {
       const ob = mk("button", "btn ghost gk-optbtn");
       ob.type = "button";
+      ob.setAttribute("aria-label", "Options");      // Hearts, Ludo and Battleship show only the gear: without this it has no name for a screen reader
       ob.innerHTML = '<svg class="gk-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span>';
       ob.addEventListener("click", () => body.classList.toggle("gk-play"));
       (menu || ctl).before(ob);
@@ -945,8 +946,17 @@
     apply();
   }
 
+  // Keep the pages and files in the phone's own storage (sw.js) so games open fast and single-player ones work offline.
+  // Skipped under test automation (it would cache across checks) unless a test asks for it with localStorage "wa:sw".
+  function keepOffline() {
+    if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost")) return;
+    try { if (navigator.webdriver && !localStorage.getItem("wa:sw")) return; } catch (e) { /* storage blocked: register anyway */ }
+    global.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+  }
+
   function init() {
     backIsHistory();
+    keepOffline();
     undoIcons();
     layout();
     deskPanels();
