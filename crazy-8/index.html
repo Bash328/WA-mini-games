@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
-<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
+<link rel="stylesheet" href="../shared/shared.css?v=a1f1633d">
+<link rel="stylesheet" href="../shared/fun.css?v=ce7f7cc6">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <script>window.c8Theme = function (pref) { return pref === "classic" || pref === "halloween" ? pref : new Date().getMonth() === 9 ? "halloween" : "classic"; };
 try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || localStorage.getItem("crazy-8:theme"); document.documentElement.setAttribute("data-c8theme", window.c8Theme(p)); } catch (e) { document.documentElement.setAttribute("data-c8theme", window.c8Theme()); }</script>
@@ -68,7 +68,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   #c8 .c8-card.sm::before { border-width: 0.6cqw; inset: 0.5cqw; }
   #c8 .c8-card.lg { width: 19cqw; height: 27.5cqw; }
   #c8 .c8-card.lg .r { font-size: 6.6cqw; } #c8 .c8-card.lg .s { top: 8cqw; font-size: 5cqw; } #c8 .c8-card.lg .m { font-size: 15cqw; }
-  #c8-hand .c8-card.sel { transform: translateY(-4cqw); box-shadow: 0 0 0 0.9cqw var(--accent); z-index: 2; }
+  #c8-hand .c8-card.sel { outline: 0.9cqw solid var(--accent); outline-offset: -0.9cqw; z-index: 2; }
 
   /* ---------- the table: players round a felt circle ---------- */
   #c8 { display: none; container-type: inline-size; position: relative; margin: 0 -11px; padding: 0 11px; overflow: hidden; }

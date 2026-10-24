@@ -131,8 +131,11 @@ body.fun[class*="g-"] .panel .btn {
   background: var(--fun-btn); color: #fff;
   box-shadow: 0 5px 0 color-mix(in srgb, var(--fun-btn) 72%, #000);
 }
-body.fun[class*="g-"] .panel button:hover, body.fun[class*="g-"] .panel .btn:hover {
-  background: var(--fun-btn); color: #fff; filter: brightness(1.08);
+/* hover only where there is a mouse: a tap on a phone leaves :hover stuck on the last cell touched (queens cells brightened for good) */
+@media (hover: hover) {
+  body.fun[class*="g-"] .panel button:hover, body.fun[class*="g-"] .panel .btn:hover {
+    background: var(--fun-btn); color: #fff; filter: brightness(1.08);
+  }
 }
 body.fun[class*="g-"] .panel button:active, body.fun[class*="g-"] .panel .btn:active {
   transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--fun-btn) 72%, #000);

@@ -3124,6 +3124,38 @@ check('dice-selection-ring-inside', 'tapping and untapping dice left yellow sliv
   return bad;
 }, ['farkle']);
 
+check('card-selection-ring-inside', 'the selected card in dominoes, onitama and crazy-8 drew its ring outside the card and lifted it (the same yellow sliver as the Farkle dice on an iPhone); the ring must be drawn inside the card and the card must not lift', async () => {
+  const bad = [];
+  for (const [page, sel] of [['dominoes', /html body\.fun\.g-dominoes \.panel \.dm-tile\.sel \.dm \{[^}]*\}/], ['onitama', /html body\.fun\.g-onitama \.panel \.on-card\.sel \{[^}]*\}/], ['crazy-8', /#c8-hand \.c8-card\.sel \{[^}]*\}/]]) {
+    const css = fs.readFileSync(path.join(ROOT, page, 'index.html'), 'utf8');
+    const rule = (css.match(sel) || [''])[0];
+    if (!rule) { bad.push(page + ': the selected-card rule was not found'); continue; }
+    if (!/outline-offset:\s*-/.test(rule)) bad.push(page + ': the selected ring is not inside the card');
+    if (/translate\(|translateY\((?!0)/.test(rule.replace(/transform:\s*none/, ''))) bad.push(page + ': the selected card lifts');
+    if (/box-shadow:\s*0 0 0 \S+ (#|var)/.test(rule)) bad.push(page + ': the selected card still has an outer ring');
+  }
+  return bad;
+}, ['dominoes']);
+
+check('cell-hover-only-with-a-mouse', 'on an iPhone a tapped cell stayed in its hover colour (tic-tac-toe, ultimate tic-tac-toe, queens, connect-four columns) until the next tap elsewhere; every cell hover rule must sit inside @media (hover: hover)', async () => {
+  const bad = [];
+  const files = ['tic-tac-toe/index.html', 'ultimate-tic-tac-toe/index.html', 'connect-four/index.html', 'shared/shared.css', 'shared/fun.css'];
+  const rules = [/\.cell:hover/, /\.ut-cell:not\(:disabled\):hover/, /\.c4-col-btn:hover/, /\.panel button:hover, body\.fun\[class\*="g-"\] \.panel \.btn:hover/];
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const re of rules) {
+      const g = new RegExp(re.source, 'g'); let m;
+      while ((m = g.exec(src))) {
+        // walk back to the start of this rule's line and check an open "@media (hover: hover)" sits before it in the same block
+        const head = src.slice(0, m.index);
+        const open = head.lastIndexOf('@media (hover: hover)');
+        if (open < 0 || head.slice(open).split('{').length - 1 <= head.slice(open).split('}').length - 1) bad.push(f + ': ' + m[0] + ' is not inside @media (hover: hover)');
+      }
+    }
+  }
+  return bad;
+}, ['tic-tac-toe']);
+
 check('farkle-dice-throw', 'Farkle: the dice just changed number on a roll; they must roll like every dice game (each die turns over while its faces flick past) and land on the numbers rolled', async () => {
   const p = await open('farkle', 390);
   const bad = [];

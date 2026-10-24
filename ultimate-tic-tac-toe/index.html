@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
-<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
+<link rel="stylesheet" href="../shared/shared.css?v=a1f1633d">
+<link rel="stylesheet" href="../shared/fun.css?v=ce7f7cc6">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   .ut-wrap { width: min(520px, 100%); margin: 8px auto 0; }
@@ -58,7 +58,7 @@
     font-family: inherit; font-weight: 700; color: var(--fg); font-size: clamp(0.8rem, 3.6vw, 1.3rem); cursor: pointer;
   }
   #board .ut-cell:disabled { cursor: default; opacity: 1; }
-  #board .ut-cell:not(:disabled):hover { background: var(--panel); }
+  @media (hover: hover) { #board .ut-cell:not(:disabled):hover { background: var(--panel); } }
   #board .ut-cell.x { color: var(--accent); }
   #board .ut-cell.o { color: var(--accent-2); }
   #board .ut-cell.last { outline: 2px dashed var(--muted); outline-offset: -3px; }
@@ -83,7 +83,7 @@
   html body.fun.g-ultimate-tic-tac-toe .ut-small { background: #fff; border: 3px solid #cfc9e4; border-radius: 12px; gap: 3px; padding: 4px; }
   html body.fun.g-ultimate-tic-tac-toe .ut-small.target { border-color: #ffbf2e; background: #fff6d6; }
   html body.fun.g-ultimate-tic-tac-toe #board .ut-cell { background: #eeeaf8; border-radius: 6px; opacity: 1; box-shadow: none; color: #2f3555; font-weight: 400; }
-  html body.fun.g-ultimate-tic-tac-toe #board .ut-cell:not(:disabled):hover { background: #ddd6f1; }
+  @media (hover: hover) { html body.fun.g-ultimate-tic-tac-toe #board .ut-cell:not(:disabled):hover { background: #ddd6f1; } }
   html body.fun.g-ultimate-tic-tac-toe #board .ut-cell.x, html body.fun.g-ultimate-tic-tac-toe .ut-small.x .ut-mark { color: #ff4d46; }
   html body.fun.g-ultimate-tic-tac-toe #board .ut-cell.o, html body.fun.g-ultimate-tic-tac-toe .ut-small.o .ut-mark { color: #0aa5ea; }
   html body.fun.g-ultimate-tic-tac-toe .ut-mark { background: rgba(255,255,255,.88); font-weight: 400; }

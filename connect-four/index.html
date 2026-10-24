@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
-<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
+<link rel="stylesheet" href="../shared/shared.css?v=a1f1633d">
+<link rel="stylesheet" href="../shared/fun.css?v=ce7f7cc6">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   .c4-wrap {
@@ -63,9 +63,11 @@
     min-height: var(--tap);
     border-radius: 8px;
   }
-  .c4-col-btn:hover:not(:disabled) {
-    color: var(--accent);
-    background: rgba(245,184,0,0.08);
+  @media (hover: hover) {
+    .c4-col-btn:hover:not(:disabled) {
+      color: var(--accent);
+      background: rgba(245,184,0,0.08);
+    }
   }
   .c4-col-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 

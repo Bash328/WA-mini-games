@@ -866,9 +866,11 @@ body.g-tic-tac-toe .panel .cell {
   font-weight: 700;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-body.g-tic-tac-toe .panel .cell:hover:not(:disabled):not(.taken) {
-  background: var(--border);
-  border-color: var(--border-hi);
+@media (hover: hover) {
+  body.g-tic-tac-toe .panel .cell:hover:not(:disabled):not(.taken) {
+    background: var(--border);
+    border-color: var(--border-hi);
+  }
 }
 body.g-tic-tac-toe .panel .cell.x { color: var(--coral); }
 body.g-tic-tac-toe .panel .cell.o { color: var(--teal); }
@@ -1210,9 +1212,11 @@ body.g-connect-four .panel .c4-col-btn {
      var(--tap)=44px — a 4px tap-target shrink. */
   min-height: var(--tap);
 }
-body.g-connect-four .panel .c4-col-btn:hover:not(:disabled) {
-  background: rgba(245,184,0,0.08);
-  color: var(--accent);
+@media (hover: hover) {
+  body.g-connect-four .panel .c4-col-btn:hover:not(:disabled) {
+    background: rgba(245,184,0,0.08);
+    color: var(--accent);
+  }
 }
 
 /* ── 2048 ───────────────────────────────────────────────────── */
