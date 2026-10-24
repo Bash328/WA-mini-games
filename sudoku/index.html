@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <style>
   .sk-grid {
     display: grid;
@@ -140,10 +140,12 @@
   html body.fun.g-sudoku.g-sudoku .panel .sk-act { background: rgba(255,255,255,.12); box-shadow: none; border: 0; border-radius: 16px; font-size: 14px; color: #fff; }
   html body.fun.g-sudoku.g-sudoku .panel .sk-act[aria-pressed="true"] { background: #ffbf2e; color: #5a3a00; }
   html body.fun.g-sudoku.g-sudoku .ok { color: #7dffa8; } html body.fun.g-sudoku.g-sudoku .bad { color: #ff8a7a; }
+  /* PC side panels: this page is tall, so its board column is shorter than the standard one (measured: fits at 1280x900, 1366x768, 1440x900, 1920x1080) */
+  @media (min-width: 1100px) and (min-height: 700px) { html body.fun.g-sudoku[data-desk-panels] { --deskboard: clamp(300px, calc(100svh - 291px), 700px); } }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-sudoku fun" data-next="Next level" data-fun-zone="mini" data-fun-reset>
+<body class="g-sudoku fun" data-desk-panels data-next="Next level" data-fun-zone="mini" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>sudoku</h1>
@@ -217,7 +219,7 @@
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
+<script defer src="../shared/gamekit.js?v=219f1806"></script>
 <script defer src="../shared/fun.js?v=2d6bc944"></script>
 <script defer src="game.js?v=8e80bfca"></script>
 </body>

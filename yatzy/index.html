@@ -32,8 +32,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <style>
   .yz-dice { display: flex; justify-content: center; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
   body.g-yatzy .panel .yz-die { position: relative; width: 56px; height: 56px; min-height: 0; min-width: 0; padding: 8px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; border-radius: 12px; background: #fbf7ee; border: 1px solid #cdbfa3; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer; transition: transform .1s; }
@@ -66,7 +66,8 @@
   html body.fun.g-yatzy .yz-die i.on { background: #2f3a46; }
   html body.fun.g-yatzy .panel .yz-die.blank { background: #4d5a66; box-shadow: 0 4px 0 #36414b; position: relative; }
   html body.fun.g-yatzy .yz-die.blank::after { content: ""; position: absolute; inset: 28%; background: #c9d1d9; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z'/%3E%3C/svg%3E"); }
-  html body.fun.g-yatzy .panel .yz-die.held, html body.fun.g-yatzy .panel .yz-die.held:active { outline: 0; transform: translateY(-8px); box-shadow: 0 0 0 4px #ffbf2e, 0 4px 0 4px #c98a00; }
+  /* the ring is inside the die and the die does not lift: an outer ring plus a lift left stale yellow slivers on an iPhone (see Farkle) */
+  html body.fun.g-yatzy .panel .yz-die.held, html body.fun.g-yatzy .panel .yz-die.held:active { outline: 0; transform: none; background: #fff3c4; box-shadow: inset 0 0 0 5px #ffbf2e, 0 4px 0 #c98a00; }
   html body.fun.g-yatzy .yz-die .tag { bottom: -22px; color: #ffbf2e; font-size: 11px; }
   html body.fun.g-yatzy .yz-roll { margin: 14px 0 4px; }
   html body.fun.g-yatzy .panel .yz-roll .btn { width: 100%; min-width: 0; height: 60px; min-height: 0; border-radius: 16px; background: #d95a4e; color: #fff; font-size: 30px; letter-spacing: .04em; box-shadow: 0 6px 0 #a8403a; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; }
@@ -99,7 +100,7 @@
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-yatzy fun" data-fun-zone="mini" data-no-wins data-fun-reset>
+<body class="g-yatzy fun" data-desk-panels data-fun-zone="mini" data-no-wins data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>yatzy</h1>
@@ -151,7 +152,7 @@
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
+<script defer src="../shared/gamekit.js?v=219f1806"></script>
 <script defer src="rules.js?v=19a4e9fe"></script>
 <script defer src="../shared/fun.js?v=2d6bc944"></script>
 <script defer src="game.js?v=45683679"></script>

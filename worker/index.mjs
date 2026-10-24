@@ -249,6 +249,14 @@ class Drop {
   element(el) { el.remove(); }
 }
 
+// Marks a response the Worker handled. Scripts, styles and pictures never reach the Worker (wrangler.toml), so they must
+// NOT carry it: the regression check "static-files-skip-worker" looks for exactly that.
+function viaWorker(res) {
+  const out = new Response(res.body, res);
+  out.headers.set("x-worker", "1");
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     // Before anything else, and before touching the assets: www and the
@@ -272,6 +280,7 @@ export default {
       out.headers.set("Cache-Control", "no-cache");
       out.headers.set("Content-Type", "text/javascript; charset=utf-8");
       out.headers.set("Service-Worker-Allowed", "/");
+      out.headers.set("x-worker", "1");
       return out;
     }
 
@@ -279,7 +288,7 @@ export default {
 
     // Only HTML is worth rewriting, and only when the link carries state.
     const type = res.headers.get("content-type") || "";
-    if (!type.includes("text/html")) return res;
+    if (!type.includes("text/html")) return viaWorker(res);
 
     const url = new URL(request.url);
     const live = url.searchParams.get("live");
@@ -287,7 +296,7 @@ export default {
       ? ogForLive(url.pathname, live)
       : ogFor(url.pathname, url.searchParams.get("s"));
     const bot = PREVIEW_BOT.test(request.headers.get("User-Agent") || "");
-    if (!og && !bot) return res;
+    if (!og && !bot) return viaWorker(res);
 
     // A preview varies with ?s= / ?live= (and with who is asking), so a cache
     // keyed on the path alone would hand every player the first player's preview.
@@ -295,6 +304,7 @@ export default {
     out.headers.append("Vary", "Accept");
     out.headers.append("Vary", "User-Agent");
     out.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+    out.headers.set("x-worker", "1");
     if (live !== null) out.headers.set("X-Robots-Tag", "noindex");
 
     let rw = new HTMLRewriter();

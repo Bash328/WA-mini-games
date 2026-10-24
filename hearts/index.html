@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
 <style>
   /* ---------- the chunky look: a green card table ---------- */
@@ -273,10 +273,15 @@
   #ht .ht-card.dim.red { --ink: #7d2c2c; }
   .ht-actions { min-height: 12cqw; padding-top: 2cqw; }
   .ht-actions .btn { min-height: 9.5cqw; }
+  /* PC side panels: the gear and its menu follow the board column (--deskboard) instead of the 430px phone column */
+  @media (min-width: 1100px) and (min-height: 700px) {
+    body.g-hearts[data-desk-panels] .gk-optwrap { right: calc((100vw - var(--deskboard)) / 2 + 72px) !important; }
+    html body.fun.g-hearts[data-desk-panels][data-fun-zone] .gk-menu { left: calc((100vw - var(--deskboard)) / 2 + 8px); right: calc((100vw - var(--deskboard)) / 2 + 8px); }
+  }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-hearts fun" data-fun-zone data-fun-reset>
+<body class="g-hearts fun" data-desk-panels data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <a class="back" href="../">← all games</a>
@@ -363,7 +368,7 @@
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
+<script defer src="../shared/gamekit.js?v=219f1806"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
 <script defer src="../shared/live-share.js?v=61dc292f"></script>
 <script defer src="../shared/multiseat.js?v=2f80f13b"></script>

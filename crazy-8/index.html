@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <script>window.c8Theme = function (pref) { return pref === "classic" || pref === "halloween" ? pref : new Date().getMonth() === 9 ? "halloween" : "classic"; };
 try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || localStorage.getItem("crazy-8:theme"); document.documentElement.setAttribute("data-c8theme", window.c8Theme(p)); } catch (e) { document.documentElement.setAttribute("data-c8theme", window.c8Theme()); }</script>
@@ -255,10 +255,12 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
   [data-c8theme="halloween"] #c8 .c8-card.joker .s { width: 44%; aspect-ratio: 1; }
   [data-c8theme="halloween"] #c8 .c8-card.back { background: var(--c8-pumpkin) center / 58% no-repeat, repeating-linear-gradient(45deg, #2a1245 0 6px, #3d1c66 6px 12px); border-color: #ff8a1f; }
   [data-c8theme="halloween"] #c8 .c8-card.back.sm { background-size: 0 0, auto; }
+  /* PC side panels: this page is tall, so its board column is shorter than the standard one (measured: fits at 1280x900, 1366x768, 1440x900, 1920x1080) */
+  @media (min-width: 1100px) and (min-height: 700px) { html body.fun.g-crazy-8[data-desk-panels] { --deskboard: clamp(300px, calc(100svh - 479px), 700px); } }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-crazy-8 fun" data-fun-zone="slim" data-fun-reset>
+<body class="g-crazy-8 fun" data-desk-panels data-fun-zone="slim" data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <h1>crazy 8</h1>
@@ -416,7 +418,7 @@ try { var q = (location.search.match(/[?&]theme=(\w+)/) || [])[1], p = q || loca
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
+<script defer src="../shared/gamekit.js?v=219f1806"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
 <script defer src="../shared/live-share.js?v=61dc292f"></script>
 <script defer src="engine.js?v=a774e3a3"></script>

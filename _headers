@@ -35,24 +35,30 @@
 /letter-boxed/words.txt
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# The site's own CSS and JS carry no content hash in their filenames, so
-# they can't be immutable — a stale game.js would strand players on a bug
-# that was already fixed. But leaving them on the Workers default of
-# max-age=0, must-revalidate was worse: a game page pulls four stylesheets
-# and four scripts, so every single navigation paid eight blocking
-# revalidation round trips (~0.2s each, measured). GitHub Pages served
-# these with max-age=600 and no round trips at all, so that change made
-# clicking into a game noticeably slower than before the migration.
+# The site's own CSS and JS have no hash in their file NAMES, but every page asks for them as file.js?v=<hash of the
+# file> (tests/cache-bust.mjs stamps them; the cache-versions check fails on a stale stamp). A changed file therefore
+# has a new address, so an old address can be cached for a year: nothing waits on a revalidation after the first visit.
+# The query string is part of the cache key, which is why a rule on the bare path is safe.
 #
-# 600s matches what Pages did. stale-while-revalidate then serves the
-# cached copy instantly for a day while refreshing in the background, so
-# a deploy reaches players within about ten minutes without any load
-# ever waiting on a revalidation.
+# RULE: never load a script or stylesheet without a ?v= stamp, or a phone keeps the old copy for a year.
+# (sw.js is the one exception: the Worker answers it with its own no-cache header, see worker/index.mjs.)
 /*.css
-  Cache-Control: public, max-age=600, stale-while-revalidate=86400
+  Cache-Control: public, max-age=31536000, immutable
 
 /*.js
-  Cache-Control: public, max-age=600, stale-while-revalidate=86400
+  Cache-Control: public, max-age=31536000, immutable
+
+# The hub's art sprite is asked for as hub-art.svg?v=<hash> (stamped like the scripts), so it is immutable too.
+/assets/hub-art.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+# Pictures keep their names when they change, so a day plus background refresh.
+/battleship/ships/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# iPhone launch screens: only fetched when the installed app starts.
+/assets/splash/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
 
 # The Worker also answers on its workers.dev hostname, which serves the
 # same site as wa-minigames.online. Keep search engines off that copy so

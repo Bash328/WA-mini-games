@@ -510,3 +510,44 @@ body.fun[class*="g-"] .panel { animation: gk-fade .28s ease-out; }
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; animation-timing-function: ease-out; }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+/* ── PC side panels (opt-in per page with data-desk-panels on <body>) ────────────────────────────
+   On a big screen the status line and Options go to a panel on the left, the action buttons and hint to a
+   panel on the right, and the board gets the middle at a larger size. gamekit.js moves the elements into
+   .gk-side-l / .gk-side-r only while the window matches this query, and puts them back when it stops.
+   Phones, tablets and short laptop screens keep the single column untouched. */
+@media (min-width: 1100px) and (min-height: 700px) {
+  html body.fun[data-desk-panels] { --deskboard: clamp(460px, calc(100svh - 190px), 720px); }
+  html body.fun[data-desk-panels] .wrap { max-width: min(1240px, 96vw); }
+  html body.fun[data-desk-panels] .topbar { width: min(var(--deskboard), 100%); margin-inline: auto; }
+  html body.fun[data-desk-panels] .panel.gk-desk { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, var(--deskboard)) minmax(200px, 1fr); column-gap: 32px; row-gap: 0; align-items: start; }
+  html body.fun[data-desk-panels] .panel.gk-desk > :not(.gk-side) { grid-column: 2; }
+  html body.fun[data-desk-panels] .gk-side { grid-row: 1 / span 40; height: 0; overflow: visible; display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 0; }
+  html body.fun[data-desk-panels] .gk-side-l { grid-column: 1; }
+  html body.fun[data-desk-panels] .gk-side-r { grid-column: 3; }
+  html body.fun[data-desk-panels] .gk-side > * { margin: 0; width: 100%; box-sizing: border-box; }
+  html body.fun[data-desk-panels] .gk-side-r .gk-acts { flex-direction: column; align-items: stretch; }
+}
+@media (min-width: 1100px) and (min-height: 700px) {
+  /* the message zone lives in the left panel now, so the board column needs no room above it */
+  html body.fun[data-desk-panels] .panel.gk-desk { padding-top: 0; }
+  html body.fun[data-desk-panels] .gk-side > .row { position: static; height: auto; padding: 0; justify-content: flex-start; text-align: left; pointer-events: auto; }
+  html body.fun[data-desk-panels] .gk-side > .turn { position: static; transform: none; height: auto; white-space: normal; }
+  html body.fun[data-desk-panels] .gk-side:has(> .row .status:not(.dup):not(:empty):not(#score)) > .turn { display: none; }
+  html body.fun[data-desk-panels] .gk-side > .gk-slot { height: auto; margin: 0; }
+  html body.fun[data-desk-panels] .gk-side-l .gk-menu { right: auto; width: max(100%, 280px); }
+}
+@media (min-width: 1100px) and (min-height: 700px) {
+  html body.fun[data-desk-panels] .gk-side .turn-text { white-space: normal; overflow: visible; text-overflow: clip; text-wrap: balance; }
+}
+@media (min-width: 1100px) and (min-height: 700px) {
+  html body.fun[data-desk-panels] .gk-side > .row .status:not(.dup):not(:empty) { background: rgba(0,0,0,.3); border-radius: 22px; padding: 16px 18px; text-align: center; text-wrap: balance; box-sizing: border-box; width: 100%; }
+  html body.fun[data-desk-panels] .gk-side > .gk-slot:not(:has(.gk-msg:not([hidden]), .gk-say:not(:empty))) { display: none; }
+}
+@media (min-width: 1100px) and (min-height: 700px) {
+  html body.fun[data-desk-panels] .gk-side > .turn { min-height: 64px; height: auto; padding: 12px 20px; justify-content: center; text-align: center; border-radius: 28px; }
+  html body.fun[data-desk-panels] .gk-side .turn-text { display: block; line-height: 1.2; }
+}
+@media (min-width: 1100px) and (min-height: 700px) {
+  /* Battleship's battle gear is pinned in the header by the page; the side panel must not stretch it */
+  html body.fun.g-battleship.bs-battle[data-desk-panels] .gk-side > .gk-optwrap { width: 56px; }
+}

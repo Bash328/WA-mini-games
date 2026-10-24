@@ -200,7 +200,9 @@
     fleetsEl.innerHTML = row("foe", v.enemyFleet, v.myShots) + row("me", v.myFleet, v.theirShots);
     // the tab on the left: how many of their ships you have sunk (blue) and of yours they have (red)
     const sunk = (fleet, shots) => { const set = new Set(shots); return fleet ? fleet.filter((_, k) => shipSunk(fleet, k, set)).length : 0; };
-    scoreEl.innerHTML = '<b class="foe">' + sunk(v.enemyFleet, v.myShots) + '</b><i></i><b class="me">' + sunk(v.myFleet, v.theirShots) + "</b>";
+    const mineSunk = sunk(v.enemyFleet, v.myShots), theirsSunk = sunk(v.myFleet, v.theirShots);
+    scoreEl.innerHTML = '<b class="foe">' + mineSunk + '</b><i></i><b class="me">' + theirsSunk + "</b>";
+    $("score").textContent = "You: " + mineSunk + " Foe: " + theirsSunk;           // the header bar (fun.js) reads this
   }
 
   function buildGrid(el) {

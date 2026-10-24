@@ -1608,12 +1608,12 @@ html[data-theme="light"] body[class*="g-"] {
   }
 }
 html[data-theme="light"] body[class*="g-"] .panel { box-shadow: 0 1px 3px rgba(60,40,10,.10), 0 8px 24px rgba(60,40,10,.10); }
-html[data-theme="light"] body[class*="g-"] .panel button.ghost:hover,
-html[data-theme="light"] body[class*="g-"] .topbar .back:hover { background: rgba(60,40,10,.06); }
+html[data-theme="light"] body[class*="g-"]:not(.fun) .panel button.ghost:hover,
+html[data-theme="light"] body[class*="g-"]:not(.fun) .topbar .back:hover { background: rgba(60,40,10,.06); }
 @media (prefers-color-scheme: light) {
   html:not([data-theme="dark"]) body[class*="g-"] .panel { box-shadow: 0 1px 3px rgba(60,40,10,.10), 0 8px 24px rgba(60,40,10,.10); }
-  html:not([data-theme="dark"]) body[class*="g-"] .panel button.ghost:hover,
-  html:not([data-theme="dark"]) body[class*="g-"] .topbar .back:hover { background: rgba(60,40,10,.06); }
+  html:not([data-theme="dark"]) body[class*="g-"]:not(.fun) .panel button.ghost:hover,
+  html:not([data-theme="dark"]) body[class*="g-"]:not(.fun) .topbar .back:hover { background: rgba(60,40,10,.06); }
 }
 
 /* ── Top bar: ← all games · title ········ theme · how to ? ─────────── */
@@ -1754,10 +1754,10 @@ body.g-backgammon { --p1: #ff6b6b; --p2: #f4efe6; }
 
 /* light theme: Sudoku colours, and primary buttons that turned white-on-white when hovered */
 html[data-theme="light"] :is(body.g-mini-sudoku, body.g-sudoku) { --sk-grid: #e6dcc9; --sk-line: #8a7a5e; --sk-cell: #fbf7ee; --sk-cell-b: #cfc4ad; --sk-digit: #1f8f6a; --sk-given: #e3d9c4; --sk-given-fg: #231f1a; --sk-peer: #f1eadb; --sk-given-peer: #d9ceb7; --sk-note: #6b6459; --sk-btn: #efe8da; --sk-btn-b: #c9bca5; --sk-btn-hover: #e6dcc9; --sk-btn-hover-b: #a39b8c; --sk-act: #efe8da; }
-html[data-theme="light"] body[class*="g-"] .panel button.primary:hover, html[data-theme="light"] body[class*="g-"] .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
+html[data-theme="light"] body[class*="g-"]:not(.fun) .panel button.primary:hover, html[data-theme="light"] body[class*="g-"]:not(.fun) .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
 @media (prefers-color-scheme: light) {
   html:not([data-theme="dark"]) :is(body.g-mini-sudoku, body.g-sudoku) { --sk-grid: #e6dcc9; --sk-line: #8a7a5e; --sk-cell: #fbf7ee; --sk-cell-b: #cfc4ad; --sk-digit: #1f8f6a; --sk-given: #e3d9c4; --sk-given-fg: #231f1a; --sk-peer: #f1eadb; --sk-given-peer: #d9ceb7; --sk-note: #6b6459; --sk-btn: #efe8da; --sk-btn-b: #c9bca5; --sk-btn-hover: #e6dcc9; --sk-btn-hover-b: #a39b8c; --sk-act: #efe8da; }
-  html:not([data-theme="dark"]) body[class*="g-"] .panel button.primary:hover, html:not([data-theme="dark"]) body[class*="g-"] .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
+  html:not([data-theme="dark"]) body[class*="g-"]:not(.fun) .panel button.primary:hover, html:not([data-theme="dark"]) body[class*="g-"]:not(.fun) .panel .btn.primary:hover { background: color-mix(in srgb, var(--fg) 88%, #fff); border-color: var(--fg); color: var(--bg); }
 }
 
 /* Once play starts the menus fold away; the Options button brings them back. */

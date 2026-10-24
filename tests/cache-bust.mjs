@@ -15,7 +15,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
 const hash = (f) => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 8);
-const REF = /((?:src|href)=")((?:\.\.\/)?[\w./-]+\.(?:js|css))(\?v=[\w]+)?(")/g;
+// scripts and styles, plus the hub's art sprite (assets/hub-art.svg?v=<hash>#art-<game>, so a #fragment may follow)
+const REF = /((?:src|href)=")((?:\.\.\/)?[\w./-]+?(?:\.(?:js|css)|hub-art\.svg))(\?v=[\w]+)?(#[\w-]+)?(")/g;
 
 let stale = 0;
 // the redesigned game pages, and the hub (the root index.html)
@@ -25,10 +26,10 @@ for (const dir of pages) {
   if (!fs.existsSync(page)) continue;
   const html = fs.readFileSync(page, 'utf8');
   if (!html.includes('fun.css')) continue;                       // only the redesigned pages
-  const out = html.replace(REF, (m, a, p, v, z) => {
+  const out = html.replace(REF, (m, a, p, v, frag, z) => {
     const file = path.join(dir.dir, p);
     if (!fs.existsSync(file) || /^https?:/.test(p)) return m;
-    return a + p + '?v=' + hash(file) + z;
+    return a + p + '?v=' + hash(file) + (frag || '') + z;
   });
   if (out !== html) {
     stale++;

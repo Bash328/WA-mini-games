@@ -899,9 +899,57 @@
     }, true);
   }
 
+  // Coming from the hub, Back/Home step back in history instead of loading the hub again: the browser
+  // restores the page it kept (instant, scroll kept) rather than waiting on the network.
+  function backIsHistory() {
+    document.addEventListener("click", (e) => {
+      const t = e.target && e.target.closest && e.target.closest(".topbar .back, .gk-over .home");
+      if (!t || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      let ref; try { ref = new URL(document.referrer); } catch (err) { return; }
+      const to = new URL(t.getAttribute("href") || "", location.href);
+      if (history.length < 2 || ref.origin !== location.origin || ref.pathname !== to.pathname || ref.search || to.search) return;
+      e.preventDefault();
+      history.back();
+    });
+  }
+
+  // PC side panels (pages with data-desk-panels; the CSS is at the end of fun.css). While the window is wide and tall
+  // enough, the status line and Options go to a left panel and the action buttons and hints to a right one; each moved
+  // element leaves a comment marker so it goes back to exactly its place when the window shrinks.
+  function deskPanels() {
+    const panel = $(".panel");
+    // on by default for every fun page; a page that cannot take the panels sets data-no-desk on the body
+    if (document.body.classList.contains("fun") && !document.body.hasAttribute("data-no-desk")) document.body.setAttribute("data-desk-panels", "");
+    if (!panel || !document.body.hasAttribute("data-desk-panels") || !global.matchMedia) return;
+    const mq = global.matchMedia("(min-width: 1100px) and (min-height: 700px)");
+    let moved = [], left = null, right = null;
+    function park(el, side) {
+      if (global.getComputedStyle(el).position === "fixed") return;      // a page that pins its gear in the header keeps it there
+      const mark = document.createComment("gk-desk");
+      el.before(mark); side.append(el); moved.push([el, mark]);
+    }
+    function apply() {
+      if (mq.matches && !moved.length) {
+        left = mk("div", "gk-side gk-side-l"); right = mk("div", "gk-side gk-side-r");
+        $$(":scope > .turn, :scope > .row, :scope > .gk-slot, :scope > .gk-optwrap", panel).forEach((el) => park(el, left));
+        $$(":scope > .gk-acts, :scope > .footer-note", panel).forEach((el) => park(el, right));
+        panel.prepend(left, right); panel.classList.add("gk-desk");
+      } else if (!mq.matches && moved.length) {
+        moved.forEach(([el, mark]) => mark.replaceWith(el));
+        moved = []; left.remove(); right.remove(); panel.classList.remove("gk-desk");
+      }
+    }
+    // the turn pill and message strip are built after this runs: park them as they arrive
+    new MutationObserver(() => { if (moved.length) $$(":scope > .turn, :scope > .gk-slot", panel).forEach((el) => park(el, left)); }).observe(panel, { childList: true });
+    (mq.addEventListener ? mq.addEventListener("change", apply) : mq.addListener(apply));
+    apply();
+  }
+
   function init() {
+    backIsHistory();
     undoIcons();
     layout();
+    deskPanels();
     $$("select").forEach(enhanceSelect);
     watchPanel();
     pressedFeedback();

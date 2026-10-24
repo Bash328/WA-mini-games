@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
@@ -276,16 +276,36 @@
   html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mid { width: var(--bw); }
   html body.fun.g-battleship .panel .bs-cannon, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-cannon { width: calc(var(--bw) * .37); }
   body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { left: max(12px, calc(50% - var(--bw) / 2 + 12px)); right: max(12px, calc(50% - var(--bw) / 2 + 12px)); }
+  /* v8: the battle screen uses the same header and Options bar as every other game (back, YOU / FOE ships sunk, restart, ?),
+     the white half-circle tabs are gone, and nothing is faded or blurred: the sides are told apart by the page colour alone */
+  html body.fun.g-battleship.bs-battle .topbar { display: grid !important; margin: 0; padding: max(10px, env(safe-area-inset-top)) 12px 0; box-sizing: border-box; width: var(--bw); max-width: 100%; margin-inline: auto; }
+  html body.fun.g-battleship.bs-battle .wrap { padding-top: 0; }
+  /* the Options bar is a gear in the header (where the ? was, like Ludo), so the boards sit higher; How to play lives in its menu */
+  body.bs-battle .gk-optwrap { position: fixed !important; top: max(10px, env(safe-area-inset-top)) !important; right: calc((100vw - var(--bw)) / 2 + 12px) !important; left: auto !important; width: 56px; height: 56px; margin: 0; padding: 0; z-index: 80; }
+  body.bs-battle .gk-optbtn { display: inline-flex !important; width: 56px; height: 56px; min-height: 0; margin: 0; padding: 0; border-radius: 50%; background: var(--fun-chip); font-size: 0; overflow: hidden; justify-content: center; }
+  body.bs-battle .gk-optbtn span { display: none; }
+  body.bs-battle .gk-optbtn .gk-gear { width: 26px; height: 26px; }
+  body.bs-battle .topbar .man-trigger { visibility: hidden; pointer-events: none; }      /* keeps its slot so the score bar stays centred; the gear sits on top of it */
+  html body.fun.g-battleship.bs-battle[data-fun-zone] .gk-menu { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(8px, calc((100vw - var(--bw)) / 2 + 8px)); right: max(8px, calc((100vw - var(--bw)) / 2 + 8px)); }
+  body.bs-battle .bs-tab { display: none !important; }
+  /* PC side panels: the status line, turn pill and message strip are not shown on the battle screen even once they sit in a side panel */
+  body.bs-battle .gk-side > .row, body.bs-battle .gk-side > .turn, body.bs-battle .gk-side > .gk-slot { display: none !important; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] { --gh: min(calc(var(--bw) * .825), calc((100svh - 172px) / 2)); min-height: 0; justify-content: flex-start; padding-top: 12px; box-sizing: border-box; }   /* a little air between the score bar and the top board */
+  html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub, html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull,
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-fleets .row.me .bs-mini { opacity: 1; filter: none; }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-hull.sunk { opacity: .85; filter: sepia(1) saturate(4) hue-rotate(-25deg) brightness(.85); }
+  html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mini.sunk { opacity: .35; }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-battleship fun" data-fun-zone data-fun-reset>
+<body class="g-battleship fun" data-desk-panels data-fun-zone data-fun-reset data-fun-vs="YOU,FOE">
 <main class="wrap">
   <div class="topbar">
     <h1>battleship</h1>
     <a class="back" href="../">← all games</a>
   </div>
   <div class="panel" id="bs">
+    <span id="score" hidden></span>
     <div class="row">
       <p class="status" id="status">Your move.</p>
       <button class="btn ghost tool-btn man-trigger" data-man="battleship" data-man-title="BATTLESHIP(1)" type="button">
@@ -293,6 +313,7 @@
       </button>
     </div>
     <div class="controls" style="justify-content:center">
+      <button class="btn ghost tool-btn man-trigger" data-man="battleship" data-man-title="BATTLESHIP(1)" type="button">How to play</button>
       <select id="mode" aria-label="Mode">
         <option data-short="WhatsApp" value="whatsapp" selected>2 players · WhatsApp</option>
         <option data-short="Computer" value="computer">vs computer</option>
@@ -375,11 +396,11 @@
 </template>
 
 <script src="../shared/taunts.js?v=cc001b6b"></script>
-<script src="../shared/gamekit.js?v=d7d6d488"></script>
+<script src="../shared/gamekit.js?v=219f1806"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../shared/async-share.js?v=0a9136e6"></script>
 <script defer src="../shared/fun.js?v=2d6bc944"></script>
-<script src="game.js?v=4e440a84"></script>
+<script src="game.js?v=8b9b50ec"></script>
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 </body>
 </html>

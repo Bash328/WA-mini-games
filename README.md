@@ -400,7 +400,7 @@ First-time setup, in order:
 
 To go back to GitHub Pages: point the nameservers (or the A records) at GitHub again, per the section below, and restore the `CNAME` file — it was deleted once Cloudflare took over the domain, so recover it with `git checkout 837ee16 -- CNAME` (it contained one line: the bare domain). `.nojekyll` is still in the repo and still needed for that path.
 
-Caching is in [_headers](_headers) — fonts and `assets/vendor/` are immutable for a year; the site's own CSS and JS stay on ETag revalidation, because their filenames carry no content hash and a long `max-age` would strand players on a stale `game.js`. GitHub Pages allowed none of this: it serves a fixed `max-age=600`.
+Caching is in [_headers](_headers): fonts and `assets/vendor/` are immutable for a year, and so are the site's own CSS and JS, which every page loads as `file.js?v=<hash>` (`node tests/cache-bust.mjs` stamps them, so a changed file has a new address). Only pages, `/api/*` and `/sw.js` run the Worker (`run_worker_first` in wrangler.toml); static files are served straight from the assets store and are not billed as Worker requests.
 
 ## Deploy to GitHub Pages (fallback)
 

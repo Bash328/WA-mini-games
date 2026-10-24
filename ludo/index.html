@@ -38,8 +38,8 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1536x2048.png" media="(device-width:768px) and (device-height:1024px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="../shared/shared.css?v=a6d09e40">
-<link rel="stylesheet" href="../shared/fun.css?v=aa1980e7">
+<link rel="stylesheet" href="../shared/shared.css?v=cb63a2f3">
+<link rel="stylesheet" href="../shared/fun.css?v=cfc518c2">
 <link rel="stylesheet" href="../shared/multiseat.css?v=15df6c42">
 <style>
   /* ---------- the chunky look: a deep blue table with a cream cross board ---------- */
@@ -226,10 +226,12 @@
   html body.fun.g-ludo[data-fun-zone] .gk-menu { position: fixed; top: 126px; left: max(8px, calc(50vw - 207px)); right: max(8px, calc(50vw - 207px)); }
 
   @media (max-width: 360px) { .ld-vs { width: 210px; } }
+  /* PC side panels: this page is tall, so its board column is shorter than the standard one (measured: fits at 1280x900, 1366x768, 1440x900, 1920x1080) */
+  @media (min-width: 1100px) and (min-height: 700px) { html body.fun.g-ludo[data-desk-panels] { --deskboard: clamp(300px, calc(100svh - 411px), 700px); } }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
-<body class="g-ludo fun" data-fun-zone data-fun-reset>
+<body class="g-ludo fun" data-desk-panels data-fun-zone data-fun-reset>
 <main class="wrap">
   <div class="topbar">
     <div class="ld-vs" id="ld-vs" aria-label="Scores">
@@ -309,7 +311,7 @@
 
 <script defer src="../shared/manpage.js?v=01a4ac19"></script>
 <script defer src="../shared/taunts.js?v=cc001b6b"></script>
-<script defer src="../shared/gamekit.js?v=d7d6d488"></script>
+<script defer src="../shared/gamekit.js?v=219f1806"></script>
 <script defer src="../shared/account.js?v=160336a8"></script>
 <script defer src="../shared/live-share.js?v=61dc292f"></script>
 <script defer src="../shared/multiseat.js?v=2f80f13b"></script>

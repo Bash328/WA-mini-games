@@ -7,6 +7,12 @@
 
   const h = Account.h;
 
+  // The two symbols Safari uses: the Share button (a box with an arrow leaving it) and Add to Home Screen (a square with a plus).
+  const SVG = (inner, label) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="' + label + '">' + inner + "</svg>";
+  const ico = (inner, label) => { const e = h("span", { class: "acct-ico" }); e.innerHTML = SVG(inner, label); return e; };
+  const shareIco = () => ico('<path d="M12 3.5v11M8.5 7 12 3.5 15.5 7M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/>', "Share");
+  const addIco = () => ico('<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/>', "Add to Home Screen");
+
   let profile = null;          // { name, push, muted, blocked } once the server has answered
   let pushAvailable = false;
   let msg = "";
@@ -74,9 +80,9 @@
     } else if (!pushAvailable) {
       out.push(h("p", { class: "acct-hint" }, "Poke notifications aren't switched on for this site yet."));
     } else {
-      out.push(h("p", { class: "acct-hint" }, Account.needsIOSHint()
-        ? "On iPhone, notifications work from the installed app: tap Share, then Add to Home Screen, and open it from there."
-        : "This browser can't do notifications."));
+      out.push(Account.needsIOSHint()
+        ? h("p", { class: "acct-hint" }, "On iPhone, notifications work from the installed app: tap Share ", shareIco(), ", then Add to Home Screen ", addIco(), ", and open it from there.")
+        : h("p", { class: "acct-hint" }, "This browser can't do notifications."));
     }
 
     const blockInput = h("input", { type: "text", maxlength: "16", placeholder: "block a name", autocomplete: "off", autocapitalize: "off", spellcheck: "false", "aria-label": "Name to block" });
@@ -106,17 +112,20 @@
   function shareRow() {
     const url = location.origin + "/";
     const canShare = typeof navigator.share === "function";
-    const label = Account.needsIOSHint() ? "Share · Add to Home Screen" : "Share";
+    const ios = Account.needsIOSHint();
+    const label = "Share";
     const b = h("button", { type: "button", class: "acct-primary", onclick: async () => {
       try {
-        if (canShare) await navigator.share({ title: "WA mini-games", text: "Two-player games over WhatsApp. No logins.", url: url });
+        // the link only: with a title and text as well, iOS skips the link's own preview and shows a plain compass instead of the site icon
+        if (canShare) await navigator.share({ url: url });
         else { await navigator.clipboard.writeText(url); b.textContent = "Link copied"; setTimeout(() => { b.textContent = label; }, 1800); }
       } catch (e) { /* the person closed the share sheet */ }
     } }, label);
-    const hint = canShare
-      ? "Install it: tap the Share button, then “Add to Home Screen”."
-      : "Copies the link so you can send it or bookmark it.";
-    return h("div", { class: "acct-install acct-share" }, b, h("span", { class: "acct-hint" }, hint));
+    // on an iPhone the share sheet a page opens has no Add to Home Screen, so point at Safari's own Share button with its real symbol
+    const hint = ios
+      ? h("span", { class: "acct-hint" }, "To install, tap Share ", shareIco(), ", then Add to Home Screen ", addIco())
+      : h("span", { class: "acct-hint" }, canShare ? "Sends the link to a friend." : "Copies the link so you can send it or bookmark it.");
+    return h("div", { class: "acct-install acct-share" }, b, hint);
   }
 
   function installRow() {

@@ -31,13 +31,12 @@ compatibility_date = "2026-09-12"
 directory = "./"
 binding = "ASSETS"
 
-# The Worker has to see a request before the asset is served, otherwise it
-# can't rewrite the OG tags for a ?s= link. This does mean every asset
-# request costs a Worker invocation; worker/index.mjs returns non-HTML
-# responses untouched on the first check to keep that as cheap as
-# possible. If invocation count ever matters more than simplicity, this
-# can become an array of route patterns covering only the game pages.
-run_worker_first = true
+# The Worker only has to see requests it changes: the pages (to rewrite the link-preview tags for a ?s= link and to
+# redirect www), the API, and the service worker. Scripts, styles, pictures and fonts are served straight from the
+# assets store, which is faster and is NOT billed as a Worker request (with run_worker_first = true every one of them
+# was: about 20 requests for a first visit, which is what eats a daily request limit). Caching for those files is in
+# _headers. A game page is "/<game>/", the hub is "/".
+run_worker_first = ["/", "/*/", "/api/*", "/sw.js"]
 
 # ---- Live online play (worker/live-room.mjs) ------------------------------
 # One Durable Object per room holds the game state and relays moves between
