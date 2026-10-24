@@ -3156,6 +3156,20 @@ check('cell-hover-only-with-a-mouse', 'on an iPhone a tapped cell stayed in its 
   return bad;
 }, ['tic-tac-toe']);
 
+check('favicon-ico-exists', 'browsers that ask for /favicon.ico by default got a 404 and kept showing an old icon (a joystick); the file must exist, be a real icon with 16, 32 and 48 pixel images, and be served', async () => {
+  const bad = [];
+  const f = path.join(ROOT, 'favicon.ico');
+  if (!fs.existsSync(f)) return ['favicon.ico is missing'];
+  const b = fs.readFileSync(f);
+  if (b.readUInt16LE(0) !== 0 || b.readUInt16LE(2) !== 1) bad.push('favicon.ico is not an icon file');
+  const n = b.readUInt16LE(4), got = [];
+  for (let i = 0; i < n; i++) got.push(b[6 + i * 16]);
+  if ([16, 32, 48].some((s) => !got.includes(s))) bad.push('favicon.ico lacks a size: has ' + got.join(','));
+  const r = await fetch(base + 'favicon.ico');
+  if (!r.ok) bad.push('/favicon.ico is not served: ' + r.status);
+  return bad;
+}, ['chess']);
+
 check('farkle-dice-throw', 'Farkle: the dice just changed number on a roll; they must roll like every dice game (each die turns over while its faces flick past) and land on the numbers rolled', async () => {
   const p = await open('farkle', 390);
   const bad = [];
