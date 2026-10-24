@@ -186,7 +186,7 @@ check('desktop-column', 'on a PC the phone-first boards stretched to the 960px w
   const r = await p.evaluate(() => {
     const w = document.querySelector('.wrap').getBoundingClientRect();
     const panel = document.querySelector('.panel').getBoundingClientRect();
-    const col = (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1100 && innerHeight >= 700 ? t : null; })();   // side-panel pages: the board column (the top bar's width) is the column that must stay narrow
+    const col = (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1000 && innerHeight >= 560 ? t : null; })();   // side-panel pages: the board column (the top bar's width) is the column that must stay narrow
     return { desk: col !== null, wrap: col || w.width, panel: col || panel.width, sw: document.documentElement.scrollWidth, iw: innerWidth };
   });
   await p.close();
@@ -208,7 +208,7 @@ check('desktop-height', 'on a 1280x1000 or 1280x900 PC window the page still scr
   return bad;
 }, FUN);
 
-check('desktop-side-panels', 'the PC layout was one narrow centred column with empty screen either side; on a big window (1100x700 and up) the status and Options now sit in a left panel and the action buttons in a right one, with the board between them, and everything goes back into the one column when the window shrinks', async (g) => {
+check('desktop-side-panels', 'the PC layout was one narrow centred column with empty screen either side; on a big window (1000x560 and up) the status and Options now sit in a left panel and the action buttons in a right one, with the board between them, and everything goes back into the one column when the window shrinks', async (g) => {
   const p = await open(g, 1280, null, { viewport: { width: 1280, height: 900 } });
   const at = () => p.evaluate(() => {
     const r = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
@@ -223,17 +223,44 @@ check('desktop-side-panels', 'the PC layout was one narrow centred column with e
     if (wide.b && wide.actX !== null && wide.actX < wide.b[1]) bad.push('the right panel overlaps the board');
   }
   if (wide.sh > wide.ih + 1) bad.push('the side-panel layout scrolls at 1280x900 (' + (wide.sh - wide.ih) + 'px)');
-  await p.setViewportSize({ width: 1000, height: 900 }); await p.waitForTimeout(300);
+  await p.setViewportSize({ width: 900, height: 900 }); await p.waitForTimeout(300);
   const narrow = await at();
-  if (narrow.inSide || await p.evaluate(() => !!document.querySelector('.gk-side'))) bad.push('at 1000px wide the elements did not go back into the single column');
+  if (narrow.inSide || await p.evaluate(() => !!document.querySelector('.gk-side'))) bad.push('at 900px wide the elements did not go back into the single column');
   await p.close();
   return bad;
 }, FUN);   // every fun page: the side panels are on by default (a page opts out with data-no-desk)
 
+check('laptop-window-gets-panels', 'the PC layout (side panels, bigger board) only switched on for windows at least 700px tall, but a laptop browser window is about 640px once the tab and address bars are counted (and less with Windows scaling), so most laptops still got the narrow phone column; it now starts at 1000x560 and never scrolls sideways', async (g) => {
+  const bad = [];
+  const rows = await sweep(g, [[1366, 640], [1536, 712], [1000, 560]], (p) => p.evaluate(() => ({ desk: !!document.querySelector('.panel.gk-desk'), sw: document.documentElement.scrollWidth, iw: innerWidth })));
+  [[1366, 640], [1536, 712], [1000, 560]].forEach(([w, h], i) => {
+    const r = rows[i];
+    if (!r.desk) bad.push(w + 'x' + h + ' still has the single phone column');
+    if (r.sw > r.iw + 1) bad.push(w + 'x' + h + ' scrolls sideways by ' + (r.sw - r.iw) + 'px');
+  });
+  return bad;
+}, FUN);
+
+check('battleship-boards-side-by-side-on-laptop', 'battleship on a laptop or PC stacked the two waters in a phone-shaped column, so each grid was small; in a battle they now sit side by side (the foe left, yours right), each at least as wide as the stacked ones were, with the fleet strip underneath and no scrolling', async () => {
+  const bad = [];
+  for (const [w, h] of [[1366, 650], [1920, 890]]) {
+    const p = await open('battleship', w, "var m=document.querySelector('#mode');m.value='computer';m.dispatchEvent(new Event('change'));document.body.classList.add('gk-play')", { viewport: { width: w, height: h } });
+    await p.waitForTimeout(300);
+    await p.locator('#bs-random').click(); await p.locator('#bs-ready').click(); await p.waitForTimeout(700);
+    const r = await p.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const a = q('#bs-main'), b = q('#bs-sub'), m = q('#bs-mid'); return { aw: a.width, bl: b.left, ar: a.right, at: a.top, bt: b.top, mt: m.top, mb: m.bottom, sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
+    if (Math.abs(r.at - r.bt) > 2 || r.bl < r.ar) bad.push(w + 'x' + h + ': the two waters are not side by side');
+    if (r.aw < (h - 172) / 2 / .825 + 20) bad.push(w + 'x' + h + ': the grids are no bigger than the stacked ones (' + Math.round(r.aw) + 'px)');
+    if (r.mt < r.at + 100) bad.push(w + 'x' + h + ': the fleet strip is not under the waters');
+    if (r.sh > r.ih + 1 || r.sw > r.iw + 1) bad.push(w + 'x' + h + ': the page scrolls');
+    await p.close();
+  }
+  return bad;
+}, ['battleship']);
+
 check('desktop-large-viewports', 'wide PC windows and tablets (1440x900, 1920x1080, 834x1112, 1024x768) were never checked; the height-aware column should still end above the fold and stay narrow', async (g) => {
   const bad = [];
   const sizes = [[1440, 900], [1920, 1080], [834, 1112], [1024, 768]];
-  const rows = await sweep(g, sizes, (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth, desk: document.body.hasAttribute('data-desk-panels') && innerWidth >= 1100 && innerHeight >= 700, wrap: (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1100 && innerHeight >= 700 ? t : null; })() || document.querySelector('.wrap').getBoundingClientRect().width })));
+  const rows = await sweep(g, sizes, (p) => p.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth, desk: document.body.hasAttribute('data-desk-panels') && innerWidth >= 1000 && innerHeight >= 560, wrap: (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1000 && innerHeight >= 560 ? t : null; })() || document.querySelector('.wrap').getBoundingClientRect().width })));
   rows.forEach((r, i) => {
     const [w, h] = sizes[i];
     if (r.sh > r.ih + 2) bad.push(w + 'x' + h + ' needs ' + (r.sh - r.ih) + 'px of scroll');
@@ -433,8 +460,8 @@ check('desktop-compact', 'at 1366x768 the compact desktop layer still left a gam
       ih: innerHeight,
       sw: document.documentElement.scrollWidth,
       iw: innerWidth,
-      desk: document.body.hasAttribute('data-desk-panels') && innerWidth >= 1100 && innerHeight >= 700,
-      wrap: (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1100 && innerHeight >= 700 ? t : null; })() || wrap.getBoundingClientRect().width,
+      desk: document.body.hasAttribute('data-desk-panels') && innerWidth >= 1000 && innerHeight >= 560,
+      wrap: (() => { const t = document.querySelector('.topbar').getBoundingClientRect().width; return document.body.hasAttribute('data-desk-panels') && innerWidth >= 1000 && innerHeight >= 560 ? t : null; })() || wrap.getBoundingClientRect().width,
       padTop: parseFloat(getComputedStyle(wrap).paddingTop),
       topbar: document.querySelector('.topbar').getBoundingClientRect().height,
     };
@@ -1293,8 +1320,7 @@ check('battleship-pc-column', 'battleship on a PC: the battle screen filled the 
     const r = await p.evaluate(() => { const m = document.getElementById('bs-main').getBoundingClientRect(), c = document.querySelector('#bs-main .bs-cell').getBoundingClientRect(), f = document.getElementById('bs-fire').getBoundingClientRect(); return { mw: m.width, mc: m.left + m.width / 2, cell: c.width / c.height, gun: f.width, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
     await p.close();
     if (w > 760) {
-      if (r.mw > 600) bad.push(w + 'x' + h + ': the board is ' + Math.round(r.mw) + 'px wide, not a column');
-      if (Math.abs(r.mc - r.iw / 2) > 4) bad.push(w + 'x' + h + ': the board is not centred');
+      if (r.mw > 780) bad.push(w + 'x' + h + ': the board is ' + Math.round(r.mw) + 'px wide, too wide for one water');
       if (r.cell > 1.6) bad.push(w + 'x' + h + ': the cells are stretched into bars (' + r.cell.toFixed(2) + ':1)');
       if (r.gun > r.mw * 0.4) bad.push(w + 'x' + h + ': the cannon is ' + Math.round(r.gun) + 'px, too big for a ' + Math.round(r.mw) + 'px board');
     } else if (Math.round(r.mw) !== w) bad.push('on a phone the board must still go edge to edge (' + Math.round(r.mw) + 'px of ' + w + ')');

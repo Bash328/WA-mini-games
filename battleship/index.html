@@ -39,7 +39,7 @@
 <link rel="apple-touch-startup-image" href="../assets/splash/1668x2224.png" media="(device-width:834px) and (device-height:1112px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="../shared/shared.css?v=a1f1633d">
-<link rel="stylesheet" href="../shared/fun.css?v=ce7f7cc6">
+<link rel="stylesheet" href="../shared/fun.css?v=669bef8a">
 <link rel="stylesheet" href="../shared/async-share.css?v=f064ee85">
 <style>
   /* Grid cells are buttons, so their rules are #id-prefixed (#bs) to beat the
@@ -298,6 +298,24 @@
   /* Lighthouse: the YOU / FOE labels were red and blue on the default brown bar (contrast 2.7 and 3.8, needs 4.5), and the tray pictures were stretched to their boxes */
   html body.fun.g-battleship { --vs-bg: #26171b; }
   #bs-tray .bs-ship .bs-svg { object-fit: contain; }
+
+  /* v9: on a laptop or PC the two waters sit side by side (the foe's on the left, yours on the right) with the fleet strip
+     under them, so each grid can be much bigger than when they were stacked in a phone-shaped column */
+  @media (min-width: 1000px) and (min-height: 560px) {
+    html body.fun.g-battleship { --bw: min(calc((100vw - 120px) / 2), calc((100svh - 190px) / .825), 760px); --tot: calc(var(--bw) * 2 + 40px); }
+    html body.fun.g-battleship.bs-battle .panel.gk-desk { display: block; }
+    html body.fun.g-battleship #bs-board[data-phase="battle"] { --gh: calc(var(--bw) * .825); display: grid; grid-template-columns: var(--bw) var(--bw); column-gap: 40px; justify-content: center; align-items: start; }
+    html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap:not(.small) { grid-column: 1; grid-row: 1; }
+    html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-wrap.small { grid-column: 2; grid-row: 1; }
+    html body.fun.g-battleship #bs-board[data-phase="battle"] .bs-mid { grid-column: 1 / -1; grid-row: 2; width: var(--tot); justify-self: center; }
+    html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-main, html body.fun.g-battleship #bs-board[data-phase="battle"] #bs-sub { border-radius: 22px; }
+    html body.fun.g-battleship.bs-battle .topbar { width: var(--tot); grid-template-columns: 1fr auto 1fr; }     /* the score bar stays in the middle of the two waters */
+    html body.fun.g-battleship.bs-battle .topbar .gk-top-r { justify-self: end; }
+    html body.fun.g-battleship.bs-battle .topbar .fun-restart { margin-right: 14px; }
+    body.bs-battle .gk-optwrap { right: calc((100vw - var(--tot)) / 2 + 12px) !important; }
+    html body.fun.g-battleship.bs-battle[data-fun-zone] .gk-menu { left: max(8px, calc((100vw - var(--tot)) / 2 + 8px)); right: max(8px, calc((100vw - var(--tot)) / 2 + 8px)); }
+    body.bs-battle .wa-ui:has(button, a, input, .banner, .live-code-box) { left: max(12px, calc(50% - var(--tot) / 2 + 12px)); right: max(12px, calc(50% - var(--tot) / 2 + 12px)); }
+  }
 </style>
 <script>try{var t=localStorage.getItem("games:theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -399,7 +417,7 @@
 </template>
 
 <script src="../shared/taunts.js?v=cc001b6b"></script>
-<script src="../shared/gamekit.js?v=bd5afe0b"></script>
+<script src="../shared/gamekit.js?v=4049d4fa"></script>
 <script src="../assets/vendor/lz-string.min.js?v=2414f3d8"></script>
 <script src="../shared/async-share.js?v=0a9136e6"></script>
 <script defer src="../shared/fun.js?v=2d6bc944"></script>

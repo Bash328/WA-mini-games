@@ -923,7 +923,7 @@
     // on by default for every fun page; a page that cannot take the panels sets data-no-desk on the body
     if (document.body.classList.contains("fun") && !document.body.hasAttribute("data-no-desk")) document.body.setAttribute("data-desk-panels", "");
     if (!panel || !document.body.hasAttribute("data-desk-panels") || !global.matchMedia) return;
-    const mq = global.matchMedia("(min-width: 1100px) and (min-height: 700px)");
+    const mq = global.matchMedia("(min-width: 1000px) and (min-height: 560px)");
     let moved = [], left = null, right = null;
     function park(el, side) {
       if (global.getComputedStyle(el).position === "fixed") return;      // a page that pins its gear in the header keeps it there
