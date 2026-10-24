@@ -10,7 +10,8 @@ const check = (name, ok) => { if (!ok) { fail++; console.log("  FAIL  " + name);
 function run(hostname) {
   const scripts = []; let onLoad = null;
   const win = {                                   // in a browser `window` is the global object: so is this
-    location: { hostname },
+    location: { hostname, pathname: "/", search: "" },
+    navigator: {},
     addEventListener: (t, f) => { if (t === "load") onLoad = f; },
     document: { createElement: () => ({}), head: { appendChild: (s) => scripts.push(s) } },
   };

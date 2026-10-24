@@ -1688,6 +1688,25 @@ check('offline-after-a-visit', 'the service worker cached nothing, so a game nev
   return bad;
 }, ['chess']);
 
+check('analytics-events', 'nothing told us what players do or what breaks (only page views were counted); shared/ga.js now sends link_open, game_start, share, install, js_error and gamekit sends game_over, each tagged with the game', async () => {
+  const bad = [];
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(() => { window.__gaTest = true; });
+  const p = await ctx.newPage();
+  const seen = () => p.evaluate(() => [...(window.dataLayer || [])].filter((a) => a[0] === 'event').map((a) => a[1] + ':' + a[2].game + (a[2].kind ? ':' + a[2].kind : '')));
+  await p.goto(base + 'chess/?s=abc'); await p.waitForTimeout(500);
+  await p.mouse.click(5, 5); await p.waitForTimeout(100);
+  await p.evaluate(() => { try { navigator.share({ url: location.href }).catch(() => {}); } catch (e) { /* ignore */ } });
+  await p.evaluate(() => setTimeout(() => { throw new Error('boom'); }, 0)); await p.waitForTimeout(300);
+  const ev = await seen();
+  ['link_open:chess:move', 'game_start:chess', 'js_error:chess'].forEach((e) => { if (!ev.includes(e)) bad.push('missing event ' + e + ' (got ' + ev.join(', ') + ')'); });
+  if (await p.evaluate(() => !!navigator.share) && !ev.includes('share:chess')) bad.push('a share did not send a share event');
+  await p.goto(base + 'chess/?live=ABCD'); await p.waitForTimeout(400);
+  if (!(await seen()).includes('link_open:chess:live')) bad.push('a ?live= link did not send link_open:live');
+  await ctx.close();
+  return bad;
+}, ['chess']);
+
 check('sw-kill-switch', 'the service worker stores pages on phones and a mistake in it could only be fixed on each phone\'s next visit; a server flag (SW_KILL, sent as the x-sw-kill header on every page) now makes it delete everything it stored and stand aside, and it resumes by itself when the flag goes away', async () => {
   const bad = [];
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });

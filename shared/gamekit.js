@@ -450,6 +450,7 @@
     const draw = /^draw/i.test(full);
     const st = storage(GAME_ID + ":");
     let log = st.getJSON("winlog", []);
+    if (window.track) track("game_over", { result: tone === "win" ? "win" : draw ? "draw" : "loss" });
     if (tone === "win") { log = log.concat(Date.now()).slice(-1000); st.set("winlog", JSON.stringify(log)); }
     const c = winCounts(log), counts = [["Today", c.today], ["This week", c.week], ["All time", c.all]];
     overEl = mk("div", "gk-over " + (tone || (draw ? "draw" : "")));
